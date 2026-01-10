@@ -111,9 +111,10 @@ const ChatHeader = memo<{
   return (
     <div className="px-3 sm:px-5 py-2.5 sm:py-3.5 bg-white/95 backdrop-blur-md border-b border-gray-200/80 shadow-sm flex justify-between items-center flex-shrink-0 z-20">
       <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+        {/* Hide toggle button on mobile (< md) */}
         <button
           onClick={onToggleSidebar}
-          className="p-1.5 sm:p-2.5 hover:bg-emerald-50 rounded-xl transition-all duration-200 flex-shrink-0 text-gray-600 hover:text-emerald-600"
+          className="hidden md:flex p-1.5 sm:p-2.5 hover:bg-emerald-50 rounded-xl transition-all duration-200 flex-shrink-0 text-gray-600 hover:text-emerald-600"
           title={isSidebarOpen ? 'إخفاء القائمة' : 'إظهار القائمة'}
           aria-label={isSidebarOpen ? 'إخفاء القائمة' : 'إظهار القائمة'}
         >

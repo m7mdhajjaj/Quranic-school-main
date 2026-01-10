@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ChatSidebar from './ChatSidebar';
 import ChatWindow from './ChatWindow';
+import MobileChatLayout from './MobileChatLayout';
 import { useChatLayout } from '../hooks';
 import { MessageSquare } from 'lucide-react';
 
 const ChatLayout: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+  
   const {
     conversations,
     contacts,
@@ -21,6 +24,24 @@ const ChatLayout: React.FC = () => {
     deleteConversation
   } = useChatLayout();
 
+  // Detect mobile screen size
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768); // md breakpoint
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Mobile Layout
+  if (isMobile) {
+    return <MobileChatLayout />;
+  }
+
+  // Desktop Layout
   return (
     <div className="flex h-[calc(100vh-64px)] bg-gray-100 overflow-hidden relative overscroll-none font-sans" dir="rtl">
       {/* Sidebar */}

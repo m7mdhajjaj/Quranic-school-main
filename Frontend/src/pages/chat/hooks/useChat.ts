@@ -4,6 +4,21 @@ import { useChatMessages } from './useChatMessages';
 import { useAuth } from '../../../hooks/useAuth';
 import type { SendMessageInput } from '../../../Validation/chatValidation';
 
+// ⚡ Performance: Request idle callback with fallback
+const requestIdleCallbackPolyfill = (cb: IdleRequestCallback) => {
+  if ('requestIdleCallback' in window) {
+    return window.requestIdleCallback(cb);
+  }
+  return setTimeout(() => cb({ didTimeout: false, timeRemaining: () => 50 } as IdleDeadline), 1);
+};
+
+const cancelIdleCallbackPolyfill = (id: number) => {
+  if ('cancelIdleCallback' in window) {
+    return window.cancelIdleCallback(id);
+  }
+  return clearTimeout(id);
+};
+
 /**
  * Hook شامل للشات مع Real-time updates
  */
@@ -42,12 +57,23 @@ export const useChat = (chatType: 'DM' | 'GROUP', targetId: string) => {
 
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // ⚡ Performance: Batch message updates
+  const messageBatchRef = useRef<any[]>([]);
+  const batchTimeoutRef = useRef<number | null>(null);
+  const idleCallbackIdRef = useRef<number | null>(null);
 
-  // Cleanup typing timeout on unmount
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
+      }
+      if (batchTimeoutRef.current) {
+        clearTimeout(batchTimeoutRef.current);
+      }
+      if (idleCallbackIdRef.current) {
+        cancelIdleCallbackPolyfill(idleCallbackIdRef.current);
       }
     };
   }, []);
@@ -59,27 +85,57 @@ export const useChat = (chatType: 'DM' | 'GROUP', targetId: string) => {
     }
   }, [chatType, targetId, joinGroup]);
 
-  // Listen for new messages
+  // ⚡ Performance: Batch process messages
+  const processBatch = useCallback(() => {
+    if (messageBatchRef.current.length === 0) return;
+    
+    const batch = [...messageBatchRef.current];
+    messageBatchRef.current = [];
+    
+    // Process all messages at once
+    batch.forEach(message => {
+      addMessage(message);
+    });
+  }, [addMessage]);
+
+  // Listen for new messages with batching
   useEffect(() => {
     const cleanup = onMessage((message: any) => {
-      // Mark as delivered فوراً
+      // Mark as delivered فوراً (critical path)
       const isFromMe = message.sender?._id === user?._id;
       
       if (!isFromMe) {
         // Sound is handled globally by useNotificationsSocket to prevent double sound
         
         if (message.chatType === 'DM' && message.recipient === user?._id) {
-          markDelivered(message._id);
+          // ⚡ Use idle callback for non-critical delivery status
+          requestIdleCallbackPolyfill(() => {
+            markDelivered(message._id);
+          });
         } else if (message.chatType === 'GROUP') {
-          // For groups, we also mark as delivered if we receive it
-          markDelivered(message._id);
+          requestIdleCallbackPolyfill(() => {
+            markDelivered(message._id);
+          });
         }
       }
       
-      addMessage(message);
+      // ⚡ Batch messages for better performance
+      messageBatchRef.current.push(message);
+      
+      // Clear existing timeout
+      if (batchTimeoutRef.current) {
+        clearTimeout(batchTimeoutRef.current);
+      }
+      
+      // Process batch after 16ms (1 frame) or immediately if batch is large
+      if (messageBatchRef.current.length >= 10) {
+        processBatch();
+      } else {
+        batchTimeoutRef.current = window.setTimeout(processBatch, 16);
+      }
     });
     return cleanup;
-  }, [onMessage, addMessage, markDelivered, user]);
+  }, [onMessage, processBatch, markDelivered, user]);
 
   // Listen for sent confirmation
   useEffect(() => {
@@ -91,64 +147,96 @@ export const useChat = (chatType: 'DM' | 'GROUP', targetId: string) => {
     return cleanup;
   }, [onMessageSent, addMessage]);
 
-  // Listen for delivery status
+  // Listen for delivery status (use idle callback - not critical for UX)
   useEffect(() => {
     const cleanup = onMessageDelivered((data: any) => {
-      const { messageId, deliveredAt, userId } = data;
-      if (userId) {
-        // Group Chat
-        updateGroupMessageStatus(messageId, userId, 'delivered', deliveredAt);
-      } else {
-        // DM
-        updateMessage(messageId, { deliveredAt });
-      }
+      // ⚡ Defer to idle time - delivery status is not immediately visible
+      requestIdleCallbackPolyfill(() => {
+        const { messageId, deliveredAt, userId } = data;
+        if (userId) {
+          // Group Chat
+          updateGroupMessageStatus(messageId, userId, 'delivered', deliveredAt);
+        } else {
+          // DM
+          updateMessage(messageId, { deliveredAt });
+        }
+      });
     });
     return cleanup;
   }, [onMessageDelivered, updateMessage, updateGroupMessageStatus]);
 
-  // Listen for read status
+  // Listen for read status (use idle callback - not critical for UX)
   useEffect(() => {
     const cleanup = onMessageRead((data: any) => {
-      const { messageId, readAt, seenAt, userId, user } = data;
-      if (userId) {
-        // Group Chat
-        updateGroupMessageStatus(messageId, userId, 'read', seenAt || readAt, user);
-      } else {
-        // DM
-        updateMessage(messageId, { readAt });
-      }
+      // ⚡ Defer to idle time - read status can be updated later
+      requestIdleCallbackPolyfill(() => {
+        const { messageId, readAt, seenAt, userId, user } = data;
+        if (userId) {
+          // Group Chat
+          updateGroupMessageStatus(messageId, userId, 'read', seenAt || readAt, user);
+        } else {
+          // DM
+          updateMessage(messageId, { readAt });
+        }
+      });
     });
     return cleanup;
   }, [onMessageRead, updateMessage, updateGroupMessageStatus]);
 
-  // Listen for typing indicators
+  // Listen for typing indicators (optimized with debouncing)
   useEffect(() => {
+    const typingTimeouts = new Map<string, NodeJS.Timeout>();
+    
     const cleanup = onTyping((data: any) => {
       const { userId } = data;
       
       // Ignore own typing
       if (userId === user?._id) return;
       
-      setTypingUsers(prev => {
-        const newSet = new Set(prev);
-        // Check if it's typing:start or typing:stop based on event
-        if (data.userRole !== undefined) { // typing:start has userRole
-          newSet.add(userId);
-          // Auto-remove after 4 seconds
-          setTimeout(() => {
-            setTypingUsers(current => {
-              const updated = new Set(current);
-              updated.delete(userId);
-              return updated;
-            });
-          }, 4000);
-        } else {
-          newSet.delete(userId);
-        }
-        return newSet;
+      // ⚡ Batch state updates with requestAnimationFrame
+      requestAnimationFrame(() => {
+        setTypingUsers(prev => {
+          const newSet = new Set(prev);
+          // Check if it's typing:start or typing:stop based on event
+          if (data.userRole !== undefined) { // typing:start has userRole
+            newSet.add(userId);
+            
+            // Clear existing timeout
+            if (typingTimeouts.has(userId)) {
+              clearTimeout(typingTimeouts.get(userId)!);
+            }
+            
+            // Auto-remove after 4 seconds
+            const timeout = setTimeout(() => {
+              requestAnimationFrame(() => {
+                setTypingUsers(current => {
+                  const updated = new Set(current);
+                  updated.delete(userId);
+                  return updated;
+                });
+              });
+              typingTimeouts.delete(userId);
+            }, 4000);
+            
+            typingTimeouts.set(userId, timeout);
+          } else {
+            newSet.delete(userId);
+            if (typingTimeouts.has(userId)) {
+              clearTimeout(typingTimeouts.get(userId)!);
+              typingTimeouts.delete(userId);
+            }
+          }
+          return newSet;
+        });
       });
     });
-    return cleanup;
+    
+    return () => {
+      cleanup();
+      // Cleanup all timeouts
+      typingTimeouts.forEach(timeout => clearTimeout(timeout));
+      typingTimeouts.clear();
+    };
   }, [onTyping, user]);
 
   // Listen for message deletion (Real-time)
