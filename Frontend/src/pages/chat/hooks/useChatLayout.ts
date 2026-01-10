@@ -6,26 +6,9 @@ import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { useDebounce } from '../../../hooks/useDebounce';
 import { useConversations } from './useConversations';
-import { useChatContacts } from './useChatContacts';
+import { useChatContacts, type Contact, type Group } from './useChatContacts';
 import { useGroupConversations } from './useGroupConversations';
 import type { Conversation } from '../types';
-
-interface Contact {
-  _id: string;
-  firstName: string;
-  lastName: string;
-  avatar?: string;
-  role: string;
-  [key: string]: any;
-}
-
-interface Group {
-  _id: string;
-  name: string;
-  description?: string;
-  image?: string;
-  teacher?: string;
-}
 
 interface TargetInfo {
   chatType: 'DM' | 'GROUP';

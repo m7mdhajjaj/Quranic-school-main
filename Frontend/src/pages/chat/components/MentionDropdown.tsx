@@ -1,13 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { Avatar } from '@/components/Avatar';
-
-interface MentionUser {
-  _id: string;
-  firstName: string;
-  lastName: string;
-  avatar?: { url: string };
-}
+import { useMentionDropdown, type MentionUser } from '../hooks/useMentionDropdown';
 
 interface MentionDropdownProps {
   isOpen: boolean;
@@ -25,54 +19,20 @@ export const MentionDropdown: React.FC<MentionDropdownProps> = ({
   onSelect
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
-  const [coords, setCoords] = useState({ top: 0, left: 0 });
-
-  // Adjust position to prevent overflow and handle fixed positioning
-  useEffect(() => {
-    if (isOpen) {
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-      const menuWidth = 256; // w-64
-      const menuHeight = Math.min(users.length * 50 + 100, 240); // Approximate height
-
-      let newLeft = position.left;
-      // Position the bottom of the menu slightly above the caret line
-      // position.top is the top of the current line. We want the menu to end above it.
-      let newTop = position.top - menuHeight - 5; 
-
-      // Prevent going off right screen
-      if (newLeft + menuWidth > viewportWidth) {
-        newLeft = viewportWidth - menuWidth - 20;
-      }
-      
-      // Prevent going off left screen
-      if (newLeft < 10) {
-        newLeft = 10;
-      }
-
-      // If top is too high (off screen), show below instead
-      // This handles cases where input is at the top or user scrolled way down
-      if (newTop < 10) {
-        newTop = position.top + 25; // Show below the line (approx line height)
-      }
-
-      setCoords({ top: newTop, left: newLeft });
-    }
-  }, [position, isOpen, users.length]);
+  const { coords, displayList, hasNoResults } = useMentionDropdown({
+    isOpen,
+    users,
+    position
+  });
 
   if (!isOpen) return null;
-
-  const allOption = { _id: 'all', firstName: 'الجميع', lastName: '(All)' };
-  const displayList = [allOption, ...users];
 
   return ReactDOM.createPortal(
     <div
       ref={menuRef}
-      className="fixed z-[9999] w-64 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-700 overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-100"
-      style={{
-        top: coords.top,
-        left: coords.left,
-      }}
+      className={`mention-dropdown fixed z-[9999] w-64 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-700 overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-100`}
+      data-top={coords.top}
+      data-left={coords.left}
       dir="rtl"
     >
       {/* Header with Gradient to match App Header */}
@@ -104,7 +64,7 @@ export const MentionDropdown: React.FC<MentionDropdownProps> = ({
               </div>
             ) : (
               <div className={`transition-transform ${index === activeIndex ? 'scale-110' : ''}`}>
-                <Avatar user={item as any} size="sm" />
+                <Avatar user={item as MentionUser} size="sm" />
               </div>
             )}
             <div className="flex flex-col">
@@ -128,7 +88,7 @@ export const MentionDropdown: React.FC<MentionDropdownProps> = ({
             )}
           </div>
         ))}
-        {users.length === 0 && (
+        {hasNoResults && (
           <div className="px-4 py-6 text-sm text-gray-400 text-center flex flex-col items-center gap-2">
             <span className="text-2xl opacity-50">🔍</span>
             <span>لا يوجد نتائج...</span>

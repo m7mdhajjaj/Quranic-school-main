@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import ChatSidebar from './ChatSidebar';
 import ChatWindow from './ChatWindow';
 import { useChatLayout } from '../hooks';
-import { EmptyState } from '../../../components/UI';
-import { MessageSquare, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
 
 const ChatLayout: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -55,7 +54,7 @@ const ChatLayout: React.FC = () => {
             targetAvatar={targetInfo.targetAvatar}
             isSidebarOpen={isSidebarOpen}
             onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-            onNewMessage={(newMsg) => {
+            onNewMessage={() => {
               // Update conversation on new message if needed
             }}
           />

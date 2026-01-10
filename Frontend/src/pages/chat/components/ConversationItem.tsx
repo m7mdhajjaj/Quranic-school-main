@@ -1,7 +1,7 @@
 import React from 'react';
 import { Avatar } from '../../../components/Avatar';
-import { Badge } from '../../../components/UI';
 import { Trash2 } from 'lucide-react';
+import { useConversationItem } from '../hooks/useConversationItem';
 import type { Conversation } from '../types';
 
 interface ConversationItemProps {
@@ -19,29 +19,13 @@ const ConversationItem: React.FC<ConversationItemProps> = React.memo(({
   onSelect, 
   onDelete 
 }) => {
-  const getDisplayInfo = () => {
-    if (conversation.type === 'GROUP' && conversation.groupId) {
-      return {
-        name: conversation.groupId.name,
-        subtitle: 'محادثة جماعية',
-        avatar: (conversation.groupId as any).image?.url || null,
-        userId: conversation.groupId._id
-      };
-    } else {
-      const otherParticipant = conversation.participants.find(p => p.userId._id !== currentUserId);
-      if (otherParticipant) {
-        return {
-          name: `${otherParticipant.userId.firstName} ${otherParticipant.userId.lastName}`,
-          subtitle: otherParticipant.userModel === 'Student' ? 'طالب' : otherParticipant.userModel === 'Teacher' ? 'معلم' : 'مدير',
-          avatar: otherParticipant.userId.avatar?.url,
-          userId: otherParticipant.userId._id
-        };
-      }
-    }
-    return { name: 'محادثة', subtitle: '', avatar: null, userId: '' };
-  };
-
-  const display = getDisplayInfo();
+  const {
+    displayInfo,
+    formattedTime,
+    lastMessageText,
+    showUnreadBadge,
+    unreadCountText
+  } = useConversationItem({ conversation, currentUserId });
 
   return (
     <div 
@@ -54,9 +38,9 @@ const ConversationItem: React.FC<ConversationItemProps> = React.memo(({
     >
       <div className="ml-3 relative">
         <Avatar 
-          userId={display.userId}
-          src={display.avatar || undefined}
-          userName={display.name}
+          userId={displayInfo.userId}
+          src={displayInfo.avatar || undefined}
+          userName={displayInfo.name}
           size="md"
           showStatus={conversation.type === 'DM'}
           statusSize="sm"
@@ -65,12 +49,12 @@ const ConversationItem: React.FC<ConversationItemProps> = React.memo(({
       <div className="flex-1 min-w-0">
         <div className="flex justify-between items-start mb-0.5">
           <div className={`font-bold truncate ${isSelected ? 'text-gray-900' : 'text-gray-800'}`}>
-            {display.name}
+            {displayInfo.name}
           </div>
           <div className="flex flex-col items-end gap-1">
-            {conversation.lastMessage && (
+            {formattedTime && (
               <div className={`text-[10px] flex-shrink-0 ${isSelected ? 'text-emerald-600 font-medium' : 'text-gray-400'}`}>
-                {new Date(conversation.lastMessage.createdAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}
+                {formattedTime}
               </div>
             )}
             {/* Delete Button - Shows on Hover */}
@@ -87,14 +71,14 @@ const ConversationItem: React.FC<ConversationItemProps> = React.memo(({
         <div className="flex justify-between items-center">
           <div className={`text-xs truncate max-w-[80%] ${
             isSelected ? 'text-emerald-700/80 font-medium' : 
-            conversation.unreadCount > 0 ? 'text-gray-800 font-semibold' : 'text-gray-500'
+            showUnreadBadge ? 'text-gray-800 font-semibold' : 'text-gray-500'
           }`}>
-            {conversation.lastMessage?.text || display.subtitle}
+            {lastMessageText}
           </div>
           
-          {conversation.unreadCount > 0 && (
+          {showUnreadBadge && (
             <div className="min-w-[18px] h-[18px] flex items-center justify-center bg-emerald-500 text-white text-[10px] font-bold rounded-full shadow-sm animate-pulse">
-              {conversation.unreadCount > 99 ? '99+' : conversation.unreadCount}
+              {unreadCountText}
             </div>
           )}
         </div>

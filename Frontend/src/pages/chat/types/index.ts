@@ -14,6 +14,7 @@ export type Conversation = {
     _id: string;
     name: string;
     description?: string;
+    image?: { url: string };
   };
   lastMessage?: {
     _id: string;
@@ -25,14 +26,29 @@ export type Conversation = {
   updatedAt: string;
 }
 
+export interface User {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  name?: string;
+  avatar?: { url: string };
+}
+
+export interface SeenByItem {
+  userId: string;
+  seenAt: string;
+  user?: User;
+}
+
+export interface MentionItem {
+  type: 'user' | 'all';
+  user?: User;
+}
+
 export type Message = {
   _id: string;
   chatType: 'DM' | 'GROUP';
-  sender: {
-    _id: string;
-    name: string;
-    avatar?: string;
-  };
+  sender: User;
   text: string;
   attachments?: Array<{
     url: string;
@@ -42,21 +58,18 @@ export type Message = {
   replyTo?: {
     _id: string;
     text: string;
-    sender: {
-      name: string;
-    };
+    sender: User;
   };
+  mentions?: MentionItem[];
   deliveredAt?: string;
   readAt?: string;
   deliveredTo?: string[];
-  seenBy?: Array<{
-    userId: string;
-    readAt: string;
-  }>;
+  seenBy?: SeenByItem[];
   edited?: boolean;
   editedAt?: string;
   deletedFor?: string[];
   deletedForAll?: boolean;
   createdAt: string;
   clientTempId?: string;
+  _optimistic?: boolean;
 }

@@ -1,17 +1,15 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Reply, Check, CheckCheck, Clock, Trash2, Edit3, X, Save } from 'lucide-react';
+import React from 'react';
+import { Reply, Check, CheckCheck, Clock, Trash2, Edit3, Save } from 'lucide-react';
 import { Avatar } from '../../../components/Avatar';
 import { Tooltip } from '../../../components/UI';
 import { DropdownMenu } from '../../../components/UI/DropdownMenu';
-import { useAuth } from '../../../hooks/useAuth';
-import api from '../../../Api/api';
-import { showConfirmMessage, showSuccessMessage, showErrorMessage } from '../../../utils/sweetalertUtils';
-import { editMessageSchema } from '../../../Validation/chatValidation';
+import { useMessageItem } from '../hooks/useMessageItem';
+import type { Message, SeenByItem, MentionItem } from '../types';
 
 interface MessageItemProps {
-  message: any;
+  message: Message;
   isOwn: boolean;
-  onReply?: (message: any) => void;
+  onReply?: (message: Message) => void;
   onReplyClick?: (messageId: string) => void;
   onDelete?: (messageId: string, deletedForAll: boolean) => void;
   onEdit?: (messageId: string, newText: string) => void;
@@ -25,92 +23,18 @@ const MessageItem: React.FC<MessageItemProps> = React.memo(({
   onDelete,
   onEdit
 }) => {
-  const { user } = useAuth();
-  const [isEditing, setIsEditing] = useState(false);
-  const [editText, setEditText] = useState(message.text);
-  const [editError, setEditError] = useState<string | null>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  // Focus textarea when editing starts
-  useEffect(() => {
-    if (isEditing && textareaRef.current) {
-      textareaRef.current.focus();
-      textareaRef.current.select();
-    }
-  }, [isEditing]);
-
-  const handleStartEdit = () => {
-    setIsEditing(true);
-    setEditText(message.text);
-    setEditError(null);
-  };
-
-  const handleCancelEdit = () => {
-    setIsEditing(false);
-    setEditText(message.text);
-    setEditError(null);
-  };
-
-  const handleSaveEdit = async () => {
-    try {
-      // Validate
-      const validated = editMessageSchema.parse({ text: editText.trim() });
-      
-      // Check if text changed
-      if (validated.text === message.text) {
-        setIsEditing(false);
-        return;
-      }
-
-      // Save via Socket (through onEdit callback)
-      if (onEdit) {
-        await onEdit(message._id, validated.text);
-        setIsEditing(false);
-        setEditError(null);
-      }
-    } catch (error: any) {
-      if (error.errors?.[0]?.message) {
-        setEditError(error.errors[0].message);
-      } else {
-        setEditError(error.response?.data?.message || 'فشل تعديل الرسالة');
-      }
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSaveEdit();
-    } else if (e.key === 'Escape') {
-      handleCancelEdit();
-    }
-  };
-
-  const handleDelete = async (deleteForAll: boolean) => {
-    try {
-      const confirmed = await showConfirmMessage(
-        deleteForAll ? "حذف لدى الجميع؟" : "حذف لديّ؟",
-        deleteForAll 
-          ? "سيتم حذف الرسالة لدى جميع المشاركين في المحادثة." 
-          : "سيتم حذف الرسالة من جهازك فقط.",
-        "نعم، احذف",
-        "إلغاء"
-      );
-
-      if (confirmed.isConfirmed) {
-        await api.delete(`/chat/messages/${message._id}`, {
-          data: { deleteForAll }
-        });
-        
-        // Optimistic update / Manual handling
-        if (onDelete) {
-          onDelete(message._id, deleteForAll);
-        }
-      }
-    } catch (error: any) {
-      showErrorMessage("خطأ", error.response?.data?.message || "فشل حذف الرسالة");
-    }
-  };
+  const {
+    isEditing,
+    editText,
+    setEditText,
+    editError,
+    textareaRef,
+    handleStartEdit,
+    handleCancelEdit,
+    handleSaveEdit,
+    handleKeyDown,
+    handleDelete
+  } = useMessageItem({ message, onEdit, onDelete });
 
   const getDropdownItems = () => {
     const items = [];
@@ -192,13 +116,13 @@ const MessageItem: React.FC<MessageItemProps> = React.memo(({
       const deliveredCount = message.deliveredTo?.length || 0;
 
       // Show Blue Ticks if ANYONE has seen it
-      if (seenCount > 0) {
+      if (seenCount > 0 && message.seenBy) {
          return (
           <Tooltip 
             width="w-auto min-w-[200px]"
             content={
               <div className="max-h-40 overflow-y-auto custom-scrollbar p-1">
-                {message.seenBy.map((seen: any) => (
+                {message.seenBy.map((seen: SeenByItem) => (
                   <div key={seen.userId} className="py-1 border-b border-gray-700/50 last:border-0 text-xs whitespace-nowrap">
                     تمت المشاهدة بواسطة {seen.user?.firstName} في {new Date(seen.seenAt).toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' })}
                   </div>
@@ -256,7 +180,9 @@ const MessageItem: React.FC<MessageItemProps> = React.memo(({
           >
             <div className="cursor-pointer hover:scale-105 transition-transform">
               <Avatar 
-                user={message.sender}
+                userId={message.sender._id}
+                src={message.sender.avatar?.url}
+                userName={`${message.sender.firstName} ${message.sender.lastName}`}
                 size="sm"
                 showStatus={false}
               />
@@ -291,7 +217,7 @@ const MessageItem: React.FC<MessageItemProps> = React.memo(({
         {message.replyTo && (
           <div 
             dir="rtl"
-            onClick={() => onReplyClick && onReplyClick(message.replyTo._id)}
+            onClick={() => onReplyClick && onReplyClick(message.replyTo!._id)}
             className={`p-2 rounded-xl text-xs mb-1 cursor-pointer hover:opacity-90 transition-opacity shadow-sm text-right ${
             isOwn 
               ? 'bg-emerald-600 text-emerald-100'
@@ -300,7 +226,7 @@ const MessageItem: React.FC<MessageItemProps> = React.memo(({
             <div className="flex items-center gap-1 mb-0.5">
               <Reply className="w-3 h-3 opacity-70" />
               <span className="font-bold opacity-90">
-                {message.replyTo.sender?.firstName}:
+                {message.replyTo.sender.firstName}:
               </span>
             </div>
             <p className="truncate opacity-80">
@@ -379,7 +305,7 @@ const MessageItem: React.FC<MessageItemProps> = React.memo(({
                 {/* Message text with mentions */}
                 <p className="whitespace-pre-wrap break-words leading-relaxed text-[15px]">
                   {message.text.split(/(@[\u0600-\u06FFa-zA-Z0-9\s]+)/g).map((part: string, i: number) => {
-                    const isMention = message.mentions?.some((m: any) => {
+                    const isMention = message.mentions?.some((m: MentionItem) => {
                       if (m.type === 'all' && part.trim() === '@الجميع') return true;
                       if (m.type === 'user' && m.user && part.trim() === `@${m.user.firstName} ${m.user.lastName}`) return true;
                       return false;
@@ -426,7 +352,7 @@ const MessageItem: React.FC<MessageItemProps> = React.memo(({
         {/* Seen By Avatars (Group Chat) */}
         {message.chatType === 'GROUP' && message.seenBy && message.seenBy.length > 0 && (
           <div className="flex items-center justify-end mt-1 mr-1 gap-[-6px]">
-            {message.seenBy.slice(0, 3).map((seen: any, index: number) => (
+            {message.seenBy.slice(0, 3).map((seen: SeenByItem) => (
               <div 
                 key={seen.userId} 
                 className="relative -ml-1.5 first:ml-0 transition-transform hover:z-10 hover:scale-110"
@@ -437,7 +363,9 @@ const MessageItem: React.FC<MessageItemProps> = React.memo(({
                 >
                   <div className="cursor-pointer">
                     <Avatar 
-                      user={seen.user} 
+                      userId={seen.user?._id || ''}
+                      src={seen.user?.avatar?.url}
+                      userName={seen.user ? `${seen.user.firstName} ${seen.user.lastName}` : 'مستخدم'}
                       size="xs"
                       className="border border-white ring-1 ring-gray-100 w-4 h-4 text-[8px]"
                     />
@@ -481,7 +409,7 @@ const MessageItem: React.FC<MessageItemProps> = React.memo(({
     prevProps.message.deliveredAt === nextProps.message.deliveredAt &&
     prevProps.message.seenBy?.length === nextProps.message.seenBy?.length &&
     prevProps.isOwn === nextProps.isOwn &&
-    prevProps.message.isEdited === nextProps.message.isEdited
+    prevProps.message.edited === nextProps.message.edited
   );
 });
 

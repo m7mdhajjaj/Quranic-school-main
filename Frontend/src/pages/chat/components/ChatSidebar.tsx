@@ -1,10 +1,11 @@
-import React, { useState, useCallback } from 'react';
+import React from 'react';
 import { Avatar } from '../../../components/Avatar';
-import { EmptyState, LoadingSpinner, Badge } from '../../../components/UI';
+import { LoadingSpinner } from '../../../components/UI';
 import { MessageSquare, Users, Search } from 'lucide-react';
 import type { Conversation } from '../types';
 import type { Contact, Group } from '../hooks/useChatContacts';
 import ConversationItem from './ConversationItem';
+import { useChatSidebar } from '../hooks/useChatSidebar';
 
 interface ChatSidebarProps {
   conversations: Conversation[];
@@ -33,16 +34,13 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
   onSearchChange,
   onDeleteConversation
 }) => {
-  const [view, setView] = useState<'conversations' | 'contacts'>('conversations');
-
-  const handleDeleteConversation = useCallback(async (e: React.MouseEvent, conversationId: string) => {
-    e.stopPropagation();
-    try {
-      await onDeleteConversation(conversationId);
-    } catch (error: any) {
-      console.error("Failed to delete conversation", error);
-    }
-  }, [onDeleteConversation]);
+  const {
+    view,
+    setView,
+    handleDeleteConversation,
+    isContactSelected,
+    isGroupSelected,
+  } = useChatSidebar(conversations, selectedId, onDeleteConversation);
 
   if (loading) {
     return (
@@ -51,29 +49,6 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
       </div>
     );
   }
-
-  // Helper to check if contact is selected
-  const isContactSelected = (contactId: string) => {
-    if (!selectedId) return false;
-    if (selectedId === `temp-${contactId}`) return true;
-    
-    const activeConv = conversations.find(c => c._id === selectedId);
-    if (activeConv && activeConv.type === 'DM') {
-      return activeConv.participants.some(p => p.userId._id === contactId);
-    }
-    return false;
-  };
-
-  const isGroupSelected = (groupId: string) => {
-    if (!selectedId) return false;
-    if (selectedId === `temp-${groupId}`) return true;
-    
-    const activeConv = conversations.find(c => c._id === selectedId);
-    if (activeConv && activeConv.type === 'GROUP') {
-      return activeConv.groupId?._id === groupId;
-    }
-    return false;
-  };
 
   return (
     <div className="flex flex-col h-full bg-white">
