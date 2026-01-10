@@ -1,4 +1,5 @@
 // Utility code for extracting validation messages from Yup and Segment objects
+// ✅ V3 Compatible - UI-layer validation only
 import { sectionValidationSchema } from '@/Validation/dailyMarksValidation';
 import type { QuranSegmentUI } from '../types/types';
 import * as yup from 'yup';
@@ -6,6 +7,9 @@ import * as yup from 'yup';
 /**
  * Validates the consistency between memorization and review segments.
  * Uses the shared Yup schema but returns a clean array of error messages.
+ * 
+ * ✅ V3: This is UI-layer validation only (quick feedback)
+ * Backend performs deeper date-aware validation
  */
 export const validateSectionConsistency = (
   memorizationMeta: QuranSegmentUI[] = [],

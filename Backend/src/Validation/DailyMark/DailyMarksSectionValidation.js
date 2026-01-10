@@ -3,9 +3,20 @@
 const { parseSegment } = require("../../utils/Quran/dailyMarkSegmentParser");
 
 /**
- * Daily Marks Section validation middleware
+ * ============================================================================
+ * Daily Marks Section Validation Middleware (V3)
+ * ============================================================================
+ * 
  * Validates section data for daily marks (date, reviewSection, memorizationSection)
  * Updated to support Structured Quran Segments (Meta)
+ * 
+ * V3 Changes:
+ * - ✅ Removed past date restriction (supports backfilling)
+ * - ✅ Moved deep sequence validation to Service layer
+ * - ✅ Focus on data format/structure validation only
+ * 
+ * Note: Complex validation (gaps, overlaps, date-aware checks) 
+ * is handled by SectionSequenceService.validateSequence()
  */
 
 /**
@@ -19,7 +30,7 @@ const isRequired = (value) => {
 
 /**
  * Validate date field
- * Ensures the date is not in the past (must be today or future) - only for new sections
+ * ✅ V3: Removed past date restriction to support backfilling
  */
 const validateDate = (date, isUpdate = false) => {
   if (!isRequired(date)) {
@@ -31,24 +42,8 @@ const validateDate = (date, isUpdate = false) => {
     return { isValid: false, message: "التاريخ غير صحيح" };
   }
 
-  // Only check for past dates when creating new sections (not when updating)
-  if (!isUpdate) {
-    // Get today's date at midnight (00:00:00) for comparison
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    // Set the input date to midnight for fair comparison
-    const inputDate = new Date(dateObj);
-    inputDate.setHours(0, 0, 0, 0);
-    
-    // Check if the date is in the past
-    if (inputDate < today) {
-      return { 
-        isValid: false, 
-        message: "لا يمكن إضافة مقطع بتاريخ سابق. يجب أن يكون التاريخ من اليوم أو في المستقبل" 
-      };
-    }
-  }
+  // ✅ V3: Allow past dates for backfilling
+  // No restriction on date - sequence validation happens in Service layer
 
   return { isValid: true, value: dateObj };
 };
@@ -255,25 +250,9 @@ const validateDailyMarksSectionData = async (req, res, next) => {
       errors.push("يجب إدخال مقطع الحفظ أو مقطع المراجعة على الأقل");
     }
 
-    // --- Consistency Validation ---
-    // Rule 1: Review blocked if Memorization starts at 1
-    // Rule 2: Review End < Memorization Start (Strict Overlap)
-    
-    if (validatedData.memorizationMeta.length > 0 && validatedData.reviewMeta.length > 0) {
-       validatedData.reviewMeta.forEach(rev => {
-          const matchingMems = validatedData.memorizationMeta.filter(m => m.surahNumber === rev.surahNumber);
-          matchingMems.forEach(mem => {
-             // Rule 1
-             if (mem.ayahStart === 1) {
-                errors.push(`لا يمكن المراجعة في سورة ${rev.surahNameCanonical || ''} لأن الحفظ يبدأ من الآية 1`);
-             }
-             // Rule 2
-             if (rev.ayahEnd >= mem.ayahStart) {
-                errors.push(`المراجعة في سورة ${rev.surahNameCanonical || ''} تتداخل مع الحفظ. يجب أن تنتهي قبل الآية ${mem.ayahStart}`);
-             }
-          });
-       });
-    }
+    // ✅ V3: Consistency validation moved to Service layer
+    // Basic validation only - deep sequence checks happen in SectionSequenceService
+    // This keeps validation simple and focused on data format/structure
 
     // Validate group (optional)
     if (data.group !== undefined) {

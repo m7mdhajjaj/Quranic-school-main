@@ -3,6 +3,10 @@ import type { AddMarkModalProps } from '../types/types';
 
 /**
  * Modal for adding a new mark for a student
+ * 
+ * ✅ V3 Compatible:
+ * - Works with date-aware sections
+ * - Displays section info with proper date formatting
  */
 export const AddMarkModal = ({
   isOpen,

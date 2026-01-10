@@ -2,13 +2,24 @@ import * as yup from "yup";
 
 /**
  * ============================================================================
- * DailyMarks Validation Schema
+ * DailyMarks Validation Schema - Frontend UI Layer
  * ============================================================================
+ * 
+ * ✅ V3 Compatible - Date-Aware Sequence System
  * 
  * Validation schemas for DailyMarks forms using Yup
  * - Section validation (for creating/updating sections)
  * - Mark validation (for creating/updating marks)
  * - Arabic error messages
+ * 
+ * ARCHITECTURE:
+ * - UI Layer (This file): Basic format validation + UX-friendly checks
+ * - Backend Layer: Deep business logic validation (date-aware, neighbor-based)
+ * 
+ * V3 FEATURES:
+ * ✅ Backfilling Support: No date restrictions (backend handles chronology)
+ * ✅ UI Validation Only: Quick feedback before API call
+ * ✅ Backend validates: Sequence integrity, neighbor bridging, same-day duplicates
  */
 
 // ============================================================================
@@ -75,6 +86,16 @@ export const quranSegmentSchema = yup.object({
 
 /**
  * Validation schema for creating/updating sections
+ * 
+ * ✅ V3: UI-layer validation only (format checks + basic UX)
+ * - Date format validation (YYYY-MM-DD)
+ * - No past-date restriction (backfilling allowed)
+ * - Basic consistency checks for immediate UX feedback
+ * 
+ * Backend performs deeper validation:
+ * - Date-aware sequence validation
+ * - Neighbor-based gap detection
+ * - Same-day duplicate prevention (via dateKey)
  */
 export const sectionValidationSchema = yup.object<SectionFormData>({
   date: yup
@@ -83,7 +104,10 @@ export const sectionValidationSchema = yup.object<SectionFormData>({
     .matches(
       /^\d{4}-\d{2}-\d{2}$/,
       "صيغة التاريخ غير صحيحة (YYYY-MM-DD)"
-    ),
+    )
+    // ✅ V3: No .min(today) restriction - backfilling is allowed
+    // Backend will validate chronological sequence integrity
+    ,
   
   memorizationMeta: yup.array().of(quranSegmentSchema).optional(),
   reviewMeta: yup.array().of(quranSegmentSchema).optional(),
@@ -106,18 +130,29 @@ export const sectionValidationSchema = yup.object<SectionFormData>({
   'at-least-one-section',
   'يجب إدخال مقطع حفظ أو مقطع مراجعة على الأقل',
   (value: any) => {
-    // Safety check with optional chaining
-    const hasMem = (value?.memorizationSection?.trim()) || (value?.memorizationMeta?.length > 0);
-    const hasRev = (value?.reviewSection?.trim()) || (value?.reviewMeta?.length > 0);
+    // Check both legacy strings AND new structured data
+    const hasMem = (value?.memorizationSection?.trim()) || 
+                   (value?.memorizationMeta && Array.isArray(value.memorizationMeta) && value.memorizationMeta.length > 0);
+    const hasRev = (value?.reviewSection?.trim()) || 
+                   (value?.reviewMeta && Array.isArray(value.reviewMeta) && value.reviewMeta.length > 0);
     return Boolean(hasMem || hasRev);
   }
 ).test(
   'consistency-check',
   'خطأ في اتساق البيانات المنطقي',
   function(value: any) {
-    // ==========================================================
-    // Strict Consistency Check (Frontend Mirror of Backend Rules)
-    // ==========================================================
+    // ============================================================================
+    // ✅ V3: UI-Layer Consistency Check (Quick UX Feedback)
+    // ============================================================================
+    // Purpose: Provide immediate feedback BEFORE sending to backend
+    // 
+    // This is NOT authoritative validation - backend performs deeper checks:
+    // - Date-aware neighbor validation
+    // - Cross-day sequence integrity
+    // - Historical data consistency
+    // 
+    // UI checks here are for SAME-REQUEST data only (faster UX)
+    // ============================================================================
     if (!value?.memorizationMeta || !value?.reviewMeta) return true;
     
     // Explicitly casting to avoid TypeErrors
@@ -133,8 +168,9 @@ export const sectionValidationSchema = yup.object<SectionFormData>({
        
        for (const mem of matchingMems) {
           
-          // Rule 1: No Review if Memorization Starts at 1
-          // (Can't review a Surah you just started)
+          // UI Rule 1: No Review if Memorization Starts at 1 (in same request)
+          // Quick logic check for better UX
+          // Backend will perform deeper historical validation
           if (mem.ayahStart === 1) {
              return this.createError({
                 path: 'reviewMeta',
@@ -142,9 +178,9 @@ export const sectionValidationSchema = yup.object<SectionFormData>({
              });
           }
 
-          // Rule 2: Strict Temporal Separation (Review must be strictly BEFORE New Memorization)
-          // Review is for the PAST. Memorization is for the FUTURE.
-          // They cannot overlap.
+          // UI Rule 2: Temporal Separation Check (within same request)
+          // Review should be BEFORE new memorization (quick sanity check)
+          // Backend performs date-aware validation across all history
           if (rev.ayahEnd !== undefined && mem.ayahStart !== undefined) {
              if (rev.ayahEnd >= mem.ayahStart) {
                 return this.createError({

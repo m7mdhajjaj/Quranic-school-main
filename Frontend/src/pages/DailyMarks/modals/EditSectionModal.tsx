@@ -8,6 +8,11 @@ import ErrorMessageList from '../components/ErrorMessageList';
 
 /**
  * Modal for editing an existing section
+ * 
+ * ✅ V3 Compatible:
+ * - Date can be changed (with backend validation)
+ * - Backend handles date-aware neighbor validation
+ * - UI provides quick consistency feedback
  */
 const EditSectionModalComponent = ({
   isOpen,
@@ -97,6 +102,9 @@ const EditSectionModalComponent = ({
             onChange={handleDateChange}
             required
           />
+          <p className="mt-2 text-xs text-slate-500 flex items-center gap-1">
+             ✅ V3: يمكن تغيير التاريخ - النظام سيتحقق من التسلسل الزمني تلقائياً
+          </p>
         </div>
 
         {/* Updated Input Structure */}

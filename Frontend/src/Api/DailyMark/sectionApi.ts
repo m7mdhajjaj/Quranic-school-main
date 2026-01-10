@@ -1,9 +1,16 @@
 import api from "../api";
 
 // ============================================================================
-// Section API - Daily Assignment Sections Management
+// Section API - Daily Assignment Sections Management (V3)
+// ============================================================================
 // Note: Sections are now part of DailyMarks system
 // Base URL: /api/daily-marks/sections
+// 
+// V3 Features:
+// - ✅ Date-aware validation (chronological order)
+// - ✅ Backfilling support (insert sections with past dates)
+// - ✅ Neighbor segments API for context-aware UI
+// - ✅ Auto-generation of dateKey & canonicalKey
 // ============================================================================
 
 // --- New Structured Types ---
@@ -45,6 +52,7 @@ export interface ProgressSummary {
 export interface Section {
   _id: string;
   date: string;
+  dateKey?: string; // ✅ V3: YYYY-MM-DD format for same-day comparison
   
   // Legacy Strings (Display)
   memorizationSection: string;
@@ -73,6 +81,7 @@ export interface Section {
       percentage: number;
   };
 
+  quranMetaVersion?: number; // ✅ V3: version 3
   createdAt?: string;
   updatedAt?: string;
 }
@@ -204,6 +213,8 @@ export const toggleSectionStatus = async (
 
 /**
  * Get the last recorded segment to suggest the next step
+ * ✅ V3: Still supported for backward compatibility
+ * Note: For date-aware context, use getNeighborSegments()
  */
 export const getLastSegment = async (
   group: string, 
@@ -220,6 +231,89 @@ export const getLastSegment = async (
     return null;
   } catch (error) {
     // console.error("Failed to fetch last segment", error);
+    return null;
+  }
+};
+
+// ============================================================================
+// ✅ V3: NEW ENDPOINTS - Backfilling Support
+// ============================================================================
+
+/**
+ * Neighbor segment info (previous or next)
+ */
+export interface NeighborSegment {
+  ayahStart: number;
+  ayahEnd: number;
+  canonicalKey: string;
+  date: string;
+  dateKey: string;
+}
+
+/**
+ * Suggestions for insertion based on neighbors
+ */
+export interface InsertionSuggestions {
+  canInsert: boolean;
+  suggestedStart: number | null;
+  suggestedEnd: number | null;
+  reason: string;
+}
+
+/**
+ * Response from getNeighborSegments API
+ */
+export interface NeighborSegmentsResponse {
+  neighbors: {
+    previous: NeighborSegment | null;
+    next: NeighborSegment | null;
+  };
+  suggestions: InsertionSuggestions;
+  context: {
+    group: string;
+    surahNumber: number;
+    type: 'memorization' | 'review';
+    targetDate: string;
+  };
+}
+
+/**
+ * ✅ V3: Get neighbor segments for backfilling validation
+ * 
+ * Returns the closest segments BEFORE and AFTER the specified date.
+ * Useful for:
+ * - Backfilling UI (show context)
+ * - Validation preview
+ * - Auto-suggestions based on chronological neighbors
+ * 
+ * @param group - اسم الحلقة
+ * @param surah - رقم السورة (1-114)
+ * @param type - 'memorization' or 'review'
+ * @param date - التاريخ المستهدف (YYYY-MM-DD format)
+ * 
+ * @example
+ * const neighbors = await getNeighborSegments('حلقة الإتقان', 2, 'memorization', '2026-01-10');
+ * if (neighbors?.suggestions.canInsert) {
+ *   console.log(`Suggested: ${neighbors.suggestions.suggestedStart}-${neighbors.suggestions.suggestedEnd}`);
+ * }
+ */
+export const getNeighborSegments = async (
+  group: string,
+  surah: number,
+  type: 'memorization' | 'review',
+  date: string
+): Promise<NeighborSegmentsResponse | null> => {
+  try {
+    const response = await api.get('/daily-marks/sections/neighbor-segments', {
+      params: { group, surah, type, date }
+    });
+    
+    if (response.data.success) {
+      return response.data.data;
+    }
+    return null;
+  } catch (error) {
+    console.error("Failed to fetch neighbor segments:", error);
     return null;
   }
 };

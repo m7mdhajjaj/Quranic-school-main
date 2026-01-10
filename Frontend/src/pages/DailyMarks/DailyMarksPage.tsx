@@ -39,6 +39,10 @@ const TeacherView = lazy(() =>
 
 // ============================================================================
 // MAIN COMPONENT
+// ✅ V3 Compatible - Date-Aware Sequence System
+// - Supports backfilling (past dates)
+// - Displays sections in chronological order
+// - Backend handles sequence validation
 // ============================================================================
 
 const DailyMarksPage = () => {

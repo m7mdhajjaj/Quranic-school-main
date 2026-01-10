@@ -33,32 +33,30 @@ exports.createSection = async (req, res) => {
     };
 
     // ============================================
-    // 🛡️ Advanced Conflict Check (Group Level) - Using Centralized Service
+    // 🛡️ Advanced Conflict Check (Group Level) - V3: Date-Aware + Backfilling
     // ============================================
     if (sectionData.group) {
         
-        // 1. Check Memorization Sequence & Overlaps
-        // (Strict No-Overlap + Strict No-Gaps)
+        // 1. Check Memorization Sequence (Date-Aware with Neighbors)
         const memValidation = await sequenceService.validateSequence(
             sectionData.memorizationMeta,
             sectionData.group,
             'memorization',
-            sectionData.date // NEW: Pass date for context
+            sectionData.date // ✅ V3: Date for neighbor queries
         );
         
         if (!memValidation.isValid) {
             return sendValidationError(res, memValidation.message);
         }
 
-        // 2. Check Review Overlaps
-        // (Prevents Same-Day Duplicates)
+        // 2. Check Review (Exact Match + Same-Day Duplicates with dateKey)
         const revValidation = await sequenceService.validateSequence(
              sectionData.reviewMeta,
              sectionData.group,
              'review',
-             sectionData.date, // NEW: Pass date for duplicate check
-             null, // Exclude Id
-             sectionData.memorizationMeta // Pass sibling memorization for context
+             sectionData.date, // ✅ V3: Date for dateKey comparison
+             null, // No exclude (new section)
+             sectionData.memorizationMeta // Pass sibling memorization
         );
 
         if (!revValidation.isValid) {
@@ -66,7 +64,6 @@ exports.createSection = async (req, res) => {
         }
 
         // 3. Check Consistency (Internal Consistency)
-        // (Review must be strictly BEFORE Memorization for same Surah)
         const consistencyValidation = sequenceService.validateConsistency(
             sectionData.memorizationMeta,
             sectionData.reviewMeta

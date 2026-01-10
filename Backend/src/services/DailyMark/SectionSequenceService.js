@@ -19,6 +19,17 @@ const Section = require("../../schema/DailyMark/Section");
 class SectionSequenceService {
 
   /**
+   * Helper: Convert Date to dateKey (YYYY-MM-DD in UTC)
+   */
+  toDateKeyUTC(date) {
+    const dt = new Date(date);
+    const y = dt.getUTCFullYear();
+    const m = String(dt.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(dt.getUTCDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }
+
+  /**
    * البحث عن آخر نقطة وصل إليها الطالب (مرجعية التسلسل)
    * 
    * @param {string} groupId - معرف الحلقة
@@ -100,12 +111,16 @@ class SectionSequenceService {
 
     const metaField = type === 'memorization' ? 'memorizationMeta' : 'reviewMeta';
     const typeLabel = type === 'memorization' ? 'الحفظ' : 'المراجعة';
-    const newDateStr = newSectionDate ? new Date(newSectionDate).toLocaleDateString('en-CA') : null;
+    
+    // ✅ استخدام dateKey بدلاً من التحويل اليدوي
+    const newDateKey = newSectionDate 
+      ? this.toDateKeyUTC(newSectionDate) 
+      : null;
 
     for (const seg of newSegments) {
       
       // ====================================================
-      // 1. منع التكرار (No Duplicates)
+      // 1. منع التداخل والتكرار (Overlap & Duplicate Check)
       // ====================================================
       const overlapQuery = {
         group: groupId,
@@ -120,10 +135,10 @@ class SectionSequenceService {
       };
       if (excludeSectionId) overlapQuery._id = { $ne: excludeSectionId };
 
-      const potentialConflicts = await Section.find(overlapQuery).select(`date ${metaField}`);
+      const potentialConflicts = await Section.find(overlapQuery).select(`date dateKey ${metaField}`);
 
       for (const conflictingSection of potentialConflicts) {
-         // أ. تكرار الحفظ (ممنوع منعاً باتاً)
+         // أ. تكرار الحفظ (ممنوع منعاً باتاً - في أي تاريخ)
          if (type === 'memorization') {
             const conflictSeg = conflictingSection[metaField].find(s => 
                 s.surahNumber === seg.surahNumber && 
@@ -133,24 +148,34 @@ class SectionSequenceService {
             const dateStr = new Date(conflictingSection.date).toLocaleDateString('ar-EG');
             return {
               isValid: false,
-              message: `🚫 تداخل في الحفظ: الآيات (${seg.ayahStart}-${seg.ayahEnd}) محفوظة سابقاً بتاريخ ${dateStr}. الحفظ لا يتكرر.`
+              message: `🚫 تداخل في الحفظ: الآيات (${seg.ayahStart}-${seg.ayahEnd}) من السورة ${seg.surahNumber} محفوظة سابقاً بتاريخ ${dateStr}. الحفظ لا يتكرر.`
             };
          }
          
-         // ب. تكرار المراجعة (ممنوع في نفس اليوم فقط)
-         if (type === 'review' && newDateStr) {
-             const conflictDateStr = new Date(conflictingSection.date).toLocaleDateString('en-CA');
-             if (conflictDateStr === newDateStr) {
-                 return {
+         // ب. تكرار المراجعة (ممنوع في نفس اليوم فقط - باستخدام dateKey)
+         if (type === 'review' && newDateKey) {
+             const conflictDateKey = conflictingSection.dateKey || this.toDateKeyUTC(conflictingSection.date);
+             
+             if (conflictDateKey === newDateKey) {
+                 // التحقق من تطابق canonicalKey بالضبط
+                 const exactMatch = conflictingSection[metaField].find(s =>
+                   s.surahNumber === seg.surahNumber &&
+                   s.ayahStart === seg.ayahStart &&
+                   s.ayahEnd === seg.ayahEnd
+                 );
+                 
+                 if (exactMatch) {
+                   return {
                      isValid: false,
-                     message: `🚫 تكرار مراجعة: الآيات (${seg.ayahStart}-${seg.ayahEnd}) مضافة للمراجعة بالفعل في نفس هذا اليوم.`
-                 };
+                     message: `🚫 تكرار مراجعة: المقطع [${seg.surahNumber}:${seg.ayahStart}-${seg.ayahEnd}] مسجل بالفعل للمراجعة في نفس هذا اليوم (${newDateKey}).`
+                   };
+                 }
              }
          }
       }
 
       // ====================================================
-      // 2. منطق المراجعة الصارم (Strict Matching Policy)
+      // 2. منطق المراجعة الصارم (Exact Match to Memorization)
       // ====================================================
       if (type === 'review') {
           // القاعدة: نطاق المراجعة يجب أن يطابق بدقة نطاق حفظ سابق.
@@ -187,11 +212,11 @@ class SectionSequenceService {
           if (!strictMatchFound) {
               return {
                   isValid: false,
-                  message: `🚫 نطاق مراجعة غير مسموح: يجب أن يتطابق نطاق المراجعة (${seg.ayahStart}-${seg.ayahEnd}) تماماً مع مقطع تم حفظه سابقاً بنفس الآيات.\n(شعارنا: نفس الرينجات بالضبط، لا أقل ولا أكثر).`
+                  message: `🚫 مراجعة غير صحيحة: المقطع [${seg.surahNumber}:${seg.ayahStart}-${seg.ayahEnd}] لم يُحفظ بهذا المدى بالضبط.\n(يجب مراجعة نفس المقاطع المحفوظة - لا تقسيم ولا دمج).`
               };
           }
 
-          // فحص التسلسل الزمني للمراجعة (Cycles)
+          // فحص التسلسل الزمني للمراجعة (Cycles) - اختياري وتحذيري
           const lastReview = await this.getLastProgress(groupId, seg.surahNumber, 'review', newSectionDate, excludeSectionId);
           let expectedStart = 1;
           
@@ -200,91 +225,66 @@ class SectionSequenceService {
           }
 
           // التحقق من الاتصال (Continuity)
-          // هل هذا المقطع يتصل بمقطع سابق محلي (في نفس الطلب)؟
           const hasLocalPredecessor = newSegments.some(s => 
-            s !== seg && // ليس نفس المقطع
+            s !== seg && 
             s.surahNumber === seg.surahNumber && 
-            s.ayahEnd === seg.ayahStart - 1 // ينتهي قبلي مباشرة
+            s.ayahEnd === seg.ayahStart - 1
           );
 
-          if (!hasLocalPredecessor) {
-               // إذا لم يتصل محلياً، يجب أن يطابق التوقع التاريخي
-               if (seg.ayahStart !== expectedStart) {
-                   // استثناء وحيد: "إعادة الدورة" (Restart Cycle)
-                   // إذا كان التوقع هو آية متقدمة (مثلاً 50)، وبدأنا من 1.
-                   const isRestart = (seg.ayahStart === 1); 
-                   
-                   if (!isRestart) {
-                        return {
-                            isValid: false,
-                            message: `🚫 تسلسل مراجعة خاطئ: آخر مراجعة انتهت عند الآية ${expectedStart - 1}. المراجعة التالية يجب أن تبدأ من ${expectedStart}. (أو من 1 لبدء ختمة مراجعة جديدة).`
-                        };
-                   }
-               }
+          if (!hasLocalPredecessor && seg.ayahStart !== expectedStart && seg.ayahStart !== 1) {
+              // تحذير فقط (لا نمنع، لكن نعلم المستخدم)
+              console.warn(`⚠️ تنبيه: المراجعة [${seg.surahNumber}:${seg.ayahStart}-${seg.ayahEnd}] لا تتبع التسلسل المتوقع (كان متوقع من ${expectedStart}).`);
           }
       }
 
       // ====================================================
-      // 3. منطق الحفظ الصارم (Strict No-Gap Policy)
+      // 3. منطق الحفظ الصارم (DATE-AWARE with Backfilling Support)
       // ====================================================
       if (type === 'memorization') {
-        const lastProgress = await this.getLastProgress(groupId, seg.surahNumber, type, newSectionDate, excludeSectionId);
-        
-        if (lastProgress) {
-            // هل البداية تطابق النهاية المتوقعة؟
-            if (seg.ayahStart !== lastProgress.nextStart) {
-                
-                const dateStr = new Date(lastProgress.lastDate).toLocaleDateString('ar-EG');
+        // ✅ V3: استخدام neighbor queries للتحقق date-aware
+        const neighbors = await this.getNeighborSegments(
+          groupId, 
+          seg.surahNumber, 
+          type, 
+          newSectionDate, 
+          excludeSectionId
+        );
 
-                // فحص اتصال محلي (Local Sibling)
-                const hasLocalPredecessor = newSegments.some(s => 
-                    s !== seg && 
-                    s.surahNumber === seg.surahNumber && 
-                    s.ayahEnd === seg.ayahStart - 1
-                );
+        // التحقق من اتصال محلي (Local Sibling) في نفس الطلب
+        const hasLocalPredecessor = newSegments.some(s => 
+          s !== seg && 
+          s.surahNumber === seg.surahNumber && 
+          s.ayahEnd === seg.ayahStart - 1
+        );
 
-                if (hasLocalPredecessor) {
-                     continue; // ✅ متصل بمقطع زميل في نفس الحصة
-                }
+        const hasLocalSuccessor = newSegments.some(s => 
+          s !== seg && 
+          s.surahNumber === seg.surahNumber && 
+          s.ayahStart === seg.ayahEnd + 1
+        );
 
-                // خطأ: فجوة حقيقية
-                if (seg.ayahStart > lastProgress.nextStart) {
-                     return {
-                        isValid: false,
-                        message: `🚫 فجوة في الحفظ: الوصل السابق كان عند الآية ${lastProgress.lastEnd} (${dateStr}).\nيجب إكمال الحفظ من الآية ${lastProgress.nextStart}.`
-                     };
-                }
-                
-                // خطأ: تداخل مع الماضي / إعادة
-                if (seg.ayahStart < lastProgress.nextStart) {
-                     // نسمح فقط إذا كان يتصل بمقطع قديم "منتهي" عند هذه النقطة (تفرع) - (نادر الحدوث)
-                     const predecessor = await Section.findOne({
-                         group: groupId,
-                         [`${metaField}.surahNumber`]: seg.surahNumber,
-                         [`${metaField}.ayahEnd`]: seg.ayahStart - 1,
-                         _id: excludeSectionId ? { $ne: excludeSectionId } : { $exists: true }
-                     });
+        // إذا كان متصل محلياً، نتجاهل فحص الجيران الخارجيين لهذا الاتجاه
+        const effectivePrevious = hasLocalPredecessor ? null : neighbors.previous;
+        const effectiveNext = hasLocalSuccessor ? null : neighbors.next;
 
-                     if (!predecessor && seg.ayahStart !== 1) {
-                         return {
-                            isValid: false,
-                            message: `🚫 تسلسل الحفظ غير متصل: تحاول البدء من ${seg.ayahStart} لكنك واصل سابقاً إلى ${lastProgress.lastEnd}.`
-                         };
-                     }
-                }
-            }
-        } else {
-            // أول مرة يتم حفظ هذه السورة: يجب أن يبدأ من 1.
-            if (seg.ayahStart !== 1) {
-               // هل يوجد مقطع زميل يبدأ من 1 ويوصلني؟
-               const siblingPredecessor = newSegments.find(s => s !== seg && s.surahNumber === seg.surahNumber && s.ayahEnd === seg.ayahStart - 1);
-               if (!siblingPredecessor) {
-                  return {
-                      isValid: false,
-                      message: `🚫 بداية خاطئة: أول حفظ في السورة يجب أن يبدأ من الآية 1.`
-                  };
-               }
-            }
+        // التحقق من الإدراج بين الجيران
+        const validationResult = this.validateInsertionWithNeighbors(
+          seg,
+          effectivePrevious,
+          effectiveNext,
+          type
+        );
+
+        if (!validationResult.isValid) {
+          return validationResult;
+        }
+
+        // فحص إضافي: أول حفظ في السورة يجب أن يبدأ من 1
+        if (!neighbors.previous && !hasLocalPredecessor && seg.ayahStart !== 1) {
+          return {
+            isValid: false,
+            message: `🚫 بداية خاطئة: أول حفظ في السورة ${seg.surahNumber} يجب أن يبدأ من الآية 1 (وليس ${seg.ayahStart}).`
+          };
         }
       }
     }
@@ -354,6 +354,161 @@ class SectionSequenceService {
             }
         }
     }
+    return { isValid: true };
+  }
+
+  /**
+   * ============================================================================
+   * 🆕 V3: DATE-AWARE NEIGHBOR QUERIES (Backfilling Support)
+   * ============================================================================
+   */
+
+  /**
+   * Get the closest segment BEFORE and AFTER a given date for backfilling validation
+   * 
+   * @param {string} groupId - الحلقة
+   * @param {number} surahNumber - رقم السورة
+   * @param {string} type - 'memorization' | 'review'
+   * @param {Date} targetDate - التاريخ المستهدف للمقطع الجديد
+   * @param {string} excludeSectionId - استثناء مقطع معين (عند التعديل)
+   * @returns {Promise<{previous: object|null, next: object|null}>}
+   */
+  async getNeighborSegments(groupId, surahNumber, type, targetDate, excludeSectionId = null) {
+    const metaField = type === 'memorization' ? 'memorizationMeta' : 'reviewMeta';
+    
+    const baseQuery = {
+      group: groupId,
+      [`${metaField}.surahNumber`]: surahNumber
+    };
+
+    if (excludeSectionId) {
+      baseQuery._id = { $ne: excludeSectionId };
+    }
+
+    // 1. Find previous neighbor (أقرب مقطع قبل targetDate)
+    const previousSection = await Section.findOne({
+      ...baseQuery,
+      date: { $lt: targetDate }
+    })
+      .sort({ date: -1 }) // الأحدث من بين المقاطع السابقة
+      .select(`${metaField} date dateKey`)
+      .lean();
+
+    let previousNeighbor = null;
+    if (previousSection) {
+      const segments = previousSection[metaField].filter(s => s.surahNumber === surahNumber);
+      if (segments.length > 0) {
+        // نأخذ المقطع ذو أكبر ayahEnd (الأبعد في السورة)
+        const latest = segments.reduce((max, seg) => seg.ayahEnd > max.ayahEnd ? seg : max);
+        previousNeighbor = {
+          ayahStart: latest.ayahStart,
+          ayahEnd: latest.ayahEnd,
+          canonicalKey: latest.canonicalKey,
+          date: previousSection.date,
+          dateKey: previousSection.dateKey
+        };
+      }
+    }
+
+    // 2. Find next neighbor (أقرب مقطع بعد targetDate)
+    const nextSection = await Section.findOne({
+      ...baseQuery,
+      date: { $gt: targetDate }
+    })
+      .sort({ date: 1 }) // الأقدم من بين المقاطع اللاحقة
+      .select(`${metaField} date dateKey`)
+      .lean();
+
+    let nextNeighbor = null;
+    if (nextSection) {
+      const segments = nextSection[metaField].filter(s => s.surahNumber === surahNumber);
+      if (segments.length > 0) {
+        // نأخذ المقطع ذو أصغر ayahStart (الأقرب في السورة)
+        const earliest = segments.reduce((min, seg) => seg.ayahStart < min.ayahStart ? seg : min);
+        nextNeighbor = {
+          ayahStart: earliest.ayahStart,
+          ayahEnd: earliest.ayahEnd,
+          canonicalKey: earliest.canonicalKey,
+          date: nextSection.date,
+          dateKey: nextSection.dateKey
+        };
+      }
+    }
+
+    return { previous: previousNeighbor, next: nextNeighbor };
+  }
+
+  /**
+   * Validate that a new segment fits perfectly between its neighbors (date-aware)
+   * 
+   * @param {object} newSegment - المقطع الجديد { surahNumber, ayahStart, ayahEnd, canonicalKey }
+   * @param {object|null} previousNeighbor - المقطع السابق زمنياً
+   * @param {object|null} nextNeighbor - المقطع اللاحق زمنياً
+   * @param {string} type - 'memorization' | 'review'
+   * @returns {{ isValid: boolean, message?: string }}
+   */
+  validateInsertionWithNeighbors(newSegment, previousNeighbor, nextNeighbor, type) {
+    const typeLabel = type === 'memorization' ? 'الحفظ' : 'المراجعة';
+    const segDesc = `${newSegment.canonicalKey}`;
+
+    // A) Check if previousNeighbor exists
+    if (previousNeighbor) {
+      // 1. Gap check (للحفظ فقط): المقطع الجديد يجب أن يبدأ من نهاية السابق + 1
+      if (type === 'memorization') {
+        const expectedStart = previousNeighbor.ayahEnd + 1;
+        if (newSegment.ayahStart !== expectedStart) {
+          return {
+            isValid: false,
+            message: `❌ فجوة في تسلسل ${typeLabel}: المقطع [${segDesc}] يجب أن يبدأ من الآية ${expectedStart} (بعد المقطع السابق ${previousNeighbor.canonicalKey}).`
+          };
+        }
+      }
+
+      // 2. Overlap check: المقطع الجديد لا يجب أن يتداخل مع السابق
+      if (newSegment.ayahStart <= previousNeighbor.ayahEnd) {
+        return {
+          isValid: false,
+          message: `❌ تداخل: المقطع [${segDesc}] يتداخل مع المقطع السابق ${previousNeighbor.canonicalKey} (التاريخ: ${previousNeighbor.dateKey || 'unknown'}).`
+        };
+      }
+    }
+
+    // B) Check if nextNeighbor exists
+    if (nextNeighbor) {
+      // 1. Gap check (للحفظ فقط): المقطع الجديد يجب أن ينتهي عند بداية اللاحق - 1
+      if (type === 'memorization') {
+        const expectedEnd = nextNeighbor.ayahStart - 1;
+        if (newSegment.ayahEnd !== expectedEnd) {
+          return {
+            isValid: false,
+            message: `❌ فجوة في تسلسل ${typeLabel}: المقطع [${segDesc}] يجب أن ينتهي عند الآية ${expectedEnd} (قبل المقطع اللاحق ${nextNeighbor.canonicalKey}).`
+          };
+        }
+      }
+
+      // 2. Overlap check: المقطع الجديد لا يجب أن يتداخل مع اللاحق
+      if (newSegment.ayahEnd >= nextNeighbor.ayahStart) {
+        return {
+          isValid: false,
+          message: `❌ تداخل: المقطع [${segDesc}] يتداخل مع المقطع اللاحق ${nextNeighbor.canonicalKey} (التاريخ: ${nextNeighbor.dateKey || 'unknown'}).`
+        };
+      }
+    }
+
+    // C) Perfect bridge: إذا كان هناك جيران من الطرفين (للحفظ)
+    if (type === 'memorization' && previousNeighbor && nextNeighbor) {
+      // يجب أن يسد المقطع الجديد الفجوة بالضبط
+      const gapStart = previousNeighbor.ayahEnd + 1;
+      const gapEnd = nextNeighbor.ayahStart - 1;
+      
+      if (newSegment.ayahStart !== gapStart || newSegment.ayahEnd !== gapEnd) {
+        return {
+          isValid: false,
+          message: `❌ جسر غير مكتمل: المقطع [${segDesc}] يجب أن يسد الفجوة بالضبط [${gapStart}-${gapEnd}] بين ${previousNeighbor.canonicalKey} و ${nextNeighbor.canonicalKey}.`
+        };
+      }
+    }
+
     return { isValid: true };
   }
 }

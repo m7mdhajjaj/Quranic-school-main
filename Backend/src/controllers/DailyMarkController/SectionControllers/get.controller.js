@@ -52,6 +52,9 @@ exports.getSection = async (req, res) => {
  * Get the last recorded segment for a specific Surah and Group
  * Used for auto-increment suggestions in Frontend
  * GET /sections/last-segment?group=...&surah=...&type=memorization|review
+ * 
+ * ✅ V3: Still uses getLastProgress for backward compatibility
+ * Note: For date-aware validation, use /neighbor-segments endpoint
  */
 exports.getLastSegment = async (req, res) => {
   try {
@@ -98,6 +101,115 @@ exports.getLastSegment = async (req, res) => {
         maxMemorized: result.maxMemorized || maxMemorized, // Include limit in response
         suggestedEnd // Return strictly matched end
     }, "Last segment found");
+    
+  } catch (error) {
+    sendError(res, error.message, 500, error);
+  }
+};
+
+/**
+ * ✅ V3: Get neighbor segments for backfilling validation
+ * GET /sections/neighbor-segments?group=...&surah=...&type=memorization|review&date=YYYY-MM-DD
+ * 
+ * Returns the closest segments BEFORE and AFTER the specified date
+ * Useful for:
+ * - Frontend backfilling UI
+ * - Validation preview before submission
+ * - Understanding chronological context
+ */
+exports.getNeighborSegments = async (req, res) => {
+  try {
+    const { group, surah, type, date } = req.query;
+    
+    if (!group || !surah || !type || !date) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Missing required params: group, surah, type, date" 
+      });
+    }
+    
+    const surahNum = parseInt(surah);
+    const targetDate = new Date(date);
+    
+    if (isNaN(targetDate.getTime())) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Invalid date format. Use YYYY-MM-DD" 
+      });
+    }
+    
+    // استدعاء الخدمة الجديدة
+    const neighbors = await sequenceService.getNeighborSegments(
+      group, 
+      surahNum, 
+      type, 
+      targetDate
+    );
+    
+    // حساب الاقتراحات بناءً على الجيران
+    let suggestions = {
+      canInsert: false,
+      suggestedStart: null,
+      suggestedEnd: null,
+      reason: null
+    };
+    
+    if (!neighbors.previous && !neighbors.next) {
+      // لا يوجد جيران - أول مقطع
+      suggestions = {
+        canInsert: true,
+        suggestedStart: 1,
+        suggestedEnd: null, // المستخدم يحدد
+        reason: "أول مقطع في السورة"
+      };
+    } else if (neighbors.previous && !neighbors.next) {
+      // يوجد سابق فقط - استمرار عادي
+      suggestions = {
+        canInsert: true,
+        suggestedStart: neighbors.previous.ayahEnd + 1,
+        suggestedEnd: null,
+        reason: "استمرار من المقطع السابق"
+      };
+    } else if (!neighbors.previous && neighbors.next) {
+      // يوجد لاحق فقط - يجب البدء من 1
+      suggestions = {
+        canInsert: true,
+        suggestedStart: 1,
+        suggestedEnd: neighbors.next.ayahStart - 1,
+        reason: "سد الفجوة قبل المقطع اللاحق"
+      };
+    } else {
+      // يوجد سابق ولاحق - backfilling
+      const gapStart = neighbors.previous.ayahEnd + 1;
+      const gapEnd = neighbors.next.ayahStart - 1;
+      
+      if (gapStart <= gapEnd) {
+        suggestions = {
+          canInsert: true,
+          suggestedStart: gapStart,
+          suggestedEnd: gapEnd,
+          reason: "سد الفجوة بين المقاطع الموجودة"
+        };
+      } else {
+        suggestions = {
+          canInsert: false,
+          suggestedStart: null,
+          suggestedEnd: null,
+          reason: "لا توجد فجوة - المقاطع متصلة بالفعل"
+        };
+      }
+    }
+    
+    sendSuccess(res, {
+      neighbors,
+      suggestions,
+      context: {
+        group,
+        surahNumber: surahNum,
+        type,
+        targetDate: date
+      }
+    }, "Neighbor segments retrieved successfully");
     
   } catch (error) {
     sendError(res, error.message, 500, error);

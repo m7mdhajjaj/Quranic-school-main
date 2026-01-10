@@ -94,17 +94,9 @@ export const useDailyMarksHandlers = ({
     }
     // ------------------------------------------
 
-
-    // Validate date is not in the past
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const sectionDate = new Date(newSection.date);
-    sectionDate.setHours(0, 0, 0, 0);
-    
-    if (sectionDate < today) {
-      showWarningMessage("لا يمكن إضافة مقطع بتاريخ سابق. يجب أن يكون التاريخ من اليوم أو في المستقبل", "تنبيه");
-      return;
-    }
+    // ✅ V3: Date validation removed - backfilling is allowed
+    // Backend performs date-aware validation for chronological integrity
+    // No need to block past dates in UI
 
     setIsAddingSectionLoading(true);
     try {

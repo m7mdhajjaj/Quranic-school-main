@@ -2,6 +2,11 @@ import { useMemo } from 'react';
 import type { QuranSegmentUI } from '../types/types';
 import { validateSectionConsistency } from '../utils/validationLogic';
 
+/**
+ * ✅ V3 Compatible - UI validation hook
+ * Provides quick feedback for consistency errors
+ * Backend handles deeper date-aware validation
+ */
 export const useSectionValidation = (
   memorizationMeta: QuranSegmentUI[] | undefined, 
   reviewMeta: QuranSegmentUI[] | undefined

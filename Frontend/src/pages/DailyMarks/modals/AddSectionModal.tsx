@@ -13,6 +13,11 @@ import ErrorMessageList from '../components/ErrorMessageList';
 /**
  * Modal for adding a new section
  * Optimized with local state + debounced parent updates
+ * 
+ * ✅ V3 Compatible:
+ * - Backfilling support (can add past dates via backend validation)
+ * - UI validation for quick feedback
+ * - Backend handles date-aware sequence validation
  */
 const AddSectionModalComponent = ({
   isOpen,
@@ -56,9 +61,9 @@ const AddSectionModalComponent = ({
 
   if (!isOpen) return null;
 
-  // Get today's date in YYYY-MM-DD format for minDate
-  const today = new Date();
-  const minDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  // ✅ V3: minDate removed - backfilling is allowed
+  // Backend performs date-aware validation for chronological integrity
+  // UI can accept any valid date format
 
   const footerButtons = (
     <div className="flex gap-3 w-full">
@@ -115,11 +120,10 @@ const AddSectionModalComponent = ({
                 target: { name: 'date', value: date },
               } as React.ChangeEvent<HTMLInputElement>)
             }
-            minDate={minDate}
             required
           />
           <p className="mt-2 text-xs text-slate-500 flex items-center gap-1">
-             📅 يجب أن يكون التاريخ من اليوم أو في المستقبل
+             ✅ يمكنك إدخال تواريخ سابقة (Backfilling) - النظام سيتحقق من التسلسل تلقائياً
           </p>
         </div>
 

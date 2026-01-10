@@ -23,20 +23,20 @@ exports.updateSection = async (req, res) => {
     const updateData = req.validatedData || req.body;
 
     // ============================================
-    // 🛡️ Advanced Conflict Check (Update)
+    // 🛡️ Advanced Conflict Check (Update) - V3: Date-Aware
     // ============================================
-    // Ensure we don't create overlap or gaps when updating
     const targetGroup = updateData.group || section.group;
+    const targetDate = updateData.date || section.date;
     
     if (targetGroup) {
-         // Check Memorization
+         // Check Memorization (with excludeSectionId)
          if (updateData.memorizationMeta) {
              const memValidation = await sequenceService.validateSequence(
                  updateData.memorizationMeta,
                  targetGroup,
                  'memorization',
-                 updateData.date || section.date, // Pass date
-                 section._id // Exclude self
+                 targetDate, // ✅ V3: pass date for neighbor queries
+                 section._id.toString() // ✅ Exclude self
              );
              
              if (!memValidation.isValid) {
@@ -44,14 +44,14 @@ exports.updateSection = async (req, res) => {
              }
          }
 
-         // Check Review
+         // Check Review (with excludeSectionId)
          if (updateData.reviewMeta) {
              const revValidation = await sequenceService.validateSequence(
                  updateData.reviewMeta,
                  targetGroup,
                  'review',
-                 updateData.date || section.date, // Pass date
-                 section._id,
+                 targetDate, // ✅ V3: pass date for dateKey checks
+                 section._id.toString(), // ✅ Exclude self
                  updateData.memorizationMeta || section.memorizationMeta // Pass sibling memorization
              );
 
@@ -61,7 +61,6 @@ exports.updateSection = async (req, res) => {
          }
 
          // Check Consistency (Internal Consistency)
-         // Use new data if provided, otherwise fallback to existing meta
          const memMetaToCheck = updateData.memorizationMeta || section.memorizationMeta;
          const revMetaToCheck = updateData.reviewMeta || section.reviewMeta;
          
@@ -73,16 +72,19 @@ exports.updateSection = async (req, res) => {
          if (!consistencyValidation.isValid) {
             return sendValidationError(res, consistencyValidation.message);
          }
-
     }
 
     // حفظ المقطع القديم للمقارنة
     const oldSection = { ...section.toObject() };
 
+    // ✅ V3: Use findByIdAndUpdate with runValidators
     const updatedSection = await Section.findByIdAndUpdate(
       req.params.id,
       updateData,
-      { new: true }
+      { 
+        new: true, 
+        runValidators: true // ✅ Ensure schema validators run (dateKey, canonicalKey auto-generation)
+      }
     ).populate('timetableId', 'day startHour endHour sessionType');
 
     // ✅ Sync date with TimeTable if linked
