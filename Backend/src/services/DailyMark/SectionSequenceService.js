@@ -145,11 +145,26 @@ class SectionSequenceService {
                 s.ayahStart <= seg.ayahEnd && 
                 s.ayahEnd >= seg.ayahStart
             );
-            const dateStr = new Date(conflictingSection.date).toLocaleDateString('ar-EG');
-            return {
-              isValid: false,
-              message: `🚫 تداخل في الحفظ: الآيات (${seg.ayahStart}-${seg.ayahEnd}) من السورة ${seg.surahNumber} محفوظة سابقاً بتاريخ ${dateStr}. الحفظ لا يتكرر.`
-            };
+            
+            if (conflictSeg) {
+              const dateStr = new Date(conflictingSection.date).toLocaleDateString('ar-EG', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              });
+              
+              // رسالة مفصلة للمستخدم
+              let detailedMessage = `🚫 تداخل في الحفظ:\n\n`;
+              detailedMessage += `المقطع المطلوب: السورة ${seg.surahNumber}، الآيات ${seg.ayahStart}-${seg.ayahEnd}\n`;
+              detailedMessage += `المقطع المسجل سابقاً: الآيات ${conflictSeg.ayahStart}-${conflictSeg.ayahEnd}\n`;
+              detailedMessage += `التاريخ السابق: ${dateStr}\n\n`;
+              detailedMessage += `❌ لا يمكن إعادة حفظ نفس الآيات مرة أخرى.`;
+              
+              return {
+                isValid: false,
+                message: detailedMessage
+              };
+            }
          }
          
          // ب. تكرار المراجعة (ممنوع في نفس اليوم فقط - باستخدام dateKey)
@@ -457,9 +472,15 @@ class SectionSequenceService {
       if (type === 'memorization') {
         const expectedStart = previousNeighbor.ayahEnd + 1;
         if (newSegment.ayahStart !== expectedStart) {
+          const prevDate = previousNeighbor.dateKey ? 
+            new Date(previousNeighbor.date).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' }) 
+            : 'غير معروف';
+          
           return {
             isValid: false,
-            message: `❌ فجوة في تسلسل ${typeLabel}: المقطع [${segDesc}] يجب أن يبدأ من الآية ${expectedStart} (بعد المقطع السابق ${previousNeighbor.canonicalKey}).`
+            message: `❌ لا يمكن إضافة مقطع ${newSegment.ayahStart}-${newSegment.ayahEnd} في هذا التاريخ\n\n` +
+                     `السبب: في تاريخ سابق (${prevDate}) تم حفظ الآيات ${previousNeighbor.ayahStart}-${previousNeighbor.ayahEnd}\n\n` +
+                     `💡 يجب المتابعة من الآية ${expectedStart} مباشرة`
           };
         }
       }
@@ -479,18 +500,28 @@ class SectionSequenceService {
       if (type === 'memorization') {
         const expectedEnd = nextNeighbor.ayahStart - 1;
         if (newSegment.ayahEnd !== expectedEnd) {
+          const nextDate = nextNeighbor.dateKey ? 
+            new Date(nextNeighbor.date).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' }) 
+            : 'غير معروف';
+          
           return {
             isValid: false,
-            message: `❌ فجوة في تسلسل ${typeLabel}: المقطع [${segDesc}] يجب أن ينتهي عند الآية ${expectedEnd} (قبل المقطع اللاحق ${nextNeighbor.canonicalKey}).`
+            message: `❌ لا يمكن إضافة مقطع ${newSegment.ayahStart}-${newSegment.ayahEnd} في هذا التاريخ\n\n` +
+                     `السبب: في تاريخ لاحق (${nextDate}) تم حفظ الآيات ${nextNeighbor.ayahStart}-${nextNeighbor.ayahEnd}\n\n` +
+                     `💡 المقطع المناسب: من ${newSegment.ayahStart} إلى ${expectedEnd}`
           };
         }
       }
 
       // 2. Overlap check: المقطع الجديد لا يجب أن يتداخل مع اللاحق
       if (newSegment.ayahEnd >= nextNeighbor.ayahStart) {
+        const nextDate = nextNeighbor.dateKey ? 
+          new Date(nextNeighbor.date).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' }) 
+          : 'غير معروف';
+        
         return {
           isValid: false,
-          message: `❌ تداخل: المقطع [${segDesc}] يتداخل مع المقطع اللاحق ${nextNeighbor.canonicalKey} (التاريخ: ${nextNeighbor.dateKey || 'unknown'}).`
+          message: `❌ تداخل مع مقطع مسجل:\n\n📌 المقطع المسجل (${nextDate}): الآيات ${nextNeighbor.ayahStart}-${nextNeighbor.ayahEnd}\n⚠️ المقطع المطلوب يتداخل مع هذا المقطع.\n\n💡 يجب أن ينتهي مقطعك قبل الآية ${nextNeighbor.ayahStart}.`
         };
       }
     }

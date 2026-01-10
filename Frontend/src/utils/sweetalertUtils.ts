@@ -146,24 +146,18 @@ export const showErrorMessage = (title: string, message: string) => {
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
           </svg>
         </div>
-        <h3 class="text-xl font-bold text-gray-800 mb-3">${message}</h3>
-        <div class="bg-red-50 border-r-4 border-red-500 rounded-lg p-4 mt-4">
-          <div class="flex items-center justify-center gap-3">
-            <svg class="w-6 h-6 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-            </svg>
-            <p class="text-sm text-red-700 font-medium">يرجى المحاولة مرة أخرى أو التواصل مع الدعم الفني</p>
-          </div>
+        <div class="bg-red-50 border-r-4 border-red-500 rounded-lg p-5 mt-4 text-right">
+          <pre class="text-base text-red-800 font-semibold whitespace-pre-line leading-relaxed m-0 font-sans">${message}</pre>
         </div>
       </div>
     `,
     icon: "error",
-    timer: 3000, // تقليل المدة لتحسين الأداء
+    timer: 8000, // ✅ وقت أطول للرسائل المفصلة
     timerProgressBar: true,
     showConfirmButton: true,
-    confirmButtonText: "✓ حسناً",
+    confirmButtonText: "✓ فهمت",
     customClass: {
-      popup: "rtl:text-right !rounded-2xl",
+      popup: "rtl:text-right !rounded-2xl !max-w-2xl",
       title: "text-center !text-2xl !font-bold !text-gray-800",
       htmlContainer: "text-center",
       confirmButton:

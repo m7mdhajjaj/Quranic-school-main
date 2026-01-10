@@ -5,7 +5,7 @@ import { playSuccessSound, playErrorSound } from "@/utils/AudioManager";
 // الإعدادات الافتراضية للـ Toast
 const defaultOptions: ToastOptions = {
   position: "top-left", // على اليمين في RTL
-  autoClose: 3000,
+  autoClose: 4000, // ✅ زيادة الوقت لقراءة الرسالة
   hideProgressBar: false,
   closeOnClick: true,
   pauseOnHover: true,
@@ -62,7 +62,7 @@ export const showErrorToast = (
   // إظهار Toast - تصميم عصري مع خلفية بيضاء ونص أحمر
   return toast.error(message, {
     ...defaultOptions,
-    autoClose: 4000, // وقت أطول للأخطاء
+    autoClose: 6500, // ✅ وقت أطول للرسائل المفصلة
     ...options,
     style: {
       background: 'linear-gradient(135deg, #ffffff 0%, #fef2f2 100%)',
@@ -74,6 +74,9 @@ export const showErrorToast = (
       fontWeight: '600',
       fontSize: '15px',
       padding: '18px 20px',
+      lineHeight: '1.6', // ✅ تباعد أفضل للقراءة
+      whiteSpace: 'pre-line', // ✅ دعم الأسطر المتعددة
+      maxWidth: '450px', // ✅ عرض أكبر للرسائل المفصلة
     },
     progressClassName: '!bg-gradient-to-r !from-red-400 !to-red-600 !h-1',
   });
@@ -121,6 +124,7 @@ export const showWarningToast = (
   
   return toast.warning(message, {
     ...defaultOptions,
+    autoClose: 5000, // ✅ وقت أطول للتحذيرات
     ...options,
     style: {
       background: 'linear-gradient(135deg, #ffffff 0%, #fffbeb 100%)',
@@ -132,6 +136,7 @@ export const showWarningToast = (
       fontWeight: '600',
       fontSize: '15px',
       padding: '18px 20px',
+      lineHeight: '1.6', // ✅ تباعد أفضل للقراءة
     },
     progressClassName: '!bg-gradient-to-r !from-amber-400 !to-amber-600 !h-1',
   });

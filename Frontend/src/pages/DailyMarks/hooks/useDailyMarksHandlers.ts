@@ -6,10 +6,11 @@ import {
   showCenteredSwal,
   showWarningMessage,
   showConfirmMessage,
+  showErrorMessage,
 } from "@/utils/sweetalertUtils";
 import {
   showSuccessToast,
-  showErrorToast,
+  showWarningToast,
 } from "@/utils/toastUtils";
 import type { Section, Mark } from "../types/types";
 import { useNavigate } from "react-router-dom";
@@ -84,11 +85,25 @@ export const useDailyMarksHandlers = ({
 
     } catch (error) {
       if (error instanceof yup.ValidationError) {
-        // Show the first error message
-        showWarningMessage(error.errors[0], "خطأ في البيانات");
+        // ✅ User-friendly error messages
+        const errorMsg = error.errors[0];
+        
+        // Map technical errors to user-friendly messages
+        let userMessage = errorMsg;
+        
+        if (errorMsg.includes('at-least-one-section') || errorMsg.includes('مقطع حفظ أو مقطع مراجعة')) {
+          userMessage = "⚠️ يجب إدخال مقطع حفظ أو مقطع مراجعة على الأقل";
+        } else if (errorMsg.includes('التاريخ')) {
+          userMessage = `📅 ${errorMsg}`;
+        } else if (errorMsg.includes('تداخل') || errorMsg.includes('overlap')) {
+          userMessage = `🚫 ${errorMsg}`;
+        }
+        
+        showWarningMessage("يرجى التحقق من البيانات", userMessage);
         return;
       } else {
         console.error("Validation Error", error);
+        showErrorToast("⚠️ خطأ في التحقق من البيانات");
         return;
       }
     }
@@ -167,15 +182,35 @@ export const useDailyMarksHandlers = ({
       const status = error.response?.status;
       const serverMessage = error.response?.data?.message || error.message;
 
-      // Handle Validation Errors (Overlap, etc) nicely
+      // ✅ Handle Validation Errors with user-friendly messages
       if (status === 400) {
-           showErrorToast(serverMessage || "بيانات المقطع غير صحيحة");
-           // Show granular errors if available
-           if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
-               error.response.data.errors.forEach(e => showWarningMessage(e, "تنبيه"));
-           }
+        let userMessage = serverMessage || "بيانات المقطع غير صحيحة";
+        
+        // Use SweetAlert for important errors with details
+        if (serverMessage?.includes('تداخل') || serverMessage?.includes('overlap')) {
+          showErrorMessage("خطأ في البيانات", serverMessage);
+        } else if (serverMessage?.includes('فجوة') || serverMessage?.includes('gap')) {
+          showErrorMessage("خطأ في التسلسل", serverMessage);
+        } else if (serverMessage?.includes('بداية خاطئة') || serverMessage?.includes('يجب أن يبدأ من')) {
+          showErrorMessage("خطأ في البداية", serverMessage);
+        } else if (serverMessage?.includes('تكرار') || serverMessage?.includes('duplicate')) {
+          showErrorMessage("تكرار مقطع", "🚫 هذا المقطع مسجل مسبقاً");
+        } else if (serverMessage?.includes('same-day') || serverMessage?.includes('نفس اليوم')) {
+          showErrorMessage("تكرار في نفس اليوم", "📅 لا يمكن إضافة مقطع مكرر في نفس اليوم");
+        } else {
+          showErrorMessage("خطأ في البيانات", userMessage);
+        }
+        
+        // Show additional granular errors if available
+        if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
+          error.response.data.errors.forEach(e => showWarningToast(e));
+        }
+      } else if (status === 404) {
+        showErrorMessage("خطأ", "❌ الحلقة المطلوبة غير موجودة");
+      } else if (status === 500) {
+        showErrorMessage("خطأ في الخادم", "⚠️ حدث خطأ في الخادم، يرجى المحاولة لاحقاً");
       } else {
-          showErrorToast(`❌ حدث خطأ أثناء إضافة المقطع: ${serverMessage}`);
+        showErrorMessage("خطأ", `❌ حدث خطأ: ${serverMessage || 'غير معروف'}`);
       }
     } finally {
       setIsAddingSectionLoading(false);

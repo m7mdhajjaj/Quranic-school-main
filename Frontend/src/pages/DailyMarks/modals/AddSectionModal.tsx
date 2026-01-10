@@ -55,8 +55,14 @@ const AddSectionModalComponent = ({
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (hasConsistencyErrors) return;
+    
+    // ✅ CRITICAL: Sync with parent BEFORE validation
     syncWithParent(onChange);
-    onSubmit(e);
+    
+    // Small delay to ensure state is updated before submit
+    setTimeout(() => {
+      onSubmit(e);
+    }, 10);
   };
 
   if (!isOpen) return null;
