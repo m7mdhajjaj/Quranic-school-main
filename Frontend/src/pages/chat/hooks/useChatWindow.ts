@@ -2,7 +2,7 @@
 // useChatWindow.ts - Chat Window Main Logic Hook
 // ============================================================================
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { useChat } from './useChat';
 import { useMessageOperations } from './useMessageOperations';
@@ -60,11 +60,14 @@ export const useChatWindow = ({ chatType, targetId, onNewMessage }: UseChatWindo
     closeMentions
   } = useMentions();
 
-  // Dedupe messages to prevent key errors
-  const uniqueMessages = messages.filter((msg, index, self) => 
-    index === self.findIndex((m) => (
-      m._id ? m._id === msg._id : m.clientTempId === msg.clientTempId
-    ))
+  // Dedupe messages with useMemo for performance (O(n²) operation)
+  const uniqueMessages = useMemo(() => 
+    messages.filter((msg, index, self) => 
+      index === self.findIndex((m) => (
+        m._id ? m._id === msg._id : m.clientTempId === msg.clientTempId
+      ))
+    ),
+    [messages]
   );
 
   // Callbacks

@@ -1,9 +1,8 @@
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback, useState, useRef } from 'react';
 import { useChatSocket } from './useChatSocket';
 import { useChatMessages } from './useChatMessages';
 import { useAuth } from '../../../hooks/useAuth';
 import type { SendMessageInput } from '../../../Validation/chatValidation';
-import notificationSound from '../../../assets/sounds/notification.mp3';
 
 /**
  * Hook شامل للشات مع Real-time updates
@@ -42,7 +41,16 @@ export const useChat = (chatType: 'DM' | 'GROUP', targetId: string) => {
   } = useChatSocket();
 
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
-  const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Cleanup typing timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Auto-join group if needed
   useEffect(() => {
@@ -76,7 +84,7 @@ export const useChat = (chatType: 'DM' | 'GROUP', targetId: string) => {
   // Listen for sent confirmation
   useEffect(() => {
     const cleanup = onMessageSent((data: any) => {
-      const { tempId, message } = data;
+      const { message } = data;
       // Replace optimistic message with real one
       addMessage(message);
     });
@@ -116,7 +124,7 @@ export const useChat = (chatType: 'DM' | 'GROUP', targetId: string) => {
   // Listen for typing indicators
   useEffect(() => {
     const cleanup = onTyping((data: any) => {
-      const { userId, chatType: eventType } = data;
+      const { userId } = data;
       
       // Ignore own typing
       if (userId === user?._id) return;
@@ -215,22 +223,23 @@ export const useChat = (chatType: 'DM' | 'GROUP', targetId: string) => {
     }
   }, [user, chatType, targetId, addOptimisticMessage, sendSocketMessage, removeMessage]);
 
-  // Handle typing
+  // Handle typing - optimized with ref
   const handleTyping = useCallback((isTyping: boolean) => {
-    if (typingTimeout) {
-      clearTimeout(typingTimeout);
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = null;
     }
 
     sendTyping({ chatType, targetId }, isTyping);
 
     if (isTyping) {
       // Auto-stop after 3 seconds
-      const timeout = setTimeout(() => {
+      typingTimeoutRef.current = setTimeout(() => {
         sendTyping({ chatType, targetId }, false);
+        typingTimeoutRef.current = null;
       }, 3000);
-      setTypingTimeout(timeout);
     }
-  }, [chatType, targetId, sendTyping, typingTimeout]);
+  }, [chatType, targetId, sendTyping]);
 
   // Mark message as read
   const markMessageAsRead = useCallback((messageId: string) => {

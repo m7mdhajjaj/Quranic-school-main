@@ -24,6 +24,15 @@ export default defineConfig({
   
   // تحسينات الأداء
   build: {
+    target: 'es2015',
+    cssCodeSplit: true,
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+      },
+    },
     rollupOptions: {
       output: {
         manualChunks: (id) => {

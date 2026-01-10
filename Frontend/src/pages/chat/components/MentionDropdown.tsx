@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import { useRef, memo } from 'react';
 import ReactDOM from 'react-dom';
 import { Avatar } from '@/components/Avatar';
 import { useMentionDropdown, type MentionUser } from '../hooks/useMentionDropdown';
@@ -11,7 +11,7 @@ interface MentionDropdownProps {
   onSelect: (user: MentionUser | 'all') => void;
 }
 
-export const MentionDropdown: React.FC<MentionDropdownProps> = ({
+export const MentionDropdown = memo<MentionDropdownProps>(({
   isOpen,
   users,
   activeIndex,
@@ -98,4 +98,6 @@ export const MentionDropdown: React.FC<MentionDropdownProps> = ({
     </div>,
     document.body
   );
-};
+});
+
+MentionDropdown.displayName = 'MentionDropdown';
