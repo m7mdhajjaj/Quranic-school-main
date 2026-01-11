@@ -642,6 +642,28 @@ class AiSchedulerService {
             if (targetSection) canUseDay = true;
           }
 
+          // ✅ FINAL CHECK: Weekly Quota (3 days/week limit)
+          // If the week is already full, we cannot simply use this day unless it is the START day or an existing section.
+          // Exception: If we are adding to an EXISTING section (targetSection exists), it doesn't increase the daily/weekly count.
+          if (canUseDay) {
+               // Re-check existence to rely on cache/db state
+               // Note: 'checkWeeklyQuota' counts DOCUMENTS. 
+               // If a document already exists for this day, adding to it is FREE (count doesn't increase).
+               // If no document exists, adding a new one increases count.
+               const existingSec = await Section.exists({ group: groupId, dateKey: this.toDateKeyUTC(currentDate) });
+               
+               if (!existingSec) {
+                   // Only check quota if we are creating a NEW day
+                   const weeklyCheck = await sequenceService.checkWeeklyQuota(groupId, currentDate);
+                   if (!weeklyCheck.isValid) {
+                       // Week is full! Skip this day.
+                       canUseDay = false;
+                       // Optional: We could log or notify, but here we just defer to next week.
+                       // User feedback: "If full, go to next week". System will iterate date++.
+                   }
+               }
+          }
+
           if (canUseDay) {
               const segment = segmentQueue.shift();
               // Remove our internal flag before saving
