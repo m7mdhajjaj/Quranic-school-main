@@ -7,9 +7,13 @@ const getController = require("./get.controller");
 const createController = require("./create.controller");
 const updateController = require("./update.controller");
 const deleteController = require("./delete.controller");
+const repairController = require("./repair.controller");
 
 // Export all functions
 module.exports = {
+  // Repair operations (AI)
+  ...repairController,
+
   // Get operations
   ...getController,
   

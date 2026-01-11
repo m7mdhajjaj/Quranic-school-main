@@ -6,6 +6,7 @@ import SectionStatusFilter from '../../../components/SectionStatusFilter';
 import type { MarkStatus } from '../../../components/SectionStatusBadge';
 import type { Section } from '../../../types/types';
 import { SectionItem } from './SectionItem';
+import { AiRepairButton } from '../../../components/AiRepairButton';
 
 interface SectionsGridViewProps {
   selectedGroup: string;
@@ -67,7 +68,6 @@ export const SectionsGridView = ({
   onStartDateChange,
   onEndDateChange,
 }: SectionsGridViewProps) => {
-  // skeletonCount removed as it was unused
 
   return (
     <div className="animate-fade-in">
@@ -158,6 +158,14 @@ export const SectionsGridView = ({
               <Plus size={20} className="bg-white/20 rounded-full p-0.5" />
             </Button>
           )}
+
+          {/* إصلاح التسلسل */}
+          <AiRepairButton 
+            selectedGroup={selectedGroup} 
+            onSuccess={() => {
+              if (onGroupSelect) onGroupSelect(selectedGroup);
+            }}
+          />
 
           {/* حذف مقاطع */}
           {onBulkDelete && (

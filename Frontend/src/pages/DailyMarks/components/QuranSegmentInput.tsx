@@ -220,14 +220,7 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
           </div>
       )}
 
-      {/* Memorization Progress Hint */}
-      {type === 'memorization' && expectedStart && expectedStart > 1 && (
-          <div className="mt-2 text-center text-xs">
-              <span className="text-amber-600 bg-amber-50 py-1 px-3 rounded-lg inline-block border border-amber-100 font-medium">
-                 📍 آخر توقف كان عند الآية {expectedStart - 1}، ابدأ من {expectedStart}
-              </span>
-          </div>
-      )}
+
       
       {!segment.surahNumber && (
         <p className="text-xs text-gray-400 mt-1 mr-1 flex items-center gap-1">

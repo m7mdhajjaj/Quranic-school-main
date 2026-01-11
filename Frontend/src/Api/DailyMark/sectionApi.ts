@@ -317,3 +317,32 @@ export const getNeighborSegments = async (
     return null;
   }
 };
+
+/**
+ * 🤖 AI Auto-Repair Sequence
+ * 
+ * Attempts to fix sequence gaps and orphan reviews automatically
+ * 
+ * @param groupId - معرّف الحلقة (Group ID)
+ * @param surahNumber - رقم السورة (Surah Number)
+ */
+export const repairSequence = async (
+  groupId: string,
+  surahNumber?: number
+): Promise<{ 
+    repaired: boolean; 
+    message: string; 
+    stats?: { gapsFixed: number; orphansFixed: number };
+    details?: string[];
+} | null> => {
+  try {
+    const response = await api.post("/daily-marks/sections/repair-sequence", {
+        groupId,
+        surahNumber
+    });
+    return response.data.data || response.data;
+  } catch (error) {
+    console.error("Failed to repair sequence:", error);
+    throw error;
+  }
+};

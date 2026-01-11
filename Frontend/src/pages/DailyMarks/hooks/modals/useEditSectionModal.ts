@@ -32,15 +32,13 @@ export const useEditSectionModal = (editingSection: Section | null) => {
       // 1. Update Local State
       if (type === 'memorizationMeta') {
         setLocalMemorizationMeta(segments);
+        // Also update localSection and CLEAR legacy string to ensure consistency
+        setLocalSection((prev) => (prev ? { ...prev, memorizationMeta: segments, memorizationSection: '' } : null));
       } else {
         setLocalReviewMeta(segments);
+        // Also update localSection and CLEAR legacy string to ensure consistency
+        setLocalSection((prev) => (prev ? { ...prev, reviewMeta: segments, reviewSection: '' } : null));
       }
-
-      // 2. NO Parent Update here. We sync on Save only.
-      // This improves performance and prevents race conditions with parent state.
-      
-      // Also update localSection to reflect changes immediately in UI if needed
-       setLocalSection((prev) => (prev ? { ...prev, [type]: segments } : null));
     }, 
     []
   );

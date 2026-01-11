@@ -69,17 +69,6 @@ export const SectionDetailsView = ({
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-            {/* Review Section Card */}
-            <div className="bg-gradient-to-br from-emerald-50 to-green-50 p-4 rounded-xl border-2 border-emerald-300 shadow-sm hover:shadow-md transition-all">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="p-1.5 bg-emerald-500 rounded-lg">
-                  <RotateCcw size={14} className="text-white" />
-                </div>
-                <p className="text-xs font-bold text-emerald-700 uppercase tracking-wide">مقطع المراجعة</p>
-              </div>
-              <p className="font-bold text-base text-emerald-900 pr-1">{section.reviewSection}</p>
-            </div>
-            
             {/* Memorization Section Card */}
             <div className="bg-gradient-to-br from-cyan-50 to-blue-50 p-4 rounded-xl border-2 border-cyan-300 shadow-sm hover:shadow-md transition-all">
               <div className="flex items-center gap-2 mb-2">
@@ -89,6 +78,17 @@ export const SectionDetailsView = ({
                 <p className="text-xs font-bold text-cyan-700 uppercase tracking-wide">مقطع الحفظ</p>
               </div>
               <p className="font-bold text-base text-cyan-900 pr-1">{section.memorizationSection}</p>
+            </div>
+
+            {/* Review Section Card */}
+            <div className="bg-gradient-to-br from-emerald-50 to-green-50 p-4 rounded-xl border-2 border-emerald-300 shadow-sm hover:shadow-md transition-all">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-1.5 bg-emerald-500 rounded-lg">
+                  <RotateCcw size={14} className="text-white" />
+                </div>
+                <p className="text-xs font-bold text-emerald-700 uppercase tracking-wide">مقطع المراجعة</p>
+              </div>
+              <p className="font-bold text-base text-emerald-900 pr-1">{section.reviewSection}</p>
             </div>
           </div>
         </div>

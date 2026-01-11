@@ -3,6 +3,7 @@ const router = express.Router();
 const dailyMarkController = require("../../../controllers/DailyMarkController");
 const {
   validateDailyMarksSectionData,
+  validateRepairSequenceData,
 } = require("../../../Validation/DailyMark/DailyMarksSectionValidation");
 
 // ============================================================================
@@ -25,6 +26,13 @@ router.post(
   "/",
   validateDailyMarksSectionData,
   dailyMarkController.createSection
+);
+
+// 🤖 AI Auto-Repair Sequence
+router.post(
+    "/repair-sequence", 
+    validateRepairSequenceData,
+    dailyMarkController.repairSequence
 );
 
 // Update a section (for daily marks)

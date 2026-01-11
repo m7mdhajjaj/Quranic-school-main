@@ -310,8 +310,52 @@ const validateDailyMarksSectionData = async (req, res, next) => {
   }
 };
 
+/**
+ * Validate Repair Sequence Data
+ * Checks for groupId and surahNumber
+ */
+const validateRepairSequenceData = (req, res, next) => {
+  try {
+    const { groupId, surahNumber, repairAll } = req.body;
+    const errors = [];
+
+    if (!isRequired(groupId)) {
+      errors.push("معرّف الحلقة (Group ID) مطلوب");
+    }
+
+    // إذا لم يتم تحديد "إصلاح الكل" ولم يتم إرسال رقم السورة
+    if (!repairAll && !isRequired(surahNumber)) {
+        // نسمح بعدم إرسال رقم السورة إذا كان القصد إصلاح الكل ضمنياً
+        // ولكن للوضوح يفضل استخدام flag
+        // errors.push("رقم السورة مطلوب"); 
+    }
+    
+    // Check if surahNumber is provided, it must be valid
+    if (surahNumber) {
+        const surahNum = parseInt(surahNumber);
+        if (isNaN(surahNum) || surahNum < 1 || surahNum > 114) {
+            errors.push("رقم السورة يجب أن يكون بين 1 و 114");
+        }
+    }
+
+    if (errors.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "بيانات الإصلاح غير صحيحة",
+        errors: errors,
+      });
+    }
+
+    next();
+  } catch (error) {
+     console.error("❌ Validating Repair Data Error:", error);
+     res.status(500).json({ success: false, message: "Server Validation Error" });
+  }
+};
+
 module.exports = {
   validateDailyMarksSectionData,
+  validateRepairSequenceData,
   sanitizeSectionData,
   validateDate,
   validateSectionName,

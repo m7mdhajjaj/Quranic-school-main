@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 interface ModalProps {
@@ -28,6 +29,13 @@ export const Modal: React.FC<ModalProps> = ({
   bodyClassName,
   overlayClassName,
 }) => {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
   // Close on Escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -51,7 +59,7 @@ export const Modal: React.FC<ModalProps> = ({
     };
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
   const sizeClasses = {
     sm: 'max-w-sm',
@@ -64,7 +72,7 @@ export const Modal: React.FC<ModalProps> = ({
     full: 'max-w-full mx-4',
   };
 
-  return (
+  return createPortal(
     <div
       className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 ${overlayClassName || ''}`}
       onClick={closeOnOverlayClick ? onClose : undefined}
@@ -95,6 +103,7 @@ export const Modal: React.FC<ModalProps> = ({
         
         {footer && <div className="p-6 border-t border-gray-200 bg-gray-50 rounded-b-2xl shrink-0 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">{footer}</div>}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
