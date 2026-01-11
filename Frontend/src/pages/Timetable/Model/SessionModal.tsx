@@ -165,7 +165,7 @@ export const SessionModal: React.FC<SessionModalProps> = ({
                 )}
 
                 {/* عرض قائمة حلقات المعلم للاختيار */}
-                {((role === "admin" && formData.teacherId) || (role === "teacher" && teacherGroups.length > 0)) && (
+                {((role === "admin" && formData.teacherId) || (role === "teacher" && teacherGroups.length > 0 && !editingSession)) && (
                     <div>
                       <label className="block text-sm font-bold text-emerald-900 mb-3">
                         اختر حلقة للموعد *
@@ -225,7 +225,7 @@ export const SessionModal: React.FC<SessionModalProps> = ({
                 </div>
               </div>
               {/* اليوم */}
-              {!formData.sectionId && (
+              {!formData.sectionId && !(role === "teacher" && editingSession) && (
               <div className="mb-5">
                 <label className="block text-sm font-bold text-blue-900 mb-3">اليوم</label>
                 <div className="grid grid-cols-3 sm:grid-cols-7 gap-2">

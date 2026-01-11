@@ -43,30 +43,44 @@ export const TeacherTimetableView: React.FC<TeacherTimetableViewProps> = ({
 
   // ✅ التحقق من وجود طلب إضافة/تعديل جلسة من الرابط
   useEffect(() => {
+    if (loading) return;
+
     const addSession = searchParams.get('addSession');
     const editSession = searchParams.get('editSession');
     const sectionId = searchParams.get('sectionId');
+    const urlSessionType = searchParams.get('sessionType');
     
     if (sectionId) {
       if (editSession === 'true') {
-        const sessionToEdit = sessions.find(s => s.sectionId === sectionId);
-        if (sessionToEdit) {
-          // Check if sessionType is updated in URL
-          const urlSessionType = searchParams.get('sessionType');
-          if (urlSessionType) {
-              sessionToEdit.sessionType = urlSessionType as any;
-          }
+        const matchingSessions = sessions.filter(s => s.sectionId === sectionId);
+        
+        if (matchingSessions.length === 1) {
+          // الحالة 1: تطابق وحيد - فتح التعديل
+          const sessionToEdit = matchingSessions[0];
+          if (urlSessionType) sessionToEdit.sessionType = urlSessionType as any;
           setEditingSession(sessionToEdit);
           setIsModalOpen(true);
+        } else if (matchingSessions.length > 1) {
+          // الحالة 2: تطابقات متعددة
+          // محاولة المطابقة بالنوع، وإلا فالأول
+          let targetSession = matchingSessions[0];
+          if (urlSessionType) {
+            const specificMatch = matchingSessions.find(s => s.sessionType === urlSessionType);
+            if (specificMatch) targetSession = specificMatch;
+          }
+          setEditingSession(targetSession);
+          setIsModalOpen(true);
         } else {
-             // If no session found, do nothing (respecting "Only if there is a time")
+          // الحالة 3: لا يوجد جلسة مرتبطة - فتح إضافة جديدة
+          setEditingSession(null);
+          setIsModalOpen(true);
         }
       } else if (addSession === 'true') {
         setEditingSession(null);
         setIsModalOpen(true);
       }
     }
-  }, [searchParams, sessions]);
+  }, [searchParams, sessions, loading]);
 
   const handleOpenAddModal = () => {
     setEditingSession(null);

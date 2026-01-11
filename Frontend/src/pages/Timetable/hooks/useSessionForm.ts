@@ -191,6 +191,7 @@ export const useSessionForm = ({ editingSession, role, teacherGroups = [], initi
         description: editingSession.description || "",
         sessionType: editingSession.sessionType,
         teacherId: teacherIdValue,
+        sectionId: editingSession.sectionId || "",
       });
       
       if (role === "teacher") {

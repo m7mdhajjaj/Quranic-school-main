@@ -38,14 +38,31 @@ export const AdminTimetableView: React.FC<AdminTimetableViewProps> = ({
   const { showModal, editingSession, openAddModal, openEditModal, closeModal } = useSessionModal();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // ✅ التحقق من وجود طلب إضافة جلسة من الرابط
+  // ✅ التحقق من وجود طلب إضافة/تعديل جلسة من الرابط
   useEffect(() => {
     const addSession = searchParams.get('addSession');
+    const editSession = searchParams.get('editSession');
     const sectionId = searchParams.get('sectionId');
-    if (addSession === 'true' && sectionId) {
+    
+    if (sectionId) {
+      if (editSession === 'true') {
+        const matchingSessions = sessions.filter(s => s.sectionId === sectionId);
+        if (matchingSessions.length === 1) {
+          const sessionToEdit = matchingSessions[0];
+          // Check if sessionType is updated in URL
+          const urlSessionType = searchParams.get('sessionType');
+          if (urlSessionType) {
+              sessionToEdit.sessionType = urlSessionType as any;
+          }
+          openEditModal(sessionToEdit);
+        }
+      } else if (addSession === 'true') {
+        openAddModal();
+      }
+    } else if (addSession === 'true') {
       openAddModal();
     }
-  }, [searchParams, openAddModal]);
+  }, [searchParams, openAddModal, sessions, openEditModal]);
 
   // تعطيل scroll الصفحة عند فتح الـ Modal
   useDisableBodyScroll(showModal);
