@@ -543,16 +543,26 @@ class AiSchedulerService {
               const current = segmentQueue[i];
               const last = uniqueQueue[uniqueQueue.length - 1];
 
-              // Check for exact duplicate or full containment
-              // Since we sorted by Start ASC, End DESC:
-              // If Start is same, Current.End <= Last.End. So Current is contained in Last.
-              // If Start is greater, we check if Current.End <= Last.End.
+              // Check for overlap or containment
+              // Since sorted by Start ASC:
+              // current.start is guaranteed >= last.start
               
-              const isContained = (current.surahNumber === last.surahNumber) && 
-                                  (current.ayahStart >= last.ayahStart) && 
-                                  (current.ayahEnd <= last.ayahEnd);
-              
-              if (!isContained) {
+              const isOverlapping = current.surahNumber === last.surahNumber && 
+                                    current.ayahStart <= last.ayahEnd; // Strict overlap (not just touching) or identical start
+
+              if (isOverlapping) {
+                  // Merge: Extend last segment to cover current
+                  last.ayahEnd = Math.max(last.ayahEnd, current.ayahEnd);
+                  last.canonicalKey = `${last.surahNumber}:${last.ayahStart}-${last.ayahEnd}`;
+                  
+                  // Preserve status priority (completed > in_progress > not_started)
+                  if (current.status === 'completed' && last.status !== 'completed') {
+                      last.status = 'completed';
+                  }
+
+                  // Note: detailed info from current might be lost, but range is preserved (Maximized)
+                  // This fulfills "Don't reduce 100 to 90" rule.
+              } else {
                   uniqueQueue.push(current);
               }
           }
