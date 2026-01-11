@@ -17,12 +17,14 @@ exports.repairSequence = async (req, res) => {
     console.log(`🤖 AI Scheduler: Starting repair for Group ${groupId}, Surah: ${surahNumber || 'ALL'}...`);
 
     // Call the AI Service
-    const result = await AiScheduler.repairSequence(groupId, surahNumber);
+    // Pass everything in req.body.options to the service
+    const options = req.body.options || {};
+    const result = await AiScheduler.repairSequence(groupId, surahNumber, false, options);
 
     // Handle "No repairs needed" case
     if (result.repaired === false) {
-       console.log("✅ AI Scheduler: Sequence is healthy. No action needed.");
-       return sendSuccess(res, { status: "healthy", ...result }, result.message);
+       console.log(`ℹ️ AI Scheduler: ${result.message}`);
+       return sendSuccess(res, { status: "no_action", ...result }, result.message);
     }
 
     // Handle "Repairs executed" case
