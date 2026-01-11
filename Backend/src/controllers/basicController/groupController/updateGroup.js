@@ -36,15 +36,63 @@ exports.updateGroup = async (req, res) => {
     }
 
     // التحقق من صحة المعلم إذا تم تغييره
+    let newTeacherDoc = null;
     if (updates.teacher) {
       const teacherExists = await findTeacherByIdOrName(updates.teacher);
       if (!teacherExists) {
         return notFoundResponse(res, "المعلم المحدد غير موجود في النظام");
       }
       updates.teacher = teacherExists._id;
+      newTeacherDoc = teacherExists;
     }
 
     const group = await Group.findByIdAndUpdate(id, updates, { new: true, runValidators: true });
+
+    // ✅ FIX: معالجة نقل الحلقة بين المعلمين
+    // إذا تغير المعلم، يجب تحديث سجلات المعلم القديم والجديد والطلاب
+    if (newTeacherDoc && oldGroup.teacher && oldGroup.teacher.toString() !== newTeacherDoc._id.toString()) {
+        try {
+            // 1. إزالة الحلقة من المعلم القديم
+            await Teacher.findByIdAndUpdate(oldGroup.teacher, {
+                $pull: { groups: { id: oldGroup._id } }
+            });
+
+            // 2. إضافة الحلقة للمعلم الجديد
+            // نتأكد أولاً أنها ليست مضافة بالفعل
+            // نستخدم newTeacherDoc الذي جلبناه سابقاً، لكن قد نحتاج لإعادة جلبه لضمان تحديث الـ groups إذا كانت هناك عمليات متزامنة
+            // لكن للسرعة سنستخدم ما لدينا
+            const currentGroups = newTeacherDoc.groups || [];
+            const isAlreadyAdded = currentGroups.some(g => g.id.toString() === group._id.toString());
+            
+            if (!isAlreadyAdded) {
+                // نستخدم الاسم الجديد إذا تم تحديثه، وإلا الاسم القديم
+                const groupName = updates.name || oldGroup.name;
+                
+                await Teacher.findByIdAndUpdate(newTeacherDoc._id, {
+                    $push: { 
+                        groups: {
+                            id: group._id,
+                            name: groupName,
+                            number: currentGroups.length + 1
+                        }
+                    }
+                });
+            }
+
+            // 3. تحديث معلم الطلاب في هذه الحلقة
+            // Student schema uses 'teacher' as String field storing the name
+            const newTeacherName = `${newTeacherDoc.firstName} ${newTeacherDoc.lastName}`;
+            await Student.updateMany(
+                { group: group.name },
+                { teacher: newTeacherName }
+            );
+            
+            console.log(`✅ تم نقل الحلقة "${group.name}" من المعلم ${oldGroup.teacher} إلى ${newTeacherName}`);
+            
+        } catch (transferError) {
+             console.error("❌ خطأ في نقل الحلقة بين المعلمين:", transferError);
+        }
+    }
 
     emitSocketEvent("groupUpdated", group);
 
