@@ -14,7 +14,7 @@ const { checkTimetableConflict, checkSessionConflict } = require("./Helper/confl
 exports.createTimetable = async (req, res) => {
   try {
     const timetableData = req.validatedData || req.body;
-    const { day, startHour, endHour, note, description, sessionType, teacherId, sectionId } = timetableData;
+    let { day, startHour, endHour, note, description, sessionType, teacherId, sectionId } = timetableData;
 
     // ✅ فحص الصلاحيات: المعلم يمكنه إضافة مواعيد لنفسه فقط (بناءً على teacherId)
     const currentUser = req.user;
@@ -30,6 +30,44 @@ exports.createTimetable = async (req, res) => {
         });
       }
       console.log(`✅ الصلاحيات صحيحة - يضيف المعلم موعده الخاص`);
+    }
+
+    // ✅ إذا كان الموعد مرتبط بمقطع، احصل على تاريخ المقطع واشتق اليوم إذا لزم الأمر
+    let sessionDate = null;
+    let section = null;
+    
+    if (sectionId) {
+      section = await Section.findById(sectionId);
+      if (!section) {
+         return res.status(404).json({
+          success: false,
+          error: "Not Found",
+          message: "المقطع المرتبط غير موجود",
+        });
+      }
+      sessionDate = section.date; // نسخ التاريخ من المقطع
+
+      // ✅ اشتقاق اليوم تلقائياً إذا لم يتم تحديده
+      if (!day && sessionDate) {
+        const arabicDays = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+        // التأكد من التاريخ ككائن Date
+        const dateObj = new Date(sessionDate);
+        if (!isNaN(dateObj.getTime())) {
+          const dayIndex = dateObj.getDay(); // 0 = الأحد
+          day = arabicDays[dayIndex];
+          // تحديث الكائن الأصلي أيضاً لأنه يستخدم في التحقق من التعارض
+          timetableData.day = day;
+          console.log(`🤖 تم اشتقاق اليوم تلقائياً: ${day} من التاريخ ${sessionDate}`);
+        }
+      }
+    }
+
+    // التحقق من أن اليوم موجود (إما مرسل أو مشتق)
+    if (!day) {
+      return res.status(400).json({
+        success: false,
+        message: 'اليوم مطلوب (يجب تحديده أو ربط الموعد بمقطع لاشتقاق اليوم منه)'
+      });
     }
 
     // 1. فحص التعارب لجميع حلقات المعلم - الفحص الأساسي والأهم
@@ -67,22 +105,6 @@ exports.createTimetable = async (req, res) => {
       if (group) {
         groupId = group._id;
       }
-    }
-
-    // ✅ إذا كان الموعد مرتبط بمقطع، احصل على تاريخ المقطع
-    let sessionDate = null;
-    let section = null;
-    
-    if (sectionId) {
-      section = await Section.findById(sectionId);
-      if (!section) {
-         return res.status(404).json({
-          success: false,
-          error: "Not Found",
-          message: "المقطع المرتبط غير موجود",
-        });
-      }
-      sessionDate = section.date; // نسخ التاريخ من المقطع
     }
 
     // إنشاء موعد جديد مع groupId و sessionType و teacherId و description

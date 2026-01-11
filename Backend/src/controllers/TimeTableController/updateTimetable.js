@@ -22,7 +22,7 @@ exports.updateTimetable = async (req, res) => {
     console.log("✅ البيانات المتحقق منها:", req.validatedData);
 
     const timetableData = req.validatedData || req.body;
-    const { day, startHour, endHour, note, description, sessionType, teacherId } = timetableData;
+    let { day, startHour, endHour, note, description, sessionType, teacherId, sectionId } = timetableData;
 
     // احصل على الموعد القديم قبل التحديث
     const oldTimetable = await TimeTable.findById(id);
@@ -32,6 +32,40 @@ exports.updateTimetable = async (req, res) => {
         error: "Not found",
         message: "لم يتم العثور على الموعد",
       });
+    }
+
+    // ✅ منطق اشتقاق اليوم عند التحديث
+    let sessionDate = oldTimetable.sessionDate;
+    let section = null;
+
+    // إذا تم تحديث sectionId أو الاستمرار على نفس المقطع
+    if (sectionId || (oldTimetable.sectionId && !day)) {
+        // إذا كان هناك sectionId جديد نقوم بجلب المقطع
+        if (sectionId && sectionId !== oldTimetable.sectionId?.toString()) {
+            section = await Section.findById(sectionId);
+            if (!section) {
+                return res.status(404).json({ success: false, message: "المقطع المرتبط غير موجود" });
+            }
+            sessionDate = section.date;
+        } 
+        // أو نستخدم التاريخ الحالي إذا لم يتغير المقطع ولكننا نحتاج التاريخ
+        else if (oldTimetable.sectionId && !sessionDate) {
+             // fallback if SessionDate wasn't saved in old records
+             section = await Section.findById(oldTimetable.sectionId);
+             if (section) sessionDate = section.date;
+        }
+
+        // اشتقاق اليوم إذا لم يتم إرساله
+        if (!day && sessionDate) {
+          const arabicDays = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+          const dateObj = new Date(sessionDate);
+          if (!isNaN(dateObj.getTime())) {
+            const dayIndex = dateObj.getDay();
+            day = arabicDays[dayIndex];
+            timetableData.day = day; // تحديث reference
+            console.log(`🤖 Update: تم اشتقاق اليوم تلقائياً: ${day}`);
+          }
+        }
     }
 
     // ✅ فحص الصلاحيات: المعلم يمكنه تعديل مواعيده فقط (بناءً على teacherId)
@@ -96,7 +130,16 @@ exports.updateTimetable = async (req, res) => {
     }
 
     // تحديث الموعد
-    const updateData = { day, startHour, endHour, note: note || "", groupId };
+    const updateData = { 
+        day: day || oldTimetable.day, // استخدام القيمة الجديدة أو القديمة
+        startHour: startHour || oldTimetable.startHour, 
+        endHour: endHour || oldTimetable.endHour, 
+        note: note || "", 
+        groupId,
+        // تحديث البيانات المرتبطة بالمقطع
+        sectionId: sectionId || oldTimetable.sectionId,
+        sessionDate: sessionDate
+    };
     if (sessionType !== undefined) {
       updateData.sessionType = sessionType; // ✅ تحديث sessionType فقط إذا تم إرساله
     }

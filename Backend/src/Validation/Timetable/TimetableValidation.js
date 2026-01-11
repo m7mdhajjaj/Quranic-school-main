@@ -26,7 +26,8 @@ const isRequired = (value) => {
  */
 const validateDay = (day) => {
   if (!isRequired(day)) {
-    return { isValid: false, message: 'اليوم مطلوب' };
+    // If not provided, return valid (controller will handle derivation or error if context missing)
+    return { isValid: true, value: undefined };
   }
 
   const dayStr = day.toString().trim();
