@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useLoginLogic } from "./hooks";
+import ForgotPasswordModal from "../../../components/ForgotPasswordModal";
 
 const Login = () => {
   const {
@@ -22,6 +23,8 @@ const Login = () => {
     handleChange,
     handleSubmit,
   } = useLoginLogic();
+
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
 
   return (
     <KeyboardAvoidingView
@@ -86,7 +89,9 @@ const Login = () => {
           </View>
 
           {/* Forgot Password */}
-          <TouchableOpacity style={styles.forgotPassword}>
+          <TouchableOpacity
+            style={styles.forgotPassword}
+            onPress={() => setShowForgotPasswordModal(true)}>
             <Text style={styles.forgotPasswordText}>نسيت كلمة المرور؟</Text>
           </TouchableOpacity>
 
@@ -116,6 +121,12 @@ const Login = () => {
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Forgot Password Modal */}
+      <ForgotPasswordModal
+        visible={showForgotPasswordModal}
+        onClose={() => setShowForgotPasswordModal(false)}
+      />
     </KeyboardAvoidingView>
   );
 };
