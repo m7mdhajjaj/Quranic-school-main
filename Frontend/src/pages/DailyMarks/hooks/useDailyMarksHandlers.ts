@@ -380,11 +380,16 @@ export const useDailyMarksHandlers = ({
     try {
       // 2. Call API in background
       await deleteSection(sectionId);
+      
+      // ✅ 3. Refresh to show AI repairs (if any gaps were filled)
+      if (refetchSections) {
+        await refetchSections();
+      }
     } catch (err) {
       console.error("Error deleting section:", err);
       showErrorMessage("حدث خطأ", "❌ حدث خطأ أثناء حذف المقطع، سيتم استعادة البيانات...");
       
-      // 3. Rollback on error
+      // 4. Rollback on error
       if (refetchSections) await refetchSections();
       if (refetchMarks) await refetchMarks();
     }

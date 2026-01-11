@@ -4,6 +4,7 @@ const dailyMarkController = require("../../../controllers/DailyMarkController");
 const {
   validateDailyMarksSectionData,
   validateRepairSequenceData,
+  validateSectionId,
 } = require("../../../Validation/DailyMark/DailyMarksSectionValidation");
 
 // ============================================================================
@@ -43,6 +44,10 @@ router.put(
 );
 
 // Delete a section
-router.delete("/:id", dailyMarkController.deleteSection);
+router.delete(
+  "/:id", 
+  validateSectionId,
+  dailyMarkController.deleteSection
+);
 
 module.exports = router;

@@ -1,5 +1,6 @@
 // Validation/DailyMarksSectionValidation.js
 
+const mongoose = require("mongoose");
 const { parseSegment } = require("../../utils/Quran/dailyMarkSegmentParser");
 
 /**
@@ -353,9 +354,33 @@ const validateRepairSequenceData = (req, res, next) => {
   }
 };
 
+/**
+ * Validate Section ID (for params)
+ */
+const validateSectionId = (req, res, next) => {
+  const { id } = req.params;
+  
+  if (!isRequired(id)) {
+    return res.status(400).json({
+      success: false,
+      message: "معرّف المقطع مطلوب"
+    });
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({
+      success: false,
+      message: "معرّف المقطع غير صالح"
+    });
+  }
+
+  next();
+};
+
 module.exports = {
   validateDailyMarksSectionData,
   validateRepairSequenceData,
+  validateSectionId,
   sanitizeSectionData,
   validateDate,
   validateSectionName,

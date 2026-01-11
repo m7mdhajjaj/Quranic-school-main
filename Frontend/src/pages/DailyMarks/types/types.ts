@@ -209,6 +209,7 @@ export interface TeacherViewProps {
   onUpdateMark?: (mark: Mark, section: Section, student: Student) => void;
   onDeleteMark?: (markId: string) => void;
   onMarkChange?: () => void;
+  onRefreshData?: () => void; // ✅ New prop for instant refresh
   // Filter props
   selectedMonth: number | null;
   selectedYear: number | null;

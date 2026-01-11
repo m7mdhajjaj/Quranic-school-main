@@ -1,5 +1,6 @@
 const Section = require("../../schema/DailyMark/Section");
 const sequenceService = require("./SectionSequenceService"); // To re-use the strict validation logic
+const { getSurahByNumber } = require("../../utils/Quran/dailyMarkQuranMetadata");
 
 /**
  * ============================================================================
@@ -22,19 +23,21 @@ class AiSchedulerService {
    * الوظيفة الرئيسية: إصلاح تسلسل سورة معينة أو جميع السور لحلقة محددة
    * @param {string} groupId - معرف الحلقة
    * @param {number|undefined} surahNumber - رقم السورة (اختياري)
+   * @param {boolean} dryRun - وضع المحاكاة (عدم التنفيذ)
+   * @param {object} options - خيارات إضافية (أيام مقترحة، حد أقصى للآيات)
    * @returns {Promise<{ repaired: boolean, actions: Array, message: string, stats?: any }>}
    */
-  async repairSequence(groupId, surahNumber) {
+  async repairSequence(groupId, surahNumber, dryRun = false, options = {}) {
     if (!surahNumber) {
         return this.repairAllSequences(groupId);
     }
-    return this.repairSingleSequence(groupId, surahNumber);
+    return this.repairSingleSequence(groupId, surahNumber, dryRun, options);
   }
 
   /**
    * إصلاح جميع السور التي لها سجلات في الحلقة
    */
-  async repairAllSequences(groupId) {
+  async repairAllSequences(groupId, options = {}) {
       // جلب جميع أرقام السور الموجودة في السجلات (حفظ أو مراجعة)
       const memSurahs = await Section.distinct("memorizationMeta.surahNumber", { group: groupId });
       const revSurahs = await Section.distinct("reviewMeta.surahNumber", { group: groupId });
@@ -74,161 +77,266 @@ class AiSchedulerService {
   /**
    * إصلاح سورة واحدة محددة
    */
-  async repairSingleSequence(groupId, surahNumber) {
+  async repairSingleSequence(groupId, surahNumber, dryRun = false, options = {}) {
     // 1. جلب التاريخ الكامل للسورة (History)
+    // نجلب كل المستندات التي تحتوي على ذكر لهذه السورة سواء في الحفظ أو المراجعة
     const history = await Section.find({
       group: groupId,
-      "memorizationMeta.surahNumber": surahNumber
+      $or: [
+          { "memorizationMeta.surahNumber": surahNumber },
+          { "reviewMeta.surahNumber": surahNumber }
+      ]
     })
-    .sort({ date: 1 }) // الأقدم إلى الأحدث
+    .sort({ date: 1 }) // الترتيب الزمني من الأقدم للأحدث مهم جداً لتحديد أين نضع الترميم
     .lean();
 
     // --- المرحلة 1: جمع البيانات (حفظ ومراجعة) ---
     let memSegments = [];
     let reviewSegments = [];
 
-    // نحن بحاجة لجلب المراجعات أيضاً (التي قد تكون "يتيمة" بلا حفظ)
-    const reviewHistory = await Section.find({
-        group: groupId,
-        "reviewMeta.surahNumber": surahNumber
-    }).lean();
-
-    // تجميع الحفظ
     if (history) {
         history.forEach(doc => {
-            const mems = doc.memorizationMeta.filter(m => m.surahNumber === surahNumber);
-            mems.forEach(m => {
-                memSegments.push({
-                    ...m,
-                    originalDate: doc.date,
-                    originalSectionId: doc._id
+            // استخراج مقاطع الحفظ
+            if (doc.memorizationMeta) {
+                const mems = doc.memorizationMeta.filter(m => m.surahNumber === surahNumber);
+                mems.forEach(m => {
+                    memSegments.push({
+                        ...m,
+                        originalDate: doc.date,
+                        originalSectionId: doc._id
+                    });
                 });
-            });
+            }
+            // استخراج مقاطع المراجعة
+            if (doc.reviewMeta) {
+                const revs = doc.reviewMeta.filter(r => r.surahNumber === surahNumber);
+                revs.forEach(r => {
+                    reviewSegments.push({
+                        ...r,
+                        originalDate: doc.date,
+                        originalSectionId: doc._id
+                    });
+                });
+            }
         });
     }
 
-    // تجميع المراجعة
-    if (reviewHistory) {
-         reviewHistory.forEach(doc => {
-             const revs = doc.reviewMeta.filter(r => r.surahNumber === surahNumber);
-             revs.forEach(r => {
-                 reviewSegments.push({
-                     ...r,
-                     originalDate: doc.date,
-                     originalSectionId: doc._id
-                 });
+    // ترتيب مقاطع الحفظ بدقة عالية لضمان كشف الفجوات الحقيقية
+    // الترتيب: حسب البداية أولاً، وإذا تساوت البدايات، الأطول (الأبعد نهاية) يأتي أولاً
+    // هذا يضمن أننا نعتمد "أكبر تغطية" عند حساب الفجوات
+    memSegments.sort((a, b) => {
+        if (a.ayahStart !== b.ayahStart) return a.ayahStart - b.ayahStart;
+        return b.ayahEnd - a.ayahEnd; 
+    });
+
+    // --- المرحلة 2: توحيد الجدول الزمني (Consolidate Timeline) ---
+    // المشكلة: قد يكون لدينا مراجعة (مثل 11-30) دون حفظ مقابل (يتيمة)، وهذا يسبب غياب
+    // 11-30 من قائمة "الحفظ" مما يؤدي لعدم اكتشاف الفجوة 1-10 قبلها.
+    // الحل: نعتبر كل مراجعة يتيمة بمثابة "دليل على وجود حفظ ضمني" ونضيفها للجدول
+    // الزمني للفحص، مع وسمها بـ isVirtual لتصحيحها لاحقاً.
+
+    let consolidatedSegments = [...memSegments.map(s => ({...s, isVirtual: false}))];
+    
+    // فحص المراجعات وإضافتها إذا لم تكن مغطاة
+    reviewSegments.forEach(rev => {
+         const isCovered = consolidatedSegments.some(m => 
+             m.ayahStart <= rev.ayahStart && m.ayahEnd >= rev.ayahEnd
+         );
+         if (!isCovered) {
+             consolidatedSegments.push({
+                 ...rev,
+                 isVirtual: true, // هذه مراجعة ستتحول لحفظ (Orphan Fix)
+                 reason: 'Implicit memorization derived from review'
              });
-         });
-    }
+         }
+    });
 
-    // ترتيب مقاطع الحفظ
-    memSegments.sort((a, b) => a.ayahStart - b.ayahStart);
+    // إعادة الترتيب بعد الدمج
+    consolidatedSegments.sort((a, b) => {
+        if (a.ayahStart !== b.ayahStart) return a.ayahStart - b.ayahStart;
+        return b.ayahEnd - a.ayahEnd; 
+    });
 
-    // --- المرحلة 2: كشف الفجوات في الحفظ (Memorization Gaps) ---
+    // --- المرحلة 3: كشف الفجوات والمراجعات اليتيمة معاً (Unified Analysis) ---
+    
     let repairsNeeded = [];
     let expectedStart = 1;
 
-    for (let i = 0; i < memSegments.length; i++) {
-        const current = memSegments[i];
+    for (let i = 0; i < consolidatedSegments.length; i++) {
+        const current = consolidatedSegments[i];
 
-        // هل هناك فجوة قبل هذا المقطع؟
+        // 1. معالجة "المراجعة اليتيمة" (Orphan Fix)
+        // إذا كان المقطع افتراضياً (جاء من مراجعة)، فهذا يعني أنه يحتاج لتثبيت كحفظ أصلي
+        if (current.isVirtual) {
+            repairsNeeded.push({
+                type: 'orphan_fix',
+                surahNumber: surahNumber,
+                ayahStart: current.ayahStart,
+                ayahEnd: current.ayahEnd,
+                targetDate: current.originalDate,
+                referenceSectionId: current.originalSectionId,
+                reason: current.reason
+            });
+        }
+
+        // 2. معالجة الفجوات (Gap Filling)
+        // تجاهل المقاطع المكررة أو المتداخلة في التحقق من الفجوات
+        if (current.ayahEnd < expectedStart) {
+            continue; 
+        }
+
+        // كشف الفجوة قبل المقطع الحالي (سواء كان حقيقياً أو افتراضياً)
         if (current.ayahStart > expectedStart) {
             const gapStart = expectedStart;
             const gapEnd = current.ayahStart - 1;
             
-            const fixDate = current.originalDate;
-
             repairsNeeded.push({
                 type: 'gap_fill',
                 surahNumber: surahNumber,
                 ayahStart: gapStart,
                 ayahEnd: gapEnd,
-                targetDate: fixDate,
-                referenceSectionId: current.originalSectionId
+                targetDate: current.originalDate, // تاريخ المقطع الذي كشف الفجوة
+                referenceSectionId: current.originalSectionId,
+                reason: `Gap detected before range ${current.ayahStart}-${current.ayahEnd}`
             });
         }
+
         expectedStart = Math.max(expectedStart, current.ayahEnd + 1);
-    }
-
-    // --- المرحلة 3: كشف المراجعات اليتيمة (Orphan Reviews) ---
-    for (const rev of reviewSegments) {
-        // هل يوجد حفظ يغطي هذا المراجعة تماماً؟
-        const hasParent = memSegments.some(m => 
-            m.ayahStart === rev.ayahStart && 
-            m.ayahEnd === rev.ayahEnd
-        );
-
-        if (!hasParent) {
-            // يتيمة!
-            repairsNeeded.push({
-                type: 'orphan_fix',
-                surahNumber: surahNumber,
-                ayahStart: rev.ayahStart,
-                ayahEnd: rev.ayahEnd,
-                targetDate: rev.originalDate,
-                referenceSectionId: rev.originalSectionId
-            });
-            
-            // إضافة للتفادي
-            memSegments.push({
-                ayahStart: rev.ayahStart,
-                ayahEnd: rev.ayahEnd
-            });
-        }
     }
 
     if (repairsNeeded.length === 0) {
         return { repaired: false, message: "السلسلة سليمة تماماً، لا توجد فجوات ولا مراجعات يتيمة." };
     }
 
+    // --- تحسين الفجوات (Splitting Large Gaps) ---
+    // إذا كانت الفجوة كبيرة، نقسمها لمقاطع أصغر بناءً على خيارات المستخدم
+    const { maxVersesPerDay } = options;
+    if (maxVersesPerDay && maxVersesPerDay > 0) {
+        const refinedRepairs = [];
+        for (const repair of repairsNeeded) {
+            if (repair.type === 'gap_fill') {
+                const gapSize = repair.ayahEnd - repair.ayahStart + 1;
+                if (gapSize > maxVersesPerDay) {
+                    // تقسيم الفجوة
+                    let currentStart = repair.ayahStart;
+                    const finalEnd = repair.ayahEnd;
+                    while (currentStart <= finalEnd) {
+                        const nextEnd = Math.min(currentStart + maxVersesPerDay - 1, finalEnd);
+                        refinedRepairs.push({
+                            ...repair,
+                            ayahStart: currentStart,
+                            ayahEnd: nextEnd,
+                            reason: `${repair.reason} (Split ${gapSize} verses into chunks of ${maxVersesPerDay})`
+                        });
+                        currentStart = nextEnd + 1;
+                    }
+                } else {
+                    refinedRepairs.push(repair);
+                }
+            } else {
+                refinedRepairs.push(repair);
+            }
+        }
+        repairsNeeded = refinedRepairs;
+    }
+
     // --- المرحلة 4: التنفيذ (Execution Phase) ---
+    // تحديث: استخدام نظام الإزاحة (Ripple Shift) للفجوات
+    // الهدف: إذا اكتشفنا فجوة 1-10، وكان اليوم 11-20، نجعل اليوم 1-10، ونزحزح 11-20 للمستقبل.
+    
+    // ✅ DRY RUN CHECK
+    if (dryRun) {
+        return {
+            repaired: false, // لم يتم الإصلاح (لأننا في وضع المحاكاة)
+            needsRepair: true,
+            detectedRepairs: repairsNeeded,
+            message: `تم اكتشاف ${repairsNeeded.length} مشكلة في التسلسل.`
+        };
+    }
+
     let actionsTaken = [];
     let gapsFixed = 0;
     let orphansFixed = 0;
     
-    for (const repair of repairsNeeded) {
+    // معالجة الفجوات أولاً (لأنها تتطلب إزاحة)
+    const gapRepairs = repairsNeeded.filter(r => r.type === 'gap_fill');
+    // معالجة الأيتام (في مكانها)
+    const orphanRepairs = repairsNeeded.filter(r => r.type === 'orphan_fix');
+
+    // 1. تنفيذ الإزاحة للفجوات (Processing Gaps with Ripple Shift)
+    // نجمع كل الفجوات المتصلة التي لها  referenceSectionId واحد لنرسلها دفعة واحدة
+    // ولكن في العادة الفجوات منفصلة، هنا سنرسلها جميعاً ونعتمد على Ripple Shift للتعامل معها
+    
+    // Group gaps by reference section ID to handle them in one ripple wave if they proceed the same block
+    // Actually, ripple shift works by reference ID.
+    // If we have multiple gaps BEFORE the same reference block (due to splitting), we should pass them all.
+
+    const gapsByRef = {};
+    for (const repair of gapRepairs) {
+        if (!gapsByRef[repair.referenceSectionId]) {
+            gapsByRef[repair.referenceSectionId] = [];
+        }
+        gapsByRef[repair.referenceSectionId].push(repair);
+    }
+
+    for (const [refId, repairs] of Object.entries(gapsByRef)) {
+        // Prepare segments
+        const segmentsToAdd = repairs.map(repair => {
+            const rangeKey = `${surahNumber}:${repair.ayahStart}-${repair.ayahEnd}`;
+            // Resolve Surah Name
+            const surahInfo = getSurahByNumber(surahNumber);
+            const resolvedSurahName = surahInfo ? surahInfo.name : `سورة ${surahNumber}`;
+            
+            return {
+                surahNumber: repair.surahNumber,
+                surahNameCanonical: resolvedSurahName, 
+                ayahStart: repair.ayahStart,
+                ayahEnd: repair.ayahEnd,
+                canonicalKey: rangeKey,
+                status: 'completed',
+                completionNote: `تم ترميم الفجوة وتعديل التسلسل تلقائياً (${rangeKey})`
+            };
+        });
+
+        try {
+            // Pass options (contains suggestedDates) to ripple shift
+            await this.applyRippleShift(
+                groupId, 
+                surahNumber, 
+                segmentsToAdd, 
+                refId,
+                options
+            );
+            
+            gapsFixed += repairs.length;
+            actionsTaken.push(`تمت إضافة ${repairs.length} مقاطع لملء الفجوات وإزاحة الجدول`);
+            
+        } catch (error) {
+            console.error(`Ripple shift failed for ref ${refId}`, error);
+            actionsTaken.push(`فشل الإزاحة للمجموعة المرتبطة بـ ${refId}`);
+        }
+    }
+
+    // 2. تنفيذ إصلاح الأيتام (In-Place Fix)
+    for (const repair of orphanRepairs) {
         const rangeKey = `${surahNumber}:${repair.ayahStart}-${repair.ayahEnd}`;
-        let autoNote = "";
-
-        if (repair.type === 'gap_fill') {
-            autoNote = `تم ترميم الفجوة تلقائياً (${rangeKey})`;
-            gapsFixed++;
-        } else {
-            autoNote = `تم إنشاء أصل حفظ للمراجعة اليتيمة (${rangeKey})`;
-            orphansFixed++;
-        }
-
-        // التحقق (Validation)
-        const validation = await sequenceService.validateSequence(
-            [{ surahNumber, ayahStart: repair.ayahStart, ayahEnd: repair.ayahEnd, canonicalKey: rangeKey }],
-            groupId,
-            'memorization',
-            repair.targetDate,
-            null, 
-            [] 
-        );
-
-        if (!validation.isValid) {
-            console.warn(`⚠️ AiScheduler skipped repair for ${rangeKey}: ${validation.message}`);
-            actionsTaken.push(`فشل إصلاح ${rangeKey}: ${validation.message}`);
-            continue; 
-        }
-
-        const newSegment = {
+        
+         const newSegment = {
             surahNumber: repair.surahNumber,
             surahNameCanonical: "", 
             ayahStart: repair.ayahStart,
             ayahEnd: repair.ayahEnd,
             canonicalKey: rangeKey,
             status: 'completed',
-            completionNote: autoNote
+            completionNote: `تم تثبيت الحفظ للمراجعة اليتيمة (${rangeKey})`
         };
 
         await Section.findByIdAndUpdate(repair.referenceSectionId, {
             $push: { memorizationMeta: newSegment }
         });
-
-        actionsTaken.push(`${autoNote}`);
+        
+        orphansFixed++;
+        actionsTaken.push(`تم تثبيت ${rangeKey} في مكانه`);
     }
 
     return {
@@ -237,6 +345,235 @@ class AiSchedulerService {
         stats: { gapsFixed, orphansFixed },
         message: `تمت عملية الإصلاح بنجاح. تم معالجة ${actionsTaken.length} مشكلة.`
     };
+  }
+
+  /**
+   * 🌊 Ripple Shift Algorithm (Resequence Strategy)
+   * يقوم بإعادة جدولة مقاطع السورة بدءاً من نقطة التعديل لملء الفجوات المتاحة في الأسبوع الحالي.
+   */
+  async applyRippleShift(groupId, surahNumber, gapSegments, startSectionId, options = {}) {
+      // 1. العثور على المقطع المرجعي ونقطة البداية
+      const startSection = await Section.findById(startSectionId);
+      if (!startSection) throw new Error("Start section not found");
+
+      const startDate = new Date(startSection.date);
+
+      // normalization for suggested dates
+      let { suggestedDates } = options;
+      if (suggestedDates && Array.isArray(suggestedDates)) {
+          // Sort dates to use closest first
+          suggestedDates = suggestedDates
+            .map(d => new Date(d))
+            .sort((a, b) => a - b)
+            // Filter only future or equal dates to start
+            .filter(d => d >= startDate);
+      } else {
+          suggestedDates = [];
+      }
+
+      // 2. جمع كل المقاطع المستقبلية لهذه السورة (بما فيها اليوم الحالي)
+      // نجمعها لنعيد توزيعها بالترتيب الصحيح
+      const futureSections = await Section.find({
+          group: groupId,
+          date: { $gte: startDate },
+          "memorizationMeta.surahNumber": surahNumber
+      }).sort({ date: 1, createdAt: 1 }).lean();
+
+      // 3. بناء طابور البيانات (Queue)
+      // نضيف الفجوات الجديدة أولاً، ثم نلحقها بباقي المقاطع الموجودة
+      const segmentQueue = [];
+
+      // أ) الفجوات الجديدة (Array support)
+      // Ensure gapSegments is an array
+      const gaps = Array.isArray(gapSegments) ? gapSegments : [gapSegments];
+      
+      for (const gap of gaps) {
+        const cleanGapSegment = { ...gap, isNewGap: true }; // Flag to identify for suggestedDates
+        delete cleanGapSegment._id;
+        segmentQueue.push(cleanGapSegment);
+      }
+
+      // ب) المقاطع المرحلة
+      for (const section of futureSections) {
+          // قد يحتوي اليوم على أكثر من مقطع لنفس السورة، نأخذهم بالترتيب
+          // ولكن: نتخطى المقطع الذي نبدأ منه (الفجوة) إذا كان موجوداً بالفعل لتجنب التكرار
+          // الخوارزمية هنا تفترض أننا نزيد مقطعاً، لذا نأخذ كل القديم ونزيحه
+          const relevantSegments = section.memorizationMeta
+            .filter(m => m.surahNumber === surahNumber)
+            .map(s => {
+                const clean = { ...s, isNewGap: false };
+                delete clean._id; 
+                return clean;
+            });
+          segmentQueue.push(...relevantSegments);
+      }
+
+      // 4. تنظيف الطريق (Clear Path)
+      // نحذف سجلات هذه السورة من كافة الأيام المستقبلية المتأثرة لنعيد كتابتها بانتظام
+      // هذا يضمن عدم وجود بقايا أو تداخل
+      const sectionIdsToClean = futureSections.map(s => s._id);
+      if (sectionIdsToClean.length > 0) {
+        await Section.updateMany(
+            { _id: { $in: sectionIdsToClean } },
+            { $pull: { memorizationMeta: { surahNumber: surahNumber } } }
+        );
+      }
+
+      // 5. إعادة التوزيع (Re-Distribution)
+      // نمشي يوماً بيوم من تاريخ البداية، ونملأ كل يوم متاح
+      const allowedDays = await this.detectWorkingDays(groupId);
+      let currentDate = new Date(startDate);
+      let safetyCounter = 0; // لمنع الحلقات اللانهائية
+      
+      while (segmentQueue.length > 0 && safetyCounter < 365) { 
+          // 365 days max lookahead per batch
+          
+          let canUseDay = false;
+
+          // Priority: Suggested Dates for New Gaps
+          // If the next segment is a "New Gap" and we have suggested dates left
+          const nextSegmentIsGap = segmentQueue[0].isNewGap;
+          if (nextSegmentIsGap && suggestedDates.length > 0) {
+              // Jump to the preferred date immediately
+              const preferredDate = suggestedDates.shift(); // Take and remove first date
+              // Ensure we don't go backwards
+              if (preferredDate >= currentDate) {
+                  currentDate = new Date(preferredDate);
+                  canUseDay = true; 
+                  // Note: We force use on suggested date regardless of working status, 
+                  // assuming user knows best.
+              }
+          } 
+          
+          if (!canUseDay) {
+            // Standard Logic
+            // دائماً نستخدم يوم البداية (لأنه المختار من المستخدم)
+            if (safetyCounter === 0 && currentDate.getTime() === startDate.getTime()) {
+                canUseDay = true;
+            } else {
+                // للأيام التالية، نفحص إذا كان يوم عمل
+                const dayIndex = currentDate.getDay();
+                // نسمح بالجمعة فقط إذا كانت هي يوم العمل الوحيد
+                const isFriday = dayIndex === 5;
+                const isWorkingDay = allowedDays.includes(dayIndex);
+                
+                if (isWorkingDay && (!isFriday || allowedDays.length === 1)) {
+                    canUseDay = true;
+                }
+            }
+
+            // بالإضافة لأيام العمل، إذا كان هناك "حصة" مسجلة في هذا اليوم أصلاً، نستخدمها
+            // (مثلاً حصة تعويضية في يوم عطلة)
+            let targetSection = await Section.findOne({ group: groupId, date: currentDate });
+            if (targetSection) canUseDay = true;
+          }
+
+          if (canUseDay) {
+              const segment = segmentQueue.shift();
+              // Remove our internal flag before saving
+              delete segment.isNewGap;
+
+              // تجهيز النص
+              let surahName = segment.surahNameCanonical || segment.surahNameInput;
+              if (!surahName) {
+                const surahInfo = getSurahByNumber(segment.surahNumber);
+                surahName = surahInfo ? surahInfo.name : `سورة ${segment.surahNumber}`;
+              }
+              const newDisplayText = `${surahName} ${segment.ayahStart}-${segment.ayahEnd}`;
+
+              // Find section again (currentDate might have changed)
+              let targetSection = await Section.findOne({ group: groupId, date: currentDate });
+
+              if (targetSection) {
+                  // تحديث مقطع موجود
+                   await Section.updateOne(
+                      { _id: targetSection._id },
+                      {
+                          $push: { memorizationMeta: segment },
+                          $set: { memorizationSection: newDisplayText } 
+                      }
+                  );
+              } else {
+                  // إنشاء يوم جديد (لأننا في نطاق الأيام المسموحة ولم نجد مقطع)
+                  const newKey = this.toDateKeyUTC(currentDate);
+                  await Section.create({
+                      group: groupId,
+                      date: currentDate,
+                      dateKey: newKey,
+                      teacher: startSection.teacher, 
+                      memorizationMeta: [segment],
+                      memorizationSection: newDisplayText,
+                      marksStatus: 'not_started'
+                  });
+              }
+              
+              // Only advance date if we are not processing multiple segments for the same day?
+              // Current logic puts one segment per day.
+              // If we want multiple gaps on same day, we need more logic.
+              // For now, one gap per day is safer for "Daily" marks.
+          }
+          
+          // الانتقال لليوم التالي
+          currentDate.setDate(currentDate.getDate() + 1);
+          safetyCounter++;
+      }
+  }
+
+  // Helper date key
+  toDateKeyUTC(d) {
+      const dt = new Date(d);
+      const y = dt.getUTCFullYear();
+      const m = String(dt.getUTCMonth() + 1).padStart(2, "0");
+      const day = String(dt.getUTCDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+  }
+
+  /**
+   * اكتشاف أيام عمل الحلقة بناءً على التاريخ السابق
+   */
+  async detectWorkingDays(groupId) {
+    // نجلب آخر 30 حصة لنعرف الأيام التي يجتمعون فيها عادة
+    const recent = await Section.find({ group: groupId }).sort({ date: -1 }).limit(30).select('date').lean();
+    
+    // إذا لم يكن لدينا بيانات كافية، نفترض الافتراضي (كل الأيام ما عدا الجمعة)
+    if (!recent || recent.length < 5) return [0, 1, 2, 3, 4, 6]; 
+
+    const days = new Set(recent.map(r => new Date(r.date).getDay()));
+    
+    // إذا كانت المجموعة تعمل فقط يوم الجمعة (نادر جداً)، نسمح به. غير ذلك نحذفه
+    if (days.has(5) && days.size > 1) {
+        // إذا كان عندهم أيام أخرى، نعتبر الجمعة استثناء ولا نجدول عليه
+        days.delete(5);
+    }
+    
+    return Array.from(days);
+  }
+
+  /**
+   * الحصول على يوم العمل التالي
+   */
+  getNextWorkingDay(date, allowedDays) {
+      const d = new Date(date);
+      // نحاول البحث عن يوم مناسب خلال الأسبوع القادم
+      for (let i = 0; i < 14; i++) { // Max lookahead 2 weeks
+        d.setDate(d.getDate() + 1);
+        const day = d.getDay();
+        
+        // القاعدة الذهبية: تجاوز الجمعة دائماً ما لم تكن المجموعة تعمل فقط يوم الجمعة
+        if (day === 5 && allowedDays.includes(5) && allowedDays.length === 1) {
+            return d;
+        }
+        if (day === 5) continue; 
+
+        // إذا كان اليوم ضمن أيام العمل المعتادة
+        if (allowedDays.includes(day)) {
+            return d;
+        }
+      }
+      // Fallback: Return next day if logic fails
+      const fallback = new Date(date);
+      fallback.setDate(fallback.getDate() + 1);
+      return fallback;
   }
 }
 

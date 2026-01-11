@@ -332,6 +332,10 @@ const DailyMarksPage = () => {
               onUpdateMark={openUpdateMarkModal}
               onDeleteMark={handlers.handleDeleteMark}
               onMarkChange={refetchMarksOnly}
+              onRefreshData={() => {
+                refetchSectionsOnly();
+                refetchStats();
+              }}
               selectedMonth={selectedMonth}
               selectedYear={selectedYear}
               selectedDay={selectedDay}

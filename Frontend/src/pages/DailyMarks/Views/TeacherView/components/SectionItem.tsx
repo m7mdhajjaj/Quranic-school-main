@@ -177,7 +177,30 @@ const SectionItemComponent = ({
               <BookOpen size={16} className="text-teal-600" />
               <span className="text-xs font-semibold text-teal-700">مقطع الحفظ</span>
             </div>
-            <p className="text-sm font-medium text-gray-800 pr-1 line-clamp-2 leading-relaxed">{section.memorizationSection || "لا يوجد"}</p>
+            {section.memorizationMeta && section.memorizationMeta.length > 0 ? (
+               <div className="space-y-2">
+                  <p className="text-sm font-medium text-gray-800 pr-1 line-clamp-2 leading-relaxed">{section.memorizationSection}</p>
+                  {/* ✅ Show AI Scheduler Notes (Auto-Repair) */}
+                  {section.memorizationMeta.some((m: any) => m.completionNote) && (
+                      <div className="bg-amber-50 border border-amber-100 rounded p-2 mt-2" onClick={e => e.stopPropagation()}>
+                          <div className="flex items-start gap-1.5">
+                              <span className="text-[10px] bg-amber-200 text-amber-800 px-1.5 rounded font-bold shrink-0 mt-0.5">تنبيه</span>
+                              <div className="text-xs text-amber-800 space-y-1">
+                                  {section.memorizationMeta
+                                      .filter((m: any) => m.completionNote)
+                                      .map((m: any, i: number) => (
+                                      <p key={i} className="leading-tight">
+                                           {m.completionNote}
+                                      </p>
+                                  ))}
+                              </div>
+                          </div>
+                      </div>
+                  )}
+               </div>
+            ) : (
+                <p className="text-sm font-medium text-gray-800 pr-1 line-clamp-2 leading-relaxed">{section.memorizationSection || "لا يوجد"}</p>
+            )}
           </div>
           <div className="bg-white/80 p-3.5 rounded-lg border border-emerald-200 shadow-sm">
             <div className="flex items-center gap-2 mb-2">

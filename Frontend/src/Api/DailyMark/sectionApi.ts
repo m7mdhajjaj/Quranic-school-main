@@ -195,10 +195,13 @@ export const updateSection = async (
 };
 
 // Delete section
-export const deleteSection = async (sectionId: string): Promise<boolean> => {
+export const deleteSection = async (id: string): Promise<boolean> => {
   try {
-    const response = await api.delete(`/daily-marks/sections/${sectionId}`);
-    return response.data.success || true;
+    const response = await api.delete(`/daily-marks/sections/${id}`);
+    if (response.data.success) {
+      return true;
+    }
+    throw new Error(response.data.message || "فشل في حذف المقطع");
   } catch (error) {
     console.error("Failed to delete section:", error);
     throw error;
@@ -364,10 +367,12 @@ export const checkSectionQuota = async (
  * 
  * @param groupId - معرّف الحلقة (Group ID)
  * @param surahNumber - رقم السورة (Surah Number)
+ * @param options - خيارات إضافية مثل الحد الأقصى للآيات (maxVersesPerDay)
  */
 export const repairSequence = async (
   groupId: string,
-  surahNumber?: number
+  surahNumber?: number,
+  options?: { maxVersesPerDay?: number }
 ): Promise<{ 
     repaired: boolean; 
     message: string; 
@@ -377,7 +382,8 @@ export const repairSequence = async (
   try {
     const response = await api.post("/daily-marks/sections/repair-sequence", {
         groupId,
-        surahNumber
+        surahNumber,
+        options
     });
     return response.data.data || response.data;
   } catch (error) {

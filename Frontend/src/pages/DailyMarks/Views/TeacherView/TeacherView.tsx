@@ -34,6 +34,7 @@ const TeacherViewComponent = ({
   onUpdateMark,
   onDeleteMark,
   onMarkChange,
+  onRefreshData, // ✅ Destructure
   selectedMonth,
   selectedYear,
   selectedDay,
@@ -250,6 +251,7 @@ const TeacherViewComponent = ({
       onBulkDelete={onBulkDelete}
       onEditSection={onEditSection}
       onDeleteSection={onDeleteSection}
+      onRefreshData={onRefreshData}
       onSectionSelect={handleSectionSelectWrapper}
       onFilterToggle={() => setIsFilterOpen(!isFilterOpen)}
       onStatusChange={setSelectedStatus}

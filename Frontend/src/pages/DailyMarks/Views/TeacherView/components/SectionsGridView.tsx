@@ -34,6 +34,7 @@ interface SectionsGridViewProps {
   onBulkDelete?: () => void;
   onEditSection?: (section: Section) => void;
   onDeleteSection?: (sectionId: string) => void;
+  onRefreshData?: () => void;
   onSectionSelect: (section: Section) => void;
   onFilterToggle: () => void;
   onStatusChange: (status: MarkStatus | null) => void;
@@ -66,6 +67,7 @@ export const SectionsGridView = ({
   onBulkDelete,
   onEditSection,
   onDeleteSection,
+  onRefreshData,
   onSectionSelect,
   onStatusChange,
 
@@ -198,7 +200,8 @@ export const SectionsGridView = ({
             <AiRepairButton 
               selectedGroup={selectedGroup} 
               onSuccess={() => {
-                if (onGroupSelect) onGroupSelect(selectedGroup);
+                if (onRefreshData) onRefreshData();
+                else if (onGroupSelect) onGroupSelect(selectedGroup);
               }}
             />
           </div>
