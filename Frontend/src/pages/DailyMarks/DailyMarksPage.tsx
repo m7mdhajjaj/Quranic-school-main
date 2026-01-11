@@ -256,18 +256,15 @@ const DailyMarksPage = () => {
         />
 
         {/* Groups Grid View - Teacher Only, shown when no group selected */}
-        {isTeacher && !loading && (!selectedGroup || selectedGroup === 'all') && (
+        {isTeacher && (!selectedGroup || selectedGroup === 'all') && (
           <GroupsGridView
             groupsWithStats={groupsWithStats}
             onGroupSelect={(g) => setGroupWithUrl(g, false)}
-            isLoading={isAnyGroupLoading}
+            isLoading={loading || isAnyGroupLoading}
           />
         )}
 
-        {/* Groups Grid Skeleton - Teacher Only while basic data loads */}
-        {isTeacher && loading && (!selectedGroup || selectedGroup === 'all') && (
-          <GroupsGridSkeleton count={teacherGroups?.length || 6} />
-        )}
+        {/* Groups Grid Skeleton - REMOVED per user request */}
 
         {/* Averages Section - Teacher Only */}
         {isTeacher && !loading && (
@@ -279,61 +276,53 @@ const DailyMarksPage = () => {
         )}
 
         {/* Main Content Area */}
-        {loading ? (
-          <div className="space-y-8">
-            {isTeacher && <AveragesBarSkeleton />}
-          </div>
+        {isStudent ? (
+          <StudentView
+            sections={sections}
+            marks={marks}
+            loadingMarks={loadingMarks || loading}
+            averages={averages}
+            selectedMonth={selectedMonth ?? currentMonth}
+            selectedYear={selectedYear ?? currentYear}
+            studentId={selectedStudentId}
+            onMonthChange={(month: number) => setSelectedMonth(month)}
+            onYearChange={(year: number) => setSelectedYear(year)}
+          />
         ) : (
-          <>
-            {isStudent ? (
-              <StudentView
-                sections={sections}
-                marks={marks}
-                loadingMarks={loadingMarks}
-                averages={averages}
-                selectedMonth={selectedMonth ?? currentMonth}
-                selectedYear={selectedYear ?? currentYear}
-                studentId={selectedStudentId}
-                onMonthChange={(month: number) => setSelectedMonth(month)}
-                onYearChange={(year: number) => setSelectedYear(year)}
-              />
-            ) : (
-              <Suspense fallback={<AveragesBarSkeleton />}>
-                <TeacherView
-                  students={students}
-                  selectedGroup={selectedGroup}
-                  teacherGroups={teacherGroups}
-                  sections={sections}
-                  marks={marks}
-                  loadingMarks={loadingMarks || isPending}
-                  onBulkMarks={() => {}}
-                  onGroupSelect={(g) => setGroupWithUrl(g, false)}
-                  onAddSection={handleAddSectionClick}
-                  onEditSection={openEditSectionModal}
-                  onDeleteSection={handlers.handleDeleteSection}
-                  onBulkDelete={() => state.setIsBulkDeleteModalOpen(true)}
-                  onAddMark={openAddMarkModal}
-                  onUpdateMark={openUpdateMarkModal}
-                  onDeleteMark={handlers.handleDeleteMark}
-                  onMarkChange={refetchMarksOnly}
-                  selectedMonth={selectedMonth}
-                  selectedYear={selectedYear}
-                  selectedDay={selectedDay}
-                  onMonthChange={setSelectedMonth}
-                  onYearChange={setSelectedYear}
-                  onDayChange={setSelectedDay}
-                  searchQuery={state.searchQuery}
-                  onSearchChange={state.setSearchQuery}
-                  startDate={startDate}
-                  endDate={endDate}
-                  onStartDateChange={setStartDate}
-                  onEndDateChange={setEndDate}
-                  selectedFilterMode={filterMode}
-                  onFilterModeChange={setFilterMode}
-                />
-              </Suspense>
-            )}
-          </>
+          <Suspense fallback={<div className="h-40 animate-pulse bg-gray-100 rounded-xl"></div>}>
+            <TeacherView
+              students={students}
+              selectedGroup={selectedGroup}
+              teacherGroups={teacherGroups}
+              sections={sections}
+              marks={marks}
+              loadingMarks={loadingMarks || isPending || loading}
+              onBulkMarks={() => {}}
+              onGroupSelect={(g) => setGroupWithUrl(g, false)}
+              onAddSection={handleAddSectionClick}
+              onEditSection={openEditSectionModal}
+              onDeleteSection={handlers.handleDeleteSection}
+              onBulkDelete={() => state.setIsBulkDeleteModalOpen(true)}
+              onAddMark={openAddMarkModal}
+              onUpdateMark={openUpdateMarkModal}
+              onDeleteMark={handlers.handleDeleteMark}
+              onMarkChange={refetchMarksOnly}
+              selectedMonth={selectedMonth}
+              selectedYear={selectedYear}
+              selectedDay={selectedDay}
+              onMonthChange={setSelectedMonth}
+              onYearChange={setSelectedYear}
+              onDayChange={setSelectedDay}
+              searchQuery={state.searchQuery}
+              onSearchChange={state.setSearchQuery}
+              startDate={startDate}
+              endDate={endDate}
+              onStartDateChange={setStartDate}
+              onEndDateChange={setEndDate}
+              selectedFilterMode={filterMode}
+              onFilterModeChange={setFilterMode}
+            />
+          </Suspense>
         )}
       </div>
 

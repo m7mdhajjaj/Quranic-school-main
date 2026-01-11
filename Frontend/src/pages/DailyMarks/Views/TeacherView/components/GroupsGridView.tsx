@@ -49,10 +49,8 @@ export const GroupsGridView = ({
   onGroupSelect,
   isLoading = false 
 }: GroupsGridViewProps) => {
-  if (isLoading && groupsWithStats.length === 0) {
-    return <GroupsGridSkeleton count={6} />;
-  }
-
+  // Skeleton logic removed per user request
+  
   return (
     <div className="animate-fade-in">
       <div className="mb-6">
@@ -60,9 +58,6 @@ export const GroupsGridView = ({
         <p className="text-gray-600">اختر حلقة لعرض مقاطعها وعلاماتها</p>
       </div>
       
-      {isLoading ? (
-        <GroupsGridCardsSkeleton count={groupsWithStats.length || 6} />
-      ) : (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {groupsWithStats.map((group) => (
           <Card
@@ -111,7 +106,6 @@ export const GroupsGridView = ({
           </Card>
         ))}
       </div>
-      )}
     </div>
   );
 };
