@@ -119,6 +119,12 @@ export default function TabLayout() {
             href: null, // Hide from tabs - accessible from drawer
           }}
         />
+        <Tabs.Screen
+          name="warnings"
+          options={{
+            href: null, // Hide from tabs - accessible from drawer
+          }}
+        />
       </Tabs>
     </View>
   );
