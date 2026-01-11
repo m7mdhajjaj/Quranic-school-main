@@ -140,6 +140,7 @@ export const DrawerMenu: React.FC<DrawerMenuProps> = ({ isOpen, onClose }) => {
           style={[styles.drawer, { transform: [{ translateX: slideAnim }] }]}>
           <ScrollView
             style={styles.content}
+            contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}>
             {/* Header */}
             <View style={styles.header}>
@@ -297,7 +298,10 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  scrollContent: {
     padding: 24,
+    paddingBottom: 100,
   },
   header: {
     flexDirection: "row",
