@@ -592,7 +592,7 @@ class AiSchedulerService {
    */
   async detectWorkingDays(groupId) {
     // 1. Check Group Settings first (Source of Truth)
-    const Group = require('../../../schema/Group'); // Lazy load
+    const Group = require('../../schema/Group'); // Adjusted path from services/DailyMark/
     const group = await Group.findById(groupId).select('schedule').lean();
     
     if (group && group.schedule) {
