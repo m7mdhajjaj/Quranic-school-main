@@ -132,6 +132,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 24,
+    paddingTop: 40, // Space for status bar (clock, battery, etc.)
   },
   logoContainer: {
     alignItems: "center",
