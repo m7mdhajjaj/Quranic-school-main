@@ -12,6 +12,7 @@ import type {
 } from "../types/timetable.types";
 import { WEEK_DAYS, isSummerTime } from "../utils";
 import { Calendar, Clock, Users, UserCircle } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import { 
   useSessionForm, 
   useTeachers, 
@@ -39,11 +40,17 @@ export const SessionModal: React.FC<SessionModalProps> = ({
   role,
   teacherGroups = [],
 }) => {
+  const [searchParams] = useSearchParams();
+  const initialSectionId = searchParams.get('sectionId') || undefined;
+  const initialGroupName = searchParams.get('groupName') || undefined;
+
   // ✅ استخدام الـ hooks المنفصلة لتنظيم أفضل
   const { formData, setFormData, hours, bookedHours, handleStartHourChange, resetForm } = useSessionForm({
     editingSession,
     role,
     teacherGroups,
+    initialSectionId,
+    initialGroupName,
   });
 
   const { teachers, loadingTeachers } = useTeachers({
@@ -151,7 +158,7 @@ export const SessionModal: React.FC<SessionModalProps> = ({
                 )}
 
                 {/* عرض قائمة حلقات المعلم للاختيار */}
-                {((role === "admin" && formData.teacherId) || (role === "teacher" && teacherGroups.length > 0)) && (
+                {!formData.sectionId && ((role === "admin" && formData.teacherId) || (role === "teacher" && teacherGroups.length > 0)) && (
                     <div>
                       <label className="block text-sm font-bold text-emerald-900 mb-3">
                         اختر حلقة للموعد *
@@ -211,6 +218,7 @@ export const SessionModal: React.FC<SessionModalProps> = ({
                 </div>
               </div>
               {/* اليوم */}
+              {!formData.sectionId && (
               <div className="mb-5">
                 <label className="block text-sm font-bold text-blue-900 mb-3">
                   اليوم{' '}
@@ -244,6 +252,7 @@ export const SessionModal: React.FC<SessionModalProps> = ({
                   })}
                 </div>
               </div>
+              )}
 
               {/* Time Picker أفقي */}
               <div className="space-y-5">

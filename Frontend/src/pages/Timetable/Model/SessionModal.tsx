@@ -12,6 +12,7 @@ import type {
 } from "../types/timetable.types";
 import { WEEK_DAYS, isSummerTime } from "../utils";
 import { Calendar, Clock, Users, UserCircle } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import { 
   useSessionForm, 
   useTeachers, 
@@ -43,13 +44,20 @@ export const SessionModal: React.FC<SessionModalProps> = ({
   initialSectionId,
   initialGroupName,
 }) => {
+  const [searchParams] = useSearchParams();
+  const urlSectionId = searchParams.get('sectionId');
+  const urlGroupName = searchParams.get('groupName');
+
+  const effectiveSectionId = initialSectionId || urlSectionId || undefined;
+  const effectiveGroupName = initialGroupName || urlGroupName || undefined;
+
   // ✅ استخدام الـ hooks المنفصلة لتنظيم أفضل
   const { formData, setFormData, hours, bookedHours, handleStartHourChange, resetForm } = useSessionForm({
     editingSession,
     role,
     teacherGroups,
-    initialSectionId,
-    initialGroupName,
+    initialSectionId: effectiveSectionId,
+    initialGroupName: effectiveGroupName,
   });
 
   const { teachers, loadingTeachers } = useTeachers({
@@ -99,7 +107,7 @@ export const SessionModal: React.FC<SessionModalProps> = ({
         <div className="flex-1 overflow-y-auto px-1">
           <div className="space-y-6">
             {/* 1️⃣ قسم معلومات المعلم والحلقة - الأول */}
-            {(role === "admin" || role === "teacher") && (
+            {!formData.sectionId && (role === "admin" || role === "teacher") && (
               <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-4 border-2 border-emerald-200">
                 <h3 className="text-base font-bold text-emerald-900 mb-4 flex items-center gap-2">
                   <UserCircle className="w-5 h-5" />
@@ -217,6 +225,7 @@ export const SessionModal: React.FC<SessionModalProps> = ({
                 </div>
               </div>
               {/* اليوم */}
+              {!formData.sectionId && (
               <div className="mb-5">
                 <label className="block text-sm font-bold text-blue-900 mb-3">اليوم</label>
                 <div className="grid grid-cols-3 sm:grid-cols-7 gap-2">
@@ -235,6 +244,7 @@ export const SessionModal: React.FC<SessionModalProps> = ({
                   ))}
                 </div>
               </div>
+              )}
 
               {/* Time Picker أفقي */}
               <div className="space-y-5">
