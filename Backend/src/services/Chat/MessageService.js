@@ -8,7 +8,10 @@ const { sendPushNotification } = require("../../Notifications/Core/PushSender");
 const ContactsService = require("./ContactsService");
 const ConversationService = require("./ConversationService");
 const GroupService = require("./GroupService");
-const { notifyNewMessage, notifyMention } = require("../../Notifications/Handlers/ChatHandler");
+const {
+  notifyNewMessage,
+  notifyMention,
+} = require("../../Notifications/Handlers/ChatHandler");
 const Student = require("../../schema/Student");
 const Teacher = require("../../schema/Teacher");
 const Admin = require("../../schema/Admin");
@@ -20,8 +23,9 @@ class MessageService {
    * Send Message (DM or GROUP)
    */
   async sendMessage(senderId, senderRole, data) {
-    const normalizedSenderRole = senderRole.charAt(0).toUpperCase() + senderRole.slice(1);
-    
+    const normalizedSenderRole =
+      senderRole.charAt(0).toUpperCase() + senderRole.slice(1);
+
     // Validate input
     const validated = sendMessageSchema.parse(data);
     // Pass mentions through validation if not already
@@ -39,13 +43,20 @@ class MessageService {
    */
   async _sendDMMessage(senderId, senderRole, data) {
     // Get recipient role
-    const recipientRole = await ContactsService.getRecipientRole(data.recipientId);
+    const recipientRole = await ContactsService.getRecipientRole(
+      data.recipientId
+    );
     if (!recipientRole) {
       throw new Error("Recipient not found");
     }
 
     // Check permissions
-    const allowed = await ContactsService.canChat(senderId, senderRole, data.recipientId, recipientRole);
+    const allowed = await ContactsService.canChat(
+      senderId,
+      senderRole,
+      data.recipientId,
+      recipientRole
+    );
     if (!allowed) {
       throw new Error("Not authorized to chat with this user");
     }
@@ -71,7 +82,7 @@ class MessageService {
       clientTempId: data.clientTempId,
       mentions: data.mentions || [], // Add mentions
       deliveredAt: null,
-      readAt: null
+      readAt: null,
     });
 
     // Populate sender info
@@ -91,16 +102,22 @@ class MessageService {
     // Send In-App Notification
     const senderName = `${message.sender.firstName} ${message.sender.lastName}`;
     await notifyNewMessage(
-      data.recipientId, 
-      recipientRole, 
-      senderName, 
-      data.text, 
-      conversation._id, 
+      data.recipientId,
+      recipientRole,
+      senderName,
+      data.text,
+      conversation._id,
       "DM"
     );
 
     // Send Push Notification if offline
-    await this._sendPushIfOffline(data.recipientId, senderId, senderRole, data.text, conversation._id);
+    await this._sendPushIfOffline(
+      data.recipientId,
+      senderId,
+      senderRole,
+      data.text,
+      conversation._id
+    );
 
     return message;
   }
@@ -110,7 +127,11 @@ class MessageService {
    */
   async _sendGroupMessage(senderId, senderRole, data) {
     // Check group membership and permissions
-    const allowed = await GroupService.canSendToGroup(senderId, senderRole, data.groupId);
+    const allowed = await GroupService.canSendToGroup(
+      senderId,
+      senderRole,
+      data.groupId
+    );
     if (!allowed) {
       throw new Error("Not authorized to send to this group");
     }
@@ -122,19 +143,19 @@ class MessageService {
     const processedMentions = [];
     if (data.mentions && Array.isArray(data.mentions)) {
       for (const m of data.mentions) {
-        if (m.type === 'all') {
-          processedMentions.push({ type: 'all' });
-        } else if (m.type === 'user' && m.user) {
-          const userId = typeof m.user === 'object' ? m.user._id : m.user;
-          
-          let userModel = 'Student';
-          if (await Teacher.exists({ _id: userId })) userModel = 'Teacher';
-          else if (await Admin.exists({ _id: userId })) userModel = 'Admin';
+        if (m.type === "all") {
+          processedMentions.push({ type: "all" });
+        } else if (m.type === "user" && m.user) {
+          const userId = typeof m.user === "object" ? m.user._id : m.user;
+
+          let userModel = "Student";
+          if (await Teacher.exists({ _id: userId })) userModel = "Teacher";
+          else if (await Admin.exists({ _id: userId })) userModel = "Admin";
 
           processedMentions.push({
-            type: 'user',
+            type: "user",
             user: userId,
-            userModel: userModel
+            userModel: userModel,
           });
         }
       }
@@ -151,7 +172,7 @@ class MessageService {
       replyTo: data.replyTo,
       clientTempId: data.clientTempId,
       mentions: processedMentions,
-      deliveredTo: [] // Initialize empty
+      deliveredTo: [], // Initialize empty
     };
 
     // ✅ Check for Online Members (for immediate "Delivered" status)
@@ -159,20 +180,25 @@ class MessageService {
       // Get all students in group + teacher
       const group = await Group.findById(data.groupId);
       if (group) {
-        const students = await Student.find({ group: group.name }).select('_id');
-        const memberIds = students.map(s => s._id.toString());
+        const students = await Student.find({ group: group.name }).select(
+          "_id"
+        );
+        const memberIds =
+          students && Array.isArray(students)
+            ? students.map((s) => s._id.toString())
+            : [];
         if (group.teacher) memberIds.push(group.teacher.toString());
 
         // Filter out sender
-        const recipients = memberIds.filter(id => id !== senderId.toString());
-        
+        const recipients = memberIds.filter((id) => id !== senderId.toString());
+
         // Check who is online
         const now = new Date();
-        recipients.forEach(recipientId => {
+        recipients.forEach((recipientId) => {
           if (global.isUserOnline && global.isUserOnline(recipientId)) {
             messageData.deliveredTo.push({
               userId: recipientId,
-              at: now
+              at: now,
             });
           }
         });
@@ -199,22 +225,22 @@ class MessageService {
 
     // Send In-App Notifications
     const senderName = `${message.sender.firstName} ${message.sender.lastName}`;
-    
+
     // Handle Mentions Notifications
     if (data.mentions && data.mentions.length > 0) {
       const group = await Group.findById(data.groupId);
       const groupName = group ? group.name : "المجموعة";
 
       for (const mention of data.mentions) {
-        if (mention.type === 'all') {
+        if (mention.type === "all") {
           // Notify everyone (handled by _notifyGroupMembers but with special title maybe?)
           // For now, standard notification covers it, or we can send a special "Mention All"
           // Let's stick to standard group notification but ensure it goes out
-        } else if (mention.type === 'user' && mention.user) {
+        } else if (mention.type === "user" && mention.user) {
           // Specific user mention
           await notifyMention(
             mention.user,
-            'Student', // Assuming mostly students are mentioned, or fetch role
+            "Student", // Assuming mostly students are mentioned, or fetch role
             senderName,
             data.text,
             data.groupId, // Conversation ID for group is group ID usually or conversation ID
@@ -228,7 +254,14 @@ class MessageService {
     // Standard Group Notification (skips if already mentioned to avoid double? Or just send standard)
     // Usually, if mentioned, you get a mention notification. If not, you get a message notification.
     // We can filter out mentioned users from standard notification list in _notifyGroupMembers
-    await this._notifyGroupMembers(data.groupId, senderId, senderName, data.text, "GROUP", data.mentions);
+    await this._notifyGroupMembers(
+      data.groupId,
+      senderId,
+      senderName,
+      data.text,
+      "GROUP",
+      data.mentions
+    );
 
     return message;
   }
@@ -238,17 +271,17 @@ class MessageService {
    */
   async getMessages(userId, role, query) {
     const { chatType, targetId, limit = 50, before } = query;
-    
-    const filter = { 
-      chatType, 
-      deletedForAll: false, 
-      deletedFor: { $ne: userId } 
+
+    const filter = {
+      chatType,
+      deletedForAll: false,
+      deletedFor: { $ne: userId },
     };
-    
+
     if (chatType === "DM") {
       filter.$or = [
         { sender: userId, recipient: targetId },
-        { sender: targetId, recipient: userId }
+        { sender: targetId, recipient: userId },
       ];
     } else {
       filter.groupId = targetId;
@@ -267,14 +300,14 @@ class MessageService {
       .lean();
 
     // Transform 'at' to 'seenAt'/'deliveredAt' for frontend compatibility
-    messages.forEach(msg => {
+    messages.forEach((msg) => {
       if (msg.seenBy) {
-        msg.seenBy.forEach(s => {
+        msg.seenBy.forEach((s) => {
           if (s.at) s.seenAt = s.at;
         });
       }
       if (msg.deliveredTo) {
-        msg.deliveredTo.forEach(d => {
+        msg.deliveredTo.forEach((d) => {
           if (d.at) d.deliveredAt = d.at;
         });
       }
@@ -283,9 +316,9 @@ class MessageService {
     // ✅ Populate seenBy users for Group Chat (Manual Population)
     if (chatType === "GROUP" && messages.length > 0) {
       const userIds = new Set();
-      messages.forEach(msg => {
+      messages.forEach((msg) => {
         if (msg.seenBy) {
-          msg.seenBy.forEach(s => {
+          msg.seenBy.forEach((s) => {
             if (s.userId) userIds.add(s.userId.toString());
           });
         }
@@ -295,19 +328,27 @@ class MessageService {
         const ids = Array.from(userIds);
         const Teacher = require("../../schema/Teacher");
         const Admin = require("../../schema/Admin");
-        
+
         const [students, teachers, admins] = await Promise.all([
-          Student.find({ _id: { $in: ids } }).select("firstName lastName avatar").lean(),
-          Teacher.find({ _id: { $in: ids } }).select("firstName lastName avatar").lean(),
-          Admin.find({ _id: { $in: ids } }).select("firstName lastName avatar").lean()
+          Student.find({ _id: { $in: ids } })
+            .select("firstName lastName avatar")
+            .lean(),
+          Teacher.find({ _id: { $in: ids } })
+            .select("firstName lastName avatar")
+            .lean(),
+          Admin.find({ _id: { $in: ids } })
+            .select("firstName lastName avatar")
+            .lean(),
         ]);
 
         const userMap = new Map();
-        [...students, ...teachers, ...admins].forEach(u => userMap.set(u._id.toString(), u));
+        [...students, ...teachers, ...admins].forEach((u) =>
+          userMap.set(u._id.toString(), u)
+        );
 
-        messages.forEach(msg => {
+        messages.forEach((msg) => {
           if (msg.seenBy) {
-            msg.seenBy.forEach(s => {
+            msg.seenBy.forEach((s) => {
               if (s.userId) {
                 s.user = userMap.get(s.userId.toString());
               }
@@ -328,21 +369,21 @@ class MessageService {
       const messages = await Chat.find({
         chatType: "DM",
         recipient: userId,
-        deliveredAt: null
+        deliveredAt: null,
       });
 
       if (messages.length === 0) return;
 
       const now = new Date();
-      
+
       for (const msg of messages) {
         msg.deliveredAt = now;
         await msg.save();
-        
+
         if (global.io) {
           global.io.to(msg.sender.toString()).emit("message:delivered", {
             messageId: msg._id,
-            deliveredAt: now
+            deliveredAt: now,
           });
         }
       }
@@ -363,23 +404,26 @@ class MessageService {
     const now = new Date();
 
     if (message.chatType === "DM") {
-      if (message.recipient.toString() === userId.toString() && !message.deliveredAt) {
+      if (
+        message.recipient.toString() === userId.toString() &&
+        !message.deliveredAt
+      ) {
         message.deliveredAt = now;
         await message.save();
-        
+
         // Notify sender
         if (global.io) {
           global.io.to(message.sender.toString()).emit("message:delivered", {
             messageId: message._id,
-            deliveredAt: now
+            deliveredAt: now,
           });
         }
       }
     } else if (message.chatType === "GROUP") {
       const alreadyDelivered = message.deliveredTo.find(
-        d => d.userId.toString() === userId.toString()
+        (d) => d.userId.toString() === userId.toString()
       );
-      
+
       if (!alreadyDelivered) {
         // ✅ Fix: Use 'at' to match Schema
         message.deliveredTo.push({ userId, at: now });
@@ -390,7 +434,7 @@ class MessageService {
           global.io.to(`group:${message.groupId}`).emit("message:delivered", {
             messageId: message._id,
             userId: userId,
-            deliveredAt: now
+            deliveredAt: now,
           });
         }
       }
@@ -411,54 +455,71 @@ class MessageService {
     const now = new Date();
 
     if (message.chatType === "DM") {
-      if (message.recipient.toString() === userId.toString() && !message.readAt) {
+      if (
+        message.recipient.toString() === userId.toString() &&
+        !message.readAt
+      ) {
         message.readAt = now;
         if (!message.deliveredAt) {
           message.deliveredAt = now;
         }
         await message.save();
-        
+
         // Reset unread count
-        await ConversationService.resetUnreadCount(userId, message.chatType, message.sender);
-        
+        await ConversationService.resetUnreadCount(
+          userId,
+          message.chatType,
+          message.sender
+        );
+
         // Notify sender
         if (global.io) {
           global.io.to(message.sender.toString()).emit("message:read", {
             messageId: message._id,
-            readAt: now
+            readAt: now,
           });
         }
       }
     } else if (message.chatType === "GROUP") {
       const alreadySeen = message.seenBy.find(
-        s => s.userId.toString() === userId.toString()
+        (s) => s.userId.toString() === userId.toString()
       );
-      
+
       if (!alreadySeen) {
         // ✅ Fix: Use 'at' to match Schema
         message.seenBy.push({ userId, at: now });
-        
+
         // Also mark as delivered if not already
-        if (!message.deliveredTo.find(d => d.userId.toString() === userId.toString())) {
+        if (
+          !message.deliveredTo.find(
+            (d) => d.userId.toString() === userId.toString()
+          )
+        ) {
           message.deliveredTo.push({ userId, at: now });
         }
-        
+
         await message.save();
-        
+
         // Reset unread count for group
-        await ConversationService.resetUnreadCount(userId, message.chatType, message.groupId);
+        await ConversationService.resetUnreadCount(
+          userId,
+          message.chatType,
+          message.groupId
+        );
 
         // ✅ Notify Group (Real-time read status)
         // We need to send user details for the avatar
         const userModel = await this._getUserModel(userId);
-        const user = await userModel.findById(userId).select("firstName lastName avatar");
+        const user = await userModel
+          .findById(userId)
+          .select("firstName lastName avatar");
 
         if (global.io) {
           global.io.to(`group:${message.groupId}`).emit("message:read", {
             messageId: message._id,
             userId: userId,
             seenAt: now,
-            user: user // Send user details for avatar display
+            user: user, // Send user details for avatar display
           });
         }
       }
@@ -469,7 +530,7 @@ class MessageService {
 
   async _getUserModel(userId) {
     // Helper to find user model (Student, Teacher, Admin)
-    // This is a bit of a hack, ideally we know the role. 
+    // This is a bit of a hack, ideally we know the role.
     // But for now we can try to find in each collection or pass role.
     // Since we don't have role here easily without querying, let's try:
     const Student = require("../../schema/Student/Student");
@@ -489,14 +550,15 @@ class MessageService {
     if (!message) {
       throw new Error("Message not found");
     }
-    
+
     // Check if sender
     if (message.sender.toString() !== userId.toString()) {
       throw new Error("Not authorized");
     }
 
     // Check if within 5 minutes
-    const timeDiff = (Date.now() - new Date(message.createdAt).getTime()) / 1000 / 60;
+    const timeDiff =
+      (Date.now() - new Date(message.createdAt).getTime()) / 1000 / 60;
     if (timeDiff > 5) {
       throw new Error("Cannot edit message after 5 minutes");
     }
@@ -518,10 +580,14 @@ class MessageService {
     // Emit update
     if (global.io) {
       if (message.chatType === "DM") {
-        global.io.to(message.recipient.toString()).emit("message:edited", message);
+        global.io
+          .to(message.recipient.toString())
+          .emit("message:edited", message);
         global.io.to(message.sender.toString()).emit("message:edited", message);
       } else {
-        global.io.to(`group:${message.groupId}`).emit("message:edited", message);
+        global.io
+          .to(`group:${message.groupId}`)
+          .emit("message:edited", message);
       }
     }
 
@@ -544,7 +610,8 @@ class MessageService {
       }
 
       // 2. Check Time Limit (3 minutes)
-      const timeDiff = (Date.now() - new Date(message.createdAt).getTime()) / 1000 / 60;
+      const timeDiff =
+        (Date.now() - new Date(message.createdAt).getTime()) / 1000 / 60;
       if (timeDiff > 3) {
         throw new Error("Cannot delete message for everyone after 3 minutes");
       }
@@ -552,16 +619,22 @@ class MessageService {
       // 3. Check Read Status
       // For DM: check readAt
       if (message.chatType === "DM" && message.readAt) {
-        throw new Error("Cannot delete message for everyone after it has been read");
+        throw new Error(
+          "Cannot delete message for everyone after it has been read"
+        );
       }
       // For Group: check if anyone has seen it (optional strictness, usually just time limit is enough for groups but user asked for strict rules)
-      if (message.chatType === "GROUP" && message.seenBy && message.seenBy.length > 0) {
-         // User didn't specify group rules explicitly, but "read status" implies seen.
-         // I will stick to time limit for groups to be safe, or check if *all* read?
-         // Usually "Delete for everyone" works even if read in WhatsApp, but user said "HIDE... IF... The message is read".
-         // I will enforce it for DM. For Group it's complex. I'll enforce for DM mainly.
+      if (
+        message.chatType === "GROUP" &&
+        message.seenBy &&
+        message.seenBy.length > 0
+      ) {
+        // User didn't specify group rules explicitly, but "read status" implies seen.
+        // I will stick to time limit for groups to be safe, or check if *all* read?
+        // Usually "Delete for everyone" works even if read in WhatsApp, but user said "HIDE... IF... The message is read".
+        // I will enforce it for DM. For Group it's complex. I'll enforce for DM mainly.
       }
-      
+
       message.deletedForAll = true;
       message.text = "تم حذف هذه الرسالة"; // Placeholder text
       message.attachments = []; // Remove attachments
@@ -570,10 +643,16 @@ class MessageService {
       // Emit deletion
       if (global.io) {
         if (message.chatType === "DM") {
-          global.io.to(message.recipient.toString()).emit("message:deleted", { messageId, deletedForAll: true });
-          global.io.to(message.sender.toString()).emit("message:deleted", { messageId, deletedForAll: true });
+          global.io
+            .to(message.recipient.toString())
+            .emit("message:deleted", { messageId, deletedForAll: true });
+          global.io
+            .to(message.sender.toString())
+            .emit("message:deleted", { messageId, deletedForAll: true });
         } else {
-          global.io.to(`group:${message.groupId}`).emit("message:deleted", { messageId, deletedForAll: true });
+          global.io
+            .to(`group:${message.groupId}`)
+            .emit("message:deleted", { messageId, deletedForAll: true });
         }
       }
     } else {
@@ -586,13 +665,13 @@ class MessageService {
         const filter = {
           chatType: message.chatType,
           deletedForAll: false,
-          deletedFor: { $ne: userId }
+          deletedFor: { $ne: userId },
         };
 
         if (message.chatType === "DM") {
           filter.$or = [
             { sender: message.sender, recipient: message.recipient },
-            { sender: message.recipient, recipient: message.sender }
+            { sender: message.recipient, recipient: message.sender },
           ];
         } else {
           filter.groupId = message.groupId;
@@ -604,21 +683,24 @@ class MessageService {
 
         // ✅ Emit conversation:updated to the user to update sidebar preview
         if (global.io) {
-          const targetId = message.chatType === "DM" 
-            ? (message.sender.toString() === userId.toString() ? message.recipient : message.sender)
-            : message.groupId;
+          const targetId =
+            message.chatType === "DM"
+              ? message.sender.toString() === userId.toString()
+                ? message.recipient
+                : message.sender
+              : message.groupId;
 
           // 1. Emit conversation update (for sidebar)
           global.io.to(userId.toString()).emit("conversation:updated", {
             chatType: message.chatType,
             targetId: targetId,
-            lastMessage: newLastMessage || null
+            lastMessage: newLastMessage || null,
           });
 
           // 2. Emit message deletion (for chat window in other tabs)
-          global.io.to(userId.toString()).emit("message:deleted", { 
-            messageId, 
-            deletedForAll: false 
+          global.io.to(userId.toString()).emit("message:deleted", {
+            messageId,
+            deletedForAll: false,
           });
         }
       }
@@ -641,8 +723,10 @@ class MessageService {
 
     // Verify permission
     if (targetMessage.chatType === "DM") {
-      if (targetMessage.sender._id.toString() !== userId.toString() && 
-          targetMessage.recipient.toString() !== userId.toString()) {
+      if (
+        targetMessage.sender._id.toString() !== userId.toString() &&
+        targetMessage.recipient.toString() !== userId.toString()
+      ) {
         throw new Error("Not authorized");
       }
     } else {
@@ -654,13 +738,19 @@ class MessageService {
     const baseFilter = {
       chatType: targetMessage.chatType,
       deletedForAll: false,
-      deletedFor: { $ne: userId }
+      deletedFor: { $ne: userId },
     };
 
     if (targetMessage.chatType === "DM") {
       baseFilter.$or = [
-        { sender: targetMessage.sender._id, recipient: targetMessage.recipient },
-        { sender: targetMessage.recipient, recipient: targetMessage.sender._id }
+        {
+          sender: targetMessage.sender._id,
+          recipient: targetMessage.recipient,
+        },
+        {
+          sender: targetMessage.recipient,
+          recipient: targetMessage.sender._id,
+        },
       ];
     } else {
       baseFilter.groupId = targetMessage.groupId;
@@ -669,31 +759,27 @@ class MessageService {
     // Get 25 messages BEFORE
     const olderMessages = await Chat.find({
       ...baseFilter,
-      createdAt: { $lt: targetMessage.createdAt }
+      createdAt: { $lt: targetMessage.createdAt },
     })
-    .sort({ createdAt: -1 })
-    .limit(25)
-    .populate("sender", "firstName lastName avatar")
-    .populate("replyTo")
-    .lean();
+      .sort({ createdAt: -1 })
+      .limit(25)
+      .populate("sender", "firstName lastName avatar")
+      .populate("replyTo")
+      .lean();
 
     // Get 25 messages AFTER
     const newerMessages = await Chat.find({
       ...baseFilter,
-      createdAt: { $gt: targetMessage.createdAt }
+      createdAt: { $gt: targetMessage.createdAt },
     })
-    .sort({ createdAt: 1 })
-    .limit(25)
-    .populate("sender", "firstName lastName avatar")
-    .populate("replyTo")
-    .lean();
+      .sort({ createdAt: 1 })
+      .limit(25)
+      .populate("sender", "firstName lastName avatar")
+      .populate("replyTo")
+      .lean();
 
     // Combine: Older (reversed to be chrono) + Target + Newer
-    return [
-      ...olderMessages.reverse(),
-      targetMessage,
-      ...newerMessages
-    ];
+    return [...olderMessages.reverse(), targetMessage, ...newerMessages];
   }
 
   /**
@@ -706,20 +792,20 @@ class MessageService {
     const messageObj = message.toObject();
 
     // 1. Confirm to Sender (Always)
-    global.io.to(senderId.toString()).emit("message:sent", { 
-      tempId: clientTempId, 
-      message: messageObj
+    global.io.to(senderId.toString()).emit("message:sent", {
+      tempId: clientTempId,
+      message: messageObj,
     });
 
     // 2. Broadcast Message & Update Conversation
     if (chatType === "DM") {
       const recipientId = data.recipientId;
-      
+
       // Notify Recipient
       global.io.to(recipientId.toString()).emit("message:new", {
         ...messageObj,
         chatType: "DM",
-        from: senderId.toString()
+        from: senderId.toString(),
       });
 
       // Update Conversation (Recipient)
@@ -727,7 +813,7 @@ class MessageService {
         chatType: "DM",
         targetId: senderId.toString(),
         lastMessage: messageObj,
-        timestamp: message.createdAt
+        timestamp: message.createdAt,
       });
 
       // Update Conversation (Sender)
@@ -735,9 +821,8 @@ class MessageService {
         chatType: "DM",
         targetId: recipientId.toString(),
         lastMessage: messageObj,
-        timestamp: message.createdAt
+        timestamp: message.createdAt,
       });
-
     } else if (chatType === "GROUP") {
       const groupId = data.groupId;
       const room = `group:${groupId}`;
@@ -746,7 +831,7 @@ class MessageService {
       global.io.to(room).emit("message:new", {
         ...messageObj,
         chatType: "GROUP",
-        from: senderId.toString()
+        from: senderId.toString(),
       });
 
       // Update Conversation (Group Members)
@@ -754,7 +839,7 @@ class MessageService {
         chatType: "GROUP",
         targetId: groupId.toString(),
         lastMessage: messageObj,
-        timestamp: message.createdAt
+        timestamp: message.createdAt,
       });
     }
   }
@@ -762,22 +847,38 @@ class MessageService {
   /**
    * Private: Send Push Notification if User Offline
    */
-  async _sendPushIfOffline(recipientId, senderId, senderRole, messageText, conversationId) {
-    const isOnline = global.isUserOnline ? global.isUserOnline(recipientId) : false;
-    
+  async _sendPushIfOffline(
+    recipientId,
+    senderId,
+    senderRole,
+    messageText,
+    conversationId
+  ) {
+    const isOnline = global.isUserOnline
+      ? global.isUserOnline(recipientId)
+      : false;
+
     if (!isOnline) {
       try {
         // Check if muted
         if (conversationId) {
-          const isMuted = await ConversationService.isMuted(recipientId, conversationId);
+          const isMuted = await ConversationService.isMuted(
+            recipientId,
+            conversationId
+          );
           if (isMuted) return;
         }
 
-        const senderModel = senderRole === "Student" ? require("../../schema/Student/Student") 
-                          : senderRole === "Teacher" ? require("../../schema/Teacher")
-                          : require("../../schema/Admin");
-        
-        const sender = await senderModel.findById(senderId).select("firstName lastName");
+        const senderModel =
+          senderRole === "Student"
+            ? require("../../schema/Student/Student")
+            : senderRole === "Teacher"
+            ? require("../../schema/Teacher")
+            : require("../../schema/Admin");
+
+        const sender = await senderModel
+          .findById(senderId)
+          .select("firstName lastName");
         if (sender) {
           await sendPushNotification({
             userId: recipientId,
@@ -786,8 +887,8 @@ class MessageService {
             data: {
               type: "chat",
               senderId: senderId.toString(),
-              chatType: "DM"
-            }
+              chatType: "DM",
+            },
           });
         }
       } catch (err) {
@@ -799,27 +900,44 @@ class MessageService {
   /**
    * Private: Notify Group Members
    */
-  async _notifyGroupMembers(groupId, senderId, senderName, text, chatType, mentions = []) {
+  async _notifyGroupMembers(
+    groupId,
+    senderId,
+    senderName,
+    text,
+    chatType,
+    mentions = []
+  ) {
     try {
       // Get Group
       const group = await Group.findById(groupId);
       if (!group) return;
 
       // Get Conversation ID for the group
-      const conversation = await Conversation.findOne({ type: 'GROUP', groupId: groupId });
+      const conversation = await Conversation.findOne({
+        type: "GROUP",
+        groupId: groupId,
+      });
       const conversationId = conversation ? conversation._id : null;
       if (!conversationId) return;
 
       // Helper to check if user is mentioned
       const isMentioned = (userId) => {
-        return mentions.some(m => 
-          (m.type === 'user' && m.user && m.user.toString() === userId.toString()) ||
-          m.type === 'all'
+        return mentions.some(
+          (m) =>
+            (m.type === "user" &&
+              m.user &&
+              m.user.toString() === userId.toString()) ||
+            m.type === "all"
         );
       };
 
       // Notify Teacher (if not sender AND not mentioned)
-      if (group.teacher && group.teacher.toString() !== senderId.toString() && !isMentioned(group.teacher)) {
+      if (
+        group.teacher &&
+        group.teacher.toString() !== senderId.toString() &&
+        !isMentioned(group.teacher)
+      ) {
         await notifyNewMessage(
           group.teacher,
           "Teacher",
@@ -832,9 +950,12 @@ class MessageService {
       }
 
       // Notify Students (if not sender AND not mentioned)
-      const students = await Student.find({ group: group.name }).select('_id');
+      const students = await Student.find({ group: group.name }).select("_id");
       for (const student of students) {
-        if (student._id.toString() !== senderId.toString() && !isMentioned(student._id)) {
+        if (
+          student._id.toString() !== senderId.toString() &&
+          !isMentioned(student._id)
+        ) {
           await notifyNewMessage(
             student._id,
             "Student",
