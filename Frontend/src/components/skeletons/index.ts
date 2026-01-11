@@ -7,3 +7,4 @@ export { default as ListSkeleton } from './ListSkeleton';
 export * from './AttendanceSkeleton';
 export { AbsentStudentCardSkeleton } from './AbsentStudentCardSkeleton';
 export { default as ProfileSkeleton } from './ProfileSkeleton';
+export { AveragesBarSkeleton } from './AveragesBarSkeleton';

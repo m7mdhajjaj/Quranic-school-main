@@ -3,6 +3,7 @@ import { Table } from "@/components/UI";
 import { Trash2, Plus, RefreshCw } from "lucide-react";
 import type { Column } from "@/components/UI/Table";
 import type { Student, Mark, Section } from "../../../types/types";
+import { TableSkeleton } from '../../../components/DailyMarksSkeletons';
 
 interface StudentsMarksTableProps {
   tableData: Array<{
@@ -41,6 +42,10 @@ export const StudentsMarksTable = ({
   onClearSelection,
   areAllSelected,
 }: StudentsMarksTableProps) => {
+  if (loading) {
+    return <TableSkeleton rows={10} hasActions={true} />;
+  }
+
   const columns: Column<typeof tableData[0]>[] = useMemo(() => [
     {
       key: "select",

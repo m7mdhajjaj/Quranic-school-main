@@ -6,7 +6,7 @@ import { memo } from "react";
 import { RefreshCw, Plus, Edit, Trash2, RotateCcw, BookOpen, Calendar, ChevronRight, ChevronLeft, Users, FileCheck, FileEdit } from "lucide-react";
 import { getMarkColor, formatDateWithDay } from "../utils";
 import { useMonthNavigation, useMarkFinder } from "../hooks";
-import { CardSkeleton } from "@/components/skeletons";
+import { TableSkeleton } from "./DailyMarksSkeletons";
 
 // Extended section type with mark for table rendering
 type SectionWithMark = Section & { mark?: Mark };
@@ -45,6 +45,10 @@ const SectionsTableComponent = ({
     onMonthChange,
     onYearChange,
   });
+
+  if (loadingMarks && sections.length === 0) {
+    return <TableSkeleton rows={8} hasActions={isTeacher} />;
+  }
 
   // Use custom hook to attach marks to sections
   // Pass studentId to filter marks by student (prevents cross-student display)
