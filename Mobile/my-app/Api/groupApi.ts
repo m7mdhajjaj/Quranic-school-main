@@ -1,85 +1,55 @@
-// Group API functions
+// ============================================================================
+// Group API - طبقة وسيطة بين Frontend و Backend
+// ============================================================================
+
 import api from "./api";
 import { AxiosError } from "axios";
+import type {
+  Group,
+  GroupFormData,
+  GroupsQueryParams,
+  PaginationInfo,
+  GroupFilter,
+  GroupWithStudents,
+  GroupsByTeacherResponse,
+  GroupsStats,
+} from "@/types/group.types";
 
-export interface Group {
-  _id: string;
-  name: string;
-  number?: number; // رقم الحلقة
-  teacher: string;
-  teacherName?: string; // حقل إضافي للاسم
-  description?: string;
-  capacity?: number;
-  schedule?: string;
-  activeStatus: boolean;
-  currentStudents?: number; // عدد الطلاب المشتركين في الحلقة
-  isFull?: boolean; // هل الحلقة ممتلئة؟
-  availableSpots?: number; // عدد الأماكن المتاحة
-  capacityStatus?: string; // حالة السعة مثل "25/30"
-  capacityPercentage?: number; // نسبة الإشغال المئوية
-  timetable?: Array<{
-    _id?: string;
-    day: string;
-    startHour: string;
-    endHour: string;
-  }>;
-  createdAt: Date;
-  updatedAt: Date;
-}
+// Re-export types for backward compatibility
+export type {
+  Group,
+  GroupFormData,
+  GroupsQueryParams,
+  PaginationInfo,
+  GroupFilter,
+  GroupWithStudents,
+  GroupsByTeacherResponse,
+  GroupsStats,
+} from "@/types/group.types";
 
-export interface GroupFormData {
-  name: string;
-  teacher: string;
-  description?: string;
-  capacity?: number;
-  schedule?: string;
-  activeStatus?: boolean;
-}
-
-// Query parameters for filtering groups
-export interface GroupsQueryParams {
-  search?: string;
-  capacity?: 'all' | 'small' | 'medium' | 'large';
-  status?: 'all' | 'active' | 'inactive';
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-  page?: number;
-  limit?: number;
-}
-
-export interface PaginationInfo {
-  total: number;
-  page: number;
-  limit: number;
-  pages: number;
-  showing: number;
-}
-
-// Get all groups with filters and pagination
-export const getAllGroups = async (params?: GroupsQueryParams): Promise<{
-  success: boolean;
-  data?: Group[];
-  pagination?: PaginationInfo;
-  message?: string;
-}> => {
+/**
+ * جلب جميع الحلقات مع الفلاتر
+ * @route GET /api/groups
+ */
+export const getAllGroups = async (params?: GroupsQueryParams) => {
   try {
-    console.log('📡 API: جلب الحلقات مع فلاتر:', params);
-    
+    console.log("📡 API: جلب الحلقات مع فلاتر:", params);
+
     // Build query string
     const queryParams = new URLSearchParams();
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
+        if (value !== undefined && value !== null && value !== "") {
           queryParams.append(key, String(value));
         }
       });
     }
-    
+
     const queryString = queryParams.toString();
-    const url = queryString ? `/groups?${queryString}` : '/groups';
-    
+    const url = queryString ? `/groups?${queryString}` : "/groups";
+
     const response = await api.get(url);
-    console.log('✅ API Response:', response.data);
+    console.log("✅ API Response:", response.data);
     return response.data;
   } catch (error) {
     console.error("❌ Error fetching groups:", error);
@@ -114,7 +84,7 @@ export const getGroupStudents = async (
   groupId: string,
   includeDetails: boolean = true,
   search?: string,
-  gender?: 'ذكر' | 'أنثى' | 'male' | 'female'
+  gender?: "ذكر" | "أنثى" | "male" | "female"
 ): Promise<{
   success: boolean;
   data?: {
@@ -156,21 +126,24 @@ export const getGroupStudents = async (
 }> => {
   try {
     const params = new URLSearchParams();
-    params.append('includeDetails', includeDetails.toString());
+    params.append("includeDetails", includeDetails.toString());
     if (search && search.trim()) {
-      params.append('search', search.trim());
+      params.append("search", search.trim());
     }
     if (gender) {
-      params.append('gender', gender);
+      params.append("gender", gender);
     }
-    const response = await api.get(`/groups/${groupId}/students?${params.toString()}`);
+    const response = await api.get(
+      `/groups/${groupId}/students?${params.toString()}`
+    );
     return response.data;
   } catch (error) {
     console.error("Error fetching group students:", error);
     const axiosError = error as AxiosError<{ message?: string }>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || "حدث خطأ أثناء جلب طلاب الحلقة",
+      message:
+        axiosError.response?.data?.message || "حدث خطأ أثناء جلب طلاب الحلقة",
     };
   }
 };
@@ -271,61 +244,40 @@ export const deleteGroup = async (
 // 🆕 Get groups by teacher ID with flexible filters
 /**
  * جلب حلقات المعلم بفلاتر مرنة
- * 
+ *
  * أمثلة الاستخدام:
  * ```ts
  * // جلب كل الحلقات (فيها طلاب + فارغة)
  * const result = await getGroupsByTeacherIdWithFilters(teacherId, 'all');
- * 
+ *
  * // جلب الحلقات اللي فيها طلاب فقط
  * const result = await getGroupsByTeacherIdWithFilters(teacherId, 'withStudents');
- * 
+ *
  * // جلب الحلقات الفارغة فقط
  * const result = await getGroupsByTeacherIdWithFilters(teacherId, 'withoutStudents');
- * 
+ *
  * // جلب كل الحلقات مع معلومات الطلاب
  * const result = await getGroupsByTeacherIdWithFilters(teacherId, 'all', true);
  * ```
  */
-export interface GroupWithStudents extends Group {
-  students?: Array<{
-    _id: string;
-    studentId: number;
-    name: string;
-  }>;
-  totalStudents?: number; // إجمالي عدد الطلاب في الحلقة
-  hasStudents?: boolean;
-  isEmpty?: boolean;
-}
-
-export interface GroupsByTeacherResponse {
-  teacher: {
-    _id: string;
-    name: string;
-  };
-  groups: GroupWithStudents[];
-  summary: {
-    totalGroups: number;
-    groupsWithStudents: number;
-    emptyGroups: number;
-    totalStudents: number;
-  };
-}
-
-export type GroupFilter = 'all' | 'withStudents' | 'withoutStudents';
-
 export const getGroupsByTeacherIdWithFilters = async (
   teacherId: string,
-  filter: GroupFilter = 'all',
+  filter: GroupFilter = "all",
   includeStudents: boolean = false
-): Promise<{ success: boolean; data?: GroupsByTeacherResponse; message?: string }> => {
+): Promise<{
+  success: boolean;
+  data?: GroupsByTeacherResponse;
+  message?: string;
+}> => {
   try {
-    console.log(`⚡ [API] جلب حلقات المعلم - ID: ${teacherId}, فلتر: ${filter}, مع الطلاب: ${includeStudents}`);
+    console.log(
+      `⚡ [API] جلب حلقات المعلم - ID: ${teacherId}, فلتر: ${filter}, مع الطلاب: ${includeStudents}`
+    );
     const startTime = Date.now();
 
     const params = new URLSearchParams();
-    params.append('filter', filter);
-    params.append('includeStudents', includeStudents.toString());
+    params.append("filter", filter);
+    params.append("includeStudents", includeStudents.toString());
 
     const response = await api.get(
       `/groups/teacher-id/${teacherId}/filtered?${params.toString()}`
@@ -336,17 +288,20 @@ export const getGroupsByTeacherIdWithFilters = async (
 
     return response.data;
   } catch (error) {
-    console.error('❌ خطأ في جلب حلقات المعلم:', error);
+    console.error("❌ خطأ في جلب حلقات المعلم:", error);
     const axiosError = error as AxiosError<{ message?: string }>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || 'حدث خطأ أثناء جلب حلقات المعلم',
+      message:
+        axiosError.response?.data?.message || "حدث خطأ أثناء جلب حلقات المعلم",
     };
   }
 };
 
 // Get group timetable
-export const getGroupTimetable = async (groupId: string): Promise<{
+export const getGroupTimetable = async (
+  groupId: string
+): Promise<{
   success: boolean;
   data?: {
     groupId: string;
@@ -367,88 +322,84 @@ export const getGroupTimetable = async (groupId: string): Promise<{
   try {
     console.log(`📡 API: جلب جدول الحلقة ${groupId}`);
     const response = await api.get(`/sessions/group/${groupId}`);
-    console.log('✅ API Response:', response.data);
+    console.log("✅ API Response:", response.data);
     return response.data;
   } catch (error) {
-    console.error('❌ خطأ في جلب جدول الحلقة:', error);
+    console.error("❌ خطأ في جلب جدول الحلقة:", error);
     const axiosError = error as AxiosError<{ message?: string }>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || 'حدث خطأ أثناء جلب جدول الحلقة',
+      message:
+        axiosError.response?.data?.message || "حدث خطأ أثناء جلب جدول الحلقة",
     };
   }
 };
 
 // Get groups statistics
-export interface GroupsStats {
-  totalGroups: number;
-  totalStudents: number;
-  fullGroups: number;
-  emptyGroups: number;
-  totalCapacity: number;
-  availableSeats: number;
-  occupancyRate: number;
-  activeGroups: number;
-  byTeacher: Array<{
-    teacher: string;
-    groupsCount: number;
-    studentsCount: number;
-  }>;
-}
-
 export const getGroupsStats = async (): Promise<{
   success: boolean;
   data?: GroupsStats;
   message?: string;
 }> => {
   try {
-    console.log('📊 API: جلب إحصائيات الحلقات');
-    const response = await api.get('/groups/stats/overview');
-    console.log('✅ API Response:', response.data);
+    console.log("📊 API: جلب إحصائيات الحلقات");
+    const response = await api.get("/groups/stats/overview");
+    console.log("✅ API Response:", response.data);
     return response.data;
   } catch (error) {
-    console.error('❌ خطأ في جلب الإحصائيات:', error);
+    console.error("❌ خطأ في جلب الإحصائيات:", error);
     const axiosError = error as AxiosError<{ message?: string }>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || 'حدث خطأ أثناء جلب الإحصائيات',
+      message:
+        axiosError.response?.data?.message || "حدث خطأ أثناء جلب الإحصائيات",
     };
   }
 };
 
 // Export groups to CSV
-export const exportGroupsToCSV = async (filters?: GroupsQueryParams): Promise<Blob | null> => {
+export const exportGroupsToCSV = async (
+  filters?: GroupsQueryParams
+): Promise<Blob | null> => {
   try {
-    console.log('📥 API: تصدير الحلقات إلى CSV');
-    
+    console.log("📥 API: تصدير الحلقات إلى CSV");
+
     // Build query string
     const queryParams = new URLSearchParams();
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '' && key !== 'page' && key !== 'limit') {
+        if (
+          value !== undefined &&
+          value !== null &&
+          value !== "" &&
+          key !== "page" &&
+          key !== "limit"
+        ) {
           queryParams.append(key, String(value));
         }
       });
     }
-    
+
     const queryString = queryParams.toString();
-    const url = queryString ? `/groups/export?${queryString}` : '/groups/export';
-    
+    const url = queryString
+      ? `/groups/export?${queryString}`
+      : "/groups/export";
+
     const response = await api.get(url, {
-      responseType: 'blob',
+      responseType: "blob",
     });
-    
-    console.log('✅ تم تصدير البيانات بنجاح');
+
+    console.log("✅ تم تصدير البيانات بنجاح");
     return response.data;
   } catch (error) {
-    console.error('❌ خطأ في تصدير البيانات:', error);
+    console.error("❌ خطأ في تصدير البيانات:", error);
     return null;
   }
 };
 
 // Check duplicate group name
 export const checkDuplicateGroupName = async (
-  field: 'name',
+  field: "name",
   value: string,
   excludeId?: string
 ): Promise<{
@@ -459,24 +410,27 @@ export const checkDuplicateGroupName = async (
 }> => {
   try {
     console.log(`🔍 API: فحص تكرار ${field}: "${value}"`);
-    
+
     const params = new URLSearchParams();
-    params.append('field', field);
-    params.append('value', value);
+    params.append("field", field);
+    params.append("value", value);
     if (excludeId) {
-      params.append('excludeId', excludeId);
+      params.append("excludeId", excludeId);
     }
-    
-    const response = await api.get(`/groups/check-duplicate?${params.toString()}`);
-    console.log('✅ نتيجة الفحص:', response.data);
+
+    const response = await api.get(
+      `/groups/check-duplicate?${params.toString()}`
+    );
+    console.log("✅ نتيجة الفحص:", response.data);
     return response.data;
   } catch (error) {
-    console.error('❌ خطأ في فحص التكرار:', error);
+    console.error("❌ خطأ في فحص التكرار:", error);
     const axiosError = error as AxiosError<{ message?: string }>;
     return {
       success: false,
       isDuplicate: false,
-      message: axiosError.response?.data?.message || 'حدث خطأ أثناء فحص التكرار',
+      message:
+        axiosError.response?.data?.message || "حدث خطأ أثناء فحص التكرار",
     };
   }
 };
