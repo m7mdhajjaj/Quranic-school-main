@@ -204,6 +204,7 @@ export const SectionsGridView = ({
                 if (onRefreshData) onRefreshData();
                 else if (onGroupSelect) onGroupSelect(selectedGroup);
               }}
+              className="w-full h-[40px]"
             />
           </div>
 
