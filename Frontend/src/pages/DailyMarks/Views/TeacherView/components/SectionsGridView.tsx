@@ -10,6 +10,7 @@ import { SectionItem } from './SectionItem';
 import { AiRepairButton } from '../../../components/AiRepairButton';
 import { CompletedSurahsModal } from '../../../components/CompletedSurahsModal';
 import { useState } from 'react';
+import { SectionsGridSkeleton } from '../../../components/DailyMarksSkeletons';
 
 interface SectionsGridViewProps {
   selectedGroup: string;
@@ -54,6 +55,7 @@ interface SectionsGridViewProps {
 export const SectionsGridView = ({
   selectedGroup,
   sections,
+  loadingMarks, // Added loadingMarks here
   selectedStatus,
   statusCounts,
   filteredSectionsByStatus,
@@ -90,16 +92,16 @@ export const SectionsGridView = ({
       </button>
 
       {/* Header with Section Name and Action Buttons */}
-      <Card className="mb-6 bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50 border-2 border-emerald-300 shadow-lg sticky top-4 z-[100]">
+      <Card className="mb-6 bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50 border-2 border-emerald-300 shadow-lg relative md:sticky md:top-4 z-40">
         <div className="p-5">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             {/* Section Name */}
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl shadow-md">
+              <div className="p-3 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl shadow-md shrink-0">
                 <Users className="text-white" size={24} />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-gray-800">
+                <h2 className="text-xl md:text-2xl font-bold text-gray-800 break-words">
                   {selectedGroup}
                 </h2>
                 <p className="text-sm text-gray-600 mt-1">حلقة الدراسة</p>
@@ -107,7 +109,7 @@ export const SectionsGridView = ({
             </div>
 
             {/* Date Range & Search */}
-            <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto">
+            <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full md:w-auto">
               {/* Date Range Picker */}
               <div className="w-full md:w-auto">
                 <DateRangePicker
@@ -117,7 +119,7 @@ export const SectionsGridView = ({
                     if (onStartDateChange) onStartDateChange(start);
                     if (onEndDateChange) onEndDateChange(end);
                   }}
-                  className="w-full md:w-auto"
+                  className="w-full"
                 />
               </div>
 
@@ -136,34 +138,38 @@ export const SectionsGridView = ({
       </Card>
 
       {/* Status Filter & Action Buttons */}
-      <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="mb-6 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
         {/* Filters (Right side in RTL) */}
         <div>
           {sections.length > 0 && (
-            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+            <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
                {/* Period Toggle */}
-               <PeriodFilterToggle
-                  selectedMode={selectedFilterMode}
-                  onModeChange={onFilterModeChange}
-               />
+               <div className="w-full sm:w-auto">
+                <PeriodFilterToggle
+                    selectedMode={selectedFilterMode}
+                    onModeChange={onFilterModeChange}
+                />
+               </div>
               
-              <SectionStatusFilter
-                selectedStatus={selectedStatus}
-                onStatusChange={onStatusChange}
-                counts={statusCounts}
-              />
+              <div className="w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+                <SectionStatusFilter
+                  selectedStatus={selectedStatus}
+                  onStatusChange={onStatusChange}
+                  counts={statusCounts}
+                />
+              </div>
             </div>
           )}
         </div>
 
         {/* Action Buttons (Left side in RTL) */}
-        <div className="flex flex-wrap items-center gap-3" dir="rtl">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-3" dir="rtl">
           {/* إضافة مقطع */}
           {onAddSection && (
             <Button
               onClick={onAddSection}
               variant="primary"
-              className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-md hover:shadow-lg transition-all font-semibold w-[140px] h-[40px] flex items-center justify-between px-3"
+              className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-md hover:shadow-lg transition-all font-semibold w-full sm:w-[140px] h-[40px] flex items-center justify-between px-3"
               type="button"
               dir="rtl"
             >
@@ -178,7 +184,7 @@ export const SectionsGridView = ({
           <Button
             onClick={() => setShowCompletedModal(true)}
             variant="secondary"
-            className="border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 hover:border-amber-300 font-semibold h-[40px] px-3 shadow-sm hover:shadow-md transition-all"
+            className="border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 hover:border-amber-300 font-semibold h-[40px] w-full sm:w-auto px-3 shadow-sm hover:shadow-md transition-all justify-center"
             type="button"
           >
              <div className="flex items-center gap-2">
@@ -188,19 +194,21 @@ export const SectionsGridView = ({
           </Button>
 
           {/* إصلاح التسلسل */}
-          <AiRepairButton 
-            selectedGroup={selectedGroup} 
-            onSuccess={() => {
-              if (onGroupSelect) onGroupSelect(selectedGroup);
-            }}
-          />
+          <div className="w-full sm:w-auto">
+            <AiRepairButton 
+              selectedGroup={selectedGroup} 
+              onSuccess={() => {
+                if (onGroupSelect) onGroupSelect(selectedGroup);
+              }}
+            />
+          </div>
 
           {/* حذف مقاطع */}
           {onBulkDelete && (
             <Button
               onClick={onBulkDelete}
               variant="secondary"
-              className="border border-red-200 bg-white text-red-600 hover:bg-red-50 hover:border-red-300 shadow-sm hover:shadow transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed w-[140px] h-[40px] flex items-center justify-between px-3"
+              className="border border-red-200 bg-white text-red-600 hover:bg-red-50 hover:border-red-300 shadow-sm hover:shadow transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-[140px] h-[40px] flex items-center justify-between px-3"
               type="button"
               disabled={sections.length === 0}
               dir="rtl"
@@ -216,8 +224,9 @@ export const SectionsGridView = ({
       </div>
 
       {/* Sections Cards */}
-      {        
-       sections.length === 0 ? (
+      {loadingMarks && sections.length === 0 ? (
+        <SectionsGridSkeleton count={6} />
+      ) : sections.length === 0 ? (
         <Card className="p-12 text-center">
           <BookOpen className="w-16 h-16 mx-auto text-gray-400 mb-4" />
           <p className="text-gray-600 font-medium">

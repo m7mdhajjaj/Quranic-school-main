@@ -3,6 +3,7 @@ import type { StudentViewProps } from '../types/types';
 import { SectionsTable } from '../components/SectionsTable';
 import { AveragesBar } from '../components/AveragesBar';
 import { Card } from '@/components/UI';
+import { AveragesBarSkeleton } from '../components/DailyMarksSkeletons';
 
 /**
  * Header component for Student View
@@ -64,7 +65,11 @@ const StudentViewComponent = ({
 
           <div className="p-0 bg-gradient-to-br from-white via-emerald-50/35 to-teal-50/20">
             {/* Averages Section */}
-            {sections.length > 0 && (
+            {loadingMarks ? (
+              <div className="px-6 pt-6 pb-4">
+                <AveragesBarSkeleton />
+              </div>
+            ) : sections.length > 0 && (
               <div className="px-6 pt-6 pb-4">
                 <AveragesBar
                   reviewAverage={averages.reviewAverage}
