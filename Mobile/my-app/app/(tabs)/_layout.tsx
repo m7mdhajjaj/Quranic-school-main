@@ -20,7 +20,7 @@ export default function TabLayout() {
           headerShown: false,
           tabBarButton: HapticTab,
           tabBarStyle: {
-            backgroundColor: Colors[colorScheme ?? "light"].background,
+            display: "none", // إخفاء شريط التنقل السفلي
           },
         }}>
         <Tabs.Screen
