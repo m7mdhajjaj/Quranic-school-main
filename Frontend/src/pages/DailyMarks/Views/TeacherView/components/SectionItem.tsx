@@ -40,8 +40,17 @@ const SectionItemComponent = ({
   const handleAddSchedule = (e: React.MouseEvent) => {
     e.stopPropagation();
     let sessionType = "both";
-    const hasMem = section.memorizationSection && section.memorizationSection.trim() !== "";
-    const hasRev = section.reviewSection && section.reviewSection.trim() !== "";
+    
+    // Check both legacy strings and new structured meta data
+    const sectionAny = section as any;
+    const hasMemMeta = sectionAny.memorizationMeta && Array.isArray(sectionAny.memorizationMeta) && sectionAny.memorizationMeta.length > 0;
+    const hasRevMeta = sectionAny.reviewMeta && Array.isArray(sectionAny.reviewMeta) && sectionAny.reviewMeta.length > 0;
+    
+    const hasMemLegacy = section.memorizationSection && section.memorizationSection.trim() !== "";
+    const hasRevLegacy = section.reviewSection && section.reviewSection.trim() !== "";
+
+    const hasMem = hasMemMeta || hasMemLegacy;
+    const hasRev = hasRevMeta || hasRevLegacy;
     
     if (hasMem && !hasRev) {
       sessionType = "hifz";

@@ -169,6 +169,7 @@ export const useSessionForm = ({ editingSession, role, teacherGroups = [], initi
       // ➕ وضع الإضافة: تعيين قيم افتراضية
       const currentUser = getCurrentUser();
       const defaultTeacherId = role === "teacher" && currentUser?._id ? currentUser._id : "";
+      const urlSessionType = searchParams.get('sessionType') as any || undefined;
       
       setFormData({
         day: WEEK_DAYS[0], // اليوم الأول (السبت)
@@ -176,7 +177,7 @@ export const useSessionForm = ({ editingSession, role, teacherGroups = [], initi
         endHour: "",   // المستخدم يختار
         note: initialGroupName || "",
         description: "",
-        sessionType: undefined,
+        sessionType: urlSessionType,
         teacherId: defaultTeacherId, // للمعلم: ID تلقائي، للأدمن: فارغ
         sectionId: initialSectionId || "",
       });
@@ -186,7 +187,7 @@ export const useSessionForm = ({ editingSession, role, teacherGroups = [], initi
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editingSession, role, initialSectionId, initialGroupName]);
+  }, [editingSession, role, initialSectionId, initialGroupName, searchParams]);
 
   // دالة لإعادة تعيين النموذج (reset)
   const resetForm = () => {
