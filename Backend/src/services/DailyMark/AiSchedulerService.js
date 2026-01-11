@@ -415,6 +415,34 @@ class AiSchedulerService {
           return a.ayahStart - b.ayahStart;
       });
 
+      // ✅ Deduplicate Segment Queue
+      // Fixes issue where same segment appears on multiple days (e.g. 19 Jan and 26 Jan)
+      // This happens if DB had duplicates or if logic added them twice.
+      // We keep the *last* one if duplicates exist? No, the *first* one in sorted order is fine.
+      // Actually if we have duplicates in DB of same range, we should condense them to one unless status is different?
+      // Assuming 'completed' status, it's a duplicate.
+      const uniqueQueue = [];
+      const seenKeys = new Set();
+      for (const seg of segmentQueue) {
+          const key = `${seg.surahNumber}:${seg.ayahStart}-${seg.ayahEnd}`;
+          if (!seenKeys.has(key)) {
+              seenKeys.add(key);
+              uniqueQueue.push(seg);
+          }
+      }
+      // Re-assign sorted, deduped queue
+      // segmentQueue is 'const' in function scope? No, it was passed as argument?
+      // Wait, applyRippleShift definition: async applyRippleShift(..., gapSegments, ...)
+      // But segmentQueue is created INSIDE applyRippleShift.
+      // Let's check where it is defined.
+      // It is defined as: const segmentQueue = [...gapSegments]; 
+      // So we cannot reassign it.
+      // We must push into it or use splices, or change definition to let.
+      
+      // FIX: Clear and refill
+      segmentQueue.length = 0;
+      segmentQueue.push(...uniqueQueue);
+
       // 4. تنظيف الطريق (Clear Path)
       // نحذف سجلات هذه السورة من كافة الأيام المستقبلية المتأثرة لنعيد كتابتها بانتظام
       // هذا يضمن عدم وجود بقايا أو تداخل
@@ -442,13 +470,23 @@ class AiSchedulerService {
           const nextSegmentIsGap = segmentQueue[0].isNewGap;
           if (nextSegmentIsGap && suggestedDates.length > 0) {
               // Jump to the preferred date immediately
-              const preferredDate = suggestedDates.shift(); // Take and remove first date
+              const preferredDate = new Date(suggestedDates[0]); // Don't shift yet
               // Ensure we don't go backwards
               if (preferredDate >= currentDate) {
-                  currentDate = new Date(preferredDate);
-                  canUseDay = true; 
-                  // Note: We force use on suggested date regardless of working status, 
-                  // assuming user knows best.
+                  // ✅ CHECK TEACHER CONFLICT FOR SUGGESTED DATE
+                  const hasConflict = await this.checkTeacherConflict(startSection.teacher, preferredDate, groupId);
+                  if (hasConflict) {
+                      actionsTaken.push(`⚠️ تم تجاهل الموعد المقترح ${this.toDateKeyUTC(preferredDate)} لوجود تعارض مع حلقات أخرى للمعلم.`);
+                      suggestedDates.shift(); // Remove rejected date
+                      // Fall through to standard logic (find next avail day)
+                  } else {
+                      currentDate = new Date(preferredDate);
+                      canUseDay = true; 
+                      suggestedDates.shift(); // Consumed
+                  }
+              } else {
+                  // Old date, just discard
+                  suggestedDates.shift();
               }
           } 
           
@@ -465,7 +503,12 @@ class AiSchedulerService {
                 const isWorkingDay = allowedDays.includes(dayIndex);
                 
                 if (isWorkingDay && (!isFriday || allowedDays.length === 1)) {
-                    canUseDay = true;
+                    // ✅ CHECK TEACHER CONFLICT FOR AUTO DATE (Prefer Avoidance)
+                    const hasConflict = await this.checkTeacherConflict(startSection.teacher, currentDate, groupId);
+                    if (!hasConflict) {
+                        canUseDay = true;
+                    }
+                    // If conflict exists, we keep canUseDay = false and loop will increment date
                 }
             }
 
@@ -545,14 +588,32 @@ class AiSchedulerService {
   }
 
   /**
-   * اكتشاف أيام عمل الحلقة بناءً على التاريخ السابق
+   * اكتشاف أيام عمل الحلقة بناءً على إعدادات المجموعة أو التاريخ السابق
    */
   async detectWorkingDays(groupId) {
+    // 1. Check Group Settings first (Source of Truth)
+    const Group = require('../../../schema/Group'); // Lazy load
+    const group = await Group.findById(groupId).select('schedule').lean();
+    
+    if (group && group.schedule) {
+        const scheduleText = group.schedule;
+        const dayMap = {
+            'الأحد': 0, 'الاثنين': 1, 'الإثنين': 1, 'الثلاثاء': 2, 'الأربعاء': 3, 'الاربعاء': 3,
+            'الخميس': 4, 'الجمعة': 5, 'السبت': 6
+        };
+        const detectedDays = new Set();
+        for (const [name, idx] of Object.entries(dayMap)) {
+            if (scheduleText.includes(name)) detectedDays.add(idx);
+        }
+        if (detectedDays.size > 0) return Array.from(detectedDays);
+    }
+
+    // 2. Fallback to History
     // نجلب آخر 30 حصة لنعرف الأيام التي يجتمعون فيها عادة
     const recent = await Section.find({ group: groupId }).sort({ date: -1 }).limit(30).select('date').lean();
     
-    // إذا لم يكن لدينا بيانات كافية، نفترض الافتراضي (كل الأيام ما عدا الجمعة)
-    if (!recent || recent.length < 5) return [0, 1, 2, 3, 4, 6]; 
+    // إذا لم يكن لدينا بيانات كافية، نفترض الافتراضي (أحد، ثلاثاء، خميس) بدلاً من كل الأيام
+    if (!recent || recent.length < 5) return [0, 2, 4]; 
 
     const days = new Set(recent.map(r => new Date(r.date).getDay()));
     
@@ -590,6 +651,26 @@ class AiSchedulerService {
       const fallback = new Date(date);
       fallback.setDate(fallback.getDate() + 1);
       return fallback;
+  }
+
+  /**
+   * Check if teacher has other sections on this date (conflict)
+   * @param {string} teacherId 
+   * @param {Date} date 
+   * @param {string} currentGroupId 
+   */
+  async checkTeacherConflict(teacherId, date, currentGroupId) {
+    if (!teacherId) return false;
+    
+    // We look for any section for THIS teacher on THIS date
+    // BUT belonging to a DIFFERENT group
+    const conflict = await Section.exists({
+        teacher: teacherId,
+        date: date,
+        group: { $ne: currentGroupId }
+    });
+
+    return !!conflict;
   }
 }
 
