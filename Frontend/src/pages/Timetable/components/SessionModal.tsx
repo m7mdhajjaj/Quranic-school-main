@@ -212,21 +212,36 @@ export const SessionModal: React.FC<SessionModalProps> = ({
               </div>
               {/* اليوم */}
               <div className="mb-5">
-                <label className="block text-sm font-bold text-blue-900 mb-3">اليوم</label>
+                <label className="block text-sm font-bold text-blue-900 mb-3">
+                  اليوم{' '}
+                  {formData.sectionId && (
+                    <span className="text-xs font-normal text-red-500 bg-red-50 px-2 py-0.5 rounded-full">
+                      (مرتبط بتاريخ المقطع)
+                    </span>
+                  )}
+                </label>
                 <div className="grid grid-cols-3 sm:grid-cols-7 gap-2">
-                  {WEEK_DAYS.map((day) => (
-                    <button
-                      key={day}
-                      type="button"
-                      onClick={() => setFormData({ ...formData, day })}
-                      className={`px-3 py-3 rounded-lg text-sm font-bold transition-all min-w-0 ${
-                        formData.day === day
-                          ? 'bg-blue-600 text-white shadow-lg scale-105'
-                          : 'bg-white text-blue-700 hover:bg-blue-100 border-2 border-blue-200'
-                      }`}>
-                      <span className="block truncate">{day}</span>
-                    </button>
-                  ))}
+                  {WEEK_DAYS.map((day) => {
+                    const isLocked = !!formData.sectionId;
+                    const isSelected = formData.day === day;
+                    
+                    return (
+                      <button
+                        key={day}
+                        type="button"
+                        onClick={() => !isLocked && setFormData({ ...formData, day })}
+                        disabled={isLocked}
+                        className={`px-3 py-3 rounded-lg text-sm font-bold transition-all min-w-0 ${
+                          isSelected
+                            ? 'bg-blue-600 text-white shadow-lg scale-105'
+                            : 'bg-white text-blue-700 border-2 border-blue-200'
+                        } ${!isLocked && !isSelected ? 'hover:bg-blue-100' : ''} ${
+                          isLocked ? 'cursor-not-allowed' : ''
+                        } ${isLocked && !isSelected ? 'opacity-40 grayscale' : ''}`}>
+                        <span className="block truncate">{day}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 

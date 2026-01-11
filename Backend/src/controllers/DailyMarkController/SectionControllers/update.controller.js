@@ -26,6 +26,7 @@ exports.updateSection = async (req, res) => {
     // 🛡️ Advanced Conflict Check (Update) - V3: Date-Aware
     // ============================================
     const targetDate = updateData.date || section.date;
+    const targetGroup = updateData.group || section.group;
     
     if (targetGroup) {
          // 0.5 Check Weekly Quota (If date changes)

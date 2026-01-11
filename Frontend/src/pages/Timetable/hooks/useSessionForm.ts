@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import type { Session, SessionFormData, UserRole } from "../types/timetable.types";
 import { WEEK_DAYS, getCurrentUser } from "../utils";
 import { getAvailableHours, getAvailableHoursForTeacher } from "@/Api/TimeTable.Api";
+import { getSectionById } from "@/Api/DailyMark/sectionApi";
 import { useSearchParams } from "react-router-dom";
 
 interface UseSessionFormProps {
@@ -93,7 +94,37 @@ export const useSessionForm = ({ editingSession, role, teacherGroups = [], initi
   }, [formData.teacherId, formData.day, editingSession?._id]);
   
   // ============================================
-  // 🔄 Fallback: توليد الأوقات محلياً (إذا فشل الـ API)
+  // � Auto-fill Day from Section Date
+  // ============================================
+  useEffect(() => {
+    if (initialSectionId && !editingSession) {
+      const fetchSectionDetails = async () => {
+        try {
+          const section = await getSectionById(initialSectionId);
+          if (section?.date) {
+            const dateObj = new Date(section.date);
+            const jsDay = dateObj.getDay(); // 0 = Sunday
+            // WEEK_DAYS starts with Saturday (0)
+            // Sat(6) -> 0, Sun(0) -> 1
+            const dayIndex = (jsDay + 1) % 7;
+            const targetDay = WEEK_DAYS[dayIndex];
+            
+            setFormData(prev => ({
+              ...prev,
+              day: targetDay
+            }));
+          }
+        } catch (error) {
+          console.error("Failed to auto-fill day from section:", error);
+        }
+      };
+      
+      fetchSectionDetails();
+    }
+  }, [initialSectionId, editingSession]);
+
+  // ============================================
+  // �🔄 Fallback: توليد الأوقات محلياً (إذا فشل الـ API)
   // ============================================
   const generateFallbackHours = (): string[] => {
     const now = new Date();
