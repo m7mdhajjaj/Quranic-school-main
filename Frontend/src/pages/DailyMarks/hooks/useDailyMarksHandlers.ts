@@ -103,7 +103,7 @@ export const useDailyMarksHandlers = ({
         return;
       } else {
         console.error("Validation Error", error);
-        showErrorToast("⚠️ خطأ في التحقق من البيانات");
+        showErrorMessage("خطأ", "⚠️ خطأ في التحقق من البيانات");
         return;
       }
     }
@@ -221,6 +221,7 @@ export const useDailyMarksHandlers = ({
   const handleEditSection = useCallback(async (
     e: React.FormEvent,
     editingSection: Section | null,
+    updatedData: Partial<Section> | null,
     setIsEditingSectionLoading?: (loading: boolean) => void
   ) => {
     e.preventDefault();
@@ -229,62 +230,53 @@ export const useDailyMarksHandlers = ({
 
     setIsEditingSectionLoading?.(true);
 
-    // Optimistic Update: Create the optimistically updated section
-    // We assume editingSection contains the modifications from the form
-    const optimisticSection = { ...editingSection };
-
     try {
-      // 1. Update UI Immediately (Optimistic)
-      setSections((prev) =>
-        prev.map((section) =>
-          section._id === editingSection._id ? optimisticSection : section
-        ).filter((s): s is Section => s !== null)
-      );
+      // 1. Call API first (Wait for validation)
+      // Use updatedData if available, otherwise fallback to editingSection (but updatedData should be preferred)
+      const dataToSend = updatedData || editingSection;
       
-      setIsEditSectionModalOpen(false);
-      setEditingSection(null);
-      showSuccessToast("✅ تم تحديث المقطع بنجاح!");
-
-      // 2. Start API call in background
-      const updatePromise = updateSection(editingSection._id, {
-        date: editingSection.date,
-        memorizationSection: editingSection.memorizationSection,
-        reviewSection: editingSection.reviewSection,
-        memorizationMeta: editingSection.memorizationMeta, // Added: Send structured data
-        reviewMeta: editingSection.reviewMeta,             // Added: Send structured data
+      const updatedSection = await updateSection(editingSection._id, {
+        date: dataToSend.date,
+        memorizationSection: dataToSend.memorizationSection,
+        reviewSection: dataToSend.reviewSection,
+        memorizationMeta: dataToSend.memorizationMeta,
+        reviewMeta: dataToSend.reviewMeta,
       });
 
-      // Show confirmation dialog immediately (without waiting for API)
-      const confirmResult = await showConfirmMessage(
-        "تحديث الجدول",
-        "هل تود تعديل موعد الجدول المرتبط بهذا المقطع؟",
-        "نعم، عدّل الموعد",
-        "لا، شكراً"
-      );
-
-      if (confirmResult.isConfirmed) {
-        // Determine session type based on filled fields
-        let sessionType = "both";
-        const hasMem = editingSection.memorizationSection && editingSection.memorizationSection.trim() !== "";
-        const hasRev = editingSection.reviewSection && editingSection.reviewSection.trim() !== "";
-        
-        if (hasMem && !hasRev) {
-          sessionType = "hifz";
-        } else if (!hasMem && hasRev) {
-          sessionType = "murajaah";
-        }
-
-        navigate(`/timetable?editSession=true&sectionId=${editingSection._id}&groupName=${encodeURIComponent(selectedGroup)}&sessionType=${sessionType}`);
-      }
-
-      // 3. Wait for API and update with actual server data to ensure consistency
-      const updatedSection = await updatePromise;
+      // 2. Success: Update UI
       if (updatedSection) {
         setSections((prev) =>
           prev.map((section) =>
             section._id === editingSection._id ? updatedSection : section
           ).filter((s): s is Section => s !== null)
         );
+        
+        setIsEditSectionModalOpen(false);
+        setEditingSection(null);
+        showSuccessToast("✅ تم تحديث المقطع بنجاح!");
+
+        // 3. Prompt for Schedule Update
+        const confirmResult = await showConfirmMessage(
+          "تحديث الجدول",
+          "هل تود تعديل موعد الجدول المرتبط بهذا المقطع؟",
+          "نعم، عدّل الموعد",
+          "لا، شكراً"
+        );
+  
+        if (confirmResult.isConfirmed) {
+          // Determine session type
+          let sessionType = "both";
+          const hasMem = editingSection.memorizationSection && editingSection.memorizationSection.trim() !== "";
+          const hasRev = editingSection.reviewSection && editingSection.reviewSection.trim() !== "";
+          
+          if (hasMem && !hasRev) {
+            sessionType = "hifz";
+          } else if (!hasMem && hasRev) {
+            sessionType = "murajaah";
+          }
+  
+          navigate(`/timetable?editSession=true&sectionId=${editingSection._id}&groupName=${encodeURIComponent(selectedGroup)}&sessionType=${sessionType}`);
+        }
       }
 
     } catch (err: unknown) {
@@ -296,17 +288,15 @@ export const useDailyMarksHandlers = ({
 
       // Handle Validation Errors specifically (Overlap)
       if (status === 400) {
-        showErrorToast(serverMessage || "بيانات غير صالحة");
-        // Rollback only if it was a validation error (since the server rejected it)
-        if (refetchSections) await refetchSections();
+        showErrorMessage("بيانات غير صالحة", serverMessage || "بيانات غير صالحة");
+        // No need to rollback or refetch, as we didn't update UI yet.
       } else {
-        showErrorToast("❌ حدث خطأ أثناء تحديث المقطع، سيتم استعادة البيانات...");
-        if (refetchSections) await refetchSections();
+        showErrorMessage("حدث خطأ", "❌ حدث خطأ أثناء تحديث المقطع، حاول مرة أخرى.");
       }
     } finally {
       setIsEditingSectionLoading?.(false);
     }
-  }, [setSections, setIsEditSectionModalOpen, setEditingSection, refetchSections, selectedGroup, navigate]);
+  }, [setSections, setIsEditSectionModalOpen, setEditingSection, selectedGroup, navigate]);
 
   // Handler: Delete Section
   const handleDeleteSection = useCallback(async (sectionId: string) => {
@@ -340,7 +330,7 @@ export const useDailyMarksHandlers = ({
       await deleteSection(sectionId);
     } catch (err) {
       console.error("Error deleting section:", err);
-      showErrorToast("❌ حدث خطأ أثناء حذف المقطع، سيتم استعادة البيانات...");
+      showErrorMessage("حدث خطأ", "❌ حدث خطأ أثناء حذف المقطع، سيتم استعادة البيانات...");
       
       // 3. Rollback on error
       if (refetchSections) await refetchSections();
@@ -410,7 +400,7 @@ export const useDailyMarksHandlers = ({
       
       // 4. Revert on error
       setMarks((prev) => prev.filter(m => m._id !== tempId));
-      showErrorToast("❌ حدث خطأ أثناء إضافة العلامة");
+      showErrorMessage("حدث خطأ", "❌ حدث خطأ أثناء إضافة العلامة");
       
       // Re-open modal if needed, or just let user try again (data is lost from form though if modal closed)
       // Ideally we might want to keep modal open, but for speed we closed it.
@@ -489,7 +479,7 @@ export const useDailyMarksHandlers = ({
           mark._id === editingMark._id ? originalMark : mark
         )
       );
-      showErrorToast("❌ حدث خطأ أثناء تحديث العلامة");
+      showErrorMessage("حدث خطأ", "❌ حدث خطأ أثناء تحديث العلامة");
     } finally {
       setIsUpdatingMarkLoading?.(false);
     }
@@ -519,14 +509,14 @@ export const useDailyMarksHandlers = ({
       
       if (!apiResult.success) {
         // If API fails, show error and revert (by refetching)
-        showErrorToast(`❌ ${apiResult.message || "حدث خطأ أثناء حذف العلامة"}`);
+        showErrorMessage("حدث خطأ", `❌ ${apiResult.message || "حدث خطأ أثناء حذف العلامة"}`);
         if (refetchMarks) await refetchMarks();
       }
       // Refresh sections status/progress (non-blocking)
       refetchSections?.();
     } catch (err) {
       console.error("Error deleting mark:", err);
-      showErrorToast("❌ حدث خطأ أثناء حذف العلامة");
+      showErrorMessage("حدث خطأ", "❌ حدث خطأ أثناء حذف العلامة");
       if (refetchMarks) await refetchMarks();
     }
   }, [setMarks, refetchMarks, refetchSections]);
@@ -578,7 +568,7 @@ export const useDailyMarksHandlers = ({
       showSuccessToast("✅ تم تحديث المقاطع بنجاح!");
     } catch (err) {
       console.error("Error bulk updating sections:", err);
-      showErrorToast("❌ حدث خطأ أثناء تحديث المقاطع");
+      showErrorMessage("حدث خطأ", "❌ حدث خطأ أثناء تحديث المقاطع");
     } finally {
       setIsBulkUpdating?.(false);
     }
@@ -633,7 +623,7 @@ export const useDailyMarksHandlers = ({
       showSuccessToast("✅ تم حذف المقاطع بنجاح!");
     } catch (err) {
       console.error("Error bulk deleting sections:", err);
-      showErrorToast("❌ حدث خطأ أثناء حذف المقاطع");
+      showErrorMessage("حدث خطأ", "❌ حدث خطأ أثناء حذف المقاطع");
     } finally {
       setIsBulkDeleting?.(false);
     }

@@ -18,6 +18,12 @@ const Section = require("../../schema/DailyMark/Section");
 
 class SectionSequenceService {
 
+
+  // helper to format clear arabic errors
+  formatErrorMessage(title, details, advice) {
+      return `❌ ${title}\n\n📝 التفاصيل: ${details}\n\n💡 الحل: ${advice}`;
+  }
+
   /**
    * Helper: Convert Date to dateKey (YYYY-MM-DD in UTC)
    */
@@ -153,16 +159,14 @@ class SectionSequenceService {
                 day: 'numeric'
               });
               
-              // رسالة مفصلة للمستخدم
-              let detailedMessage = `🚫 تداخل في الحفظ:\n\n`;
-              detailedMessage += `المقطع المطلوب: السورة ${seg.surahNumber}، الآيات ${seg.ayahStart}-${seg.ayahEnd}\n`;
-              detailedMessage += `المقطع المسجل سابقاً: الآيات ${conflictSeg.ayahStart}-${conflictSeg.ayahEnd}\n`;
-              detailedMessage += `التاريخ السابق: ${dateStr}\n\n`;
-              detailedMessage += `❌ لا يمكن إعادة حفظ نفس الآيات مرة أخرى.`;
-              
+              // رسالة مفصلة للمستخدم - تكرار حفظ
               return {
                 isValid: false,
-                message: detailedMessage
+                message: this.formatErrorMessage(
+                    "تكرار الحفظ ممنوع",
+                    `الآيات ${seg.ayahStart} إلى ${seg.ayahEnd} من سورة ${seg.surahNumber} محفوظة مسبقاً بتاريخ ${dateStr}.`,
+                    "لا يمكنك حفظ نفس المقطع مرتين. يرجى مراجعة السجل."
+                )
               };
             }
          }
@@ -172,7 +176,6 @@ class SectionSequenceService {
              const conflictDateKey = conflictingSection.dateKey || this.toDateKeyUTC(conflictingSection.date);
              
              if (conflictDateKey === newDateKey) {
-                 // التحقق من تطابق canonicalKey بالضبط
                  const exactMatch = conflictingSection[metaField].find(s =>
                    s.surahNumber === seg.surahNumber &&
                    s.ayahStart === seg.ayahStart &&
@@ -182,7 +185,11 @@ class SectionSequenceService {
                  if (exactMatch) {
                    return {
                      isValid: false,
-                     message: `🚫 تكرار مراجعة: المقطع [${seg.surahNumber}:${seg.ayahStart}-${seg.ayahEnd}] مسجل بالفعل للمراجعة في نفس هذا اليوم (${newDateKey}).`
+                     message: this.formatErrorMessage(
+                         "تكرار المراجعة في نفس اليوم",
+                         `المقطع ${seg.ayahStart}-${seg.ayahEnd} من سورة ${seg.surahNumber}.`,
+                         "لقد قمت بإضافة هذا المقطع للمراجعة في سجل سابق اليوم."
+                     )
                    };
                  }
              }
@@ -194,7 +201,6 @@ class SectionSequenceService {
       // ====================================================
       if (type === 'review') {
           // القاعدة: نطاق المراجعة يجب أن يطابق بدقة نطاق حفظ سابق.
-          // الشعار: "نفس الرينجات بالضبط"
           
           let strictMatchFound = false;
 
@@ -220,6 +226,12 @@ class SectionSequenceService {
                     }
                 }
              };
+
+             // ✅ إضافة شرط التاريخ: يجب أن يكون الحفظ قد تم في وقت سابق أو نفس وقت المراجعة
+             if (newSectionDate) {
+                 memQuery.date = { $lte: newSectionDate };
+             }
+
              const exists = await Section.exists(memQuery);
              if (exists) strictMatchFound = true;
           }
@@ -227,7 +239,11 @@ class SectionSequenceService {
           if (!strictMatchFound) {
               return {
                   isValid: false,
-                  message: `🚫 مراجعة غير صحيحة: المقطع [${seg.surahNumber}:${seg.ayahStart}-${seg.ayahEnd}] لم يُحفظ بهذا المدى بالضبط.\n(يجب مراجعة نفس المقاطع المحفوظة - لا تقسيم ولا دمج).`
+                  message: this.formatErrorMessage(
+                      "المراجعة غير مطابقة للحفظ السابق",
+                      `المقطع المطلوب: سورة ${seg.surahNumber} (الآيات ${seg.ayahStart}-${seg.ayahEnd})`,
+                      "لم نجد سجلاً سابقاً لهذا المقطع بنفس البداية والنهاية. يجب أن تراجع نفس المقطع الذي حفظته سابقاً بالضبط (نفس عدد الآيات)، لا يمكنك زيادة أو إنقاص الآيات في المراجعة."
+                  )
               };
           }
 
@@ -291,6 +307,10 @@ class SectionSequenceService {
         );
 
         if (!validationResult.isValid) {
+          // Reformat error if it's not formatted 
+          if (!validationResult.message.startsWith('❌')) {
+              validationResult.message = this.formatErrorMessage("مشكلة في تسلسل الحفظ", validationResult.message, "يرجى الالتزام بالتسلسل.");
+          }
           return validationResult;
         }
 
@@ -298,13 +318,52 @@ class SectionSequenceService {
         if (!neighbors.previous && !hasLocalPredecessor && seg.ayahStart !== 1) {
           return {
             isValid: false,
-            message: `🚫 بداية خاطئة: أول حفظ في السورة ${seg.surahNumber} يجب أن يبدأ من الآية 1 (وليس ${seg.ayahStart}).`
+            message: this.formatErrorMessage(
+                "بداية السورة غير صحيحة",
+                `تحاول بدء حفظ سورة ${seg.surahNumber} من الآية ${seg.ayahStart}.`,
+                "يجب أن يبدأ أول حفظ للسورة دائماً من الآية رقم 1."
+            )
           };
         }
       }
     }
 
     return { isValid: true };
+  }
+
+  /**
+   * ✅ التحقق من وجود تسميع سابق لنفس اليوم (One Section Per Day Rule)
+   * تمنع إضافة أكثر من سجل واحد لنفس الحلقة في نفس اليوم (24H).
+   */
+  async checkDailyQuota(groupId, date, excludeSectionId = null) {
+      if (!date || !groupId) return { isValid: true, isBlocked: false };
+
+      const dateKey = this.toDateKeyUTC(date);
+      
+      const query = {
+          group: groupId,
+          dateKey: dateKey
+      };
+
+      if (excludeSectionId) {
+          query._id = { $ne: excludeSectionId };
+      }
+
+      const existingSection = await Section.findOne(query).select('_id');
+
+      if (existingSection) {
+          return {
+              isValid: false,
+              isBlocked: true,
+              message: this.formatErrorMessage(
+                  "تم تسجيل تسميع لهذا اليوم بالفعل",
+                  `يوجد سجل تسميع محفوظ بتاريخ اليوم (${dateKey}) لهذه الحلقة.`,
+                  "يسمح بإضافة سجل واحد فقط لكل يوم (يمكنك إضافة حفظ ومراجعة معاً في نفس السجل، أو تعديل السجل الحالي لإضافة المزيد)."
+              )
+          };
+      }
+
+      return { isValid: true, isBlocked: false };
   }
 
   /**
@@ -356,7 +415,11 @@ class SectionSequenceService {
             if (mem.ayahStart === 1) {
                  return {
                      isValid: false,
-                     message: `🚫 غير منطقي: لا يمكن مراجعة سورة ${mem.surahNameCanonical} لأنك بدأت حفظها الآن (من الآية 1).`
+                     message: this.formatErrorMessage(
+                         "ترتيب غير منطقي",
+                         `تحاول مراجعة سورة ${mem.surahNumber} بينما تقوم ببدء حفظها في نفس الطلب.`,
+                         "لا يمكن مراجعة سورة لم تكتمل حفظاً بعد، أو على الأقل لم تحفظ جزءاً كافياً منها سابقاً."
+                     )
                  };
             }
 
@@ -364,7 +427,11 @@ class SectionSequenceService {
             if (rev.ayahEnd >= mem.ayahStart) {
                  return {
                      isValid: false,
-                     message: `🚫 تداخل زمني: المراجعة (${rev.ayahStart}-${rev.ayahEnd}) تتداخل مع نطاق الحفظ الجديد (${mem.ayahStart}-${mem.ayahEnd}). المراجعة تكون للمحفوظات القديمة فقط.`
+                     message: this.formatErrorMessage(
+                         "تداخل زمني بين الحفظ والمراجعة",
+                         `المراجعة (${rev.ayahStart}-${rev.ayahEnd}) تتداخل مع نطاق الحفظ الجديد (${mem.ayahStart}-${mem.ayahEnd}).`,
+                         "المراجعة تكون للمحفوظات القديمة فقط، ولا يمكن مراجعة ما يتم حفظه الآن."
+                     )
                  };
             }
         }
@@ -478,9 +545,11 @@ class SectionSequenceService {
           
           return {
             isValid: false,
-            message: `❌ لا يمكن إضافة مقطع ${newSegment.ayahStart}-${newSegment.ayahEnd} في هذا التاريخ\n\n` +
-                     `السبب: في تاريخ سابق (${prevDate}) تم حفظ الآيات ${previousNeighbor.ayahStart}-${previousNeighbor.ayahEnd}\n\n` +
-                     `💡 يجب المتابعة من الآية ${expectedStart} مباشرة`
+            message: this.formatErrorMessage(
+                "فجوة في الحفظ (غير متصل)",
+                `المقطع الجديد يبدأ من الآية ${newSegment.ayahStart}، بينما آخر حفظ سابق لك لهذه السورة توقف عند الآية ${previousNeighbor.ayahEnd}، بتاريخ ${prevDate}.`,
+                `يجب أن تكمل الحفظ مباشرة دون ترك آيات. ابدأ من الآية ${expectedStart}.`
+            )
           };
         }
       }
@@ -489,7 +558,11 @@ class SectionSequenceService {
       if (newSegment.ayahStart <= previousNeighbor.ayahEnd) {
         return {
           isValid: false,
-          message: `❌ تداخل: المقطع [${segDesc}] يتداخل مع المقطع السابق ${previousNeighbor.canonicalKey} (التاريخ: ${previousNeighbor.dateKey || 'unknown'}).`
+          message: this.formatErrorMessage(
+              "تداخل مع حفظ سابق",
+              `المقطع ${newSegment.ayahStart}-${newSegment.ayahEnd} يتداخل مع مقطع سابق (${previousNeighbor.ayahStart}-${previousNeighbor.ayahEnd}) تم حفظه في ${previousNeighbor.dateKey || ''}.`,
+              "لا يمكن إعادة حفظ ما تم حفظه سابقاً. تحقق من التواريخ السابقة."
+          )
         };
       }
     }
@@ -506,9 +579,11 @@ class SectionSequenceService {
           
           return {
             isValid: false,
-            message: `❌ لا يمكن إضافة مقطع ${newSegment.ayahStart}-${newSegment.ayahEnd} في هذا التاريخ\n\n` +
-                     `السبب: في تاريخ لاحق (${nextDate}) تم حفظ الآيات ${nextNeighbor.ayahStart}-${nextNeighbor.ayahEnd}\n\n` +
-                     `💡 المقطع المناسب: من ${newSegment.ayahStart} إلى ${expectedEnd}`
+            message: this.formatErrorMessage(
+                "عدم تطابق مع التسلسل اللاحق",
+                `في تاريخ لاحق (${nextDate})، قمت بحفظ الآيات ابتداءً من الآية ${nextNeighbor.ayahStart}. المقطع الحالي ينتهي عند ${newSegment.ayahEnd}، مما سيترك فجوة بينهما.`,
+                `للحفاظ على التسلسل المتصل، يجب أن يمتد حفظك الحالي حتى الآية ${expectedEnd} ليلتحم بالحفظ اللاحق.`
+            )
           };
         }
       }
@@ -521,7 +596,11 @@ class SectionSequenceService {
         
         return {
           isValid: false,
-          message: `❌ تداخل مع مقطع مسجل:\n\n📌 المقطع المسجل (${nextDate}): الآيات ${nextNeighbor.ayahStart}-${nextNeighbor.ayahEnd}\n⚠️ المقطع المطلوب يتداخل مع هذا المقطع.\n\n💡 يجب أن ينتهي مقطعك قبل الآية ${nextNeighbor.ayahStart}.`
+          message: this.formatErrorMessage(
+              "تداخل مع حفظ لاحق",
+              `المقطع الجديد ينتهي عند الآية ${newSegment.ayahEnd}، وهذا يتداخل مع حفظ مسجل بتاريخ لاحق (${nextDate}) يبدأ من الآية ${nextNeighbor.ayahStart}.`,
+              `يجب أن ينتهي مقطعك الحالي قبل الآية ${nextNeighbor.ayahStart} لتجنب التكرار.`
+          )
         };
       }
     }

@@ -44,9 +44,20 @@ const EditSectionModalComponent = ({
     // Safety check just in case
     if (hasConsistencyErrors) return;
 
-    // Sync with parent before submit
+    // Construct the payload with the latest local state
+    const payload = {
+      ...localSection,
+      memorizationMeta: localMemorizationMeta,
+      reviewMeta: localReviewMeta,
+      // Ensure legacy fields if needed, or null them if using meta
+      // For now we keep legacy fields as is or empty if not used
+    };
+
+    // Sync with parent before submit (optional if we pass payload)
     syncWithParent(onChange);
-    onSubmit(e);
+    
+    // Pass event AND payload
+    onSubmit(e, payload);
   };
 
   if (!isOpen || !editingSection || !localSection) return null;

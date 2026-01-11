@@ -92,6 +92,7 @@ interface ModalsContainerProps {
     handleEditSection: (
       e: React.FormEvent,
       editingSection: Section | null,
+      updatedData: Partial<Section> | null,
       setLoading: React.Dispatch<React.SetStateAction<boolean>>
     ) => void;
     handleAddMark: (
@@ -195,10 +196,11 @@ const ModalsContainerComponent = ({
           state.setIsEditSectionModalOpen(false);
           state.setEditingSection(null);
         }}
-        onSubmit={(e) =>
+        onSubmit={(e, updatedData) =>
           handlers.handleEditSection(
             e,
             state.editingSection,
+            updatedData || null,
             state.setIsEditingSectionLoading
           )
         }

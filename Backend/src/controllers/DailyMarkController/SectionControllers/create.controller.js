@@ -37,6 +37,15 @@ exports.createSection = async (req, res) => {
     // ============================================
     if (sectionData.group) {
         
+        // 0. Daily Limit Check (One Section Per Day)
+        const dailyCheck = await sequenceService.checkDailyQuota(
+            sectionData.group,
+            sectionData.date
+        );
+        if (!dailyCheck.isValid && dailyCheck.isBlocked) {
+             return sendError(res, dailyCheck.message, 400); 
+        }
+
         // 1. Check Memorization Sequence (Date-Aware with Neighbors)
         const memValidation = await sequenceService.validateSequence(
             sectionData.memorizationMeta,

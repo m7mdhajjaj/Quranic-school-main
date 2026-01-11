@@ -132,7 +132,7 @@ export interface EditSectionModalProps {
   editingSection: Section | null;
   isLoading?: boolean;
   onClose: () => void;
-  onSubmit: (e: React.FormEvent) => void;
+  onSubmit: (e: React.FormEvent, data?: Partial<Section>) => void;
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
 }
 
