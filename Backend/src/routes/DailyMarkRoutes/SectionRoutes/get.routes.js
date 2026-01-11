@@ -20,6 +20,9 @@ router.get("/last-segment", dailyMarkController.getLastSegment);
 // ✅ V3: Get neighbor segments (for backfilling) - MUST be before /:id
 router.get("/neighbor-segments", dailyMarkController.getNeighborSegments);
 
+// ✅ V3: Check Quota (Daily & Weekly)
+router.get("/check-quota", dailyMarkController.checkQuota);
+
 // Get a single section
 router.get("/:id", dailyMarkController.getSection);
 

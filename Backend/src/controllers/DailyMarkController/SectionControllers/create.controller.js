@@ -46,6 +46,15 @@ exports.createSection = async (req, res) => {
              return sendError(res, dailyCheck.message, 400); 
         }
 
+        // 0.5 Weekly Limit Check (Max 3 sections per week)
+        const weeklyCheck = await sequenceService.checkWeeklyQuota(
+            sectionData.group,
+            sectionData.date
+        );
+        if (!weeklyCheck.isValid) {
+             return sendError(res, weeklyCheck.message, 400);
+        }
+
         // 1. Check Memorization Sequence (Date-Aware with Neighbors)
         const memValidation = await sequenceService.validateSequence(
             sectionData.memorizationMeta,

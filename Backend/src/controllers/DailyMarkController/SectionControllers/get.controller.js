@@ -8,11 +8,11 @@ const {
 
 /**
  * Get all sections, sorted by date (newest first)
- * Support filtering by group and teacher via query params
+ * Support filtering by group, teacher and period (week/all)
  */
 exports.getSections = async (req, res) => {
   try {
-    const { group, teacher } = req.query;
+    const { group, teacher, period } = req.query;
     const filter = {};
 
     if (group) {
@@ -20,6 +20,27 @@ exports.getSections = async (req, res) => {
     }
     if (teacher) {
       filter.teacher = teacher;
+    }
+
+    // ✅ V3: Weekly Filter (Current Week: Sat -> Fri)
+    if (period === 'week') {
+      const d = new Date();
+      // Calculate start of week (Saturday)
+      const dayIndex = d.getDay(); // 0-6
+      const distFromSat = (dayIndex + 1) % 7;
+      
+      const startOfWeek = new Date(d);
+      startOfWeek.setDate(d.getDate() - distFromSat);
+      startOfWeek.setHours(0, 0, 0, 0);
+      
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 7);
+      endOfWeek.setHours(0, 0, 0, 0);
+
+      filter.date = { 
+        $gte: startOfWeek, 
+        $lt: endOfWeek 
+      };
     }
 
     const sections = await Section.find(filter)
@@ -211,6 +232,51 @@ exports.getNeighborSegments = async (req, res) => {
       }
     }, "Neighbor segments retrieved successfully");
     
+  } catch (error) {
+    sendError(res, error.message, 500, error);
+  }
+};
+
+/**
+ * Check if the weekly quota (3 sections/week) allows adding a new section on this date
+ * GET /sections/check-quota?group=...&date=...&excludeId=...
+ */
+exports.checkQuota = async (req, res) => {
+  try {
+    const { group, date, excludeId } = req.query;
+
+    if (!group || !date) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Missing required params: group, date" 
+      });
+    }
+
+    // 1. Check Weekly Quota
+    const check = await sequenceService.checkWeeklyQuota(group, date, excludeId);
+
+    // 2. Check Daily Quota (Already exists logic)
+    // We check daily quota too effectively to prevent duplicate days
+    const daily = await sequenceService.checkDailyQuota(group, date, excludeId);
+
+    if (!daily.isValid) {
+         return sendSuccess(res, { 
+             allowed: false,
+             reason: 'daily_limit',
+             message: daily.message 
+         });
+    }
+
+    if (!check.isValid) {
+        return sendSuccess(res, { 
+            allowed: false,
+            reason: 'weekly_limit',
+            message: check.message 
+        });
+    }
+
+    sendSuccess(res, { allowed: true }, "Quota check passed");
+
   } catch (error) {
     sendError(res, error.message, 500, error);
   }

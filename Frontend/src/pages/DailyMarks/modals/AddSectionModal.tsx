@@ -1,4 +1,4 @@
-import { memo, useEffect } from 'react';
+import { memo, useEffect, useState } from 'react';
 import {
   Button,
   Modal,
@@ -9,6 +9,7 @@ import { useAddSectionModal } from '../hooks/modals';
 import { useSectionValidation } from '../hooks/useSectionValidation'; 
 import QuranSegmentInput from '../components/QuranSegmentInput';
 import ErrorMessageList from '../components/ErrorMessageList';
+import { checkSectionQuota } from '@/Api/DailyMark/sectionApi';
 
 /**
  * Modal for adding a new section
@@ -38,12 +39,40 @@ const AddSectionModalComponent = ({
     handleMetaChange,
   } = useAddSectionModal();
 
+  // New: Quota Validation State
+  const [quotaError, setQuotaError] = useState<string | null>(null);
+  const [isCheckingQuota, setIsCheckingQuota] = useState(false);
+
   // Sync with parent state when modal opens
   useEffect(() => {
     if (isOpen) {
       syncLocalState(newSection);
+      setQuotaError(null); // Reset error on open
     }
   }, [isOpen, newSection, syncLocalState]);
+
+  // New: Check Quota on Date Change
+  useEffect(() => {
+    if (!isOpen || !newSection.date) return;
+    
+    const grp = newSection.group || selectedGroup;
+    if (!grp) return;
+
+    const timer = setTimeout(async () => {
+        setIsCheckingQuota(true);
+        // excludeId is undefined for Add mode
+        const result = await checkSectionQuota(grp, newSection.date); 
+        setIsCheckingQuota(false);
+        
+        if (!result.allowed) {
+            setQuotaError(result.message || "لا يمكن الإضافة في هذا التاريخ");
+        } else {
+            setQuotaError(null);
+        }
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timer);
+  }, [newSection.date, selectedGroup, newSection.group, isOpen]);
 
   // Frontend Validation
   const { consistencyErrors, hasConsistencyErrors } = useSectionValidation(
@@ -51,9 +80,11 @@ const AddSectionModalComponent = ({
       localReviewMeta
   );
 
+  const hasErrors = hasConsistencyErrors || !!quotaError;
+
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (hasConsistencyErrors) return;
+    if (hasErrors) return;
     
     // Construct the payload with the latest local state
     const payload = {
@@ -88,18 +119,19 @@ const AddSectionModalComponent = ({
         type="submit"
         form="add-section-form"
         variant="primary"
+        onMouseDown={(e) => e.preventDefault()} // Prevent blur to avoid layout shift (shake) from dropdown closing
         className={`flex-[2] py-3 px-8 rounded-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 min-h-[52px] transition-all font-bold text-lg
-          ${hasConsistencyErrors 
+          ${hasErrors 
             ? 'bg-gray-400 cursor-not-allowed hover:bg-gray-400 hover:shadow-none hover:translate-y-0' 
             : 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700'
           }`}
-        disabled={isLoading || hasConsistencyErrors}
-        title={hasConsistencyErrors ? 'يرجى تصحيح الأخطاء أولاً' : 'إضافة المقطع'}
+        disabled={isLoading || hasErrors || isCheckingQuota}
+        title={hasErrors ? 'يرجى تصحيح الأخطاء أولاً' : 'إضافة المقطع'}
       >
-        {isLoading ? (
+        {isLoading || isCheckingQuota ? (
           <span className="flex items-center justify-center gap-2">
             <span className="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-white"></span>
-            جاري الإضافة...
+            {isCheckingQuota ? 'جاري التحقق...' : 'جاري الإضافة...'}
           </span>
         ) : (
           'حفظ وإضافة'
@@ -134,6 +166,14 @@ const AddSectionModalComponent = ({
           <p className="mt-2 text-xs text-slate-500 flex items-center gap-1">
              📅 يمكنك اختيار التاريخ من اليوم وما بعده فقط
           </p>
+          
+          {/* Quota Error Display */}
+          {quotaError && (
+              <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-start gap-2 animate-pulse">
+                  <span className="font-bold">⚠️ تنبيه:</span>
+                  <span className="whitespace-pre-line">{quotaError}</span>
+              </div>
+          )}
         </div>
 
         {/* Input Sections */}

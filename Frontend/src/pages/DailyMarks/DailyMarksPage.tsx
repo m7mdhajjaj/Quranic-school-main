@@ -105,6 +105,8 @@ const DailyMarksPage = () => {
     endDate,
     setStartDate,
     setEndDate,
+    filterMode,      // New
+    setFilterMode    // New
   } = useSectionsFilter();
 
   // Determine student ID for filtering marks
@@ -132,7 +134,8 @@ const DailyMarksPage = () => {
     state.searchQuery,
     !!currentUser && !!selectedGroup,
     startDate,
-    endDate
+    endDate,
+    filterMode // Pass new filter mode
   );
 
   // Student ID for averages calculation
@@ -325,6 +328,8 @@ const DailyMarksPage = () => {
                   endDate={endDate}
                   onStartDateChange={setStartDate}
                   onEndDateChange={setEndDate}
+                  selectedFilterMode={filterMode}
+                  onFilterModeChange={setFilterMode}
                 />
               </Suspense>
             )}

@@ -25,10 +25,21 @@ exports.updateSection = async (req, res) => {
     // ============================================
     // 🛡️ Advanced Conflict Check (Update) - V3: Date-Aware
     // ============================================
-    const targetGroup = updateData.group || section.group;
     const targetDate = updateData.date || section.date;
     
     if (targetGroup) {
+         // 0.5 Check Weekly Quota (If date changes)
+         if (updateData.date && new Date(updateData.date).getTime() !== new Date(section.date).getTime()) {
+             const weeklyCheck = await sequenceService.checkWeeklyQuota(
+                 targetGroup,
+                 targetDate,
+                 section._id.toString()
+             );
+             if (!weeklyCheck.isValid) {
+                 return sendValidationError(res, weeklyCheck.message);
+             }
+         }
+
          // Check Memorization (with excludeSectionId)
          if (updateData.memorizationMeta) {
              const memValidation = await sequenceService.validateSequence(

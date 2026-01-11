@@ -382,10 +382,11 @@ export const getFilteredSections = async (filters: {
   group?: string;
   startDate?: string;
   endDate?: string;
+  period?: 'week' | 'all';
 }): Promise<ApiResponse<Section[]> & { count?: number; filters?: any }> => {
   try {
     const params = new URLSearchParams();
-    
+
     if (filters.month) params.append("month", filters.month.toString());
     if (filters.year) params.append("year", filters.year.toString());
     if (filters.day) params.append("day", filters.day.toString());
@@ -393,6 +394,7 @@ export const getFilteredSections = async (filters: {
     if (filters.group) params.append("group", filters.group);
     if (filters.startDate) params.append("startDate", filters.startDate);
     if (filters.endDate) params.append("endDate", filters.endDate);
+    if (filters.period) params.append("period", filters.period);
 
     console.log("🔍 Fetching filtered sections:", filters);
     const response = await api.get(`/daily-marks/filtered-sections?${params.toString()}`);

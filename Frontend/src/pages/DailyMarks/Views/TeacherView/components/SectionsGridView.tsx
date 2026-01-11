@@ -41,6 +41,8 @@ interface SectionsGridViewProps {
   endDate?: string | null;
   onStartDateChange?: (date: string | null) => void;
   onEndDateChange?: (date: string | null) => void;
+  selectedFilterMode?: 'week' | 'all';
+  onFilterModeChange?: (mode: 'week' | 'all') => void;
 }
 
 /**
@@ -67,6 +69,8 @@ export const SectionsGridView = ({
   endDate,
   onStartDateChange,
   onEndDateChange,
+  selectedFilterMode,
+  onFilterModeChange,
 }: SectionsGridViewProps) => {
 
   return (
@@ -132,11 +136,41 @@ export const SectionsGridView = ({
         {/* Filters (Right side in RTL) */}
         <div>
           {sections.length > 0 && (
-            <SectionStatusFilter
-              selectedStatus={selectedStatus}
-              onStatusChange={onStatusChange}
-              counts={statusCounts}
-            />
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+               {/* Period Toggle */}
+               {onFilterModeChange && (
+                <div className="flex items-center bg-white rounded-lg border border-gray-200 p-1 shadow-sm">
+                  <button
+                    onClick={() => onFilterModeChange('all')}
+                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
+                      selectedFilterMode !== 'week'
+                        ? 'bg-emerald-100 text-emerald-800 shadow-sm'
+                        : 'text-gray-600 hover:bg-gray-50'
+                    }`}
+                    type="button"
+                  >
+                    الكل
+                  </button>
+                  <button
+                    onClick={() => onFilterModeChange('week')}
+                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
+                      selectedFilterMode === 'week'
+                        ? 'bg-emerald-100 text-emerald-800 shadow-sm'
+                        : 'text-gray-600 hover:bg-gray-50'
+                    }`}
+                    type="button"
+                  >
+                    الأسبوع الحالي
+                  </button>
+                </div>
+              )}
+              
+              <SectionStatusFilter
+                selectedStatus={selectedStatus}
+                onStatusChange={onStatusChange}
+                counts={statusCounts}
+              />
+            </div>
           )}
         </div>
 

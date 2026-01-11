@@ -124,13 +124,26 @@ export const getSectionsByGroup = async (
   groupId: string
 ): Promise<Section[]> => {
   try {
-    const response = await api.get(`/daily-marks/sections?group=${groupId}`);
+    const response = await api.get(`/daily-marks/sections`, {
+      params: { 
+        group: groupId,
+        period: (arguments[1] === 'week') ? 'week' : undefined
+      }
+    }); // Updated to use params object
     return response.data.data || response.data || [];
   } catch (error) {
     console.error("Failed to get sections by group:", error);
     return [];
   }
 };
+
+// Also export the new signature for clarity if calling directly
+export const getSectionsByGroupWithFilter = async (
+  groupId: string,
+  period?: 'week' | 'all'
+): Promise<Section[]> => {
+   return getSectionsByGroup(groupId, period);
+}
 
 // Get section by ID
 export const getSectionById = async (
@@ -315,6 +328,26 @@ export const getNeighborSegments = async (
   } catch (error) {
     console.error("Failed to fetch neighbor segments:", error);
     return null;
+  }
+};
+
+/**
+ * Check if adding a section is allowed based on Quota (Weekly/Daily)
+ */
+export const checkSectionQuota = async (
+  group: string,
+  date: string,
+  excludeId?: string
+): Promise<{ allowed: boolean; reason?: 'daily_limit' | 'weekly_limit'; message?: string }> => {
+  try {
+    const response = await api.get('/daily-marks/sections/check-quota', {
+      params: { group, date, excludeId },
+    });
+    return response.data.data;
+  } catch (error) {
+    console.error('Error checking quota:', error);
+    // On error, we default to allowing (backend will perform final check)
+    return { allowed: true };
   }
 };
 

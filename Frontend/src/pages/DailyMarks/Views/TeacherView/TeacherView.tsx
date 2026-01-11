@@ -46,6 +46,8 @@ const TeacherViewComponent = ({
   endDate,
   onStartDateChange,
   onEndDateChange,
+  selectedFilterMode,
+  onFilterModeChange,
 }: TeacherViewProps) => {
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -259,6 +261,8 @@ const TeacherViewComponent = ({
       endDate={endDate}
       onStartDateChange={onStartDateChange}
       onEndDateChange={onEndDateChange}
+      selectedFilterMode={selectedFilterMode}
+      onFilterModeChange={onFilterModeChange}
     />
   );
 };

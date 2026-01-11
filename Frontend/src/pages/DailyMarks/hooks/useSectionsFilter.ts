@@ -29,6 +29,9 @@ export const useSectionsFilter = (): UseSectionsFilterReturn => {
   const [selectedDay, setSelectedDay] = useState<number | null>(null); // null = all days
   const [startDate, setStartDate] = useState<string | null>(null);
   const [endDate, setEndDate] = useState<string | null>(null);
+  
+  // New: Weekly Filter Mode
+  const [filterMode, setFilterMode] = useState<'all' | 'week'>('all');
 
   return {
     selectedMonth,
@@ -41,5 +44,7 @@ export const useSectionsFilter = (): UseSectionsFilterReturn => {
     endDate,
     setStartDate,
     setEndDate,
+    filterMode,
+    setFilterMode
   };
 };

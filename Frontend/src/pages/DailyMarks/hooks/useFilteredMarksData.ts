@@ -46,7 +46,8 @@ export const useFilteredMarksData = (
   searchQuery: string,
   enabled: boolean = true,
   startDate: string | null = null,
-  endDate: string | null = null
+  endDate: string | null = null,
+  period: 'week' | 'all' = 'all' // New parameter
 ): UseFilteredMarksDataReturn => {
   const [sections, setSections] = useState<Section[]>([]);
   const [marks, setMarks] = useState<Mark[]>([]);
@@ -67,6 +68,7 @@ export const useFilteredMarksData = (
       studentId: selectedStudentId || undefined,
       startDate: startDate || undefined,
       endDate: endDate || undefined,
+      period: period // Add period to filters
     };
   }, [
     selectedMonth,
@@ -77,6 +79,7 @@ export const useFilteredMarksData = (
     selectedStudentId,
     startDate,
     endDate,
+    period
   ]);
 
   const fetchSectionsOnly = useCallback(async () => {
@@ -94,6 +97,7 @@ export const useFilteredMarksData = (
       group: f.group,
       startDate: f.startDate,
       endDate: f.endDate,
+      period: f.period // Pass period to API
     });
 
     if (sectionsResponse.success && sectionsResponse.data) {

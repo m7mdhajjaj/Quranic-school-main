@@ -107,6 +107,7 @@ export const sectionValidationSchema = yup.object<SectionFormData>({
     )
     // ✅ V3: No .min(today) restriction - backfilling is allowed
     // Backend will validate chronological sequence integrity
+    // Note: Max 3 sections per week rule is enforced by Backend.
     ,
   
   memorizationMeta: yup.array().of(quranSegmentSchema).optional(),

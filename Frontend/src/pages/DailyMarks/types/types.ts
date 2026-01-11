@@ -222,6 +222,8 @@ export interface TeacherViewProps {
   endDate?: string | null;
   onStartDateChange?: (date: string | null) => void;
   onEndDateChange?: (date: string | null) => void;
+  selectedFilterMode?: 'week' | 'all';
+  onFilterModeChange?: (mode: 'week' | 'all') => void;
 }
 
 // StudentView Props

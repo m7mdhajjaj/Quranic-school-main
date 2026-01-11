@@ -367,6 +367,62 @@ class SectionSequenceService {
   }
 
   /**
+   * ✅ التحقق من الحد الأسبوعي (3 مقاطع كحد أقصى)
+   * تمنع إضافة أكثر من 3 سجلات للحلقة في الأسبوع الواحد (السبت - الجمعة).
+   * يتم حساب التواريخ بدقة لضمان التعامل مع نويقلات الأشهر (مثلاً نهاية فبراير).
+   */
+  async checkWeeklyQuota(groupId, date, excludeSectionId = null) {
+      if (!date || !groupId) return { isValid: true };
+
+      // 1. تحديد بداية ونهاية الأسبوع بدقة (UTC لضمان التوافق)
+      const d = new Date(date);
+      
+      // السبت = 6، الجمعة = 5
+      // نريد العودة إلى أقرب يوم سبت (بداية الأسبوع)
+      const dayIndex = d.getDay(); // 0 (Sun) to 6 (Sat)
+      const distFromSat = (dayIndex + 1) % 7; // عدد الأيام للعودة للوراء للوصول للسبت
+      
+      const startOfWeek = new Date(d);
+      startOfWeek.setDate(d.getDate() - distFromSat);
+      startOfWeek.setHours(0, 0, 0, 0); // تصفير الوقت
+      
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 7); // الجمعة نهاية اليوم (أو السبت القادم بداية اليوم)
+      endOfWeek.setHours(0, 0, 0, 0); 
+      
+      // 2. الاستعلام عن المقاطع في هذا النطاق
+      const query = {
+          group: groupId,
+          date: { $gte: startOfWeek, $lt: endOfWeek }
+      };
+
+      if (excludeSectionId) {
+          query._id = { $ne: excludeSectionId };
+      }
+
+      const count = await Section.countDocuments(query);
+      
+      // 3. التحقق من الحد (3 مقاطع)
+      if (count >= 3) {
+          // تنسيق التاريخ للعرض في الرسالة بشكل مقروء
+          const formatDate = (dateObj) => {
+             return dateObj.toLocaleDateString('ar-EG', { day: 'numeric', month: 'numeric' });
+          };
+
+          return {
+              isValid: false,
+              message: this.formatErrorMessage(
+                  "تجاوز الحد الأسبوعي (3 مقاطع)",
+                  `هذه الحلقة استنفدت رصيدها لهذا الأسبوع (${formatDate(startOfWeek)} - ${formatDate(new Date(endOfWeek.getTime() - 1))}).\nعدد المقاطع الحالي: ${count}.`,
+                  "النظام يسمح بـ 3 أيام تسميع فقط أسبوعياً لكل حلقة (بغض النظر عن المعلم). يرجى اختيار تاريخ في أسبوع آخر أو حذف سجل سابق."
+              )
+          };
+      }
+
+      return { isValid: true };
+  }
+
+  /**
    * للعثور على نهاية مقطع الحفظ المقابل لبداية معينة.
    * يستخدم هذا لاقتراح "نهاية المراجعة" بحيث تطابق الحفظ الأصلي.
    */
