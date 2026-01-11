@@ -64,16 +64,6 @@ export const Header: React.FC<HeaderProps> = ({
           </TouchableOpacity>
         </View>
 
-        {/* Center Title */}
-        <View style={styles.centerSection}>
-          <Text style={styles.title} numberOfLines={1}>
-            مدرسة القرآن الكريم
-          </Text>
-          <Text style={styles.subtitle} numberOfLines={1}>
-            أكاديمية مدرسة المهاجرين
-          </Text>
-        </View>
-
         {/* Left Section - Profile */}
         <TouchableOpacity
           style={styles.profileSection}
@@ -196,8 +186,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 14,
-    paddingTop: Platform.OS === "ios" ? 50 : 14,
-    minHeight: Platform.OS === "ios" ? 100 : 76,
+    paddingTop: Platform.OS === "ios" ? 50 : 40,
+    minHeight: Platform.OS === "ios" ? 100 : 90,
   },
   actionsSection: {
     flexDirection: "row",
