@@ -12,8 +12,7 @@ import { useRouter } from "expo-router";
 import { useAuth } from "@/hooks/useAuth";
 import { Logo } from "@/components/ui";
 import { Avatar } from "@/components/Avatar/Avatar";
-import { Menu, Bell, ChevronDown } from "lucide-react-native";
-import { ProfileMenu } from "../ProfileMenu";
+import { Menu, Bell } from "lucide-react-native";
 import { DrawerMenu } from "./DrawerMenu";
 import { useLogo } from "@/components/Hooks/useLogo";
 
@@ -29,7 +28,6 @@ export const Header: React.FC<HeaderProps> = ({
   const { user: currentUser } = useAuth();
   const router = useRouter();
   const { logoUrl, logoLoading } = useLogo();
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   if (!currentUser) return null;
@@ -65,10 +63,7 @@ export const Header: React.FC<HeaderProps> = ({
         </View>
 
         {/* Left Section - Profile */}
-        <TouchableOpacity
-          style={styles.profileSection}
-          onPress={() => setProfileMenuOpen(!profileMenuOpen)}
-          activeOpacity={0.7}>
+        <View style={styles.profileSection}>
           <View style={styles.profileInfo}>
             <Text style={styles.profileName} numberOfLines={1}>
               {currentUser?.firstName && currentUser?.lastName
@@ -92,47 +87,8 @@ export const Header: React.FC<HeaderProps> = ({
             userId={currentUser._id}
             userRole={currentUser.role}
           />
-        </TouchableOpacity>
+        </View>
       </View>
-
-      {/* Profile Menu Modal */}
-      <Modal
-        visible={profileMenuOpen}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setProfileMenuOpen(false)}>
-        <Pressable
-          style={styles.modalOverlay}
-          onPress={() => setProfileMenuOpen(false)}>
-          <View style={styles.profileMenuContainer}>
-            <ProfileMenu
-              userName={
-                currentUser?.firstName && currentUser?.lastName
-                  ? `${currentUser.firstName} ${currentUser.lastName}`
-                  : currentUser?.firstName || "المستخدم"
-              }
-              userRole={
-                currentUser?.role === "teacher"
-                  ? "معلم"
-                  : currentUser?.role === "admin"
-                    ? "مدير"
-                    : "طالب"
-              }
-              onProfilePress={() => {
-                setProfileMenuOpen(false);
-                // Navigate to profile when available
-              }}
-              onSettingsPress={() => {
-                setProfileMenuOpen(false);
-              }}
-              onLogoutPress={async () => {
-                setProfileMenuOpen(false);
-                // Add logout logic here
-              }}
-            />
-          </View>
-        </Pressable>
-      </Modal>
 
       {/* Drawer Menu */}
       <DrawerMenu isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} />
