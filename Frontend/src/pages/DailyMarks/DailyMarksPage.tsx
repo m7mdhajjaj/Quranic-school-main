@@ -8,7 +8,6 @@ import { useSearchParams } from 'react-router-dom';
 
 // UI Components
 import PageHeader from '@/components/UI/PageHeader';
-import { AveragesBarSkeleton } from '../../components/skeletons/AveragesBarSkeleton';
 
 // Custom Hooks - Data Management
 import { useDailyMarksData } from './hooks/useDailyMarksData';
@@ -30,7 +29,6 @@ import { AveragesSection } from './components/AveragesSection';
 import { StudentView } from './Views/StudentView';
 import { ModalsContainer } from './modals/ModalsContainer';
 import { GroupsGridView } from './Views/TeacherView/components/GroupsGridView';
-import { GroupsGridSkeleton } from './Views/TeacherView/components/GroupsGridView';
 
 // Lazy load heavy component
 const TeacherView = lazy(() =>
@@ -121,8 +119,6 @@ const DailyMarksPage = () => {
     loading: loadingMarks,
     setSections,
     setMarks,
-    refetch: refetchMarks,
-    refetchSections,
     refetchMarksOnly,
     refetchSectionsOnly,
   } = useFilteredMarksData(
@@ -217,7 +213,7 @@ const DailyMarksPage = () => {
     const localDate = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
     state.setNewSection(prev => ({ ...prev, date: localDate }));
     state.setIsAddSectionModalOpen(true);
-  }, [state.setNewSection, state.setIsAddSectionModalOpen]);
+  }, [state]);
 
   // ==========================================================================
   // ROLE & DEFAULT VALUES

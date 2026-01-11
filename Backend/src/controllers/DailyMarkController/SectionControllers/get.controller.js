@@ -6,6 +6,15 @@ const {
   sendNotFound,
 } = require("../utils/responseHelpers");
 
+// New imports for getFilteredSections
+const { updateSectionMarksStatus } = require("./sectionMarksStatus");
+const {
+  getUserGroupsByRole,
+  buildGroupFilter,
+  buildDateFilter,
+  buildSectionSearchFilter,
+} = require("../utils/filterHelpers");
+
 /**
  * Get all sections, sorted by date (newest first)
  * Support filtering by group, teacher and period (week/all)
@@ -65,6 +74,156 @@ exports.getSection = async (req, res) => {
     }
     sendSuccess(res, section, "تم جلب المقطع بنجاح");
   } catch (error) {
+    sendError(res, error.message, 500, error);
+  }
+};
+
+/**
+ * Get filtered sections with advanced filters
+ * Moved here from getFilteredMarks.js
+ */
+exports.getFilteredSections = async (req, res) => {
+  try {
+    console.log("🔍 ========== FILTERED SECTIONS REQUEST ==========");
+    const startTime = Date.now();
+
+    const { month, year, day, search, group, startDate, endDate, period } = req.query;
+
+    console.log("📋 Filters received:", { month, year, day, search, group, startDate, endDate, period });
+
+    // Get user's group(s) based on role using helper function
+    let userGroup, teacherGroups;
+    try {
+      const groupsData = await getUserGroupsByRole(req.user, group);
+      userGroup = groupsData.userGroup;
+      teacherGroups = groupsData.teacherGroups;
+    } catch (error) {
+      return res.status(403).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    // Build section filter using helper functions
+    const groupFilter = buildGroupFilter(req.user, userGroup, group);
+    // Initial date filter
+    let dateFilter = buildDateFilter(month, year, day, startDate, endDate);
+    
+    // ✅ V3: Weekly Filter Override (Current Week: Sat -> Fri)
+    if (period === 'week') {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Reset time to ensure clean date calculation
+
+      // Calculate start of week (Saturday)
+      // dayIndex: 0 (Sun) ... 6 (Sat)
+      // distFromSat: Sun(0)->1, Mon(1)->2, ..., Fri(5)->6, Sat(6)->0
+      const dayIndex = today.getDay();
+      const distFromSat = (dayIndex + 1) % 7;
+      
+      const startOfWeek = new Date(today);
+      startOfWeek.setDate(today.getDate() - distFromSat);
+      startOfWeek.setHours(0, 0, 0, 0); // Start of Saturday (00:00:00)
+      
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6); // End of Friday
+      endOfWeek.setHours(23, 59, 59, 999); // End of Friday (23:59:59)
+
+      console.log(`📅 Applying Weekly Filter: ${startOfWeek.toDateString()} -> ${endOfWeek.toDateString()}`);
+
+      // Override dateFilter to strict Range
+      dateFilter = { 
+        $gte: startOfWeek, 
+        $lte: endOfWeek 
+      };
+    }
+
+    const searchFilter = buildSectionSearchFilter(search);
+    
+    // Merge filters properly (handle date and $or from search)
+    const sectionFilter = {
+      ...groupFilter,
+      ...(Object.keys(dateFilter).length > 0 ? { date: dateFilter } : {}),
+      ...searchFilter,
+    };
+
+    console.log("🔧 Section filter:", sectionFilter);
+
+    // Find sections
+    const sections = await Section.find(sectionFilter)
+      .populate("teacher", "firstName lastName")
+      .populate("timetableId", "day startHour endHour sessionType")
+      .sort({ date: -1 })
+      .lean();
+
+    // Check if forceRefresh is requested (useful for debugging or fixing status)
+    const forceRefresh = req.query.refreshStatus === 'true';
+    
+    // Use marksStatus from Schema, update if missing (for old sections) or if forceRefresh is requested
+    const sectionsWithStatus = await Promise.all(
+      sections.map(async (section) => {
+        // If marksStatus doesn't exist or marksProgress is missing, or forceRefresh is requested, calculate and update it
+        if (!section.marksStatus || !section.marksProgress || forceRefresh) {
+          try {
+            await updateSectionMarksStatus(section._id.toString(), section.group || userGroup);
+            // Fetch updated section
+            const updatedSection = await Section.findById(section._id)
+              .populate("timetableId", "day startHour endHour sessionType")
+              .lean();
+            return {
+              ...updatedSection,
+              marksStatus: updatedSection.marksStatus || "not_started",
+              marksProgress: updatedSection.marksProgress || {
+                totalStudents: 0,
+                studentsWithMarks: 0,
+                percentage: 0,
+              },
+            };
+          } catch (error) {
+            console.error(`⚠️ Error updating status for section ${section._id}:`, error);
+            // Return section with default values if update fails
+            return {
+              ...section,
+              marksStatus: section.marksStatus || "not_started",
+              marksProgress: section.marksProgress || {
+                totalStudents: 0,
+                studentsWithMarks: 0,
+                percentage: 0,
+              },
+            };
+          }
+        }
+        // Return section with existing marksStatus from Schema
+        return {
+          ...section,
+          marksStatus: section.marksStatus || "not_started",
+          marksProgress: section.marksProgress || {
+            totalStudents: 0,
+            studentsWithMarks: 0,
+            percentage: 0,
+          },
+        };
+      })
+    );
+
+    const duration = Date.now() - startTime;
+    console.log(`✅ Fetched ${sectionsWithStatus.length} sections with marks status in ${duration}ms`);
+    
+    console.log("🔍 ========== FILTERED SECTIONS COMPLETE ==========\n");
+
+    res.json({
+      success: true,
+      data: sectionsWithStatus,
+      count: sectionsWithStatus.length,
+      filters: {
+        month: month ? parseInt(month) : null,
+        year: year ? parseInt(year) : null,
+        day: day ? parseInt(day) : null,
+        period: period || 'all',
+      },
+    });
+
+  } catch (error) {
+    console.error("❌ Error in getFilteredSections:", error);
     sendError(res, error.message, 500, error);
   }
 };

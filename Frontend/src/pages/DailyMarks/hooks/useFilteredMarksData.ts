@@ -159,6 +159,7 @@ export const useFilteredMarksData = (
           group: f.group,
           startDate: f.startDate,
           endDate: f.endDate,
+          period: f.period,
         }),
         getFilteredMarks({
           month: f.monthToUse,

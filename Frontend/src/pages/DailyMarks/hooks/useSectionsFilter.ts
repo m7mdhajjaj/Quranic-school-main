@@ -11,6 +11,8 @@ interface UseSectionsFilterReturn {
   endDate: string | null;
   setStartDate: React.Dispatch<React.SetStateAction<string | null>>;
   setEndDate: React.Dispatch<React.SetStateAction<string | null>>;
+  filterMode: 'all' | 'week';
+  setFilterMode: React.Dispatch<React.SetStateAction<'all' | 'week'>>;
 }
 
 /**

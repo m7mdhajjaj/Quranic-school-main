@@ -121,13 +121,14 @@ export const getAllSections = async (): Promise<Section[]> => {
 
 // Get sections by group
 export const getSectionsByGroup = async (
-  groupId: string
+  groupId: string,
+  period?: 'week' | 'all'
 ): Promise<Section[]> => {
   try {
     const response = await api.get(`/daily-marks/sections`, {
       params: { 
         group: groupId,
-        period: (arguments[1] === 'week') ? 'week' : undefined
+        period: period
       }
     }); // Updated to use params object
     return response.data.data || response.data || [];

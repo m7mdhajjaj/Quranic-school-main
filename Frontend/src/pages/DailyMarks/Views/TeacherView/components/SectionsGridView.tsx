@@ -3,6 +3,7 @@ import { Users, BookOpen, ArrowLeft, Plus, Trash2, Filter } from 'lucide-react';
 import { SearchInput } from '@/components/Filters';
 import { DateRangePicker } from '@/components/UI/DateRangePicker';
 import SectionStatusFilter from '../../../components/SectionStatusFilter';
+import { PeriodFilterToggle } from '../../../components/PeriodFilterToggle';
 import type { MarkStatus } from '../../../components/SectionStatusBadge';
 import type { Section } from '../../../types/types';
 import { SectionItem } from './SectionItem';
@@ -138,32 +139,10 @@ export const SectionsGridView = ({
           {sections.length > 0 && (
             <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
                {/* Period Toggle */}
-               {onFilterModeChange && (
-                <div className="flex items-center bg-white rounded-lg border border-gray-200 p-1 shadow-sm">
-                  <button
-                    onClick={() => onFilterModeChange('all')}
-                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
-                      selectedFilterMode !== 'week'
-                        ? 'bg-emerald-100 text-emerald-800 shadow-sm'
-                        : 'text-gray-600 hover:bg-gray-50'
-                    }`}
-                    type="button"
-                  >
-                    الكل
-                  </button>
-                  <button
-                    onClick={() => onFilterModeChange('week')}
-                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
-                      selectedFilterMode === 'week'
-                        ? 'bg-emerald-100 text-emerald-800 shadow-sm'
-                        : 'text-gray-600 hover:bg-gray-50'
-                    }`}
-                    type="button"
-                  >
-                    الأسبوع الحالي
-                  </button>
-                </div>
-              )}
+               <PeriodFilterToggle
+                  selectedMode={selectedFilterMode}
+                  onModeChange={onFilterModeChange}
+               />
               
               <SectionStatusFilter
                 selectedStatus={selectedStatus}
