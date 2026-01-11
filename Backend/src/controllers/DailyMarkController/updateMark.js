@@ -77,29 +77,31 @@ exports.createOrUpdateMark = async (req, res) => {
 
     console.log("✅ تم حفظ العلامة بنجاح");
 
-    // Send response immediately
     const statusCode = isNewMark ? 201 : 200;
     const message = isNewMark ? "تم إضافة العلامة بنجاح" : "تم تحديث العلامة بنجاح";
-    
+
+    // Perform background tasks (Awaiting them to ensure UI gets fresh data immediately)
+    // This fixes the "lagging progress bar" issue
+    try {
+        await Promise.all([
+            updateStudentMonthlyAverage(mark.studentId._id, mark.sectionId),
+            mark.sectionId && mark.sectionId._id ? updateSingleSectionStatus(mark.sectionId._id.toString()) : Promise.resolve(),
+            notifyMarkUpdated(mark, req.app.get("io"), isNewMark, oldTotalMark, (mark.reviewMark || 0) + (mark.memorizationMark || 0)).catch(e => console.error('Notification error:', e))
+        ]);
+        
+        const io = req.app.get("io");
+        const eventName = isNewMark ? "markCreated" : "markUpdated";
+        emitSocketEvent(io, eventName, { mark, isNew: isNewMark });
+    } catch (err) {
+        console.error("Background task error:", err);
+        // Continue even if background tasks fail, main mark is saved
+    }
+
     if (isNewMark) {
       sendCreated(res, mark, message);
     } else {
       sendSuccess(res, mark, message);
     }
-
-    // Perform background tasks (Non-blocking)
-    // Using immediate execution without awaiting
-    Promise.all([
-      updateStudentMonthlyAverage(mark.studentId._id, mark.sectionId),
-      mark.sectionId && mark.sectionId._id ? updateSingleSectionStatus(mark.sectionId._id.toString()) : Promise.resolve(),
-      notifyMarkUpdated(mark, req.app.get("io"), isNewMark, oldTotalMark, (mark.reviewMark || 0) + (mark.memorizationMark || 0)).catch(e => console.error('Notification error:', e))
-    ]).then(() => {
-        const io = req.app.get("io");
-        const eventName = isNewMark ? "markCreated" : "markUpdated";
-        emitSocketEvent(io, eventName, { mark, isNew: isNewMark });
-    }).catch(err => console.error("Background task error:", err));
-
-    sendSuccess(res, mark, message, statusCode, { isNew: isNewMark });
   } catch (error) {
     console.error("❌ Error in createOrUpdateMark:", error);
 

@@ -57,6 +57,8 @@ interface UseHandlersProps {
   setSelectedSectionsForBulk: React.Dispatch<React.SetStateAction<string[]>>;
   refetchMarks?: () => Promise<void>;
   refetchSections?: () => Promise<void>;
+  refetchStats?: () => Promise<void>;
+  refetchCompletedSurahs?: () => Promise<void>;
 }
 
 export const useDailyMarksHandlers = ({
@@ -74,6 +76,8 @@ export const useDailyMarksHandlers = ({
   setSelectedSectionsForBulk,
   refetchMarks,
   refetchSections,
+  refetchStats,
+  refetchCompletedSurahs,
 }: UseHandlersProps): UseDailyMarksHandlersReturn => {
   const navigate = useNavigate();
   
@@ -177,6 +181,10 @@ export const useDailyMarksHandlers = ({
 
         // Show success toast immediately
         showSuccessToast("✅ تم إضافة المقطع بنجاح!");
+
+        // Trigger refetches
+        refetchStats?.();
+        refetchCompletedSurahs?.();
 
         // Check Completion
         const responseMeta = (createdSectionResponse as any).meta;
@@ -287,6 +295,10 @@ export const useDailyMarksHandlers = ({
         setEditingSection(null);
         showSuccessToast("✅ تم تحديث المقطع بنجاح!");
 
+        // Trigger refetches
+        refetchStats?.();
+        refetchCompletedSurahs?.();
+
         // Check Completion
         const meta = (updatedSection as any).meta;
         if (meta?.completedSurahs?.length > 0) {
@@ -362,6 +374,8 @@ export const useDailyMarksHandlers = ({
     );
     
     showSuccessToast("✅ تم حذف المقطع بنجاح!");
+    refetchStats?.();
+    refetchCompletedSurahs?.();
 
     try {
       // 2. Call API in background
@@ -430,6 +444,8 @@ export const useDailyMarksHandlers = ({
         );
         // Refresh sections status/progress (non-blocking)
         refetchSections?.();
+        refetchStats?.();
+        refetchCompletedSurahs?.();
       } else {
         throw new Error(response.message || "Failed to create mark");
       }
@@ -505,6 +521,8 @@ export const useDailyMarksHandlers = ({
         );
         // Refresh sections status/progress (non-blocking)
         refetchSections?.();
+        refetchStats?.();
+        refetchCompletedSurahs?.();
       } else {
         throw new Error(response.message || "Failed to update mark");
       }
@@ -552,6 +570,8 @@ export const useDailyMarksHandlers = ({
       }
       // Refresh sections status/progress (non-blocking)
       refetchSections?.();
+      refetchStats?.();
+      refetchCompletedSurahs?.();
     } catch (err) {
       console.error("Error deleting mark:", err);
       showErrorMessage("حدث خطأ", "❌ حدث خطأ أثناء حذف العلامة");
@@ -604,6 +624,8 @@ export const useDailyMarksHandlers = ({
 
       setSelectedSectionsForBulk([]);
       showSuccessToast("✅ تم تحديث المقاطع بنجاح!");
+      refetchStats?.();
+      refetchCompletedSurahs?.();
     } catch (err) {
       console.error("Error bulk updating sections:", err);
       showErrorMessage("حدث خطأ", "❌ حدث خطأ أثناء تحديث المقاطع");
@@ -659,6 +681,8 @@ export const useDailyMarksHandlers = ({
       setIsBulkDeleteModalOpen(false);
       setSelectedSectionsForBulk([]);
       showSuccessToast("✅ تم حذف المقاطع بنجاح!");
+      refetchStats?.();
+      refetchCompletedSurahs?.();
     } catch (err) {
       console.error("Error bulk deleting sections:", err);
       showErrorMessage("حدث خطأ", "❌ حدث خطأ أثناء حذف المقاطع");

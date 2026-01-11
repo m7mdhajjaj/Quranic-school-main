@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { getGroupStats } from "@/Api/DailyMark/dailyMarksApi";
 
 interface GroupStats {
@@ -10,6 +10,7 @@ interface UseGroupStatsReturn {
   stats: GroupStats | null;
   loading: boolean;
   error: string | null;
+  refetch: () => Promise<void>;
 }
 
 /**
@@ -40,53 +41,42 @@ export const useGroupStats = (
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let isMounted = true;
+  const fetchStats = useCallback(async () => {
+    // لا تجلب إذا لم يكن enabled أو لا يوجد اسم حلقة أو "الكل"
+    if (!enabled || !groupName || groupName === "all") {
+      setStats(null);
+      return;
+    }
 
-    const fetchStats = async () => {
-      // لا تجلب إذا لم يكن enabled أو لا يوجد اسم حلقة أو "الكل"
-      if (!enabled || !groupName || groupName === "all") {
-        setStats(null);
-        return;
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await getGroupStats(
+        groupName,
+        month || undefined,
+        year || undefined
+      );
+
+      if (response.success && response.data) {
+        setStats({
+          studentsCount: response.data.studentsCount,
+          sectionsCount: response.data.sectionsCount,
+        });
+      } else {
+        setError(response.message || "فشل جلب الإحصائيات");
       }
-
-      setLoading(true);
-      setError(null);
-
-      try {
-        const response = await getGroupStats(
-          groupName,
-          month || undefined,
-          year || undefined
-        );
-
-        if (!isMounted) return;
-
-        if (response.success && response.data) {
-          setStats({
-            studentsCount: response.data.studentsCount,
-            sectionsCount: response.data.sectionsCount,
-          });
-        } else {
-          setError(response.message || "فشل جلب الإحصائيات");
-        }
-      } catch (err) {
-        if (!isMounted) return;
-        console.error("❌ Error fetching group stats:", err);
-        setError("حدث خطأ أثناء جلب إحصائيات الحلقة");
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    fetchStats();
-
-    return () => {
-      isMounted = false;
-    };
+    } catch (err) {
+      console.error("❌ Error fetching group stats:", err);
+      setError("حدث خطأ أثناء جلب إحصائيات الحلقة");
+    } finally {
+      setLoading(false);
+    }
   }, [groupName, month, year, enabled]);
 
-  return { stats, loading, error };
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
+
+  return { stats, loading, error, refetch: fetchStats };
 };

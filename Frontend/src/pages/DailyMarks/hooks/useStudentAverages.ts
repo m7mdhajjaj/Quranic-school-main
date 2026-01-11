@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { getStudentAverages } from "@/Api/DailyMark/dailyMarksApi";
 
 interface StudentAverages {
@@ -12,6 +12,7 @@ interface UseStudentAveragesReturn {
   averages: StudentAverages;
   loading: boolean;
   error: string | null;
+  refetch: () => Promise<void>;
 }
 
 /**
@@ -47,57 +48,58 @@ export const useStudentAverages = (
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchAverages = async () => {
-      // Don't fetch if disabled or no student selected
-      if (!enabled || !studentId) {
+  const fetchAverages = useCallback(async () => {
+    // Don't fetch if disabled or no student selected
+    if (!enabled || !studentId) {
+      setAverages({
+        reviewAverage: 0,
+        memorizationAverage: 0,
+        overallAverage: 0,
+        totalMarks: 0,
+      });
+      return;
+    }
+
+    // Use current month/year as defaults if not specified
+    const now = new Date();
+    const monthToUse = selectedMonth ?? now.getMonth() + 1; // getMonth() returns 0-11
+    const yearToUse = selectedYear ?? now.getFullYear();
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await getStudentAverages(studentId, {
+        month: monthToUse,
+        year: yearToUse,
+        group: selectedGroup,
+      });
+
+      if (response.success && response.data) {
         setAverages({
-          reviewAverage: 0,
-          memorizationAverage: 0,
-          overallAverage: 0,
-          totalMarks: 0,
+          reviewAverage: response.data.reviewAverage,
+          memorizationAverage: response.data.memorizationAverage,
+          overallAverage: response.data.overallAverage,
+          totalMarks: response.data.totalMarks,
         });
-        return;
+      } else {
+        setError(response.message || "فشل تحميل المعدلات");
       }
-
-      // Use current month/year as defaults if not specified
-      const now = new Date();
-      const monthToUse = selectedMonth ?? now.getMonth() + 1; // getMonth() returns 0-11
-      const yearToUse = selectedYear ?? now.getFullYear();
-
-      setLoading(true);
-      setError(null);
-
-      try {
-        const response = await getStudentAverages(studentId, {
-          month: monthToUse,
-          year: yearToUse,
-          group: selectedGroup,
-        });
-
-        if (response.success && response.data) {
-          setAverages({
-            reviewAverage: response.data.reviewAverage,
-            memorizationAverage: response.data.memorizationAverage,
-            overallAverage: response.data.overallAverage,
-            totalMarks: response.data.totalMarks,
-          });
-        } else {
-          setError(response.message || "فشل تحميل المعدلات");
-        }
-      } catch (err) {
-        setError("حدث خطأ أثناء تحميل المعدلات");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAverages();
+    } catch (err) {
+      setError("حدث خطأ أثناء تحميل المعدلات");
+    } finally {
+      setLoading(false);
+    }
   }, [enabled, studentId, selectedGroup, selectedMonth, selectedYear]);
+
+  useEffect(() => {
+    fetchAverages();
+  }, [fetchAverages]);
 
   return {
     averages,
     loading,
     error,
+    refetch: fetchAverages,
   };
 };

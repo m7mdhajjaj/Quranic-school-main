@@ -13,6 +13,8 @@ import PageHeader from '@/components/UI/PageHeader';
 import { useDailyMarksData } from './hooks/useDailyMarksData';
 import { useFilteredMarksData } from './hooks/useFilteredMarksData';
 import { useStudentAverages } from './hooks/useStudentAverages';
+import { useGroupStats } from './hooks/useGroupStats';
+import { useCompletedSurahs } from './hooks/useCompletedSurahs';
 import { useStudentIdForAverages } from './hooks/useStudentIdForAverages';
 import { useDailyMarksState } from './hooks/useDailyMarksState';
 import { useSectionsFilter } from './hooks/useSectionsFilter';
@@ -141,13 +143,32 @@ const DailyMarksPage = () => {
   );
 
   // Fetch student averages
-  const { averages } = useStudentAverages(
+  const { averages, refetch: refetchAverages } = useStudentAverages(
     studentIdForAverages,
     selectedGroup,
     selectedMonth,
     selectedYear,
     !!currentUser && !!selectedGroup && !!studentIdForAverages
   );
+
+  // Fetch Group Stats (for Progress Bar)
+  const { refetch: refetchGroupStats } = useGroupStats(
+    selectedGroup,
+    selectedMonth,
+    selectedYear,
+    !!currentUser && !!selectedGroup
+  );
+
+  // Fetch Completed Surahs (for updates)
+  const { refresh: refreshCompletedSurahs } = useCompletedSurahs(selectedGroup, false);
+
+  // Combined Status Refetcher
+  const refetchStats = async () => {
+    await Promise.all([
+      refetchAverages(),
+      refetchGroupStats()
+    ]);
+  };
 
   // ==========================================================================
   // BUSINESS LOGIC HOOKS
@@ -169,6 +190,8 @@ const DailyMarksPage = () => {
     setSelectedSectionsForBulk: state.setSelectedSectionsForBulk,
     refetchMarks: refetchMarksOnly,
     refetchSections: refetchSectionsOnly,
+    refetchStats,
+    refetchCompletedSurahs: refreshCompletedSurahs,
   });
 
   // Modal actions & form handlers
