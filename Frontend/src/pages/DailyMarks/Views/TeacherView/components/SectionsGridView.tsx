@@ -96,17 +96,25 @@ export const SectionsGridView = ({
       {/* Header with Section Name and Action Buttons */}
       <Card className="mb-6 bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50 border-2 border-emerald-300 shadow-lg relative md:sticky md:top-4 z-40">
         <div className="p-5">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
             {/* Section Name */}
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl shadow-md shrink-0">
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl shadow-md shrink-0 mt-1">
                 <Users className="text-white" size={24} />
               </div>
-              <div>
-                <h2 className="text-xl md:text-2xl font-bold text-gray-800 break-words">
+              <div className="flex flex-col">
+                <h2 className="text-xl md:text-2xl font-bold text-gray-800 break-words leading-snug">
                   {selectedGroup}
                 </h2>
-                <p className="text-sm text-gray-600 mt-1">حلقة الدراسة</p>
+                <p className="text-sm text-gray-500 font-medium mt-1 mb-3">حلقة الدراسة</p>
+                {sections.length > 0 && (
+                  <div className="w-fit animate-fade-in origin-right">
+                    <PeriodFilterToggle
+                        selectedMode={selectedFilterMode}
+                        onModeChange={onFilterModeChange}
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
@@ -145,13 +153,6 @@ export const SectionsGridView = ({
         <div>
           {sections.length > 0 && (
             <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
-               {/* Period Toggle */}
-               <div className="w-full sm:w-auto">
-                <PeriodFilterToggle
-                    selectedMode={selectedFilterMode}
-                    onModeChange={onFilterModeChange}
-                />
-               </div>
               
               <div className="w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
                 <SectionStatusFilter
