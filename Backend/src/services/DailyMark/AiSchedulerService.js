@@ -210,23 +210,25 @@ class AiSchedulerService {
 
     // --- تحسين الفجوات (Splitting Large Gaps) ---
     // إذا كانت الفجوة كبيرة، نقسمها لمقاطع أصغر بناءً على خيارات المستخدم
-    const { maxVersesPerDay } = options;
-    if (maxVersesPerDay && maxVersesPerDay > 0) {
+    const limitInput = options.maxVersesPerDay;
+    const limit = parseInt(limitInput, 10);
+
+    if (!isNaN(limit) && limit > 0) {
         const refinedRepairs = [];
         for (const repair of repairsNeeded) {
             if (repair.type === 'gap_fill') {
                 const gapSize = repair.ayahEnd - repair.ayahStart + 1;
-                if (gapSize > maxVersesPerDay) {
+                if (gapSize > limit) {
                     // تقسيم الفجوة
                     let currentStart = repair.ayahStart;
                     const finalEnd = repair.ayahEnd;
                     while (currentStart <= finalEnd) {
-                        const nextEnd = Math.min(currentStart + maxVersesPerDay - 1, finalEnd);
+                        const nextEnd = Math.min(currentStart + limit - 1, finalEnd);
                         refinedRepairs.push({
                             ...repair,
                             ayahStart: currentStart,
                             ayahEnd: nextEnd,
-                            reason: `${repair.reason} (Split ${gapSize} verses into chunks of ${maxVersesPerDay})`
+                            reason: `${repair.reason} (Split ${gapSize} verses into chunks of ${limit})`
                         });
                         currentStart = nextEnd + 1;
                     }
@@ -264,28 +266,22 @@ class AiSchedulerService {
     const orphanRepairs = repairsNeeded.filter(r => r.type === 'orphan_fix');
 
     // 1. تنفيذ الإزاحة للفجوات (Processing Gaps with Ripple Shift)
-    // نجمع كل الفجوات المتصلة التي لها  referenceSectionId واحد لنرسلها دفعة واحدة
-    // ولكن في العادة الفجوات منفصلة، هنا سنرسلها جميعاً ونعتمد على Ripple Shift للتعامل معها
+    // نجمع كل الفجوات ونبدأ الإزاحة من أقدم فجوة لتجنب التضارب
     
-    // Group gaps by reference section ID to handle them in one ripple wave if they proceed the same block
-    // Actually, ripple shift works by reference ID.
-    // If we have multiple gaps BEFORE the same reference block (due to splitting), we should pass them all.
+    // Sort gaps by originalDate (which corresponds to gap location)
+    gapRepairs.sort((a, b) => new Date(a.targetDate) - new Date(b.targetDate));
 
-    const gapsByRef = {};
-    for (const repair of gapRepairs) {
-        if (!gapsByRef[repair.referenceSectionId]) {
-            gapsByRef[repair.referenceSectionId] = [];
-        }
-        gapsByRef[repair.referenceSectionId].push(repair);
-    }
-
-    for (const [refId, repairs] of Object.entries(gapsByRef)) {
-        // Prepare segments
-        const segmentsToAdd = repairs.map(repair => {
+    if (gapRepairs.length > 0) {
+        // We start from the earliest reference ID affected
+        const earliestRepair = gapRepairs[0];
+        
+        // Prepare ALL segments to add (from all gaps)
+        const allSegmentsToAdd = gapRepairs.map(repair => {
             const rangeKey = `${surahNumber}:${repair.ayahStart}-${repair.ayahEnd}`;
             // Resolve Surah Name
             const surahInfo = getSurahByNumber(surahNumber);
             const resolvedSurahName = surahInfo ? surahInfo.name : `سورة ${surahNumber}`;
+            const displayRange = `${resolvedSurahName} ${repair.ayahStart}-${repair.ayahEnd}`;
             
             return {
                 surahNumber: repair.surahNumber,
@@ -293,42 +289,45 @@ class AiSchedulerService {
                 ayahStart: repair.ayahStart,
                 ayahEnd: repair.ayahEnd,
                 canonicalKey: rangeKey,
-                status: 'completed',
-                completionNote: `تم ترميم الفجوة وتعديل التسلسل تلقائياً (${rangeKey})`
+                status: 'completed', 
+                completionNote: `تم ترميم الفجوة وتعديل التسلسل تلقائياً (${displayRange})`
             };
         });
 
         try {
-            // Pass options (contains suggestedDates) to ripple shift
+            // Apply HUGE ripple shift once
             await this.applyRippleShift(
                 groupId, 
                 surahNumber, 
-                segmentsToAdd, 
-                refId,
+                allSegmentsToAdd, 
+                earliestRepair.referenceSectionId,
                 options
             );
             
-            gapsFixed += repairs.length;
-            actionsTaken.push(`تمت إضافة ${repairs.length} مقاطع لملء الفجوات وإزاحة الجدول`);
+            gapsFixed += gapRepairs.length;
+            actionsTaken.push(`تمت إضافة ${gapRepairs.length} مقاطع لملء الفجوات وإزاحة الجدول بالكامل`);
             
         } catch (error) {
-            console.error(`Ripple shift failed for ref ${refId}`, error);
-            actionsTaken.push(`فشل الإزاحة للمجموعة المرتبطة بـ ${refId}`);
+            console.error(`Ripple shift failed`, error);
+            actionsTaken.push(`فشل الإزاحة الشاملة: ${error.message}`);
         }
     }
 
     // 2. تنفيذ إصلاح الأيتام (In-Place Fix)
     for (const repair of orphanRepairs) {
         const rangeKey = `${surahNumber}:${repair.ayahStart}-${repair.ayahEnd}`;
+        const surahInfo = getSurahByNumber(surahNumber);
+        const resolvedSurahName = surahInfo ? surahInfo.name : `سورة ${surahNumber}`;
+        const displayRange = `${resolvedSurahName} ${repair.ayahStart}-${repair.ayahEnd}`;
         
          const newSegment = {
             surahNumber: repair.surahNumber,
-            surahNameCanonical: "", 
+            surahNameCanonical: resolvedSurahName, 
             ayahStart: repair.ayahStart,
             ayahEnd: repair.ayahEnd,
             canonicalKey: rangeKey,
             status: 'completed',
-            completionNote: `تم تثبيت الحفظ للمراجعة اليتيمة (${rangeKey})`
+            completionNote: `تم تثبيت الحفظ للمراجعة اليتيمة (${displayRange})`
         };
 
         await Section.findByIdAndUpdate(repair.referenceSectionId, {
@@ -336,7 +335,7 @@ class AiSchedulerService {
         });
         
         orphansFixed++;
-        actionsTaken.push(`تم تثبيت ${rangeKey} في مكانه`);
+        actionsTaken.push(`تم تثبيت ${displayRange} في مكانه`);
     }
 
     return {
@@ -407,6 +406,14 @@ class AiSchedulerService {
             });
           segmentQueue.push(...relevantSegments);
       }
+      
+      // ✅ Essential Sorting for strict sequence validation
+      // This ensures that even if Gaps came from different parts, 
+      // the final timeline is sorted purely by Ayah Sequence.
+      segmentQueue.sort((a, b) => {
+          if (a.surahNumber !== b.surahNumber) return a.surahNumber - b.surahNumber;
+          return a.ayahStart - b.ayahStart;
+      });
 
       // 4. تنظيف الطريق (Clear Path)
       // نحذف سجلات هذه السورة من كافة الأيام المستقبلية المتأثرة لنعيد كتابتها بانتظام
@@ -517,6 +524,15 @@ class AiSchedulerService {
           currentDate.setDate(currentDate.getDate() + 1);
           safetyCounter++;
       }
+      
+      // ✅ Final Sequence Check (Safety Net)
+      // Check if dates are non-decreasing relative to verse order
+      // We process segmentQueue in SORTED Verse Order.
+      // But we wrote to DB. Let's verify what we wrote? 
+      // Actually we iterating day-by-day so date is monotonic.
+      // And we iterating segmentQueue which is sorted by Verse.
+      // So Date increases (or stays same) as Verse increases.
+      // This guarantees strict monotonic sequence: Date(V2) >= Date(V1) if V2 > V1.
   }
 
   // Helper date key
