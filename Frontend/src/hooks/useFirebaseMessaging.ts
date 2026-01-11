@@ -105,42 +105,39 @@ export const useFirebaseMessaging = (): UseFirebaseMessagingReturn => {
   // ====== الاستماع للإشعارات الواردة ======
   useEffect(() => {
     const unsubscribe = onMessageListener((payload: unknown) => {
-      const typedPayload = payload as NotificationPayload;
-      
-      // Update state only - this is fast
-      setLastNotification(typedPayload);
-
-      // Defer all heavy operations
-      if (typedPayload.notification) {
-        const { title, body } = typedPayload.notification;
+      // Optimize: Defer processing to next tick to avoid blocking the message channel (Violation prevention)
+      setTimeout(() => {
+        const typedPayload = payload as NotificationPayload;
         
-        // Play notification sound
-        try {
-          const audio = new Audio(notificationSoundUrl);
-          audio.play().catch(err => console.warn('Could not play notification sound:', err));
-        } catch (err) {
-          console.warn('Error initializing audio:', err);
-        }
+        // Update state
+        setLastNotification(typedPayload);
 
-        // Queue notification creation for later
-        requestAnimationFrame(() => {
-          setTimeout(() => {
-            if (Notification.permission === 'granted') {
-              try {
-                new Notification(title, {
-                  body: body,
-                  icon: '/logo.png',
-                  badge: '/badge.png',
-                  tag: 'quranic-school-notification',
-                  requireInteraction: false,
-                });
-              } catch (err) {
-                console.warn('Could not show notification:', err);
-              }
+        if (typedPayload.notification) {
+          const { title, body } = typedPayload.notification;
+          
+          // Play notification sound
+          try {
+            const audio = new Audio(notificationSoundUrl);
+            audio.play().catch(err => console.warn('Could not play notification sound:', err));
+          } catch (err) {
+            console.warn('Error initializing audio:', err);
+          }
+
+          if (Notification.permission === 'granted') {
+            try {
+              new Notification(title, {
+                body: body,
+                icon: '/logo.png',
+                badge: '/badge.png',
+                tag: 'quranic-school-notification',
+                requireInteraction: false,
+              });
+            } catch (err) {
+              console.warn('Could not show notification:', err);
             }
-          }, 0);
-        });
-      }
+          }
+        }
+      }, 0);
     });
 
     return unsubscribe;
