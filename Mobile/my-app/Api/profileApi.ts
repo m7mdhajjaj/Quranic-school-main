@@ -60,11 +60,20 @@ export const updateProfile = async (
 export const uploadAvatar = async (
   formData: FormData
 ): Promise<{ avatar: string }> => {
-  const response = await api.post("/profile/avatar", formData, {
+  const response = await api.post("/avatar", formData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
   });
+  return response.data;
+};
+
+// Delete profile avatar
+export const deleteAvatar = async (): Promise<{
+  success: boolean;
+  message: string;
+}> => {
+  const response = await api.delete("/avatar");
   return response.data;
 };
 

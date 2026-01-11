@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
   editButton: {
     position: "absolute",
     bottom: 8,
-    right: 8,
+    right: -10,
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
   deleteButton: {
     position: "absolute",
     bottom: 8,
-    left: 8,
+    left: -10,
     width: 40,
     height: 40,
     borderRadius: 20,

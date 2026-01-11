@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Alert } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import { uploadAvatar } from "@/Api/profileApi";
+import { uploadAvatar, deleteAvatar } from "@/Api/profileApi";
 import type { UserProfile, Endpoint } from "@/types/profile.types";
 
 export const useProfileAvatar = (
@@ -70,8 +70,34 @@ export const useProfileAvatar = (
   };
 
   const handleDeleteAvatar = async () => {
-    // TODO: Implement delete avatar API call
-    Alert.alert("قريباً", "ميزة حذف الصورة ستكون متاحة قريباً");
+    Alert.alert("تأكيد الحذف", "هل أنت متأكد من حذف الصورة الشخصية؟", [
+      {
+        text: "إلغاء",
+        style: "cancel",
+      },
+      {
+        text: "حذف",
+        style: "destructive",
+        onPress: async () => {
+          setIsUploading(true);
+          try {
+            await deleteAvatar();
+            setAvatarFile(null);
+
+            if (onSuccess) {
+              onSuccess();
+            }
+
+            Alert.alert("نجح", "تم حذف الصورة بنجاح");
+          } catch (error: any) {
+            const message = error?.response?.data?.message || "فشل حذف الصورة";
+            Alert.alert("خطأ", message);
+          } finally {
+            setIsUploading(false);
+          }
+        },
+      },
+    ]);
   };
 
   const resetAvatar = () => {
