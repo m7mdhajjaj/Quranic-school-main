@@ -4,11 +4,12 @@ import { getLastSegment } from "@/Api/DailyMark/sectionApi";
 import { normalizeText } from "@/pages/DailyMarks/utils/normalizeText";
 import type { QuranSegmentUI } from "../types/types";
 
-export function useQuranSegmentInputLogic({ segments = [], groupName, type, onChange }: {
+export function useQuranSegmentInputLogic({ segments = [], groupName, type, onChange, excludeId }: {
   segments?: QuranSegmentUI[];
   groupName?: string;
   type?: 'memorization' | 'review';
   onChange: (segments: QuranSegmentUI[]) => void;
+  excludeId?: string;
 }) {
   const segment: QuranSegmentUI = segments[0] || { surahNumber: undefined, ayahStart: undefined, ayahEnd: undefined } as QuranSegmentUI;
   const [surahInput, setSurahInput] = useState('');
@@ -32,7 +33,7 @@ export function useQuranSegmentInputLogic({ segments = [], groupName, type, onCh
     if (groupName && (type === 'memorization' || type === 'review') && segment.surahNumber) {
       
       // Use the actual type to get specific suggestions (Strict Mode)
-      getLastSegment(groupName, segment.surahNumber, type).then(suggestion => {
+      getLastSegment(groupName, segment.surahNumber, type, excludeId).then(suggestion => {
         if (suggestion) {
           const nextStart = suggestion.nextStart || 1;
           
@@ -57,7 +58,7 @@ export function useQuranSegmentInputLogic({ segments = [], groupName, type, onCh
       setExpectedStart(null);
       setReviewLimit(null);
     }
-  }, [segment.surahNumber, groupName, type]);
+  }, [segment.surahNumber, groupName, type, excludeId]);
 
   const handleUpdate = (field: keyof QuranSegmentUI, value: number | string, surahData?: { number: number, name: string }) => {
     let newSegment: QuranSegmentUI = { ...segment };
@@ -82,7 +83,7 @@ export function useQuranSegmentInputLogic({ segments = [], groupName, type, onCh
       
       if (groupName && (type === 'memorization' || type === 'review')) {
         
-        getLastSegment(groupName, numValue, type).then(suggestion => {
+        getLastSegment(groupName, numValue, type, excludeId).then(suggestion => {
           if (suggestion) {
             const nextStart = suggestion.nextStart || 1;
             

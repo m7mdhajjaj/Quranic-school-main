@@ -13,6 +13,7 @@ interface QuranSegmentInputProps {
   error?: string; // Add error prop to show validation issues
   groupName?: string; // For auto-suggestions
   type?: 'memorization' | 'review'; // For auto-suggestions
+  excludeId?: string; // For correct suggestions during edit
 }
 
 // Normalization Helper
@@ -33,7 +34,8 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
   colorClass = "emerald",
   error,
   groupName,
-  type
+  type,
+  excludeId
 }) => {
   // استخدم الهوك لفصل المنطق
   const {
@@ -51,7 +53,7 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
     currentSurah,
     maxAyah,
     segment,
-  } = useQuranSegmentInputLogic({ segments, groupName, type, onChange });
+  } = useQuranSegmentInputLogic({ segments, groupName, type, onChange, excludeId });
 
   // Dynamic border/ring colors based on colorClass prop
   const activeRing = colorClass === 'amber' ? 'focus:ring-amber-500' : 'focus:ring-emerald-500';

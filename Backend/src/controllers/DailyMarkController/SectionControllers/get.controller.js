@@ -1,5 +1,6 @@
 const Section = require("../../../schema/DailyMark/Section");
 const sequenceService = require("../../../services/DailyMark/SectionSequenceService");
+const { getSurahByNumber, surahData } = require("../../../utils/Quran/dailyMarkQuranMetadata");
 const {
   sendSuccess,
   sendError,
@@ -238,7 +239,7 @@ exports.getFilteredSections = async (req, res) => {
  */
 exports.getLastSegment = async (req, res) => {
   try {
-    const { group, surah, type } = req.query;
+    const { group, surah, type, excludeId } = req.query;
     
     if (!group || !surah || !type) {
       return res.status(400).json({ success: false, message: "Missing required params: group, surah, type" });
@@ -247,7 +248,7 @@ exports.getLastSegment = async (req, res) => {
     const surahNum = parseInt(surah);
     
     // استخدام الخدمة المركزية للبحث
-    const result = await sequenceService.getLastProgress(group, surahNum, type);
+    const result = await sequenceService.getLastProgress(group, surahNum, type, null, excludeId);
     
     // إذا لم يوجد سجل سابق (مثلاً أول مراجعة)، نحاول جلب حد الحفظ فقط إذا كان الطلب للمراجعة
     let maxMemorized = 0;
@@ -438,5 +439,95 @@ exports.checkQuota = async (req, res) => {
 
   } catch (error) {
     sendError(res, error.message, 500, error);
+  }
+};
+
+/**
+ * Get list of fully completed Surahs for a group (Memorization)
+ * Used to display "Completed Surahs" list in frontend
+ * GET /sections/completed-surahs?group=...
+ */
+exports.getCompletedSurahs = async (req, res) => {
+  try {
+    const { group } = req.query;
+    if (!group) return sendError(res, "Group is required", 400);
+
+    // 1. Checks max reached ayah for each Surah in this group
+    const pipeline = [
+      { $match: { group: group, "memorizationMeta.0": { $exists: true } } },
+      { $unwind: "$memorizationMeta" },
+      { 
+        $group: {
+          _id: "$memorizationMeta.surahNumber",
+          maxAyah: { $max: "$memorizationMeta.ayahEnd" },
+          lastCompletedAt: { $max: "$date" } // Approximate completion date
+        }
+      }
+    ];
+
+    const results = await Section.aggregate(pipeline);
+
+    // 2. Compare with Metadata
+    const completedList = [];
+    
+    for (const r of results) {
+       const info = getSurahByNumber(r._id);
+       if (info && r.maxAyah >= info.ayahCount) {
+          completedList.push({
+             surahNumber: info.number,
+             surahName: info.name,
+             totalAyahs: info.ayahCount,
+             completedAt: r.lastCompletedAt
+          });
+       }
+    }
+
+    // Sort by most recently completed
+    completedList.sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
+
+    sendSuccess(res, completedList, "Completed Surahs retrieved");
+
+  } catch (error) {
+    sendError(res, error.message, 500, error);
+  }
+};
+
+/**
+ * Get full history of a Surah for a group
+ * GET /sections/surah-history?group=...&surah=...&type=...
+ */
+exports.getSurahHistory = async (req, res) => {
+  try {
+    const { group, surah, type = 'memorization' } = req.query;
+    if (!group || !surah) return sendError(res, "Params missing", 400);
+
+    const metaField = type === 'memorization' ? 'memorizationMeta' : 'reviewMeta';
+    const surahNum = parseInt(surah);
+
+    // Find all sections containing this surah
+    const sections = await Section.find({
+       group,
+       [`${metaField}.surahNumber`]: surahNum
+    })
+    .sort({ date: 1 }) // Chronological order
+    .select(`date dateKey ${metaField}`);
+
+    // Map to clean history array
+    const history = [];
+    sections.forEach(sec => {
+        const segments = sec[metaField].filter(s => s.surahNumber === surahNum);
+        segments.forEach(seg => {
+            history.push({
+                date: sec.date,
+                ayahStart: seg.ayahStart,
+                ayahEnd: seg.ayahEnd,
+                status: seg.status
+            });
+        });
+    });
+
+    sendSuccess(res, history, "Surah history retrieved");
+  } catch (error) {
+     sendError(res, error.message, 500, error);
   }
 };

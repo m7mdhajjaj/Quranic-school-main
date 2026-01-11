@@ -169,6 +169,7 @@ const EditSectionModalComponent = ({
              onChange={(segments) => handleMetaChange('memorizationMeta', segments, onChange)}
              groupName={localSection.group}
              type="memorization"
+             excludeId={localSection._id}
            />
 
            <QuranSegmentInput 
@@ -178,6 +179,7 @@ const EditSectionModalComponent = ({
              onChange={(segments) => handleMetaChange('reviewMeta', segments, onChange)}
              groupName={localSection.group}
              type="review"
+             excludeId={localSection._id}
            />
         </div>
 

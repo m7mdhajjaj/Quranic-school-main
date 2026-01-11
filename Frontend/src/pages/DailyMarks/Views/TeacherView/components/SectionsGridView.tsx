@@ -8,6 +8,8 @@ import type { MarkStatus } from '../../../components/SectionStatusBadge';
 import type { Section } from '../../../types/types';
 import { SectionItem } from './SectionItem';
 import { AiRepairButton } from '../../../components/AiRepairButton';
+import { CompletedSurahsModal } from '../../../components/CompletedSurahsModal';
+import { useState } from 'react';
 
 interface SectionsGridViewProps {
   selectedGroup: string;
@@ -73,6 +75,7 @@ export const SectionsGridView = ({
   selectedFilterMode,
   onFilterModeChange,
 }: SectionsGridViewProps) => {
+  const [showCompletedModal, setShowCompletedModal] = useState(false);
 
   return (
     <div className="animate-fade-in">
@@ -171,6 +174,18 @@ export const SectionsGridView = ({
               <Plus size={20} className="bg-white/20 rounded-full p-0.5" />
             </Button>
           )}
+          {/* الإنجازات المكتملة */}
+          <Button
+            onClick={() => setShowCompletedModal(true)}
+            variant="secondary"
+            className="border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 hover:border-amber-300 font-semibold h-[40px] px-3 shadow-sm hover:shadow-md transition-all"
+            type="button"
+          >
+             <div className="flex items-center gap-2">
+                 <span>السور المكتملة</span>
+                 <BookOpen size={18} />
+             </div>
+          </Button>
 
           {/* إصلاح التسلسل */}
           <AiRepairButton 
@@ -235,6 +250,15 @@ export const SectionsGridView = ({
             />
           ))}
         </div>
+      )}
+
+      {/* مودال السور المكتملة */}
+      {showCompletedModal && (
+        <CompletedSurahsModal
+          isOpen={showCompletedModal}
+          onClose={() => setShowCompletedModal(false)}
+          selectedGroup={selectedGroup}
+        />
       )}
     </div>
   );

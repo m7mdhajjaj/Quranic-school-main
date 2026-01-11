@@ -233,11 +233,12 @@ export const toggleSectionStatus = async (
 export const getLastSegment = async (
   group: string, 
   surah: number, 
-  type: 'memorization' | 'review'
+  type: 'memorization' | 'review',
+  excludeId?: string
 ): Promise<{ nextStart: number; lastSegment?: QuranSegment; suggestedEnd?: number; maxMemorized?: number } | null> => {
   try {
     const response = await api.get('/daily-marks/sections/last-segment', {
-      params: { group, surah, type }
+      params: { group, surah, type, excludeId }
     });
     if (response.data.success) {
       return response.data.data;
@@ -380,3 +381,52 @@ export const repairSequence = async (
     throw error;
   }
 };
+
+// ============================================================================
+// ✅ NEW: COMPLETED SURAHS & HISTORY
+// ============================================================================
+
+export interface CompletedSurah {
+  surahNumber: number;
+  surahName: string;
+  totalAyahs: number;
+  completedAt: string;
+}
+
+export interface SurahHistoryItem {
+  date: string;
+  ayahStart: number;
+  ayahEnd: number;
+  status: string;
+}
+
+/**
+ * Get list of completed Surahs for a group
+ */
+export const getCompletedSurahs = async (group: string): Promise<CompletedSurah[]> => {
+  try {
+     const res = await api.get('/daily-marks/sections/completed-surahs', {
+       params: { group }
+     });
+     return res.data.data || [];
+  } catch (error) {
+     console.error("Failed to fetch completed surahs", error);
+     return [];
+  }
+};
+
+/**
+ * Get history of a specific Surah
+ */
+export const getSurahHistory = async (group: string, surah: number, type: 'memorization' | 'review' = 'memorization'): Promise<SurahHistoryItem[]> => {
+  try {
+     const res = await api.get('/daily-marks/sections/surah-history', {
+       params: { group, surah, type }
+     });
+     return res.data.data || [];
+  } catch (error) {
+     console.error("Failed to fetch surah history", error);
+     return [];
+  }
+};
+

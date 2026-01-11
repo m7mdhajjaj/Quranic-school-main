@@ -1,4 +1,5 @@
 const Section = require("../../schema/DailyMark/Section");
+const { getSurahByNumber } = require("../../utils/Quran/dailyMarkQuranMetadata");
 
 /**
  * ============================================================================
@@ -280,6 +281,22 @@ class SectionSequenceService {
           newSectionDate, 
           excludeSectionId
         );
+
+        // [منطق إضافي] التحقق من السورة المكتملة
+        // إذا كان المقطع السابق قد وصل لنهاية السورة، نمنع إضافة جديد
+        if (neighbors.previous) {
+            const surahInfo = getSurahByNumber(seg.surahNumber);
+            if (neighbors.previous.ayahEnd >= surahInfo.ayahCount) {
+                 return {
+                    isValid: false,
+                    message: this.formatErrorMessage(
+                        "السورة مكتملة الحفظ بالفعل",
+                        `سورة ${surahInfo.nameAr} عدد آياتها ${surahInfo.ayahCount}، وآخر مقطع مسجل ينتهي عند الآية ${neighbors.previous.ayahEnd}.`,
+                        `لقد أتممت حفظ هذه السورة سابقاً. لا يمكنك إضافة مقاطع حفظ جديدة لها. يمكنك تسجيل "مراجعة" إذا أردت تثبيتها.`
+                    )
+                 };
+            }
+        }
 
         // التحقق من اتصال محلي (Local Sibling) في نفس الطلب
         const hasLocalPredecessor = newSegments.some(s => 
@@ -591,6 +608,21 @@ class SectionSequenceService {
 
     // A) Check if previousNeighbor exists
     if (previousNeighbor) {
+      // 0. Completion check: هل السورة مكتملة بالفعل؟
+      if (type === 'memorization') {
+         const surahInfo = getSurahByNumber(newSegment.surahNumber);
+         if (surahInfo && previousNeighbor.ayahEnd >= surahInfo.ayahCount) {
+             return {
+                 isValid: false,
+                 message: this.formatErrorMessage(
+                     "السورة مكتملة الحفظ",
+                     `لقد أتممت حفظ سورة ${surahInfo.name} بالكامل (وصلت للآية ${previousNeighbor.ayahEnd} من ${surahInfo.ayahCount}).`,
+                     "لا يمكن إضافة مقاطع حفظ جديدة لهذه السورة. يمكنك البدء بمراجعتها أو الانتقال لسورة أخرى."
+                 )
+             };
+         }
+      }
+
       // 1. Gap check (للحفظ فقط): المقطع الجديد يجب أن يبدأ من نهاية السابق + 1
       if (type === 'memorization') {
         const expectedStart = previousNeighbor.ayahEnd + 1;

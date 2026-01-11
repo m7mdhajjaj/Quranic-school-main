@@ -23,6 +23,12 @@ router.get("/neighbor-segments", dailyMarkController.getNeighborSegments);
 // ✅ V3: Check Quota (Daily & Weekly)
 router.get("/check-quota", dailyMarkController.checkQuota);
 
+// ✅ NEW: Get Completed Surahs
+router.get("/completed-surahs", dailyMarkController.getCompletedSurahs);
+
+// ✅ NEW: Get Surah History
+router.get("/surah-history", dailyMarkController.getSurahHistory);
+
 // Get a single section
 router.get("/:id", dailyMarkController.getSection);
 
