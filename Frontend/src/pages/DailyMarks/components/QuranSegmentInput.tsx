@@ -5,6 +5,8 @@ import type { QuranSegmentUI } from '../types/types';
 
 import { useQuranSegmentInputLogic } from "../hooks/useQuranSegmentInputLogic";
 
+import type { CompletedSurah } from '@/Api/DailyMark/sectionApi';
+
 interface QuranSegmentInputProps {
   label: string;
   onChange: (segments: QuranSegmentUI[]) => void;
@@ -14,6 +16,7 @@ interface QuranSegmentInputProps {
   groupName?: string; // For auto-suggestions
   type?: 'memorization' | 'review'; // For auto-suggestions
   excludeId?: string; // For correct suggestions during edit
+  completedSurahs?: CompletedSurah[]; // New: For validation
 }
 
 // Normalization Helper
@@ -35,7 +38,8 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
   error,
   groupName,
   type,
-  excludeId
+  excludeId,
+  completedSurahs = []
 }) => {
   // استخدم الهوك لفصل المنطق
   const {
@@ -115,26 +119,49 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
               {/* Dropdown Suggestions */}
               {isFocused && surahInput && !segment.surahNumber && suggestions.length > 0 && (
                   <div className={`absolute top-full text-right left-0 w-full bg-white rounded-xl shadow-2xl border border-gray-100 mt-2 max-h-60 overflow-y-auto divide-y divide-gray-50 z-[100] animate-in fade-in zoom-in-95 duration-100 scrollbar-thin ${colorClass === 'amber' ? 'scrollbar-thumb-amber-500' : 'scrollbar-thumb-emerald-500'} scrollbar-track-transparent`}>
-                      {suggestions.map(s => (
+                      {suggestions.map(s => {
+                          const isCompleted = completedSurahs.some(c => c.surahNumber === s.number);
+                          return (
                           <div 
                             key={s.number}
-                            className={`px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors flex items-center justify-between group/item`}
+                            className={`px-4 py-3 border-b border-gray-50 last:border-0 transition-colors flex items-center justify-between group/item
+                                ${isCompleted ? 'bg-gray-50/50 cursor-not-allowed opacity-70' : 'cursor-pointer hover:bg-gray-50 bg-white'}
+                            `}
                             onMouseDown={(e) => {
                                 e.preventDefault(); // Prevent blur before click
+                                if (isCompleted) {
+                                   import('@/utils/toastUtils').then(({ showWarningToast }) => {
+                                      showWarningToast(`⚠️ سورة ${s.name} مكتملة بالفعل في ${type === 'memorization' ? 'الحفظ' : 'المراجعة'}`);
+                                   });
+                                   return;
+                                }
                                 selectSurah(s);
                             }}
                           >
                               <div className="flex items-center gap-3">
-                                <span className={`flex items-center justify-center w-6 h-6 rounded-full text-[10px] font-bold ${colorClass === 'emerald' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-                                  {s.number}
-                                </span>
-                                <span className="font-bold text-gray-700 group-hover/item:text-black">{s.name}</span>
+                                <div className="relative">
+                                    <span className={`flex items-center justify-center w-6 h-6 rounded-full text-[10px] font-bold 
+                                        ${isCompleted 
+                                            ? 'bg-gray-200 text-gray-500' 
+                                            : (colorClass === 'emerald' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700')
+                                        }`}>
+                                    {s.number}
+                                    </span>
+                                    {isCompleted && <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white"></div>}
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className={`font-bold ${isCompleted ? 'text-gray-500' : 'text-gray-700 group-hover/item:text-black'}`}>
+                                        {s.name}
+                                    </span>
+                                    {isCompleted && <span className="text-[9px] text-green-600 font-bold">تم الختم ✓</span>}
+                                </div>
                               </div>
                               <span className="text-[10px] font-medium text-gray-400 bg-gray-100 px-2 py-1 rounded-full group-hover/item:bg-white">
                                 {s.ayahCount} آية
                               </span>
                           </div>
-                      ))}
+                          );
+                      })}
                   </div>
               )}
                {isFocused && surahInput && suggestions.length === 0 && !quranSurahs.some(s => normalizeText(s.name) === normalizeText(surahInput)) && (

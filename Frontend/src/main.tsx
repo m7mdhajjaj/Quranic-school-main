@@ -3,19 +3,6 @@ import { createRoot } from "react-dom/client";
 import "./styles/index.css";
 import App from "./App.tsx";
 
-// ✅ Preload critical resources
-if ('connection' in navigator) {
-  const connection = (navigator as any).connection;
-  if (connection && connection.effectiveType === '4g') {
-    // Preload on fast connections only
-    const link = document.createElement('link');
-    link.rel = 'preload';
-    link.as = 'style';
-    link.href = '/styles/index.css';
-    document.head.appendChild(link);
-  }
-}
-
 // ✅ تحسين الأداء - Passive Event Listeners
 const addPassiveEventListeners = () => {
   let supportsPassive = false;

@@ -7,6 +7,7 @@ import {
 import type { AddSectionModalProps } from '../types/types';
 import { useAddSectionModal } from '../hooks/modals';
 import { useSectionValidation } from '../hooks/useSectionValidation'; 
+import { useCompletedSurahs } from '../hooks/useCompletedSurahs';
 import QuranSegmentInput from '../components/QuranSegmentInput';
 import ErrorMessageList from '../components/ErrorMessageList';
 import { checkSectionQuota } from '@/Api/DailyMark/sectionApi';
@@ -38,6 +39,9 @@ const AddSectionModalComponent = ({
     // handleInputChange, // Legacy unused
     handleMetaChange,
   } = useAddSectionModal();
+
+  // Fetch Completed Surahs for Validation
+  const { completedList } = useCompletedSurahs(selectedGroup, isOpen);
 
   // New: Quota Validation State
   const [quotaError, setQuotaError] = useState<string | null>(null);
@@ -185,6 +189,7 @@ const AddSectionModalComponent = ({
              onChange={(segments) => handleMetaChange('memorizationMeta', segments, onChange)}
              groupName={newSection.group || selectedGroup}
              type="memorization"
+             completedSurahs={completedList.filter(s => (s.type || 'memorization') === 'memorization')}
            />
 
            <QuranSegmentInput 
@@ -194,6 +199,7 @@ const AddSectionModalComponent = ({
              onChange={(segments) => handleMetaChange('reviewMeta', segments, onChange)}
              groupName={newSection.group || selectedGroup}
              type="review"
+             completedSurahs={completedList.filter(s => (s.type || 'memorization') === 'review')}
            />
         </div>
 

@@ -3,6 +3,7 @@ import { memo, useState, useEffect } from 'react';
 import type { EditSectionModalProps } from '../types/types';
 import { useEditSectionModal } from '../hooks/modals';
 import { useSectionValidation } from '../hooks/useSectionValidation'; 
+import { useCompletedSurahs } from '../hooks/useCompletedSurahs';
 import QuranSegmentInput from '../components/QuranSegmentInput';
 import ErrorMessageList from '../components/ErrorMessageList';
 import { checkSectionQuota } from '@/Api/DailyMark/sectionApi';
@@ -31,6 +32,9 @@ const EditSectionModalComponent = ({
     handleMetaChange,
     syncWithParent 
   } = useEditSectionModal(editingSection);
+
+  // Fetch Completed Surahs for Validation
+  const { completedList } = useCompletedSurahs(localSection?.group || "", isOpen);
 
   // New: Quota Validation State
   const [quotaError, setQuotaError] = useState<string | null>(null);
@@ -170,6 +174,7 @@ const EditSectionModalComponent = ({
              groupName={localSection.group}
              type="memorization"
              excludeId={localSection._id}
+             completedSurahs={completedList.filter(s => (s.type || 'memorization') === 'memorization')}
            />
 
            <QuranSegmentInput 
@@ -180,6 +185,7 @@ const EditSectionModalComponent = ({
              groupName={localSection.group}
              type="review"
              excludeId={localSection._id}
+             completedSurahs={completedList.filter(s => (s.type || 'memorization') === 'review')}
            />
         </div>
 

@@ -110,12 +110,18 @@ exports.createSection = async (req, res) => {
         .catch(err => console.error("⚠️ Async Notification Error:", err));
     }
 
+    // Check for completed Surahs
+    const completedMem = sequenceService.detectCompletedSurahs(sectionData.memorizationMeta, 'memorization');
+    const completedRev = sequenceService.detectCompletedSurahs(sectionData.reviewMeta, 'review');
+    const allCompleted = [...completedMem, ...completedRev];
+
     res.status(201).json({
       success: true,
       message: "تم إنشاء المقطع بنجاح. هل تريد تحديد موعد لهذا المقطع؟",
       data: newSection, // Send created object directly
       meta: {
         askForSchedule: true,
+        completedSurahs: allCompleted 
       }
     });
 

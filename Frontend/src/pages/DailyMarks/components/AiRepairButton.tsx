@@ -62,7 +62,7 @@ export const AiRepairButton = ({
       dir="rtl"
       title="المصلح الذكي: إصلاح فجوات الحفظ والمراجعات"
       disabled={isRepairing}
-      isLoading={isRepairing}
+      loading={isRepairing}
     >
       <div className="flex flex-col items-start leading-[1.1] pt-0.5">
         <span className="text-[9px] text-indigo-200 font-bold uppercase tracking-widest">AI Agent</span>

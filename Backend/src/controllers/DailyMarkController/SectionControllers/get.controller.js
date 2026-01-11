@@ -452,40 +452,53 @@ exports.getCompletedSurahs = async (req, res) => {
     const { group } = req.query;
     if (!group) return sendError(res, "Group is required", 400);
 
-    // 1. Checks max reached ayah for each Surah in this group
-    const pipeline = [
-      { $match: { group: group, "memorizationMeta.0": { $exists: true } } },
-      { $unwind: "$memorizationMeta" },
-      { 
-        $group: {
-          _id: "$memorizationMeta.surahNumber",
-          maxAyah: { $max: "$memorizationMeta.ayahEnd" },
-          lastCompletedAt: { $max: "$date" } // Approximate completion date
+    // Helper to check completions for a specific type
+    const checkType = async (type) => {
+        const metaField = type === 'memorization' ? 'memorizationMeta' : 'reviewMeta';
+        // Ensure we check correct field existence
+        const matchStage = { group: group };
+        matchStage[`${metaField}.0`] = { $exists: true };
+
+        const pipeline = [
+          { $match: matchStage },
+          { $unwind: `$${metaField}` },
+          { 
+            $group: {
+              _id: `$${metaField}.surahNumber`,
+              maxAyah: { $max: `$${metaField}.ayahEnd` },
+              lastCompletedAt: { $max: "$date" } // Approximate completion date
+            }
+          }
+        ];
+
+        const results = await Section.aggregate(pipeline);
+        const list = [];
+        
+        for (const r of results) {
+           const info = getSurahByNumber(r._id);
+           if (info && r.maxAyah >= info.ayahCount) {
+              list.push({
+                 surahNumber: info.number,
+                 surahName: info.name,
+                 totalAyahs: info.ayahCount,
+                 completedAt: r.lastCompletedAt,
+                 type: type // Identify source
+              });
+           }
         }
-      }
-    ];
+        return list;
+    };
 
-    const results = await Section.aggregate(pipeline);
+    // Run parallel checks
+    const [memList, revList] = await Promise.all([
+        checkType('memorization'),
+        checkType('review')
+    ]);
 
-    // 2. Compare with Metadata
-    const completedList = [];
-    
-    for (const r of results) {
-       const info = getSurahByNumber(r._id);
-       if (info && r.maxAyah >= info.ayahCount) {
-          completedList.push({
-             surahNumber: info.number,
-             surahName: info.name,
-             totalAyahs: info.ayahCount,
-             completedAt: r.lastCompletedAt
-          });
-       }
-    }
+    // Combine and Sort by most recently completed
+    const combinedList = [...memList, ...revList].sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
 
-    // Sort by most recently completed
-    completedList.sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
-
-    sendSuccess(res, completedList, "Completed Surahs retrieved");
+    sendSuccess(res, combinedList, "Completed Surahs retrieved");
 
   } catch (error) {
     sendError(res, error.message, 500, error);

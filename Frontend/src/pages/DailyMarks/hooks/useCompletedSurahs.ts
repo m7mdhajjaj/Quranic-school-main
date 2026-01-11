@@ -35,7 +35,7 @@ export const useCompletedSurahs = (selectedGroup: string, isOpen: boolean) => {
     setSelectedSurah(surah);
     setLoadingHistory(true);
     try {
-      const hist = await getSurahHistory(selectedGroup, surah.surahNumber, 'memorization');
+      const hist = await getSurahHistory(selectedGroup, surah.surahNumber, surah.type || 'memorization');
       setHistory(hist);
     } catch (err) {
       console.error(err);

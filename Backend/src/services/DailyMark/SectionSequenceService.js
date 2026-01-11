@@ -26,6 +26,32 @@ class SectionSequenceService {
   }
 
   /**
+   * Detect if any Surah is completed in this batch
+   * Checks if the segment ends at the last Ayah of the Surah
+   * @param {Array} segments - The new segments
+   * @param {string} type - 'memorization' or 'review'
+   */
+  detectCompletedSurahs(segments, type) {
+    const completed = [];
+    if (!segments || !Array.isArray(segments)) return completed;
+
+    for (const seg of segments) {
+      if (!seg || !seg.surahNumber) continue;
+      
+      const meta = getSurahByNumber(seg.surahNumber);
+      if (meta && seg.ayahEnd >= meta.ayahCount) {
+         completed.push({
+             surahNumber: seg.surahNumber,
+             surahName: meta.name,
+             type: type, // 'memorization' or 'review'
+             ayahCount: meta.ayahCount
+         });
+      }
+    }
+    return completed;
+  }
+
+  /**
    * Helper: Convert Date to dateKey (YYYY-MM-DD in UTC)
    */
   toDateKeyUTC(date) {

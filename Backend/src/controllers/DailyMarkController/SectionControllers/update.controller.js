@@ -116,7 +116,21 @@ exports.updateSection = async (req, res) => {
         .catch(err => console.error("Notification Error (Async):", err));
     }
  
-    sendSuccess(res, updatedSection, "تم تحديث المقطع بنجاح");
+    // Check for completed Surahs from the UPDATE data
+    const completedMem = sequenceService.detectCompletedSurahs(updateData.memorizationMeta, 'memorization');
+    const completedRev = sequenceService.detectCompletedSurahs(updateData.reviewMeta, 'review');
+    const allCompleted = [...completedMem, ...completedRev];
+
+    // manual sendSuccess to include meta
+    res.status(200).json({
+      success: true,
+      message: "تم تحديث المقطع بنجاح",
+      data: updatedSection,
+      meta: {
+          completedSurahs: allCompleted
+      }
+    });
+
   } catch (error) {
     sendError(res, error.message, 400, error);
   }

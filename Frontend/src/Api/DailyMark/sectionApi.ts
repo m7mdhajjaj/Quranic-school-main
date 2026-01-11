@@ -180,10 +180,14 @@ export const createSection = async (
 export const updateSection = async (
   sectionId: string,
   sectionData: Partial<CreateSectionData>
-): Promise<Section | null> => {
+): Promise<(Section & { meta?: any }) | null> => {
   try {
     const response = await api.put(`/daily-marks/sections/${sectionId}`, sectionData);
-    return response.data.data || response.data;
+    const data = response.data.data || response.data;
+    if (response.data.meta) {
+        return { ...data, meta: response.data.meta };
+    }
+    return data;
   } catch (error) {
     console.error("Failed to update section:", error);
     throw error;
@@ -391,6 +395,7 @@ export interface CompletedSurah {
   surahName: string;
   totalAyahs: number;
   completedAt: string;
+  type?: 'memorization' | 'review';
 }
 
 export interface SurahHistoryItem {

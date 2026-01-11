@@ -8,10 +8,36 @@ import {
   showConfirmMessage,
   showErrorMessage,
 } from "@/utils/sweetalertUtils";
+import { playSuccessSound } from "@/utils/AudioManager";
 import {
   showSuccessToast,
   showWarningToast,
 } from "@/utils/toastUtils";
+
+// Helper for displaying completion messages
+const handleCompletionSuccess = (completedSurahs: any[]) => {
+  if (!completedSurahs || completedSurahs.length === 0) return;
+
+  const names = completedSurahs.map(s => {
+      const typeLabel = (s.type || 'memorization') === 'memorization' ? 'حفظ' : 'مراجعة';
+      return `<div class="py-1 border-b border-gray-100 last:border-0 flex justify-between items-center">
+        <span class="font-bold text-emerald-600">سورة ${s.surahName}</span>
+        <span class="text-xs text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">${typeLabel}</span>
+      </div>`;
+  }).join('');
+
+  showCenteredSwal({
+    title: '🎉 مبارك! إنجاز عظيم',
+    html: `<div class="text-gray-600 mb-3">تم بحمد الله إتمام:</div><div class="bg-white p-3 rounded-xl border border-gray-100 shadow-inner text-right">${names}</div>`,
+    icon: 'success',
+    confirmButtonText: 'ممتاز',
+    timer: 6000,
+    timerProgressBar: true
+  });
+  
+  try { playSuccessSound(); } catch (e) { console.error(e); }
+};
+
 import type { Section, Mark } from "../types/types";
 import { useNavigate } from "react-router-dom";
 import { useCallback } from "react";
@@ -152,6 +178,12 @@ export const useDailyMarksHandlers = ({
         // Show success toast immediately
         showSuccessToast("✅ تم إضافة المقطع بنجاح!");
 
+        // Check Completion
+        const responseMeta = (createdSectionResponse as any).meta;
+        if (responseMeta?.completedSurahs?.length > 0) {
+            handleCompletionSuccess(responseMeta.completedSurahs);
+        }
+
         // Check if we need to ask/prompt for schedule
         if ((createdSectionResponse as any).meta?.askForSchedule) {
           const result = await showConfirmMessage(
@@ -254,6 +286,12 @@ export const useDailyMarksHandlers = ({
         setIsEditSectionModalOpen(false);
         setEditingSection(null);
         showSuccessToast("✅ تم تحديث المقطع بنجاح!");
+
+        // Check Completion
+        const meta = (updatedSection as any).meta;
+        if (meta?.completedSurahs?.length > 0) {
+             handleCompletionSuccess(meta.completedSurahs);
+        }
 
         // 3. Prompt for Schedule Update
         const confirmResult = await showConfirmMessage(
