@@ -113,6 +113,12 @@ export default function TabLayout() {
             href: null, // Hide from tabs - accessible from drawer
           }}
         />
+        <Tabs.Screen
+          name="exam-schedule"
+          options={{
+            href: null, // Hide from tabs - accessible from drawer
+          }}
+        />
       </Tabs>
     </View>
   );
