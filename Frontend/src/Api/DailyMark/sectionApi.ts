@@ -372,7 +372,10 @@ export const checkSectionQuota = async (
 export const repairSequence = async (
   groupId: string,
   surahNumber?: number,
-  options?: { maxVersesPerDay?: number }
+  options?: { 
+    maxVersesPerDay?: number;
+    suggestedDates?: string[]; // Array of YYYY-MM-DD
+  }
 ): Promise<{ 
     repaired: boolean; 
     message: string; 

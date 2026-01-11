@@ -1,6 +1,9 @@
 const Section = require("../../schema/DailyMark/Section");
+const mongoose = require("mongoose");
 const sequenceService = require("./SectionSequenceService"); // To re-use the strict validation logic
 const { getSurahByNumber } = require("../../utils/Quran/dailyMarkQuranMetadata");
+
+const Group = require("../../schema/Group");
 
 /**
  * ============================================================================
@@ -21,23 +24,61 @@ class AiSchedulerService {
 
   /**
    * الوظيفة الرئيسية: إصلاح تسلسل سورة معينة أو جميع السور لحلقة محددة
-   * @param {string} groupId - معرف الحلقة
+   * @param {string} groupId - معرف الحلقة (اسم أو ID)
    * @param {number|undefined} surahNumber - رقم السورة (اختياري)
    * @param {boolean} dryRun - وضع المحاكاة (عدم التنفيذ)
    * @param {object} options - خيارات إضافية (أيام مقترحة، حد أقصى للآيات)
    * @returns {Promise<{ repaired: boolean, actions: Array, message: string, stats?: any }>}
    */
   async repairSequence(groupId, surahNumber, dryRun = false, options = {}) {
+    // 🔍 Smart Group ID Resolution:
+    // Determine if we should query Sections by Name or ID based on what data exists
+    const effectiveGroupId = await this.resolveEffectiveGroupId(groupId);
+    
+    // Store original ID for Group Settings lookup if needed
+    options._originalGroupId = groupId; 
+
     if (!surahNumber) {
-        return this.repairAllSequences(groupId);
+        return this.repairAllSequences(effectiveGroupId, options);
     }
-    return this.repairSingleSequence(groupId, surahNumber, dryRun, options);
+    return this.repairSingleSequence(effectiveGroupId, surahNumber, dryRun, options);
+  }
+
+  /**
+   * Helper: Find which Group identifier (ID or Name) actually has records
+   */
+  async resolveEffectiveGroupId(inputGroupId) {
+       // 1. Check as provided
+       const count1 = await Section.countDocuments({ group: inputGroupId });
+       if (count1 > 0) return inputGroupId;
+
+       // 2. If input is ID, check Name
+       if (mongoose.Types.ObjectId.isValid(inputGroupId)) {
+           const g = await Group.findById(inputGroupId);
+           if (g) {
+               const count2 = await Section.countDocuments({ group: g.name });
+               if (count2 > 0) return g.name;
+           }
+       }
+       // 3. If input is Name, check ID
+       else {
+           const g = await Group.findOne({ name: inputGroupId });
+           if (g) {
+               const count3 = await Section.countDocuments({ group: g._id });
+               if (count3 > 0) return g._id;
+           }
+       }
+
+       // default return input
+       return inputGroupId;
   }
 
   /**
    * إصلاح جميع السور التي لها سجلات في الحلقة
    */
   async repairAllSequences(groupId, options = {}) {
+      // groupId is now resolved to the one used in Section collection
+      
       // جلب جميع أرقام السور الموجودة في السجلات (حفظ أو مراجعة)
       const memSurahs = await Section.distinct("memorizationMeta.surahNumber", { group: groupId });
       const revSurahs = await Section.distinct("reviewMeta.surahNumber", { group: groupId });
@@ -45,17 +86,27 @@ class AiSchedulerService {
       // دمج وتوحيد الأرقام
       const allSurahs = [...new Set([...memSurahs, ...revSurahs])].sort((a, b) => a - b);
       
-      let totalStats = { gapsFixed: 0, orphansFixed: 0 };
+      if (allSurahs.length === 0) {
+          // Double check if sections exist at all
+          const count = await Section.countDocuments({ group: groupId });
+          if (count === 0) {
+              return { repaired: false, message: "لا توجد سجلات لهذه الحلقة." };
+          }
+           return { repaired: false, message: "السجلات موجودة ولكن لا تحتوي على بيانات قرآنية (أرقام سور) مفهرسة." };
+      }
+
+      let totalStats = { gapsFixed: 0, orphansFixed: 0, duplicatesFixed: 0 };
       let allActions = [];
 
       console.log(`🤖 AI Scheduler: Starting full repair for group ${groupId} on ${allSurahs.length} surahs.`);
 
       for (const surah of allSurahs) {
           try {
-            const result = await this.repairSingleSequence(groupId, surah);
+            const result = await this.repairSingleSequence(groupId, surah, false, options);
             if (result.repaired && result.stats) {
                 totalStats.gapsFixed += result.stats.gapsFixed;
                 totalStats.orphansFixed += result.stats.orphansFixed;
+                totalStats.duplicatesFixed += (result.stats.duplicatesFixed || 0);
                 allActions.push(...result.actions);
             }
           } catch (err) {
@@ -63,13 +114,13 @@ class AiSchedulerService {
           }
       }
 
-      const repaired = totalStats.gapsFixed > 0 || totalStats.orphansFixed > 0;
+      const repaired = totalStats.gapsFixed > 0 || totalStats.orphansFixed > 0 || totalStats.duplicatesFixed > 0;
       return {
           repaired,
           stats: totalStats,
           actions: allActions,
           message: repaired 
-            ? `تمت الصيانة الشاملة بنجاح: تم إصلاح ${totalStats.gapsFixed} فجوة و ${totalStats.orphansFixed} مراجعة يتيمة في ${allSurahs.length} سورة.`
+            ? `تمت الصيانة الشاملة بنجاح: تم إصلاح ${totalStats.gapsFixed} فجوة، ${totalStats.orphansFixed} مراجعة يتيمة، و حذف ${totalStats.duplicatesFixed} تكرار في ${allSurahs.length} سورة.`
             : `الفحص الشامل سليم: تم فحص ${allSurahs.length} سورة ولم توجد أي مشاكل.`
       };
   }
@@ -182,6 +233,18 @@ class AiSchedulerService {
         // 2. معالجة الفجوات (Gap Filling)
         // تجاهل المقاطع المكررة أو المتداخلة في التحقق من الفجوات
         if (current.ayahEnd < expectedStart) {
+            // كشف التكرارات (Duplicates)
+            // إذا كان المقطع (الحقيقي وليس الافتراضي) مغطى بالكامل بما قبله، فهو تكرار يجب حذفه
+            if (!current.isVirtual) {
+                repairsNeeded.push({
+                    type: 'duplicate_remove',
+                    surahNumber: surahNumber,
+                    ayahStart: current.ayahStart,
+                    ayahEnd: current.ayahEnd,
+                    referenceSectionId: current.originalSectionId,
+                    reason: `Redundant segment (fully covered by previous)`
+                });
+            }
             continue; 
         }
 
@@ -259,11 +322,28 @@ class AiSchedulerService {
     let actionsTaken = [];
     let gapsFixed = 0;
     let orphansFixed = 0;
+    let duplicatesFixed = 0;
     
-    // معالجة الفجوات أولاً (لأنها تتطلب إزاحة)
+    // تصنيف المشاكل
     const gapRepairs = repairsNeeded.filter(r => r.type === 'gap_fill');
-    // معالجة الأيتام (في مكانها)
     const orphanRepairs = repairsNeeded.filter(r => r.type === 'orphan_fix');
+    const duplicateRepairs = repairsNeeded.filter(r => r.type === 'duplicate_remove');
+
+    // 0. تنفيذ حذف التكرارات
+    for (const repair of duplicateRepairs) {
+        // نستخدم $pull بدقة لإزالة العنصر المحدد
+         await Section.findByIdAndUpdate(repair.referenceSectionId, {
+            $pull: { 
+               memorizationMeta: { 
+                   surahNumber: repair.surahNumber,
+                   ayahStart: repair.ayahStart,
+                   ayahEnd: repair.ayahEnd
+               }
+            }
+         });
+         duplicatesFixed++;
+         actionsTaken.push(`تم حذف مقطع مكرر (${repair.surahNumber}:${repair.ayahStart}-${repair.ayahEnd})`);
+    }
 
     // 1. تنفيذ الإزاحة للفجوات (Processing Gaps with Ripple Shift)
     // نجمع كل الفجوات ونبدأ الإزاحة من أقدم فجوة لتجنب التضارب
@@ -295,12 +375,46 @@ class AiSchedulerService {
         });
 
         try {
+            // Find earliest involved Ayah across ALL gap repairs (to handle Reverse Chronology)
+            let minAyahStart = Infinity;
+            gapRepairs.forEach(r => {
+                if(r.ayahStart < minAyahStart) minAyahStart = r.ayahStart;
+            });
+
+            // Find effective start section for ripple shift:
+            // Check if there is any section chronologically *earlier* than the earliest repair target
+            // that contains verses *greater* (or equal?) to relevant verses, 
+            // OR simply any section that is chronologically out of place.
+            // Simplified Rule: Start shifting from the earliest date that has verses >= minAyahStart
+            // OR start from earliestRepair.referenceSectionId if nothing earlier is found.
+
+            let effectiveStartSectionId = earliestRepair.referenceSectionId;
+            
+            // Query for out-of-order section earlier than repair date
+            const earliestRepairDate = new Date(earliestRepair.targetDate);
+            
+            // Find a section for this group & surah where:
+            // 1. Date is BEFORE earliestRepair.targetDate
+            // 2. Contains AyahStart > minAyahStart (Implying it SHOULD be later)
+            const outOfOrderSection = await Section.findOne({
+                group: groupId,
+                date: { $lt: earliestRepairDate },
+                "memorizationMeta.surahNumber": surahNumber,
+                "memorizationMeta.ayahStart": { $gt: minAyahStart }
+            }).sort({ date: 1 }); // Get the earliest occurrence
+
+            if (outOfOrderSection) {
+                effectiveStartSectionId = outOfOrderSection._id;
+                // Add a note about re-sequencing
+                actionsTaken.push(`تم اكتشاف مقاطع سابقة تحتاج إعادة ترتيب (${outOfOrderSection.memorizationSection})`);
+            }
+
             // Apply HUGE ripple shift once
             await this.applyRippleShift(
                 groupId, 
                 surahNumber, 
                 allSegmentsToAdd, 
-                earliestRepair.referenceSectionId,
+                effectiveStartSectionId,
                 options
             );
             
@@ -341,7 +455,7 @@ class AiSchedulerService {
     return {
         repaired: true,
         actions: actionsTaken,
-        stats: { gapsFixed, orphansFixed },
+        stats: { gapsFixed, orphansFixed, duplicatesFixed },
         message: `تمت عملية الإصلاح بنجاح. تم معالجة ${actionsTaken.length} مشكلة.`
     };
   }
@@ -356,6 +470,7 @@ class AiSchedulerService {
       if (!startSection) throw new Error("Start section not found");
 
       const startDate = new Date(startSection.date);
+      const startDayTime = new Date(startDate).setHours(0,0,0,0);
 
       // normalization for suggested dates
       let { suggestedDates } = options;
@@ -364,8 +479,11 @@ class AiSchedulerService {
           suggestedDates = suggestedDates
             .map(d => new Date(d))
             .sort((a, b) => a - b)
-            // Filter only future or equal dates to start
-            .filter(d => d >= startDate);
+            // Filter only future or equal dates to start (Date only)
+            .filter(d => {
+                const dTime = new Date(d).setHours(0,0,0,0);
+                return dTime >= startDayTime;
+            });
       } else {
           suggestedDates = [];
       }
@@ -407,39 +525,40 @@ class AiSchedulerService {
           segmentQueue.push(...relevantSegments);
       }
       
-      // ✅ Essential Sorting for strict sequence validation
-      // This ensures that even if Gaps came from different parts, 
-      // the final timeline is sorted purely by Ayah Sequence.
+      // ✅ Deduplicate & Condense Segment Queue
+      // 1. Sort by Surah ASC, AyahStart ASC, AyahEnd DESC (Longest first) to handle containment
       segmentQueue.sort((a, b) => {
           if (a.surahNumber !== b.surahNumber) return a.surahNumber - b.surahNumber;
-          return a.ayahStart - b.ayahStart;
+          if (a.ayahStart !== b.ayahStart) return a.ayahStart - b.ayahStart;
+          return b.ayahEnd - a.ayahEnd; // Longest range first
       });
 
-      // ✅ Deduplicate Segment Queue
-      // Fixes issue where same segment appears on multiple days (e.g. 19 Jan and 26 Jan)
-      // This happens if DB had duplicates or if logic added them twice.
-      // We keep the *last* one if duplicates exist? No, the *first* one in sorted order is fine.
-      // Actually if we have duplicates in DB of same range, we should condense them to one unless status is different?
-      // Assuming 'completed' status, it's a duplicate.
       const uniqueQueue = [];
-      const seenKeys = new Set();
-      for (const seg of segmentQueue) {
-          const key = `${seg.surahNumber}:${seg.ayahStart}-${seg.ayahEnd}`;
-          if (!seenKeys.has(key)) {
-              seenKeys.add(key);
-              uniqueQueue.push(seg);
+      
+      if (segmentQueue.length > 0) {
+          // Add first segment
+          uniqueQueue.push(segmentQueue[0]);
+
+          for (let i = 1; i < segmentQueue.length; i++) {
+              const current = segmentQueue[i];
+              const last = uniqueQueue[uniqueQueue.length - 1];
+
+              // Check for exact duplicate or full containment
+              // Since we sorted by Start ASC, End DESC:
+              // If Start is same, Current.End <= Last.End. So Current is contained in Last.
+              // If Start is greater, we check if Current.End <= Last.End.
+              
+              const isContained = (current.surahNumber === last.surahNumber) && 
+                                  (current.ayahStart >= last.ayahStart) && 
+                                  (current.ayahEnd <= last.ayahEnd);
+              
+              if (!isContained) {
+                  uniqueQueue.push(current);
+              }
           }
       }
-      // Re-assign sorted, deduped queue
-      // segmentQueue is 'const' in function scope? No, it was passed as argument?
-      // Wait, applyRippleShift definition: async applyRippleShift(..., gapSegments, ...)
-      // But segmentQueue is created INSIDE applyRippleShift.
-      // Let's check where it is defined.
-      // It is defined as: const segmentQueue = [...gapSegments]; 
-      // So we cannot reassign it.
-      // We must push into it or use splices, or change definition to let.
-      
-      // FIX: Clear and refill
+
+      // Re-fill strictly
       segmentQueue.length = 0;
       segmentQueue.push(...uniqueQueue);
 
@@ -470,9 +589,14 @@ class AiSchedulerService {
           const nextSegmentIsGap = segmentQueue[0].isNewGap;
           if (nextSegmentIsGap && suggestedDates.length > 0) {
               // Jump to the preferred date immediately
-              const preferredDate = new Date(suggestedDates[0]); // Don't shift yet
+              const preferredDate = new Date(suggestedDates[0]); 
+              
+              // Normalize for comparison (Ignore Time)
+              const pTime = new Date(preferredDate).setHours(0,0,0,0);
+              const cTime = new Date(currentDate).setHours(0,0,0,0);
+
               // Ensure we don't go backwards
-              if (preferredDate >= currentDate) {
+              if (pTime >= cTime) {
                   // ✅ CHECK TEACHER CONFLICT FOR SUGGESTED DATE
                   const hasConflict = await this.checkTeacherConflict(startSection.teacher, preferredDate, groupId);
                   if (hasConflict) {
@@ -592,8 +716,15 @@ class AiSchedulerService {
    */
   async detectWorkingDays(groupId) {
     // 1. Check Group Settings first (Source of Truth)
-    const Group = require('../../schema/Group'); // Adjusted path from services/DailyMark/
-    const group = await Group.findById(groupId).select('schedule').lean();
+    // Group is already required at the top (and duplicate fix applied previously)
+    
+    // We need to support both ObjectId and Name lookups for Group Settings
+    let group = null;
+    if (mongoose.Types.ObjectId.isValid(groupId)) {
+        group = await Group.findById(groupId).select('schedule').lean();
+    } else {
+        group = await Group.findOne({ name: groupId }).select('schedule').lean();
+    }
     
     if (group && group.schedule) {
         const scheduleText = group.schedule;

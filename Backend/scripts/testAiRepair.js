@@ -203,6 +203,131 @@ async function runTestScenario() {
         console.error('   ❌ Failed:', err.message);
     }
 
+    // ========================================================================
+    // SCENARIO 4: Reverse Chronology Fix (Orphan earlier than existing)
+    // ========================================================================
+    console.log('\n\n🧪 TEST 4: Reverse Chronology Check');
+    const REVERSE_GROUP = new mongoose.Types.ObjectId();
+    
+    // Day 20: Verses 60-70 (Real Memorization)
+    const date1 = new Date();
+    date1.setDate(date1.getDate() + 20);
+    
+    await Section.create({
+        group: REVERSE_GROUP,
+        teacher: TEACHER_ID,
+        date: date1,
+        dateKey: date1.toISOString().split('T')[0],
+        memorizationSection: "Existing Later Part",
+        memorizationMeta: [{
+            surahNumber: SURAH_NUMBER,
+            ayahStart: 60,
+            ayahEnd: 70,
+            status: 'completed'
+        }]
+    });
+    console.log(`   📅 Day 20 (${date1.toISOString().split('T')[0]}): Verses 60-70`);
+
+    // Day 21: Review 5-60 (Orphan -> Virtual 5-60)
+    // Implicitly creates gap 1-4
+    const date2 = new Date();
+    date2.setDate(date2.getDate() + 21);
+    
+    await Section.create({
+        group: REVERSE_GROUP,
+        teacher: TEACHER_ID,
+        date: date2,
+        dateKey: date2.toISOString().split('T')[0],
+        reviewSection: "Orphan Review",
+        reviewMeta: [{
+            surahNumber: SURAH_NUMBER,
+            ayahStart: 5,
+            ayahEnd: 60,
+            status: 'completed'
+        }],
+        memorizationMeta: [] // Empty -> Orphan
+    });
+    console.log(`   📅 Day 21 (${date2.toISOString().split('T')[0]}): Review 5-60 (Orphan)`);
+
+    console.log("   Running Repair...");
+    try {
+        const result4 = await AiSchedulerService.repairSequence(REVERSE_GROUP, SURAH_NUMBER, false, {});
+        console.log(`   📝 Result: ${result4.message}`);
+        
+        // Validation:
+        // We expect verses 1-4 and 5-60 to be scheduled starting from Day 20 (replacing 60-70)
+        // because 1 < 60.
+        // If the fix works, the section on Day 20 should now contain verses 1-4 (or similar start).
+        // If it fails, Day 20 will still be 60-70.
+        
+        const day20Section = await Section.findOne({ group: REVERSE_GROUP, date: date1 });
+        const meta = day20Section.memorizationMeta.find(m => m.surahNumber === SURAH_NUMBER);
+        
+        if (meta && meta.ayahStart < 60) {
+            console.log(`   ✅ PASSED: Day 20 updated to start with verse ${meta.ayahStart} (Correct order)`);
+        } else {
+            console.log(`   ❌ FAILED: Day 20 still starts with verse ${meta ? meta.ayahStart : '???'} (Reverse order persisted)`);
+        }
+        
+    } catch (err) {
+        console.error('   ❌ Failed:', err.message);
+    }
+
+
+
+    // --- SCENARIO 5: DUPLICATE SEGMENTS ---
+    console.log('\n--- Scenario 5: Detecting & Removing Duplicates ---');
+    const DUPE_GROUP = new mongoose.Types.ObjectId();
+    
+    const dateD1 = new Date(); dateD1.setDate(dateD1.getDate() - 5);
+    const dateD2 = new Date(); dateD2.setDate(dateD2.getDate() - 4);
+    const dateD3 = new Date(); dateD3.setDate(dateD3.getDate() - 3);
+
+    // Day 1: 1-10
+    await Section.create({
+        group: DUPE_GROUP, teacher: TEACHER_ID, date: dateD1,
+        memorizationMeta: [{ surahNumber: SURAH_NUMBER, ayahStart: 1, ayahEnd: 10, status: 'completed' }]
+    });
+
+    // Day 2: 1-10 (Duplicate!)
+    await Section.create({
+        group: DUPE_GROUP, teacher: TEACHER_ID, date: dateD2,
+        memorizationMeta: [{ surahNumber: SURAH_NUMBER, ayahStart: 1, ayahEnd: 10, status: 'completed' }] // Duplicate
+    });
+
+    // Day 3: 11-20
+    await Section.create({
+        group: DUPE_GROUP, teacher: TEACHER_ID, date: dateD3,
+        memorizationMeta: [{ surahNumber: SURAH_NUMBER, ayahStart: 11, ayahEnd: 20, status: 'completed' }] 
+    });
+
+    console.log("   Running Repair (Expect Duplicate Removal)...");
+    try {
+        const result5 = await AiSchedulerService.repairSequence(DUPE_GROUP, SURAH_NUMBER, false, {});
+        console.log(`   📝 Result: ${result5.message}`);
+        console.log(`   STATS:`, result5.stats);
+
+        if (result5.stats && result5.stats.duplicatesFixed > 0) {
+            console.log("   ✅ PASSED: Duplicates detected and fixed.");
+        } else {
+             console.log("   ❌ FAILED: Duplicates ignored.");
+        }
+
+        // Verify DB: Find which sections still contain this surah in meta
+        const sections = await Section.find({ group: DUPE_GROUP, "memorizationMeta.surahNumber": SURAH_NUMBER }).sort({date: 1});
+        console.log(`   Sections with Surah ${SURAH_NUMBER}: ${sections.length}`);
+        
+        if(sections.length === 2 && sections[0].date.getTime() === dateD1.getTime() && sections[1].date.getTime() === dateD3.getTime()) {
+             console.log("   ✅ Database Cleaned");
+        } else {
+             // Debug
+             sections.forEach(s => console.log(`      Found: ${s.date.toISOString().split('T')[0]} - ${JSON.stringify(s.memorizationMeta)}`));
+        }
+
+    } catch(err) {
+        console.error('   ❌ Failed:', err);
+    }
+
 
     console.log('\n\n🏁 Tests Completed.');
     await mongoose.disconnect();
