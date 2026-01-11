@@ -1,0 +1,5 @@
+// hooks/profile/index.ts
+export { useProfileData } from "./useProfileData";
+export { useProfileEdit } from "./useProfileEdit";
+export { useProfileAvatar } from "./useProfileAvatar";
+export { useProfileHandlers } from "./useProfileHandlers";
