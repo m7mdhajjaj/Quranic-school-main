@@ -175,10 +175,10 @@ const ModalsContainerComponent = ({
         newSection={state.newSection}
         isLoading={state.isAddingSectionLoading}
         onClose={() => state.setIsAddSectionModalOpen(false)}
-        onSubmit={(e) =>
+        onSubmit={(e, data) =>
           handlers.handleAddSection(
             e,
-            state.newSection,
+            data || state.newSection,
             state.setNewSection,
             state.setIsAddingSectionLoading
           )

@@ -122,7 +122,7 @@ export interface AddSectionModalProps {
   newSection: Omit<Section, "_id">;
   isLoading?: boolean;
   onClose: () => void;
-  onSubmit: (e: React.FormEvent) => void;
+  onSubmit: (e: React.FormEvent, data?: Omit<Section, "_id">) => void;
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
 }
 

@@ -96,10 +96,10 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
               <input
                 type="text"
                 autoComplete="off"
-                className={`w-full rounded-xl border-2 text-sm py-2.5 pl-9 pr-3 transition-all duration-200 outline-none
-                    ${!segment.surahNumber && surahInput && !isFocused ? 'border-red-300 bg-red-50/30' : 
-                      segment.surahNumber ? `${activeBorder} border-gray-200 ${bgSelected} font-semibold ${textSelected}` : 
-                      `border-gray-200 bg-white hover:border-gray-300 ${activeBorder} ${activeRing}`
+                className={`w-full rounded-xl border text-sm py-2.5 pl-9 pr-3 transition-all duration-200 outline-none
+                    ${!segment.surahNumber && surahInput && !isFocused ? 'border-red-200 bg-red-50/30' : 
+                      segment.surahNumber ? `${activeBorder} border-gray-100 ${bgSelected} font-semibold ${textSelected}` : 
+                      `border-gray-100 bg-white hover:border-gray-200 ${activeBorder} ${activeRing}`
                     }
                 `}
                 placeholder="ابحث عن السورة..."
@@ -161,14 +161,14 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
             min={1}
             max={type === 'review' && reviewLimit ? reviewLimit : maxAyah}
             disabled={!segment.surahNumber || (type === 'review' && !!reviewLimit && !!expectedStart && expectedStart > reviewLimit)}
-            className={`w-full rounded-lg border-2 text-sm font-bold py-2 px-1 text-center transition-all outline-none 
-                disabled:bg-gray-50 disabled:border-gray-100 disabled:text-gray-400
+            className={`w-full rounded-lg border text-sm font-bold py-2 px-1 text-center transition-all outline-none 
+                disabled:bg-gray-50 disabled:border-gray-50 disabled:text-gray-400
                 ${
-                     (type === 'review' && reviewLimit && expectedStart && expectedStart > reviewLimit) ? 'bg-emerald-50 border-emerald-200 text-emerald-700 cursor-not-allowed opacity-80' : // Completed
-                     (type === 'review' && reviewLimit && segment.ayahStart && segment.ayahStart > reviewLimit) ? 'border-red-500 bg-red-50 text-red-900' :
-                     (expectedStart && segment.ayahStart && segment.ayahStart > expectedStart) ? 'border-amber-400 bg-amber-50 text-amber-900' : 
-                     (!segment.ayahStart && segment.surahNumber) ? 'border-red-300 bg-red-50/30' : 
-                     `border-gray-200 bg-white hover:border-gray-300 ${activeBorder} ${activeRing}`
+                     (type === 'review' && reviewLimit && expectedStart && expectedStart > reviewLimit) ? 'bg-emerald-50 border-emerald-100 text-emerald-700 cursor-not-allowed opacity-80' : // Completed
+                     (type === 'review' && reviewLimit && segment.ayahStart && segment.ayahStart > reviewLimit) ? 'border-red-300 bg-red-50 text-red-900' :
+                     (expectedStart && segment.ayahStart && segment.ayahStart > expectedStart) ? 'border-amber-300 bg-amber-50 text-amber-900' : 
+                     (!segment.ayahStart && segment.surahNumber) ? 'border-red-200 bg-red-50/30' : 
+                     `border-gray-100 bg-white hover:border-gray-200 ${activeBorder} ${activeRing}`
             }`}
             placeholder={type === 'review' && reviewLimit && expectedStart && expectedStart > reviewLimit ? "✓" : "1"}
             value={type === 'review' && reviewLimit && expectedStart && expectedStart > reviewLimit ? "" : (segment.ayahStart || '')}
@@ -186,13 +186,13 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
             min={segment.ayahStart || 1}
             max={type === 'review' && reviewLimit ? reviewLimit : maxAyah}
             disabled={!segment.surahNumber || (type === 'review' && !!reviewLimit && !!expectedStart && expectedStart > reviewLimit)}
-            className={`w-full rounded-lg border-2 text-sm font-bold py-2 px-1 text-center transition-all outline-none 
-                disabled:bg-gray-50 disabled:border-gray-100 disabled:text-gray-400
+            className={`w-full rounded-lg border text-sm font-bold py-2 px-1 text-center transition-all outline-none 
+                disabled:bg-gray-50 disabled:border-gray-50 disabled:text-gray-400
                 ${
-                (type === 'review' && reviewLimit && expectedStart && expectedStart > reviewLimit) ? 'bg-emerald-50 border-emerald-200 text-emerald-700 cursor-not-allowed opacity-80' : // Completed
-                (type === 'review' && reviewLimit && segment.ayahEnd && segment.ayahEnd > reviewLimit) ? 'border-red-500 bg-red-50 text-red-900' :
-                !segment.ayahEnd && segment.surahNumber ? 'border-red-300 bg-red-50/30' : 
-                `border-gray-200 bg-white hover:border-gray-300 ${activeBorder} ${activeRing}`
+                (type === 'review' && reviewLimit && expectedStart && expectedStart > reviewLimit) ? 'bg-emerald-50 border-emerald-100 text-emerald-700 cursor-not-allowed opacity-80' : // Completed
+                (type === 'review' && reviewLimit && segment.ayahEnd && segment.ayahEnd > reviewLimit) ? 'border-red-300 bg-red-50 text-red-900' :
+                !segment.ayahEnd && segment.surahNumber ? 'border-red-200 bg-red-50/30' : 
+                `border-gray-100 bg-white hover:border-gray-200 ${activeBorder} ${activeRing}`
             }`}
             placeholder={type === 'review' && reviewLimit && expectedStart && expectedStart > reviewLimit ? "✓" : maxAyah.toString()}
             value={type === 'review' && reviewLimit && expectedStart && expectedStart > reviewLimit ? "" : (segment.ayahEnd || '')}

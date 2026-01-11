@@ -40,15 +40,6 @@ export const useAddSectionModal = () => {
     []
   );
 
-  const syncWithParent = useCallback((onChange: (e: any) => void) => {
-      onChange({ target: { name: 'reviewMeta', value: localReviewMeta } });
-      onChange({ target: { name: 'memorizationMeta', value: localMemorizationMeta } });
-      // Clear legacy
-      onChange({ target: { name: 'reviewSection', value: '' } });
-      onChange({ target: { name: 'memorizationSection', value: '' } });
-  }, [localReviewMeta, localMemorizationMeta]);
-
-
   // Debounced input change handler (Legacy Text)
   const handleInputChange = useCallback(
     (
@@ -94,6 +85,5 @@ export const useAddSectionModal = () => {
     syncLocalState,
     handleInputChange,
     handleMetaChange,
-    syncWithParent,
   };
 };

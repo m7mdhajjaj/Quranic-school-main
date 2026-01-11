@@ -13,6 +13,16 @@ export const useSectionValidation = (
 ) => {
   
   const consistencyErrors = useMemo(() => {
+    // ✅ Don't show validation errors if both fields are empty
+    // (Prevents errors on initial modal open)
+    const hasMem = memorizationMeta && memorizationMeta.length > 0;
+    const hasRev = reviewMeta && reviewMeta.length > 0;
+    
+    // Only validate if user has entered data
+    if (!hasMem && !hasRev) {
+      return [];
+    }
+    
     return validateSectionConsistency(memorizationMeta, reviewMeta);
   }, [memorizationMeta, reviewMeta]);
 

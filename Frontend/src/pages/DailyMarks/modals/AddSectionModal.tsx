@@ -36,7 +36,6 @@ const AddSectionModalComponent = ({
     syncLocalState,
     // handleInputChange, // Legacy unused
     handleMetaChange,
-    syncWithParent,
   } = useAddSectionModal();
 
   // Sync with parent state when modal opens
@@ -56,13 +55,16 @@ const AddSectionModalComponent = ({
     e.preventDefault();
     if (hasConsistencyErrors) return;
     
-    // ✅ CRITICAL: Sync with parent BEFORE validation
-    syncWithParent(onChange);
+    // Construct the payload with the latest local state
+    const payload = {
+      ...newSection,
+      memorizationMeta: localMemorizationMeta,
+      reviewMeta: localReviewMeta,
+      memorizationSection: "",
+      reviewSection: ""
+    };
     
-    // Small delay to ensure state is updated before submit
-    setTimeout(() => {
-      onSubmit(e);
-    }, 10);
+    onSubmit(e, payload);
   };
 
   if (!isOpen) return null;
@@ -127,9 +129,10 @@ const AddSectionModalComponent = ({
               } as React.ChangeEvent<HTMLInputElement>)
             }
             required
+            minDate={new Date().toISOString().split('T')[0]}
           />
           <p className="mt-2 text-xs text-slate-500 flex items-center gap-1">
-             ✅ يمكنك إدخال تواريخ سابقة (Backfilling) - النظام سيتحقق من التسلسل تلقائياً
+             📅 يمكنك اختيار التاريخ من اليوم وما بعده فقط
           </p>
         </div>
 
