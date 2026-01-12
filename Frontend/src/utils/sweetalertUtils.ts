@@ -98,16 +98,16 @@ export const showSuccessMessage = (
     title: title,
     html: `
       <div class="text-center py-4">
-        <div class="mx-auto w-24 h-24 bg-gradient-to-br from-green-100 to-emerald-200 rounded-full flex items-center justify-center mb-6 shadow-lg">
-          <svg class="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="mx-auto w-24 h-24 bg-gradient-to-br from-emerald-400 to-green-600 rounded-full flex items-center justify-center mb-6 shadow-xl">
+          <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
           </svg>
         </div>
-        <h3 class="text-xl font-bold text-gray-800 mb-3">${message}</h3>
+        <h3 class="text-xl font-bold text-emerald-900 mb-3">${message}</h3>
         ${
           studentName
             ? `
-          <div class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-full font-semibold text-lg shadow-md">
+          <div class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-emerald-500 to-green-600 text-white rounded-full font-semibold text-lg shadow-md">
             <span class="mr-2">✨</span>
             <span>${studentName}</span>
             <span class="mr-2">✨</span>
@@ -115,7 +115,7 @@ export const showSuccessMessage = (
         `
             : ""
         }
-        <p class="text-gray-600 mt-4 font-medium">تم تحديث قاعدة البيانات بنجاح</p>
+        <p class="text-emerald-700 mt-4 font-medium">تم تحديث قاعدة البيانات بنجاح</p>
       </div>
     `,
     icon: "success",
@@ -127,7 +127,7 @@ export const showSuccessMessage = (
       popup: "rtl:text-right",
       title: "text-center",
       htmlContainer: "text-center",
-      timerProgressBar: "!bg-green-500",
+      timerProgressBar: "!bg-emerald-500",
     },
   });
 };
@@ -141,13 +141,13 @@ export const showErrorMessage = (title: string, message: string) => {
     title: title,
     html: `
       <div class="text-center py-4">
-        <div class="mx-auto w-24 h-24 bg-gradient-to-br from-red-100 to-rose-200 rounded-full flex items-center justify-center mb-6 shadow-lg animate-pulse">
-          <svg class="w-12 h-12 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="mx-auto w-24 h-24 bg-gradient-to-br from-red-400 to-rose-600 rounded-full flex items-center justify-center mb-6 shadow-xl animate-pulse">
+          <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
           </svg>
         </div>
-        <div class="bg-red-50 border-r-4 border-red-500 rounded-lg p-5 mt-4 text-right">
-          <pre class="text-base text-red-800 font-semibold whitespace-pre-line leading-relaxed m-0 font-sans">${message}</pre>
+        <div class="bg-gradient-to-r from-red-50 to-rose-50 border-r-4 border-red-500 rounded-lg p-5 mt-4 text-right shadow-md">
+          <pre class="text-base text-red-900 font-bold whitespace-pre-line leading-relaxed m-0 font-sans">${message}</pre>
         </div>
       </div>
     `,
@@ -158,10 +158,10 @@ export const showErrorMessage = (title: string, message: string) => {
     confirmButtonText: "✓ فهمت",
     customClass: {
       popup: "rtl:text-right !rounded-2xl !max-w-2xl",
-      title: "text-center !text-2xl !font-bold !text-gray-800",
+      title: "text-center !text-2xl !font-bold !text-gray-900",
       htmlContainer: "text-center",
       confirmButton:
-        "!bg-gradient-to-r !from-red-600 !to-rose-700 hover:!from-red-700 hover:!to-rose-800 !text-white !font-bold !px-8 !py-3 !rounded-xl !shadow-lg hover:!shadow-xl !transition-all !duration-200",
+        "!bg-gradient-to-r !from-red-500 !to-rose-600 hover:!from-red-600 hover:!to-rose-700 !text-white !font-bold !px-8 !py-3 !rounded-xl !shadow-xl hover:!shadow-2xl !transition-all !duration-200",
       timerProgressBar: "!bg-red-500",
     },
   });
@@ -209,19 +209,19 @@ export const showConfirmMessage = (
     html: text, // استخدام html بدلاً من text لدعم التنسيق
     icon: "warning",
     showCancelButton: true,
-    confirmButtonColor: "#3b82f6",
+    confirmButtonColor: "#10b981",
     cancelButtonColor: "#ef4444",
     confirmButtonText: confirmButtonText,
     cancelButtonText: cancelButtonText,
     reverseButtons: true,
     customClass: {
       popup: "rtl:text-right !rounded-2xl",
-      title: "!text-xl !font-bold !text-gray-800",
+      title: "!text-xl !font-bold !text-gray-900",
       htmlContainer: "!text-right", // RTL للمحتوى
       confirmButton:
-        "!bg-gradient-to-r !from-blue-600 !to-blue-700 hover:!from-blue-700 hover:!to-blue-800 !text-white !font-bold !px-6 !py-3 !rounded-xl !shadow-lg hover:!shadow-xl !transition-all",
+        "!bg-gradient-to-r !from-emerald-500 !to-green-600 hover:!from-emerald-600 hover:!to-green-700 !text-white !font-bold !px-6 !py-3 !rounded-xl !shadow-xl hover:!shadow-2xl !transition-all",
       cancelButton:
-        "!bg-gradient-to-r !from-red-600 !to-red-700 hover:!from-red-700 hover:!to-red-800 !text-white !font-bold !px-6 !py-3 !rounded-xl !shadow-lg hover:!shadow-xl !transition-all",
+        "!bg-gradient-to-r !from-red-500 !to-rose-600 hover:!from-red-600 hover:!to-rose-700 !text-white !font-bold !px-6 !py-3 !rounded-xl !shadow-xl hover:!shadow-2xl !transition-all",
     },
   });
 };
@@ -245,12 +245,12 @@ export const showConfirmDialog = (
     reverseButtons: true,
     customClass: {
       popup: "rtl:text-right !rounded-2xl",
-      title: "!text-xl !font-bold !text-gray-800",
+      title: "!text-xl !font-bold !text-gray-900",
       htmlContainer: "!text-right",
       confirmButton:
-        "!bg-gradient-to-r !from-red-600 !to-red-700 hover:!from-red-700 hover:!to-red-800 !text-white !font-bold !px-6 !py-3 !rounded-xl !shadow-lg hover:!shadow-xl !transition-all",
+        "!bg-gradient-to-r !from-red-500 !to-rose-600 hover:!from-red-600 hover:!to-rose-700 !text-white !font-bold !px-6 !py-3 !rounded-xl !shadow-xl hover:!shadow-2xl !transition-all",
       cancelButton:
-        "!bg-gradient-to-r !from-gray-600 !to-gray-700 hover:!from-gray-700 hover:!to-gray-800 !text-white !font-bold !px-6 !py-3 !rounded-xl !shadow-lg hover:!shadow-xl !transition-all",
+        "!bg-gradient-to-r !from-gray-500 !to-slate-600 hover:!from-gray-600 hover:!to-slate-700 !text-white !font-bold !px-6 !py-3 !rounded-xl !shadow-xl hover:!shadow-2xl !transition-all",
     },
   });
 };

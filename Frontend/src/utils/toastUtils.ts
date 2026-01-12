@@ -28,22 +28,22 @@ export const showSuccessToast = (
   // تشغيل صوت النجاح
   playSuccessSound();
   
-  // إظهار Toast - تصميم عصري مع خلفية بيضاء ونص أخضر
+  // إظهار Toast - تصميم عصري مع خلفية خضراء ونص أبيض
   return toast.success(message, {
     ...defaultOptions,
     ...options,
     style: {
-      background: 'linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%)',
-      color: '#047857', // أخضر غامق (emerald-700)
-      border: '2px solid #10b981',
+      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+      color: '#ffffff',
+      border: '2px solid #34d399',
       borderRadius: '14px',
-      boxShadow: '0 10px 30px rgba(16, 185, 129, 0.2), 0 0 0 1px rgba(16, 185, 129, 0.05)',
+      boxShadow: '0 10px 30px rgba(16, 185, 129, 0.4), 0 0 0 1px rgba(16, 185, 129, 0.1)',
       backdropFilter: 'blur(10px)',
-      fontWeight: '600',
+      fontWeight: '700',
       fontSize: '15px',
       padding: '18px 20px',
     },
-    progressClassName: '!bg-gradient-to-r !from-emerald-400 !to-emerald-600 !h-1',
+    progressClassName: '!bg-gradient-to-r !from-emerald-300 !to-green-400 !h-1',
   });
 };
 
@@ -59,26 +59,26 @@ export const showErrorToast = (
   // تشغيل صوت الخطأ
   playErrorSound();
   
-  // إظهار Toast - تصميم عصري مع خلفية بيضاء ونص أحمر
+  // إظهار Toast - تصميم عصري مع خلفية حمراء ونص أبيض
   return toast.error(message, {
     ...defaultOptions,
     autoClose: 6500, // ✅ وقت أطول للرسائل المفصلة
     ...options,
     style: {
-      background: 'linear-gradient(135deg, #ffffff 0%, #fef2f2 100%)',
-      color: '#b91c1c', // أحمر غامق (red-700)
-      border: '2px solid #ef4444',
+      background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+      color: '#ffffff',
+      border: '2px solid #f87171',
       borderRadius: '14px',
-      boxShadow: '0 10px 30px rgba(239, 68, 68, 0.2), 0 0 0 1px rgba(239, 68, 68, 0.05)',
+      boxShadow: '0 10px 30px rgba(239, 68, 68, 0.4), 0 0 0 1px rgba(239, 68, 68, 0.1)',
       backdropFilter: 'blur(10px)',
-      fontWeight: '600',
+      fontWeight: '700',
       fontSize: '15px',
       padding: '18px 20px',
-      lineHeight: '1.6', // ✅ تباعد أفضل للقراءة
-      whiteSpace: 'pre-line', // ✅ دعم الأسطر المتعددة
-      maxWidth: '450px', // ✅ عرض أكبر للرسائل المفصلة
+      lineHeight: '1.6',
+      whiteSpace: 'pre-line',
+      maxWidth: '450px',
     },
-    progressClassName: '!bg-gradient-to-r !from-red-400 !to-red-600 !h-1',
+    progressClassName: '!bg-gradient-to-r !from-red-300 !to-rose-400 !h-1',
   });
 };
 
