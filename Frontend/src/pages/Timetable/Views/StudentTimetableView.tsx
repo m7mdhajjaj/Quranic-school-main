@@ -2,13 +2,14 @@
 // StudentTimetableView - عرض الجدول للطالب (قراءة فقط)
 // ============================================================================
 
-import React from "react";
+import React, { useState } from "react";
 import type { Session } from "../types/timetable.types";
 import { AdvancedTimetableView } from "../DisplayType/AdvancedTimetableView";
+import { WeeklyGridView } from "../DisplayType/WeeklyGridView";
 import PageHeader from "@/components/UI/PageHeader";
 import { Alert } from "@/components/UI/Alert";
 import { Button } from "@/components/UI/Button";
-import { Calendar } from "lucide-react";
+import { Calendar, Grid3x3, List } from "lucide-react";
 
 interface StudentTimetableViewProps {
   sessions: Session[];
@@ -23,6 +24,8 @@ export const StudentTimetableView: React.FC<StudentTimetableViewProps> = ({
   error,
   refetchSessions,
 }) => {
+  const [viewMode, setViewMode] = useState<'monthly' | 'weekly'>('weekly');
+
   return (
     <div
       className="min-h-screen bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100 p-4 md:p-6 lg:p-8"
@@ -30,11 +33,44 @@ export const StudentTimetableView: React.FC<StudentTimetableViewProps> = ({
       lang="ar">
       <div className="max-w-7xl mx-auto">
         {/* رأس الصفحة */}
-        <PageHeader
-          title="جدول الحصص الأسبوعي"
-          subtitle="عرض مواعيد حلقتك - كل خانة تمثل نصف ساعة"
-          icon={<Calendar className="w-12 h-12 sm:w-16 sm:h-16 text-white" />}
-        />
+        <div className="mb-6">
+          <PageHeader
+            title="جدول الحصص"
+            subtitle="عرض مواعيد حلقتك والمقاطع المطلوبة"
+            icon={<Calendar className="w-12 h-12 sm:w-16 sm:h-16 text-white" />}
+          />
+          
+          {/* أزرار التبديل بين العروض */}
+          <div className="flex items-center justify-center gap-3 mt-6">
+            <button
+              onClick={() => setViewMode('weekly')}
+              className={`
+                flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-bold text-sm sm:text-base
+                transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5
+                ${viewMode === 'weekly' 
+                  ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white scale-105' 
+                  : 'bg-white text-gray-600 hover:bg-gray-50 border-2 border-gray-200'
+                }
+              `}>
+              <Grid3x3 className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span>الجدول الأسبوعي</span>
+            </button>
+            
+            <button
+              onClick={() => setViewMode('monthly')}
+              className={`
+                flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-bold text-sm sm:text-base
+                transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5
+                ${viewMode === 'monthly' 
+                  ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white scale-105' 
+                  : 'bg-white text-gray-600 hover:bg-gray-50 border-2 border-gray-200'
+                }
+              `}>
+              <List className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span>التقويم الشهري</span>
+            </button>
+          </div>
+        </div>
 
         {/* رسالة الخطأ */}
         {error && (
@@ -53,12 +89,20 @@ export const StudentTimetableView: React.FC<StudentTimetableViewProps> = ({
           </Alert>
         )}
 
-        {/* الجدول - للطالب بدون أزرار تعديل */}
-        <AdvancedTimetableView
-          sessions={sessions}
-          loading={loading}
-          role="student"
-        />
+        {/* الجدول - حسب الوضع المختار */}
+        {viewMode === 'weekly' ? (
+          <WeeklyGridView
+            sessions={sessions}
+            loading={loading}
+            role="student"
+          />
+        ) : (
+          <AdvancedTimetableView
+            sessions={sessions}
+            loading={loading}
+            role="student"
+          />
+        )}
 
         {/* معلومات إضافية */}
         {sessions.length === 0 && !loading && (

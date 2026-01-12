@@ -71,27 +71,35 @@ const SessionCard: React.FC<{
           <div className={`w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full mt-1 sm:mt-1.5 ${dotClass}`} />
         </div>
         
-        {/* معلومات المقطع */}
+        {/* معلومات المقطع - عرض مبسط للطالب */}
         {session.sectionDetails && (
           <div className="mb-2 sm:mb-3 space-y-1 sm:space-y-1.5">
             {/* عرض مقطع الحفظ فقط إذا كان نوع الحصة hifz أو both */}
             {session.sectionDetails.memorizationSection && (session.sessionType === 'hifz' || session.sessionType === 'both') && (
-              <div className="text-[10px] sm:text-xs flex items-center gap-1 sm:gap-1.5 bg-blue-50 text-blue-700 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md border border-blue-100">
-                <span className="text-xs sm:text-sm">📖</span>
-                <span className="font-medium">حفظ:</span>
-                <span className="truncate" title={session.sectionDetails.memorizationSection}>
-                  {session.sectionDetails.memorizationSection}
-                </span>
+              <div className="text-[10px] sm:text-xs bg-gradient-to-r from-blue-500 to-blue-600 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg shadow-md border border-blue-400">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1 sm:gap-1.5">
+                    <span className="text-sm sm:text-base animate-pulse">📖</span>
+                    <span className="font-bold text-white/90">حفظ</span>
+                  </div>
+                  <span className="font-bold text-white text-xs sm:text-sm" title={session.sectionDetails.memorizationSection}>
+                    {session.sectionDetails.memorizationSection}
+                  </span>
+                </div>
               </div>
             )}
             {/* عرض مقطع المراجعة فقط إذا كان نوع الحصة murajaah أو both */}
             {session.sectionDetails.reviewSection && (session.sessionType === 'murajaah' || session.sessionType === 'both') && (
-              <div className="text-[10px] sm:text-xs flex items-center gap-1 sm:gap-1.5 bg-amber-50 text-amber-700 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md border border-amber-100">
-                <span className="text-xs sm:text-sm">🔄</span>
-                <span className="font-medium">مراجعة:</span>
-                <span className="truncate" title={session.sectionDetails.reviewSection}>
-                  {session.sectionDetails.reviewSection}
-                </span>
+              <div className="text-[10px] sm:text-xs bg-gradient-to-r from-amber-500 to-amber-600 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg shadow-md border border-amber-400">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1 sm:gap-1.5">
+                    <span className="text-sm sm:text-base animate-pulse">🔄</span>
+                    <span className="font-bold text-white/90">مراجعة</span>
+                  </div>
+                  <span className="font-bold text-white text-xs sm:text-sm" title={session.sectionDetails.reviewSection}>
+                    {session.sectionDetails.reviewSection}
+                  </span>
+                </div>
               </div>
             )}
           </div>

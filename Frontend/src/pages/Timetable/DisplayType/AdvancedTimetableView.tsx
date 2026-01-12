@@ -246,111 +246,74 @@ export const AdvancedTimetableView: React.FC<AdvancedTimetableViewProps> = ({
           {calendarDays.map(( dayInfo, index) => {
             const sessionsForDay = getDailySessions(dayInfo.date);
             const isToday = dayInfo.date.isSame(dayjs(), 'day');
+            const hasSessions = sessionsForDay.length > 0;
             
             return (
               <div 
                 key={index}
-                onClick={() => openDayModal(dayInfo.date)} 
+                onClick={() => hasSessions && openDayModal(dayInfo.date)} 
                 className={`
-                   min-h-[80px] sm:min-h-[100px] md:min-h-[120px] lg:min-h-[140px] bg-white p-1 sm:p-1.5 md:p-2 relative group transition-all flex flex-col gap-1 sm:gap-1.5 md:gap-2 cursor-pointer hover:bg-emerald-50/50
+                   min-h-[80px] sm:min-h-[100px] md:min-h-[120px] lg:min-h-[140px] bg-white p-2 sm:p-3 md:p-4 relative transition-all flex flex-col
                    ${!dayInfo.isCurrentMonth ? 'bg-gray-50/50 opacity-60' : ''}
-                   ${isToday ? 'bg-emerald-50/20 ring-1 ring-emerald-200' : ''}
+                   ${isToday ? 'bg-gradient-to-br from-emerald-50 via-teal-50 to-emerald-100 ring-2 ring-emerald-400 shadow-lg' : ''}
+                   ${hasSessions && dayInfo.isCurrentMonth ? 'cursor-pointer hover:shadow-xl hover:ring-2 hover:ring-emerald-300 hover:z-10 hover:scale-105' : ''}
                 `}
               >
                 {/* Day Header */}
-                <div className="flex justify-between items-start">
+                <div className="flex justify-between items-center mb-2">
                     <span className={`
-                        w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 flex items-center justify-center rounded-full text-[10px] sm:text-xs md:text-sm font-bold transition-all
-                        ${isToday ? 'bg-emerald-600 text-white shadow-md scale-110' : 
-                          !dayInfo.isCurrentMonth ? 'text-gray-400' : 'text-gray-700'}
+                        w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 flex items-center justify-center rounded-full text-xs sm:text-sm md:text-base font-bold transition-all
+                        ${isToday ? 'bg-emerald-600 text-white shadow-lg ring-2 ring-emerald-300 ring-offset-2 animate-pulse' : 
+                          !dayInfo.isCurrentMonth ? 'text-gray-400' : 'text-gray-700 bg-gray-100'}
                     `}>
                         {dayInfo.date.format('D')}
                     </span>
                     
-                    {dayInfo.isCurrentMonth && sessionsForDay.length > 0 && (
-                        <span className="text-[8px] sm:text-[9px] md:text-[10px] bg-emerald-100 text-emerald-800 px-1 sm:px-1.5 py-0.5 rounded-md font-medium">
-                            {sessionsForDay.length}
-                        </span>
+                    {dayInfo.isCurrentMonth && hasSessions && (
+                        <div className="flex flex-col items-end gap-1">
+                          <span className="flex items-center gap-1 text-[10px] sm:text-xs bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-2 py-1 rounded-full font-bold shadow-md">
+                            <span>{sessionsForDay.length}</span>
+                            <span className="hidden sm:inline">موعد</span>
+                          </span>
+                          <span className="text-[9px] text-emerald-600 font-medium">اضغط للتفاصيل</span>
+                        </div>
                     )}
                 </div>
 
-                {/* Sessions List */}
-                <div className="flex-1 space-y-1 sm:space-y-1.5 overflow-y-auto max-h-[60px] sm:max-h-[80px] md:max-h-[100px] lg:max-h-[120px] custom-scrollbar pr-0.5 sm:pr-1">
-                  {sessionsForDay.map(session => (
-                    <div 
-                      key={session._id} 
-                      className={`group/item relative bg-white border rounded-lg p-2 hover:shadow-md hover:border-emerald-300 transition-all cursor-default flex flex-col gap-1.5
-                        ${session.sessionType === 'hifz' ? 'border-blue-100 bg-blue-50/20' : 
-                          session.sessionType === 'murajaah' ? 'border-amber-100 bg-amber-50/20' :
-                          'border-emerald-100/80'}
-                      `}
-                    >
-                      {/* Header: Time & Actions */}
-                      <div className="flex items-center justify-between gap-1 border-b border-gray-100 pb-1">
-                        <div className="flex items-center gap-1 min-w-0 bg-gray-50 px-1.5 py-0.5 rounded text-[9px] text-gray-500 font-mono">
-                           <Clock size={9} className="text-gray-400 shrink-0" />
-                           <span className="truncate dir-ltr font-bold">
-                             {session.startHour} - {session.endHour}
-                           </span>
-                        </div>
-                        
-                        {(role === "admin" || role === "teacher") && (
-                            <div className="opacity-0 group-hover/item:opacity-100 transition-opacity absolute top-1 left-1 bg-white/95 rounded z-10 shadow-sm border border-gray-100">
-                                <DropdownMenu
-                                    trigger={
-                                        <button className="p-1 hover:bg-gray-50 rounded text-gray-400 hover:text-gray-600" title="خيارات">
-                                            <MoreVertical size={12} />
-                                        </button>
-                                    }
-                                    items={[
-                                        {
-                                          label: "تعديل",
-                                          icon: <Edit size={12} />,
-                                          onClick: () => onEdit?.(session),
-                                        },
-                                        {
-                                          label: "حذف",
-                                          icon: <Trash2 size={12} />,
-                                          onClick: () => onDelete?.(session),
-                                          variant: 'danger',
-                                        },
-                                    ]}
-                                    position="bottom-left"
-                                    menuClassName="w-24 text-[10px]"
-                                />
-                            </div>
-                        )}
-                      </div>
-                      
-                      {/* Batch Name */}
-                      <div className="text-[11px] font-bold text-gray-800 truncate" title={session.groupName || session.note}>
-                         {session.groupName || session.note || "حلقة"}
-                      </div>
-
-                      {/* Section Details with Fallback */}
-                      {(session.sectionDetails || session.sectionInfo) && (
-                        <div className="space-y-1 mt-0.5">
-                          {(session.sectionDetails?.memorizationSection || session.sectionInfo?.memorizationSection) && (
-                            <div className="flex items-center gap-1 text-[9px] leading-tight text-blue-700 bg-blue-50 px-1 py-0.5 rounded border border-blue-100">
-                              <span className="shrink-0 font-bold">📖</span>
-                              <span className="truncate font-medium">
-                                {session.sectionDetails?.memorizationSection || session.sectionInfo?.memorizationSection}
-                              </span>
-                            </div>
-                          )}
-                          {(session.sectionDetails?.reviewSection || session.sectionInfo?.reviewSection) && (
-                            <div className="flex items-center gap-1 text-[9px] leading-tight text-amber-700 bg-amber-50 px-1 py-0.5 rounded border border-amber-100">
-                              <span className="shrink-0 font-bold">🔄</span>
-                              <span className="truncate font-medium">
-                                {session.sectionDetails?.reviewSection || session.sectionInfo?.reviewSection}
-                              </span>
-                            </div>
-                          )}
-                        </div>
+                {/* Session Indicators - عرض مبسط جداً */}
+                {dayInfo.isCurrentMonth && hasSessions && (
+                  <div className="flex-1 flex flex-col justify-center items-center gap-2">
+                    <div className="flex flex-wrap gap-1.5 justify-center">
+                      {sessionsForDay.slice(0, 3).map((session) => (
+                        <div 
+                          key={session._id}
+                          className={`
+                            w-2 h-2 rounded-full shadow-md
+                            ${session.sessionType === 'hifz' ? 'bg-blue-500' : 
+                              session.sessionType === 'murajaah' ? 'bg-amber-500' : 
+                              'bg-purple-500'}
+                          `}
+                          title={session.groupName || session.note}
+                        />
+                      ))}
+                      {sessionsForDay.length > 3 && (
+                        <span className="text-[9px] text-gray-500 font-bold">+{sessionsForDay.length - 3}</span>
                       )}
                     </div>
-                  ))}
-                </div>
+                    
+                    {/* أيقونة تشير للضغط */}
+                    <div className="text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <CalendarIcon className="w-5 h-5 animate-bounce" />
+                    </div>
+                  </div>
+                )}
+
+                {/* Empty State */}
+                {dayInfo.isCurrentMonth && !hasSessions && (
+                  <div className="flex-1 flex items-center justify-center">
+                    <span className="text-xs text-gray-300">-</span>
+                  </div>
+                )}
               </div>
             );
           })}
