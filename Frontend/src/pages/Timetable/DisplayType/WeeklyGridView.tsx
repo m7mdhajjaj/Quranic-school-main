@@ -217,27 +217,29 @@ export const WeeklyGridView: React.FC<WeeklyGridViewProps> = ({
                                 {session.note || "حلقة"}
                               </div>
                               
+                              {/* ✅ معلومات المقطع (السورة والقطع) */}
+                              {session.sectionDetails && (
+                                <div className="mb-2 space-y-1">
+                                  {session.sectionDetails.memorizationSection && (
+                                    <div className="text-[10px] flex items-center gap-1 bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded border border-blue-100">
+                                      <span>📖</span>
+                                      <span className="truncate">{session.sectionDetails.memorizationSection}</span>
+                                    </div>
+                                  )}
+                                  {session.sectionDetails.reviewSection && (
+                                    <div className="text-[10px] flex items-center gap-1 bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded border border-amber-100">
+                                      <span>🔄</span>
+                                      <span className="truncate">{session.sectionDetails.reviewSection}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                              
                               {/* الوقت */}
                               <div className="text-xs text-gray-500 mb-2 font-medium flex items-center gap-1 bg-gray-50 w-fit px-2 py-1 rounded-md">
                                 <span>🕒</span>
                                 <span>{session.startHour} - {session.endHour}</span>
                               </div>
-
-                              {/* المعلم */}
-                              {session.teacherId && typeof session.teacherId === 'object' && (
-                                <div className="text-xs text-emerald-600 truncate mb-2 flex items-center gap-1 font-medium" title={`${session.teacherId.firstName} ${session.teacherId.lastName}`}>
-                                  <span>👨‍🏫</span>
-                                  <span>{session.teacherId.firstName} {session.teacherId.lastName}</span>
-                                </div>
-                              )}
-
-                              {/* الوصف */}
-                              {session.description && (
-                                <div className="text-[10px] text-gray-500 line-clamp-1 mb-2 px-1" title={session.description}>
-                                  <span className="font-bold text-gray-400 ml-1">الوصف:</span>
-                                  <span className="italic">{session.description}</span>
-                                </div>
-                              )}
 
                               {/* نوع الحصة */}
                               {session.sessionType && (
@@ -326,36 +328,35 @@ export const WeeklyGridView: React.FC<WeeklyGridViewProps> = ({
                                     }`}></div>
                                   </div>
                                   
+                                  {/* ✅ معلومات المقطع (السورة والقطع) */}
+                                  {session.sectionDetails && (
+                                    <div className="mb-3 space-y-1.5">
+                                      {session.sectionDetails.memorizationSection && (
+                                        <div className="text-xs flex items-center gap-1.5 bg-blue-50 text-blue-700 px-2 py-1 rounded-md border border-blue-100">
+                                          <span>📖</span>
+                                          <span className="font-medium">حفظ:</span>
+                                          <span className="truncate" title={session.sectionDetails.memorizationSection}>
+                                            {session.sectionDetails.memorizationSection}
+                                          </span>
+                                        </div>
+                                      )}
+                                      {session.sectionDetails.reviewSection && (
+                                        <div className="text-xs flex items-center gap-1.5 bg-amber-50 text-amber-700 px-2 py-1 rounded-md border border-amber-100">
+                                          <span>🔄</span>
+                                          <span className="font-medium">مراجعة:</span>
+                                          <span className="truncate" title={session.sectionDetails.reviewSection}>
+                                            {session.sectionDetails.reviewSection}
+                                          </span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                  
                                   {/* الوقت */}
                                   <div className="text-sm text-gray-500 mb-4 font-medium flex items-center gap-2 bg-white/60 w-fit px-3 py-1.5 rounded-lg border border-gray-100/50">
                                     <span className="text-gray-400">⏰</span>
                                     <span className="font-mono">{session.startHour} - {session.endHour}</span>
                                   </div>
-
-                                  {/* المعلم */}
-                                  {session.teacherId && typeof session.teacherId === 'object' && (
-                                    <div className="text-sm text-gray-600 truncate mb-4 flex items-center gap-2" title={`${session.teacherId.firstName} ${session.teacherId.lastName}`}>
-                                      <div className={`p-1 rounded-full ${
-                                         session.sessionType === 'hifz' ? 'bg-blue-100 text-blue-600' : 
-                                         session.sessionType === 'murajaah' ? 'bg-amber-100 text-amber-600' :
-                                         'bg-purple-100 text-purple-600'
-                                      }`}>
-                                        <MoreVertical size={0} className="hidden" /> {/* Dummy for imports if needed */}
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                                      </div>
-                                      <span className="font-medium">{session.teacherId.firstName} {session.teacherId.lastName}</span>
-                                    </div>
-                                  )}
-
-                                  {/* الوصف */}
-                                  {session.description && (
-                                    <div className="text-xs text-gray-500 mb-4 bg-gray-50/50 p-2.5 rounded-lg border border-gray-100" title={session.description}>
-                                      <div className="text-[10px] font-bold text-gray-400 mb-1">الوصف:</div>
-                                      <div className="italic line-clamp-2 leading-relaxed">
-                                        {session.description}
-                                      </div>
-                                    </div>
-                                  )}
                               </div>
 
                               <div className="mt-auto pt-3 border-t border-gray-100/50 flex items-center justify-between">

@@ -43,6 +43,13 @@ export const useTimetableData = () => {
           groupId: typeof t.groupId === 'object' ? t.groupId?._id : t.groupId,
           teacherId: t.teacherId,
           sectionId: typeof t.sectionId === 'object' ? t.sectionId?._id : t.sectionId,
+          // ✅ معلومات المقطع المُحسّنة من Backend
+          sectionDetails: t.sectionDetails || null,
+          sectionInfo: t.sectionId ? {
+            memorizationSection: t.sectionId?.memorizationSection,
+            reviewSection: t.sectionId?.reviewSection,
+            marksStatus: t.sectionId?.marksStatus,
+          } : null,
         }));
         setSessions(sessionsData);
         

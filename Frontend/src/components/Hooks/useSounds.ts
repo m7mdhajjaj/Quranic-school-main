@@ -58,10 +58,11 @@ const playSoundWithDuration = (soundPath: string, volume: number = 0.6): Promise
 // ============================================================================
 
 // استخدام public folder بدلاً من assets لتجنب مشاكل cache في Vite
-const successfulSound = '/sounds/successful.mp3';
-const errorSound = '/sounds/error.wav';
-const notificationSound = '/sounds/notification.mp3';
-const loginSound = '/sounds/Login.mp3';
+const cacheBuster = '?v=1.0'; // لتجنب مشاكل الكاش
+const successfulSound = `/sounds/successful.mp3${cacheBuster}`;
+const errorSound = `/sounds/error.wav${cacheBuster}`;
+const notificationSound = `/sounds/notification.mp3${cacheBuster}`;
+const loginSound = `/sounds/Login.mp3${cacheBuster}`;
 
 export const soundPlayer = {
   // عمليات CRUD

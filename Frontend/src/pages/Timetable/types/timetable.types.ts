@@ -33,6 +33,12 @@ export interface Session {
     reviewSection?: string;
     marksStatus?: string;
   };
+  sectionDetails?: {        // ✅ معلومات المقطع المُحسّنة (من Backend)
+    surahName?: string;           // اسم السورة
+    memorizationSection?: string; // مقطع الحفظ (السورة + الآيات)
+    reviewSection?: string;       // مقطع المراجعة
+    marksStatus?: string;         // حالة الدرجات
+  };
   teacherGroups?: {         // الحلقات المرتبطة بالمعلم
     _id: string;
     name: string;

@@ -9,6 +9,40 @@ const Group = require("../../schema/Group");
 const { getWeekRange } = require("./helpers/dateTime.helper");
 
 /**
+ * استخراج معلومات المقطع للعرض
+ */
+const extractSectionInfo = (section) => {
+  if (!section) return null;
+  
+  // استخراج اسم السورة من memorizationMeta أو reviewMeta
+  let surahName = null;
+  let memorizationInfo = section.memorizationSection || null;
+  let reviewInfo = section.reviewSection || null;
+  
+  // من memorizationMeta (الهيكل الجديد)
+  if (section.memorizationMeta && section.memorizationMeta.length > 0) {
+    const firstMeta = section.memorizationMeta[0];
+    surahName = firstMeta.surahNameCanonical || firstMeta.surahNameInput;
+    memorizationInfo = `${surahName} (${firstMeta.ayahStart}-${firstMeta.ayahEnd})`;
+  }
+  
+  // من reviewMeta (الهيكل الجديد)
+  if (section.reviewMeta && section.reviewMeta.length > 0) {
+    const firstMeta = section.reviewMeta[0];
+    const reviewSurah = firstMeta.surahNameCanonical || firstMeta.surahNameInput;
+    reviewInfo = `${reviewSurah} (${firstMeta.ayahStart}-${firstMeta.ayahEnd})`;
+    if (!surahName) surahName = reviewSurah;
+  }
+  
+  return {
+    surahName,
+    memorizationSection: memorizationInfo,
+    reviewSection: reviewInfo,
+    marksStatus: section.marksStatus
+  };
+};
+
+/**
  * جلب جميع المواعيد مع فلترة
  * @route GET /api/timetable
  * @query weekFilter: 'current' | 'all' | 'week'
@@ -23,7 +57,9 @@ exports.getTimetables = async (req, res) => {
       weekStart,
       teacherId,
       groupId,
-      day 
+      day,
+      startDate,
+      endDate
     } = req.query;
 
     // ✅ 1. بناء Query الأساسي حسب الدور
@@ -43,8 +79,14 @@ exports.getTimetables = async (req, res) => {
     if (groupId) query.groupId = groupId;
     if (day) query.day = day;
 
-    // ✅ 3. فلترة حسب الأسبوع
-    if (weekFilter === 'current' || weekStart) {
+    // ✅ 3. فلترة حسب التاريخ
+    if (startDate && endDate) {
+      // فلترة بنطاق تاريخ محدد (للعرض الشهري)
+      query.sessionDate = { 
+        $gte: new Date(startDate), 
+        $lte: new Date(endDate + 'T23:59:59.999Z') 
+      };
+    } else if (weekFilter === 'current' || weekStart) {
       const refDate = weekStart ? new Date(weekStart) : new Date();
       const { startOfWeek, endOfWeek } = getWeekRange(refDate);
 
@@ -59,18 +101,28 @@ exports.getTimetables = async (req, res) => {
       ];
     }
 
-    // ✅ 4. جلب البيانات
+    // ✅ 4. جلب البيانات مع تفاصيل المقطع الكاملة
     const timetables = await TimeTable.find(query)
       .populate('teacherId', 'firstName lastName')
       .populate('groupId', 'name')
-      .populate('sectionId', 'date group memorizationSection reviewSection marksStatus')
-      .sort({ day: 1, startHour: 1 });
+      .populate({
+        path: 'sectionId',
+        select: 'date group memorizationSection reviewSection marksStatus memorizationMeta reviewMeta'
+      })
+      .sort({ sessionDate: 1, startHour: 1 });
+
+    // ✅ 5. إضافة معلومات المقطع المُحسّنة
+    const enrichedTimetables = timetables.map(tt => {
+      const obj = tt.toObject();
+      obj.sectionDetails = extractSectionInfo(tt.sectionId);
+      return obj;
+    });
 
     res.json({
       success: true,
-      data: timetables,
+      data: enrichedTimetables,
       meta: {
-        total: timetables.length,
+        total: enrichedTimetables.length,
         filter: weekFilter
       }
     });
