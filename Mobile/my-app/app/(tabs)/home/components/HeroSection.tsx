@@ -64,10 +64,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 يسرنا انضمامك إلى أكاديمية المهاجرين، حيث نؤمن أنك جزء من رحلة
                 التميز في رحاب القرآن الكريم.
               </Text>
-              <Text style={styles.descriptionSubText}>
-                نتمنى لك رحلة تعليمية ملهمة ومليئة بالنجاح، وأن تحقق أهدافك وتصل
-                إلى أعلى درجات التفوق في حفظ وتلاوة وفهم كتاب الله عز وجل.
-              </Text>
               {currentUser.role === "student" && currentUser.group && (
                 <Text style={styles.groupText}>
                   المجموعة: {currentUser.group}
@@ -78,14 +74,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         )}
 
         <View style={styles.buttonContainer}>
-          <Button
-            onPress={() => {
-              // Navigate to explore tab or show coming soon message
-              router.push("/(tabs)/explore");
-            }}
-            variant="primary"
-            size="lg"
-            style={styles.button}>
+          <Button variant="primary" size="lg" style={styles.button}>
             ابدأ رحلتك التعليمية
           </Button>
         </View>

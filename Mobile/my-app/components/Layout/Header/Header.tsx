@@ -35,35 +35,17 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        {/* Right Section - Actions */}
-        <View style={styles.actionsSection}>
-          {/* Menu Button */}
-          {showMenu && (
-            <TouchableOpacity
-              style={styles.iconButton}
-              onPress={() => setDrawerOpen(true)}
-              activeOpacity={0.7}>
-              <Menu size={24} color="#ffffff" />
-            </TouchableOpacity>
-          )}
-
-          {/* Notifications */}
-          <TouchableOpacity
-            style={styles.iconButton}
-            onPress={() => {
-              // Navigate to notifications
-            }}
-            activeOpacity={0.7}>
-            <Bell size={22} color="#ffffff" />
-            {/* Badge for unread notifications */}
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>3</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
-
-        {/* Left Section - Profile */}
+        {/* Right Section - Profile (RTL) */}
         <View style={styles.profileSection}>
+          <Avatar
+            user={currentUser}
+            size="sm"
+            border="ring"
+            showStatus={true}
+            statusSize="sm"
+            userId={currentUser._id}
+            userRole={currentUser.role}
+          />
           <View style={styles.profileInfo}>
             <Text style={styles.profileName} numberOfLines={1}>
               {currentUser?.firstName && currentUser?.lastName
@@ -78,15 +60,33 @@ export const Header: React.FC<HeaderProps> = ({
                   : "طالب"}
             </Text>
           </View>
-          <Avatar
-            user={currentUser}
-            size="sm"
-            border="ring"
-            showStatus={true}
-            statusSize="sm"
-            userId={currentUser._id}
-            userRole={currentUser.role}
-          />
+        </View>
+
+        {/* Left Section - Actions (RTL) */}
+        <View style={styles.actionsSection}>
+          {/* Notifications */}
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={() => {
+              // Navigate to notifications
+            }}
+            activeOpacity={0.7}>
+            <Bell size={22} color="#ffffff" />
+            {/* Badge for unread notifications */}
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>3</Text>
+            </View>
+          </TouchableOpacity>
+
+          {/* Menu Button */}
+          {showMenu && (
+            <TouchableOpacity
+              style={styles.iconButton}
+              onPress={() => setDrawerOpen(true)}
+              activeOpacity={0.7}>
+              <Menu size={24} color="#ffffff" />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
@@ -146,10 +146,11 @@ const styles = StyleSheet.create({
     minHeight: Platform.OS === "ios" ? 100 : 90,
   },
   actionsSection: {
-    flexDirection: "row",
+    flexDirection: "row-reverse",
     alignItems: "center",
     gap: 12,
     flex: 1,
+    justifyContent: "flex-start",
   },
   centerSection: {
     flex: 2,
@@ -162,7 +163,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 10,
     flex: 1,
-    justifyContent: "flex-end",
+    justifyContent: "flex-start",
   },
   title: {
     fontSize: 18,
@@ -206,17 +207,19 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   profileInfo: {
-    alignItems: "flex-end",
+    alignItems: "flex-start",
   },
   profileName: {
     fontSize: 14,
     fontWeight: "600",
     color: "#ffffff",
+    textAlign: "right",
   },
   profileRole: {
     fontSize: 11,
     color: "rgba(255, 255, 255, 0.9)",
     fontWeight: "500",
     marginTop: 2,
+    textAlign: "right",
   },
 });
