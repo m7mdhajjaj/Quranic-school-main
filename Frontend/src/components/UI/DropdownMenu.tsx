@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, memo } from 'react';
+import { createPortal } from 'react-dom';
 import { MoreVertical } from 'lucide-react';
 
 export interface DropdownMenuItem {
@@ -25,25 +26,64 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = memo(({
   trigger,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const [coords, setCoords] = useState({ top: 0, left: 0 });
+  const triggerRef = useRef<HTMLDivElement>(null);
 
-  // استخدام useCallback لتحسين الأداء
-  const handleClickOutside = useCallback((event: MouseEvent) => {
-    if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-      setIsOpen(false);
+  const calculatePosition = useCallback(() => {
+    if (!triggerRef.current) return;
+    
+    const rect = triggerRef.current.getBoundingClientRect();
+    
+    // استخدام fixed positioning لتجنب مشاكل overflow و z-index في الحاويات الأب
+    // الحساب يكون بالنسبة للـ Viewport
+    
+    let top = rect.bottom + 5; 
+    let left = rect.left;
+
+    // محاذاة لليمين
+    if (position === 'right' || position === 'bottom-right') {
+       left = rect.right - 192; // 192px = w-48 (12rem)
+    } else {
+       // محاذاة لليسار
+       left = rect.left;
     }
+    
+    setCoords({ top, left });
+  }, [position]);
+
+  const toggleMenu = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!isOpen) {
+        calculatePosition();
+        setIsOpen(true);
+    } else {
+        setIsOpen(false);
+    }
+  }, [isOpen, calculatePosition]);
+
+  const closeMenu = useCallback(() => {
+    setIsOpen(false);
   }, []);
 
+  const handleItemClick = useCallback((e: React.MouseEvent, onClick: () => void) => {
+    e.stopPropagation();
+    setIsOpen(false);
+    onClick();
+  }, []);
+  
+  // إغلاق القائمة عند التمرير لتجنب انفصال القائمة عن الزر
   useEffect(() => {
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
-      };
-    }
-  }, [isOpen, handleClickOutside]);
+      if (isOpen) {
+          const onScroll = () => setIsOpen(false);
+          window.addEventListener('scroll', onScroll, true); // true for capture phase to catch scroll in any div
+          window.addEventListener('resize', onScroll);
+          return () => {
+              window.removeEventListener('scroll', onScroll, true);
+              window.removeEventListener('resize', onScroll);
+          }
+      }
+  }, [isOpen]);
 
-  // تحسين الدالة باستخدام useCallback
   const getVariantStyles = useCallback((variant?: string) => {
     switch (variant) {
       case 'warning':
@@ -55,55 +95,43 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = memo(({
     }
   }, []);
 
-  const toggleMenu = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsOpen((prev) => !prev);
-  }, []);
-
-  const closeMenu = useCallback(() => {
-    setIsOpen(false);
-  }, []);
-
-  const handleItemClick = useCallback((e: React.MouseEvent, onClick: () => void) => {
-    e.stopPropagation();
-    setIsOpen(false);
-    onClick();
-  }, []);
-
-  const alignmentClass = (position === 'left' || position === 'bottom-left') ? 'left-0' : 'right-0';
-
   return (
-    <div className="relative" ref={menuRef}>
-      {trigger ? (
-        <div onClick={toggleMenu} className="cursor-pointer">
-          {trigger}
-        </div>
-      ) : (
-        <button
-          onClick={toggleMenu}
-          type="button"
-          className={`bg-white/90 backdrop-blur-sm p-1.5 rounded-full shadow-sm hover:bg-white transition-all duration-200 hover:scale-105 ${buttonClassName}`}
-          title="المزيد"
-          aria-label="المزيد"
-          aria-haspopup="menu"
-          aria-expanded={isOpen ? "true" : "false"}
-        >
-          <MoreVertical size={16} />
-        </button>
-      )}
+    <>
+      <div 
+        ref={triggerRef} 
+        onClick={toggleMenu} 
+        className={trigger ? "cursor-pointer" : "inline-block"}
+      >
+        {trigger ? (
+          trigger
+        ) : (
+          <button
+            type="button"
+            className={`bg-white/90 backdrop-blur-sm p-1.5 rounded-full shadow-sm hover:bg-white transition-all duration-200 hover:scale-105 ${buttonClassName}`}
+            title="المزيد"
+          >
+            <MoreVertical size={16} />
+          </button>
+        )}
+      </div>
 
-      {isOpen && (
+      {isOpen && createPortal(
         <>
-          {/* Overlay للإغلاق */}
+          {/* Overlay شفاف للإغلاق عند النقر خارج القائمة */}
           <div
-            className="fixed inset-0 z-30"
-            onClick={closeMenu}
+            className="fixed inset-0 z-[9998]"
+            onClick={(e) => {
+                e.stopPropagation();
+                closeMenu();
+            }}
           />
 
-          {/* القائمة المنسدلة */}
+          {/* القائمة المنسدلة - تستخدم Portal لتظهر فوق كل العناصر */}
           <div
-            className={`absolute ${alignmentClass} mt-2 w-48 bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden z-40 animate-fadeIn ${menuClassName}`}
-            role="menu"
+            className={`dropdown-menu-fixed bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden z-[9999] animate-fadeIn w-48 ${menuClassName}`}
+            data-coords-top={coords.top}
+            data-coords-left={coords.left}
+            dir="rtl"
           >
             {items.map((item, index) => (
               <button
@@ -112,16 +140,17 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = memo(({
                 className={`w-full px-3 py-2 text-right flex items-center gap-2 transition-colors text-sm ${
                   index > 0 ? 'border-t border-gray-100' : ''
                 } ${getVariantStyles(item.variant)} ${item.className || ''}`}
-                role="menuitem"
+                tabIndex={0}
               >
                 {item.icon && <span className="flex-shrink-0">{item.icon}</span>}
                 <span className="font-medium">{item.label}</span>
               </button>
             ))}
           </div>
-        </>
+        </>,
+        document.body
       )}
-    </div>
+    </>
   );
 });
 
