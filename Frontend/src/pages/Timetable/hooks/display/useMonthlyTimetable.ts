@@ -8,7 +8,7 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/ar';
 import { getMonthlyPlan } from '@/Api/TimeTable.Api';
 import type { Timetable } from '@/Api/TimeTable.Api';
-import type { Session } from '../types/timetable.types';
+import type { Session } from '../../types/timetable.types';
 
 dayjs.locale('ar');
 
@@ -44,6 +44,20 @@ export const useMonthlyTimetable = (refreshTrigger?: any) => {
   const [currentDate, setCurrentDate] = useState(dayjs());
   const [monthlySessions, setMonthlySessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // State for Day Modal (UI Logic)
+  const [selectedDate, setSelectedDate] = useState<dayjs.Dayjs | null>(null);
+  const [isDayModalOpen, setDayModalOpen] = useState(false);
+
+  const openDayModal = useCallback((date: dayjs.Dayjs) => {
+    setSelectedDate(date);
+    setDayModalOpen(true);
+  }, []);
+
+  const closeDayModal = useCallback(() => {
+    setDayModalOpen(false);
+    setSelectedDate(null);
+  }, []);
 
   // جلب بيانات الشهر الحالي من الباك اند
   const fetchMonthlyData = useCallback(async () => {
@@ -122,6 +136,11 @@ export const useMonthlyTimetable = (refreshTrigger?: any) => {
     prevMonth,
     goToToday,
     getDailySessions,
-    refresh: fetchMonthlyData
+    refresh: fetchMonthlyData,
+    // Modal State
+    selectedDate,
+    isDayModalOpen,
+    openDayModal,
+    closeDayModal,
   };
 };

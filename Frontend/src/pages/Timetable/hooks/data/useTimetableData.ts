@@ -5,8 +5,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { getTimetables } from "@/Api/TimeTable.Api";
-import type { Session } from "../types/timetable.types";
-import { getCurrentUser, getUserRole } from "../utils";
+import type { Session } from "../../types/timetable.types";
+import { getCurrentUser, getUserRole } from "../../utils";
 
 export const useTimetableData = () => {
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -46,12 +46,12 @@ export const useTimetableData = () => {
           teacherId: t.teacherId,
           sectionId: typeof t.sectionId === 'object' ? t.sectionId?._id : t.sectionId,
           // ✅ معلومات المقطع المُحسّنة من Backend
-          sectionDetails: t.sectionDetails || null,
+          sectionDetails: t.sectionDetails || undefined,
           sectionInfo: t.sectionId ? {
             memorizationSection: t.sectionId?.memorizationSection,
             reviewSection: t.sectionId?.reviewSection,
             marksStatus: t.sectionId?.marksStatus,
-          } : null,
+          } : undefined,
         }));
         setSessions(sessionsData);
         

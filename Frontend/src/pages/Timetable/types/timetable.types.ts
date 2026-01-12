@@ -122,45 +122,11 @@ export interface ConflictError {
 /**
  * أيام الأسبوع بالعربية
  */
-export const ARABIC_DAYS = [
-  "السبت",
-  "الأحد", 
-  "الاثنين",
-  "الثلاثاء",
-  "الأربعاء",
-  "الخميس",
-  "الجمعة",
-] as const;
-
-export type ArabicDay = typeof ARABIC_DAYS[number];
-
-/**
- * دالة للحصول على اسم اليوم العربي من التاريخ
- */
-export const getDayNameFromDate = (dateStr: string): ArabicDay => {
-  const date = new Date(dateStr);
-  const jsDay = date.getDay(); // 0 = Sunday, 6 = Saturday
-  // تحويل: Sunday(0) -> الأحد(1), Saturday(6) -> السبت(0)
-  const arabicIndex = (jsDay + 1) % 7;
-  return ARABIC_DAYS[arabicIndex];
-};
-
-/**
- * دالة لتنسيق التاريخ للعرض
- */
-export const formatDateForDisplay = (dateStr: string): string => {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('ar-SA', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-};
-
-/**
- * دالة لتنسيق التاريخ للإرسال للـ API
- */
-export const formatDateForAPI = (date: Date): string => {
-  return date.toISOString().split('T')[0]; // YYYY-MM-DD
-};
+export type ArabicDay = 
+  | "السبت"
+  | "الأحد" 
+  | "الاثنين"
+  | "الثلاثاء"
+  | "الأربعاء"
+  | "الخميس"
+  | "الجمعة";

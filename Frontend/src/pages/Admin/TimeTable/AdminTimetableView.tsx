@@ -2,14 +2,14 @@
 // AdminTimetableView - عرض الجدول للإداري (إدارة كاملة)
 // ============================================================================
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useDisableBodyScroll } from "@/hooks/useDisableBodyScroll";
 import type { Session, SessionFormData } from "../../Timetable/types/timetable.types";
-import { useViewMode, useSessionModal } from "../../Timetable/hooks";
+import { useViewMode } from "../../Timetable/hooks";
 import { AdvancedTimetableView } from "../../Timetable/DisplayType/AdvancedTimetableView";
 import { WeeklyGridView } from "../../Timetable/DisplayType/WeeklyGridView";
-import { SessionModal } from "../../Timetable/Model/SessionModal";
+import { SessionModal } from "../../Timetable/components/SessionModal";
 import PageHeader from "@/components/UI/PageHeader";
 import { Button } from "@/components/UI/Button";
 import { Alert } from "@/components/UI/Alert";
@@ -35,8 +35,25 @@ export const AdminTimetableView: React.FC<AdminTimetableViewProps> = ({
   refetchSessions,
 }) => {
   const { viewMode, setViewMode } = useViewMode('grid');
-  const { showModal, editingSession, openAddModal, openEditModal, closeModal } = useSessionModal();
+  const [showModal, setShowModal] = useState(false);
+  const [editingSession, setEditingSession] = useState<Session | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
+
+  // Modal handlers with useCallback for performance
+  const openAddModal = useCallback(() => {
+    setEditingSession(null);
+    setShowModal(true);
+  }, []);
+
+  const openEditModal = useCallback((session: Session) => {
+    setEditingSession(session);
+    setShowModal(true);
+  }, []);
+
+  const closeModal = useCallback(() => {
+    setShowModal(false);
+    setEditingSession(null);
+  }, []);
 
   // ✅ التحقق من وجود طلب إضافة/تعديل جلسة من الرابط
   useEffect(() => {
@@ -79,24 +96,18 @@ export const AdminTimetableView: React.FC<AdminTimetableViewProps> = ({
   // تعطيل scroll الصفحة عند فتح الـ Modal
   useDisableBodyScroll(showModal);
 
-  // التعامل مع إضافة/تعديل موعد
-  const handleSubmitSession = async (formData: SessionFormData, sessionId?: string) => {
+  // التعامل مع إضافة/تعديل موعد - with useCallback for performance
+  const handleSubmitSession = useCallback(async (formData: SessionFormData, sessionId?: string) => {
     const result = sessionId
       ? await onEditSession(sessionId, formData)
       : await onAddSession(formData);
 
     if (result) {
       closeModal();
-      // Refetch removed to improve performance - local state is updated optimistically
     }
 
     return result;
-  };
-
-  // استخدام الدوال من useSessionModal
-  const handleEditClick = openEditModal;
-  const handleAddClick = openAddModal;
-  const handleCloseModal = closeModal;
+  }, [onEditSession, onAddSession, closeModal]);
 
   return (
     <div
@@ -159,7 +170,7 @@ export const AdminTimetableView: React.FC<AdminTimetableViewProps> = ({
 
           <Button
             leftIcon={<Plus className="w-5 h-5" />}
-            onClick={handleAddClick}
+            onClick={openAddModal}
             size="lg">
             إضافة موعد حلقة
           </Button>
@@ -171,7 +182,7 @@ export const AdminTimetableView: React.FC<AdminTimetableViewProps> = ({
             sessions={sessions}
             loading={loading}
             role="admin"
-            onEdit={handleEditClick}
+            onEdit={openEditModal}
             onDelete={onDeleteSession}
           />
         ) : (
@@ -179,7 +190,7 @@ export const AdminTimetableView: React.FC<AdminTimetableViewProps> = ({
             sessions={sessions}
             loading={loading}
             role="admin"
-            onEdit={handleEditClick}
+            onEdit={openEditModal}
             onDelete={onDeleteSession}
           />
         )}
@@ -201,7 +212,7 @@ export const AdminTimetableView: React.FC<AdminTimetableViewProps> = ({
       <SessionModal
         isOpen={showModal}
         onClose={() => {
-          handleCloseModal();
+          closeModal();
            // Remove query params if they exist
            if (searchParams.get('addSession')) {
             setSearchParams({});
@@ -210,9 +221,6 @@ export const AdminTimetableView: React.FC<AdminTimetableViewProps> = ({
         onSubmit={handleSubmitSession}
         editingSession={editingSession}
         role="admin"
-        sessions={sessions}
-        initialSectionId={searchParams.get('sectionId') || undefined}
-        initialGroupName={searchParams.get('groupName') || undefined}
       />
     </div>
   );

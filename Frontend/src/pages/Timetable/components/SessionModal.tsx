@@ -11,17 +11,9 @@ import type {
   SessionFormData,
   UserRole,
 } from "../types/timetable.types";
-import { isSummerTime, getDayNameFromDate, getTodayDate } from "../utils";
+import { isSummerTime, getTodayDate } from "../utils";
 import { Calendar, Clock, Users, UserCircle } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
-import { 
-  useSessionForm, 
-  useTeachers, 
-  useTeacherGroups, 
-  useSessionModalLogic,
-  useTeacherSelection,
-  useSessionDuration
-} from "../hooks";
+import { useSessionModalController } from "../hooks";
 
 interface SessionModalProps {
   isOpen: boolean;
@@ -30,64 +22,39 @@ interface SessionModalProps {
   editingSession: Session | null;
   role: UserRole;
   teacherGroups?: string[];
-  sessions: Session[];
 }
 
-export const SessionModal: React.FC<SessionModalProps> = ({
-  isOpen,
-  onClose,
-  onSubmit,
-  editingSession,
-  role,
-  teacherGroups = [],
-}) => {
-  const [searchParams] = useSearchParams();
-  const initialSectionId = searchParams.get('sectionId') || undefined;
-  const initialGroupName = searchParams.get('groupName') || undefined;
+export const SessionModal: React.FC<SessionModalProps> = (props) => {
+  const {
+    isOpen, editingSession, role, teacherGroups
+  } = props;
 
-  // ✅ استخدام الـ hooks المنفصلة
-  const { formData, setFormData, hours, bookedHours, handleStartHourChange, handleDateChange, resetForm } = useSessionForm({
-    editingSession,
-    role,
-    teacherGroups,
-    initialSectionId,
-    initialGroupName,
-  });
-
-  const { teachers, loadingTeachers } = useTeachers({
-    isOpen,
-    enabled: role === "admin",
-    onlyWithGroups: true,
-  });
-
-  const { teacherGroups: teacherGroupsList, loadingGroups } = useTeacherGroups({
-    teacherId: formData.teacherId,
-    isOpen,
-    enabled: role === "admin",
-  });
-  
-  const { loading, handleSubmit, handleClose } = useSessionModalLogic({
-    onSubmit,
-    editingSession,
-    onClose,
-    resetForm,
-    bookedHours,
+  // ✅ استخدام الهوك المجمع لفصل المنطق (Controller)
+  const {
     formData,
-  });
-
-  const { selectedTeacher } = useTeacherSelection({
-    teachers,
-    teacherId: formData.teacherId,
-  });
-
-  const duration = useSessionDuration({
-    startHour: formData.startHour,
-    endHour: formData.endHour,
+    setFormData,
     hours,
+    bookedHours,
+    handleStartHourChange,
+    handleDateChange,
+    selectedDayName,
+    duration,
+    teachers,
+    loadingTeachers,
+    teacherGroupsList,
+    loadingGroups,
+    selectedTeacher,
+    loading,
+    handleSubmit,
+    handleClose,
+  } = useSessionModalController({
+    isOpen: props.isOpen,
+    onClose: props.onClose,
+    onSubmit: props.onSubmit,
+    editingSession: props.editingSession,
+    role: props.role,
+    teacherGroups: props.teacherGroups
   });
-
-  // ⚠️ الحصول على اسم اليوم من التاريخ المختار
-  const selectedDayName = formData.sessionDate ? getDayNameFromDate(formData.sessionDate) : '';
 
   return (
     <Modal
@@ -156,44 +123,43 @@ export const SessionModal: React.FC<SessionModalProps> = ({
                 )}
 
                 {/* عرض قائمة حلقات المعلم للاختيار */}
-                {!formData.sectionId && ((role === "admin" && formData.teacherId) || (role === "teacher" && teacherGroups.length > 0)) && (
-                    <div>
-                      <label className="block text-sm font-bold text-emerald-900 mb-3">
-                        اختر حلقة للموعد *
-                      </label>
-                      
-                      {(role === "admin" && loadingGroups) ? (
-                        <div className="flex items-center justify-center p-8 bg-emerald-50 rounded-lg border-2 border-emerald-200">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
-                          <span className="mr-3 text-emerald-700">جاري تحميل الحلقات...</span>
-                        </div>
-                      ) : ((role === "admin" && teacherGroupsList.length === 0) || (role === "teacher" && teacherGroups.length === 0)) ? (
-                        <div className="p-6 text-center bg-gray-50 rounded-lg border-2 border-gray-200">
-                          <Users className="w-12 h-12 mx-auto mb-2 text-gray-400" />
-                          <p className="text-gray-600 font-semibold">لا توجد حلقات لهذا المعلم</p>
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-64 overflow-y-auto p-3 bg-white rounded-lg border-2 border-emerald-200">
-                          {(role === "admin" ? teacherGroupsList : teacherGroups).map((group) => (
-                            <button
-                              key={group}
-                              type="button"
-                              onClick={() => setFormData({ ...formData, note: group })}
-                              className={`flex items-center gap-3 p-4 rounded-xl font-bold transition-all border-2 text-right ${
-                                formData.note === group
-                                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-lg scale-105'
-                                  : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-400'
-                              }`}>
-                              <Users className="w-5 h-5 flex-shrink-0" />
-                              <span className="flex-1 text-base">{group}</span>
-                              {formData.note === group && (
-                                <span className="text-xs bg-white text-emerald-600 px-2 py-1 rounded-full">✓</span>
-                              )}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                {!formData.sectionId && ((role === "admin" && formData.teacherId) || (role === "teacher" && (teacherGroups?.length ?? 0) > 0)) && (
+                  <div>
+                    <label className="block text-sm font-bold text-emerald-900 mb-3">
+                      اختر حلقة للموعد *
+                    </label>
+                    {(role === "admin" && loadingGroups) ? (
+                      <div className="flex items-center justify-center p-8 bg-emerald-50 rounded-lg border-2 border-emerald-200">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+                        <span className="mr-3 text-emerald-700">جاري تحميل الحلقات...</span>
+                      </div>
+                    ) : ((role === "admin" && (teacherGroupsList?.length ?? 0) === 0) || (role === "teacher" && (teacherGroups?.length ?? 0) === 0)) ? (
+                      <div className="p-6 text-center bg-gray-50 rounded-lg border-2 border-gray-200">
+                        <Users className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+                        <p className="text-gray-600 font-semibold">لا توجد حلقات لهذا المعلم</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-64 overflow-y-auto p-3 bg-white rounded-lg border-2 border-emerald-200">
+                        {(role === "admin" ? (teacherGroupsList ?? []) : (teacherGroups ?? [])).map((group) => (
+                          <button
+                            key={group}
+                            type="button"
+                            onClick={() => setFormData({ ...formData, note: group })}
+                            className={`flex items-center gap-3 p-4 rounded-xl font-bold transition-all border-2 text-right ${
+                              formData.note === group
+                                ? 'bg-emerald-600 text-white border-emerald-600 shadow-lg scale-105'
+                                : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-400'
+                            }`}>
+                            <Users className="w-5 h-5 flex-shrink-0" />
+                            <span className="flex-1 text-base">{group}</span>
+                            {formData.note === group && (
+                              <span className="text-xs bg-white text-emerald-600 px-2 py-1 rounded-full">✓</span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             )}

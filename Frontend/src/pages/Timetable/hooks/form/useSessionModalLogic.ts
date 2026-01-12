@@ -3,7 +3,7 @@
 // ============================================================================
 
 import { useState, useCallback } from "react";
-import type { SessionFormData, Session } from "../types/timetable.types";
+import type { SessionFormData, Session } from "../../types/timetable.types";
 import { validateTimetableData } from "@/Validation/timetableValidation";
 import { showErrorToast } from "@/utils/toastUtils";
 

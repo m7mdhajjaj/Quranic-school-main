@@ -4,7 +4,7 @@
 // ⚠️ النظام الجديد: يعتمد على sessionDate (التاريخ المحدد)
 
 import { useMemo, useState, useCallback } from "react";
-import type { Session } from "../types/timetable.types";
+import type { Session } from "../../types/timetable.types";
 
 export interface WeekRange {
   startOfWeek: Date;

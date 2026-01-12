@@ -3,16 +3,16 @@
 // ============================================================================
 // ⚠️ النظام الجديد: يعتمد على sessionDate (التاريخ المحدد)
 
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import {
   createTimetable,
   updateTimetable,
   deleteTimetable,
 } from "@/Api/TimeTable.Api";
-import type { Session, SessionFormData } from "../types/timetable.types";
+import type { Session, SessionFormData } from "../../types/timetable.types";
 import { showConfirmDialog, showErrorMessage } from "@/utils/sweetalertUtils";
 import { showSuccessToast, showErrorToast } from "@/utils/toastUtils";
-import { getCurrentUser, formatDateShort, getDayNameFromDate } from "../utils";
+import { getCurrentUser, formatDateShort, getDayNameFromDate } from "../../utils";
 
 interface UseTimetableActionsProps {
   setSessions: React.Dispatch<React.SetStateAction<Session[]>>;
@@ -23,37 +23,47 @@ export const useTimetableActions = ({
 }: UseTimetableActionsProps) => {
   
   // ============================================
+  // 🔄 Helper: تحويل Response إلى Session (DRY)
+  // ============================================
+  const mapResponseToSession = useMemo(() => {
+    return (data: any): Session => {
+      const currentUser = getCurrentUser();
+      
+      let session: Session = {
+        _id: data._id,
+        sessionDate: data.sessionDate,
+        day: data.day,
+        startHour: data.startHour,
+        endHour: data.endHour,
+        note: data.note,
+        description: data.description,
+        sessionType: data.sessionType,
+        groupId: typeof data.groupId === 'object' ? data.groupId?._id : data.groupId,
+        teacherId: data.teacherId,
+        sectionId: typeof data.sectionId === 'object' ? data.sectionId?._id : data.sectionId,
+      };
+      
+      // إذا كان المعلم هو المستخدم الحالي، استبدل الـ ID بالبيانات الكاملة
+      if (typeof session.teacherId === 'string' && currentUser && currentUser._id === session.teacherId) {
+        session.teacherId = {
+          _id: currentUser._id,
+          firstName: currentUser.firstName,
+          lastName: currentUser.lastName || ''
+        } as any;
+      }
+      
+      return session;
+    };
+  }, []);
+  
+  // ============================================
   // ➕ إضافة موعد جديد
   // ============================================
   const addSession = useCallback(
     async (formData: SessionFormData) => {
       try {
         const response = await createTimetable(formData);
-        
-        // استخراج البيانات من الـ response
-        const added = response.data;
-        let sessionToAdd: Session = {
-          _id: added._id,
-          sessionDate: added.sessionDate,
-          day: added.day,
-          startHour: added.startHour,
-          endHour: added.endHour,
-          note: added.note,
-          description: added.description,
-          sessionType: added.sessionType,
-          groupId: typeof added.groupId === 'object' ? added.groupId?._id : added.groupId,
-          teacherId: added.teacherId,
-          sectionId: typeof added.sectionId === 'object' ? added.sectionId?._id : added.sectionId,
-        };
-        const currentUser = getCurrentUser();
-        
-        if (typeof sessionToAdd.teacherId === 'string' && currentUser && currentUser._id === sessionToAdd.teacherId) {
-           sessionToAdd.teacherId = {
-             _id: currentUser._id,
-             firstName: currentUser.firstName,
-             lastName: currentUser.lastName || ''
-           } as any;
-        }
+        const sessionToAdd = mapResponseToSession(response.data);
 
         setSessions((prev) => [...prev, sessionToAdd]);
 
@@ -83,7 +93,7 @@ export const useTimetableActions = ({
         return false;
       }
     },
-    [setSessions]
+    [setSessions, mapResponseToSession]
   );
 
   // ============================================
@@ -93,31 +103,7 @@ export const useTimetableActions = ({
     async (sessionId: string, formData: SessionFormData) => {
       try {
         const response = await updateTimetable(sessionId, formData);
-        
-        // استخراج البيانات من الـ response
-        const updated = response.data;
-        let sessionToUpdate: Session = {
-          _id: updated._id,
-          sessionDate: updated.sessionDate,
-          day: updated.day,
-          startHour: updated.startHour,
-          endHour: updated.endHour,
-          note: updated.note,
-          description: updated.description,
-          sessionType: updated.sessionType,
-          groupId: typeof updated.groupId === 'object' ? updated.groupId?._id : updated.groupId,
-          teacherId: updated.teacherId,
-          sectionId: typeof updated.sectionId === 'object' ? updated.sectionId?._id : updated.sectionId,
-        };
-        const currentUser = getCurrentUser();
-        
-        if (typeof sessionToUpdate.teacherId === 'string' && currentUser && currentUser._id === sessionToUpdate.teacherId) {
-           sessionToUpdate.teacherId = {
-             _id: currentUser._id,
-             firstName: currentUser.firstName,
-             lastName: currentUser.lastName || ''
-           } as any;
-        }
+        const sessionToUpdate = mapResponseToSession(response.data);
 
         setSessions((prev) =>
           prev.map((s) => (s._id === sessionId ? sessionToUpdate : s))
@@ -144,7 +130,7 @@ export const useTimetableActions = ({
         return false;
       }
     },
-    [setSessions]
+    [setSessions, mapResponseToSession]
   );
 
   // ============================================

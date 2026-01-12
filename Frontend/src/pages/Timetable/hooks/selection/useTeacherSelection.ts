@@ -3,7 +3,7 @@
 // ============================================================================
 
 import { useMemo } from "react";
-import type { Teacher } from "../types/timetable.types";
+import type { Teacher } from "../../types/timetable.types";
 
 interface UseTeacherSelectionProps {
   teachers: Teacher[];

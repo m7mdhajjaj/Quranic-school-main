@@ -52,7 +52,7 @@ const Ranking = lazy(() => import("./pages/Ranking"));
 const Test = lazy(() => import("./pages/Test/TestPage"));
 import ExamSchedule from "./pages/ExamSchedule";
 import Reports from "./pages/Reports";
-import Timetable from "./pages/Timetable/TimetablePage";
+import Timetable from "./pages/Timetable/Views/TimetablePage";
 // import MyStudents from "./pages/MyStudents";
 
 // ============================================================================

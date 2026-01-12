@@ -2,4 +2,4 @@
 // Components Index - Barrel Export  
 // ============================================================================
 
-export { SessionModal } from "../Model/SessionModal";
+export { SessionModal } from "../components/SessionModal";

@@ -3,9 +3,9 @@
 // ============================================================================
 // ⚠️ النظام الجديد: يعتمد على sessionDate (التاريخ المحدد) وليس day
 
-import { useState, useEffect } from "react";
-import type { Session, SessionFormData, UserRole } from "../types/timetable.types";
-import { getCurrentUser, formatDateForAPI, getTodayDate } from "../utils";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import type { Session, SessionFormData, UserRole } from "../../types/timetable.types";
+import { getCurrentUser, formatDateForAPI, getTodayDate } from "../../utils";
 import { getAvailableHours, getTeacherAvailableHours } from "@/Api/TimeTable.Api";
 import { getSectionById } from "@/Api/DailyMark/sectionApi";
 import { useSearchParams } from "react-router-dom";
@@ -32,12 +32,12 @@ export const useSessionForm = ({
   const [bookedHours, setBookedHours] = useState<string[]>([]);
   const [loadingHours, setLoadingHours] = useState(true);
   
-  // Logic to determine initial sessionType
-  const getInitialSessionType = () => {
+  // Logic to determine initial sessionType - memoized
+  const getInitialSessionType = useMemo(() => {
     if (editingSession?.sessionType) return editingSession.sessionType;
     const urlSessionType = searchParams.get('sessionType');
     return urlSessionType as any || undefined;
-  };
+  }, [editingSession?.sessionType, searchParams]);
 
   // ⚠️ النموذج الجديد - sessionDate مطلوب!
   const [formData, setFormData] = useState<SessionFormData>(() => ({
@@ -46,7 +46,7 @@ export const useSessionForm = ({
     endHour: "",
     note: initialGroupName || "",
     description: "",
-    sessionType: getInitialSessionType(),
+    sessionType: getInitialSessionType,
     teacherId: "",
     groupId: "",
     sectionId: initialSectionId || "",
@@ -128,9 +128,9 @@ export const useSessionForm = ({
   }, [initialSectionId, editingSession]);
 
   // ============================================
-  // 🔄 Fallback: توليد الأوقات محلياً
+  // 🔄 Fallback: توليد الأوقات محلياً - memoized
   // ============================================
-  const generateFallbackHours = (): string[] => {
+  const generateFallbackHours = useCallback((): string[] => {
     const now = new Date();
     const month = now.getMonth() + 1;
     const isSummer = month >= 5 && month <= 9;
@@ -152,35 +152,35 @@ export const useSessionForm = ({
     }
     
     return fallbackHours;
-  };
+  }, []);
 
   const [selectedGroup, setSelectedGroup] = useState<string>("");
 
   // ============================================
-  // ⏰ دالة لتحديث وقت البداية
+  // ⏰ دالة لتحديث وقت البداية - with useCallback
   // ============================================
-  const handleStartHourChange = (newStartHour: string) => {
+  const handleStartHourChange = useCallback((newStartHour: string) => {
     const startIndex = hours.indexOf(newStartHour);
     const nextHour = startIndex >= 0 && startIndex < hours.length - 1 
       ? hours[startIndex + 1] 
       : hours[startIndex];
     
-    setFormData({ 
-      ...formData, 
+    setFormData(prev => ({ 
+      ...prev, 
       startHour: newStartHour,
       endHour: nextHour 
-    });
-  };
+    }));
+  }, [hours]);
   
   // ============================================
-  // 📅 دالة لتحديث التاريخ
+  // 📅 دالة لتحديث التاريخ - with useCallback
   // ============================================
-  const handleDateChange = (newDate: string) => {
-    setFormData({
-      ...formData,
+  const handleDateChange = useCallback((newDate: string) => {
+    setFormData(prev => ({
+      ...prev,
       sessionDate: newDate,
-    });
-  };
+    }));
+  }, []);
   
   // ============================================
   // 🔄 تحديث النموذج عند التعديل
@@ -191,6 +191,14 @@ export const useSessionForm = ({
         ? editingSession.teacherId 
         : editingSession.teacherId?._id || "";
       
+      // التحقق من groupId إذا كان كائنًا
+      let groupIdValue = "";
+      if (editingSession.groupId) {
+        groupIdValue = typeof editingSession.groupId === 'string'
+          ? editingSession.groupId
+          : String((editingSession.groupId as unknown as { _id?: string })?._id || "");
+      }
+
       setFormData({
         sessionDate: editingSession.sessionDate || getTodayDate(),
         startHour: editingSession.startHour,
@@ -199,9 +207,15 @@ export const useSessionForm = ({
         description: editingSession.description || "",
         sessionType: editingSession.sessionType,
         teacherId: teacherIdValue,
-        groupId: editingSession.groupId || "",
+        groupId: groupIdValue, // ✅ هنا كان الخلل، الآن نستخرجه بشكل صحيح
         sectionId: editingSession.sectionId || "",
       });
+      
+      // إذا كان هناك مجموعة مختارة، تحديث الاسم في note
+      if (editingSession.teacherGroups && editingSession.teacherGroups.length > 0) {
+          // يمكن تفعيل هذا إذا كنا بحاجة لتعيين القيمة في واجهة المستخدم
+          // setSelectedGroup(editingSession.teacherGroups[0].name);
+      }
       
       if (role === "teacher" && editingSession.note) {
         setSelectedGroup(editingSession.note);
@@ -230,8 +244,8 @@ export const useSessionForm = ({
     }
   }, [editingSession, role, initialSectionId, initialGroupName, searchParams, teacherGroups]);
 
-  // دالة لإعادة تعيين النموذج (reset)
-  const resetForm = () => {
+  // دالة لإعادة تعيين النموذج (reset) - with useCallback
+  const resetForm = useCallback(() => {
     const currentUser = getCurrentUser();
     const defaultTeacherId = role === "teacher" && currentUser?._id ? currentUser._id : "";
     
@@ -248,7 +262,7 @@ export const useSessionForm = ({
     });
     setSelectedGroup("");
     setBookedHours([]);
-  };
+  }, [role, initialGroupName, initialSectionId]);
 
   return {
     formData,

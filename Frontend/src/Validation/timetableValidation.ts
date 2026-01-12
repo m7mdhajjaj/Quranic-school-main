@@ -260,13 +260,15 @@ export const timetableValidationSchema = yup.object({
   // معرف الحلقة - اختياري
   groupId: yup
     .string()
-    .matches(/^[a-fA-F0-9]{24}$/, 'معرف الحلقة غير صحيح')
+    .test('is-valid-id', 'معرف الحلقة غير صحيح', value => !value || /^[a-fA-F0-9]{24}$/.test(value))
+    .nullable()
     .label('معرف الحلقة'),
 
   // معرف المقطع - اختياري
   sectionId: yup
     .string()
-    .matches(/^[a-fA-F0-9]{24}$/, 'معرف المقطع غير صحيح')
+    .test('is-valid-id', 'معرف المقطع غير صحيح', value => !value || /^[a-fA-F0-9]{24}$/.test(value))
+    .nullable()
     .label('معرف المقطع'),
 
   // اسم الحلقة (note) - اختياري

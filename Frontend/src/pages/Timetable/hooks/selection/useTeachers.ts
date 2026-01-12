@@ -2,7 +2,7 @@
 // useTeachers - هوك لجلب قائمة المعلمين
 // ============================================================================
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { getAllTeachers, type Teacher } from "@/Api/teacherApi";
 
 interface UseTeachersProps {
@@ -15,15 +15,21 @@ export const useTeachers = ({ isOpen, enabled = true, onlyWithGroups = false }: 
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [loadingTeachers, setLoadingTeachers] = useState(true);
 
+  // Memoize filters to prevent unnecessary re-fetches
+  const filters = useMemo(() => {
+    return onlyWithGroups ? { group: 'withGroups' } : undefined;
+  }, [onlyWithGroups]);
+
   // جلب قائمة المعلمين فقط عند فتح النافذة
   useEffect(() => {
     if (!isOpen || !enabled) return;
     
+    // فقط إذا كانت القائمة فارغة
+    if (teachers.length > 0) return;
+
     const fetchTeachers = async () => {
       try {
         setLoadingTeachers(true);
-        // إذا كان onlyWithGroups = true، جلب المعلمين الذين لديهم حلقات فقط
-        const filters = onlyWithGroups ? { group: 'withGroups' } : undefined;
         const response = await getAllTeachers(filters);
         if (response.success && response.data) {
           setTeachers(response.data);
@@ -35,11 +41,8 @@ export const useTeachers = ({ isOpen, enabled = true, onlyWithGroups = false }: 
       }
     };
     
-    // فقط إذا كانت القائمة فارغة
-    if (teachers.length === 0) {
-      fetchTeachers();
-    }
-  }, [isOpen, enabled, onlyWithGroups, teachers.length]);
+    fetchTeachers();
+  }, [isOpen, enabled, filters, teachers.length]);
 
   return {
     teachers,

@@ -7,7 +7,7 @@ import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import type { Session, SessionFormData } from "../types/timetable.types";
 import { useViewMode } from "../hooks";
-import { SessionModal } from "../Model/SessionModal";
+import { SessionModal } from "../components/SessionModal";
 import { AdvancedTimetableView } from "../DisplayType/AdvancedTimetableView";
 import { WeeklyGridView } from "../DisplayType/WeeklyGridView";
 import PageHeader from "@/components/UI/PageHeader";
@@ -81,10 +81,7 @@ export const TeacherTimetableView: React.FC<TeacherTimetableViewProps> = ({
     }
   }, [searchParams, sessions, loading]);
 
-  const handleOpenAddModal = () => {
-    setEditingSession(null);
-    setIsModalOpen(true);
-  };
+
 
   const handleOpenEditModal = (session: Session) => {
     setEditingSession(session);
@@ -245,9 +242,6 @@ export const TeacherTimetableView: React.FC<TeacherTimetableViewProps> = ({
         editingSession={editingSession}
         role="teacher"
         teacherGroups={teacherGroups}
-        sessions={sessions}
-        initialSectionId={searchParams.get('sectionId') || undefined}
-        initialGroupName={searchParams.get('groupName') || undefined}
       />
     </div>
   );

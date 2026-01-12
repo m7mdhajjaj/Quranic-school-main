@@ -3,8 +3,8 @@
 // ============================================================================
 // هذه الصفحة Router فقط - توجه المستخدم للعرض المناسب حسب دوره
 
-import { useTimetableData, useTimetableActions } from "./hooks";
-import { StudentTimetableView, TeacherTimetableView, AdminTimetableView } from "./Views";
+import { useTimetableData, useTimetableActions } from "../hooks";
+import { StudentTimetableView, TeacherTimetableView, AdminTimetableView } from ".";
 
 const TimetablePage = () => {
   // ✅ جلب البيانات من Backend
