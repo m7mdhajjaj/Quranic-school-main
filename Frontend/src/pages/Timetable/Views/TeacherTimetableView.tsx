@@ -46,36 +46,35 @@ export const TeacherTimetableView: React.FC<TeacherTimetableViewProps> = ({
     if (loading) return;
 
     const addSession = searchParams.get('addSession');
-    const editSession = searchParams.get('editSession');
+    const editSessionId = searchParams.get('editSession');
     const sectionId = searchParams.get('sectionId');
     const urlSessionType = searchParams.get('sessionType');
     
+    // الحالة 1: تعديل جلسة مباشرة بالـ ID
+    if (editSessionId) {
+      const sessionToEdit = sessions.find(s => s._id === editSessionId);
+      if (sessionToEdit) {
+        setEditingSession(sessionToEdit);
+        setIsModalOpen(true);
+      }
+      return;
+    }
+
+    // الحالة 2: إضافة/تعديل عبر sectionId
     if (sectionId) {
-      if (editSession === 'true') {
-        const matchingSessions = sessions.filter(s => s.sectionId === sectionId);
-        
-        if (matchingSessions.length === 1) {
-          // الحالة 1: تطابق وحيد - فتح التعديل
-          const sessionToEdit = matchingSessions[0];
-          if (urlSessionType) sessionToEdit.sessionType = urlSessionType as any;
-          setEditingSession(sessionToEdit);
-          setIsModalOpen(true);
-        } else if (matchingSessions.length > 1) {
-          // الحالة 2: تطابقات متعددة
-          // محاولة المطابقة بالنوع، وإلا فالأول
-          let targetSession = matchingSessions[0];
-          if (urlSessionType) {
-            const specificMatch = matchingSessions.find(s => s.sessionType === urlSessionType);
-            if (specificMatch) targetSession = specificMatch;
-          }
-          setEditingSession(targetSession);
-          setIsModalOpen(true);
-        } else {
-          // الحالة 3: لا يوجد جلسة مرتبطة - فتح إضافة جديدة
-          setEditingSession(null);
-          setIsModalOpen(true);
+      const matchingSessions = sessions.filter(s => s.sectionId === sectionId);
+      
+      if (matchingSessions.length >= 1) {
+        // يوجد جلسة مرتبطة - فتح التعديل
+        let targetSession = matchingSessions[0];
+        if (urlSessionType && matchingSessions.length > 1) {
+          const specificMatch = matchingSessions.find(s => s.sessionType === urlSessionType);
+          if (specificMatch) targetSession = specificMatch;
         }
+        setEditingSession(targetSession);
+        setIsModalOpen(true);
       } else if (addSession === 'true') {
+        // لا يوجد جلسة مرتبطة - فتح إضافة جديدة
         setEditingSession(null);
         setIsModalOpen(true);
       }

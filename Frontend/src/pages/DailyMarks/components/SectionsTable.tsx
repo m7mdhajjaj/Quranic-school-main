@@ -6,7 +6,6 @@ import { memo } from "react";
 import { RefreshCw, Plus, Edit, Trash2, RotateCcw, BookOpen, Calendar, ChevronRight, ChevronLeft, Users, FileCheck, FileEdit } from "lucide-react";
 import { getMarkColor, formatDateWithDay } from "../utils";
 import { useMonthNavigation, useMarkFinder } from "../hooks";
-import { TableSkeleton } from "../../../components/skeletons/DailyMarksSkeletons";
 
 // Extended section type with mark for table rendering
 type SectionWithMark = Section & { mark?: Mark };
@@ -45,10 +44,6 @@ const SectionsTableComponent = ({
     onMonthChange,
     onYearChange,
   });
-
-  if (loadingMarks && sections.length === 0) {
-    return <TableSkeleton rows={8} hasActions={isTeacher} />;
-  }
 
   // Use custom hook to attach marks to sections
   // Pass studentId to filter marks by student (prevents cross-student display)
@@ -337,14 +332,7 @@ const SectionsTableComponent = ({
 
       {/* Mobile Card View - Shown on mobile/tablet */}
       <div className="lg:hidden space-y-4 p-4">
-        {loadingMarks ? (
-          <div className="space-y-4">
-            {/* Show 4 skeleton cards on mobile */}
-            {Array.from({ length: 4 }).map((_, i) => (
-              <CardSkeleton key={i} hasImage={false} contentLines={3} />
-            ))}
-          </div>
-        ) : tableData.length === 0 ? (
+        {tableData.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-6xl mb-4">📝</div>
             <p className="text-gray-500 font-medium">لا توجد مقاطع في الشهر والسنة المحددة</p>

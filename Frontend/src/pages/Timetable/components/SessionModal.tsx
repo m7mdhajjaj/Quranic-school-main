@@ -336,6 +336,16 @@ export const SessionModal: React.FC<SessionModalProps> = ({
                     </span>
                   </div>
                 )}
+
+                {/* رسالة تأكيد الوقت في وضع التعديل */}
+                {editingSession && formData.startHour === editingSession.startHour && formData.endHour === editingSession.endHour && (
+                  <div className="flex items-center gap-2 p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+                    <span className="text-emerald-600">✓</span>
+                    <span className="text-sm text-emerald-700">
+                      الوقت المحدد هو نفس الوقت المحجوز حالياً للحلقة
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 

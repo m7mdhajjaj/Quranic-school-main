@@ -40,29 +40,41 @@ export const AdminTimetableView: React.FC<AdminTimetableViewProps> = ({
 
   // ✅ التحقق من وجود طلب إضافة/تعديل جلسة من الرابط
   useEffect(() => {
-    const addSession = searchParams.get('addSession');
-    const editSession = searchParams.get('editSession');
-    const sectionId = searchParams.get('sectionId');
+    if (loading) return;
     
+    const addSession = searchParams.get('addSession');
+    const editSessionId = searchParams.get('editSession');
+    const sectionId = searchParams.get('sectionId');
+    const urlSessionType = searchParams.get('sessionType');
+    
+    // الحالة 1: تعديل جلسة مباشرة بالـ ID
+    if (editSessionId) {
+      const sessionToEdit = sessions.find(s => s._id === editSessionId);
+      if (sessionToEdit) {
+        openEditModal(sessionToEdit);
+      }
+      return;
+    }
+
+    // الحالة 2: إضافة/تعديل عبر sectionId
     if (sectionId) {
-      if (editSession === 'true') {
-        const matchingSessions = sessions.filter(s => s.sectionId === sectionId);
-        if (matchingSessions.length === 1) {
-          const sessionToEdit = matchingSessions[0];
-          // Check if sessionType is updated in URL
-          const urlSessionType = searchParams.get('sessionType');
-          if (urlSessionType) {
-              sessionToEdit.sessionType = urlSessionType as any;
-          }
-          openEditModal(sessionToEdit);
+      const matchingSessions = sessions.filter(s => s.sectionId === sectionId);
+      
+      if (matchingSessions.length >= 1) {
+        // يوجد جلسة مرتبطة - فتح التعديل
+        let targetSession = matchingSessions[0];
+        if (urlSessionType && matchingSessions.length > 1) {
+          const specificMatch = matchingSessions.find(s => s.sessionType === urlSessionType);
+          if (specificMatch) targetSession = specificMatch;
         }
+        openEditModal(targetSession);
       } else if (addSession === 'true') {
         openAddModal();
       }
     } else if (addSession === 'true') {
       openAddModal();
     }
-  }, [searchParams, openAddModal, sessions, openEditModal]);
+  }, [searchParams, openAddModal, sessions, openEditModal, loading]);
 
   // تعطيل scroll الصفحة عند فتح الـ Modal
   useDisableBodyScroll(showModal);

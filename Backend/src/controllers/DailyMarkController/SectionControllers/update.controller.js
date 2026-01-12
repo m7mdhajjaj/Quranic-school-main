@@ -99,14 +99,39 @@ exports.updateSection = async (req, res) => {
       }
     ).populate('timetableId', 'day startHour endHour sessionType');
 
-    // ✅ Sync date with TimeTable if linked
-    // إذا تغير التاريخ وكان هناك موعد مرتبط، نحدّث تاريخ الموعد أيضاً ليظل متطابقاً
-    if (updatedSection.timetableId && updateData.date && 
-        new Date(updateData.date).getTime() !== new Date(oldSection.date).getTime()) {
-      // Async update
-      TimeTable.findByIdAndUpdate(updatedSection.timetableId, {
-        sessionDate: updatedSection.date
-      }).catch(err => console.error("Timetable sync error:", err));
+    // ✅ Auto-sync TimeTable if linked
+    if (updatedSection.timetableId) {
+      const timetableUpdates = {};
+      
+      // 1. Sync date if changed
+      if (updateData.date && new Date(updateData.date).getTime() !== new Date(oldSection.date).getTime()) {
+        timetableUpdates.sessionDate = updatedSection.date;
+      }
+      
+      // 2. Auto-sync sessionType based on section content
+      const hasMem = (updateData.memorizationMeta || section.memorizationMeta)?.length > 0;
+      const hasRev = (updateData.reviewMeta || section.reviewMeta)?.length > 0;
+      
+      let newSessionType;
+      if (hasMem && hasRev) {
+        newSessionType = 'both';
+      } else if (hasMem) {
+        newSessionType = 'hifz';
+      } else if (hasRev) {
+        newSessionType = 'murajaah';
+      }
+      
+      if (newSessionType) {
+        timetableUpdates.sessionType = newSessionType;
+      }
+      
+      // Apply updates if any
+      if (Object.keys(timetableUpdates).length > 0) {
+        TimeTable.findByIdAndUpdate(
+          typeof updatedSection.timetableId === 'object' ? updatedSection.timetableId._id : updatedSection.timetableId,
+          timetableUpdates
+        ).catch(err => console.error("Timetable sync error:", err));
+      }
     }
 
     // إرسال إشعارات لجميع طلاب الحلقة (Fire-and-forget)

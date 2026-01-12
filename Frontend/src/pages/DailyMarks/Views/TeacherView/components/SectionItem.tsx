@@ -62,6 +62,15 @@ const SectionItemComponent = ({
     navigate(`/timetable?addSession=true&sectionId=${section._id}&groupName=${encodeURIComponent(section.group || "")}&sessionType=${sessionType}`);
   };
 
+  const handleEditSchedule = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const timetable = section.timetableId as any;
+    if (!timetable || typeof timetable === 'string') return;
+    
+    // Navigate to timetable page with edit mode
+    navigate(`/timetable?editSession=${timetable._id}`);
+  };
+
   const statusConfig = {
     completed: {
       iconColor: "text-emerald-600",
@@ -210,12 +219,20 @@ const SectionItemComponent = ({
         {/* Scheduled Time Info */}
         {section.timetableId && typeof section.timetableId !== 'string' && (
           <div className="mb-3 bg-cyan-50 border border-cyan-100 rounded-lg p-2.5" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center gap-1.5 text-cyan-800">
-               <Clock size={14} className="text-cyan-600" />
-               <span className="text-xs font-semibold">موعد الحلقة:</span>
-               <span className="text-xs">{(section.timetableId as any).day}</span>
-               <span className="text-cyan-300">|</span>
-               <span className="text-xs font-mono">{(section.timetableId as any).startHour} - {(section.timetableId as any).endHour}</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-cyan-800">
+                 <Clock size={14} className="text-cyan-600" />
+                 <span className="text-xs font-semibold">موعد الحلقة:</span>
+                 <span className="text-xs">{(section.timetableId as any).day}</span>
+                 <span className="text-cyan-300">|</span>
+                 <span className="text-xs font-mono">{(section.timetableId as any).startHour} - {(section.timetableId as any).endHour}</span>
+              </div>
+              <button
+                onClick={handleEditSchedule}
+                className="text-xs text-cyan-600 hover:text-cyan-800 hover:bg-cyan-100 px-2 py-1 rounded transition-colors font-medium"
+              >
+                تعديل
+              </button>
             </div>
           </div>
         )}
