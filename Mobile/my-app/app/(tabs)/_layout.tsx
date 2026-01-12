@@ -136,6 +136,12 @@ export default function TabLayout() {
             href: null,
           }}
         />
+        <Tabs.Screen
+          name="timetable"
+          options={{
+            href: null,
+          }}
+        />
       </Tabs>
 
       {/* Custom Bottom Tab Bar */}
