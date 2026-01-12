@@ -11,6 +11,8 @@ import {
   ActivityIndicator,
   Animated,
   Alert,
+  Keyboard,
+  Dimensions,
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -27,6 +29,9 @@ import type { AiMessage, AiChatResponse } from "@/types/aiChat";
 export default function AiChatScreen() {
   const router = useRouter();
   const scrollViewRef = useRef<ScrollView>(null);
+  const textInputRef = useRef<TextInput>(null);
+
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   const initialMessage: AiMessage = {
     id: "1",
@@ -55,11 +60,41 @@ export default function AiChatScreen() {
   };
   const scrollToBottom = () => {
     scrollViewRef.current?.scrollToEnd({ animated: true });
+    // Force scroll with additional attempts
+    setTimeout(() => {
+      scrollViewRef.current?.scrollToEnd({ animated: false });
+    }, 50);
   };
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Keyboard listeners
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      "keyboardDidShow",
+      (e) => {
+        setKeyboardHeight(e.endCoordinates.height);
+        // Multiple scroll attempts for better positioning
+        setTimeout(() => scrollToBottom(), 100);
+        setTimeout(() => scrollToBottom(), 300);
+        setTimeout(() => scrollToBottom(), 500);
+      }
+    );
+
+    const keyboardDidHideListener = Keyboard.addListener(
+      "keyboardDidHide",
+      () => {
+        setKeyboardHeight(0);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
 
   const handleSubmit = async () => {
     if (!input.trim() || isLoading) return;
@@ -74,6 +109,9 @@ export default function AiChatScreen() {
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
+
+    // Scroll to bottom after adding user message
+    setTimeout(() => scrollToBottom(), 100);
 
     try {
       const response = await api.post("/ai-chat", {
@@ -124,128 +162,158 @@ export default function AiChatScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}>
-          <ArrowLeft size={24} color="#ffffff" />
-        </TouchableOpacity>
-
-        <View style={styles.headerContent}>
-          <View style={styles.headerIcon}>
-            <Sparkles size={20} color="#fbbf24" />
-          </View>
-          <View>
-            <Text style={styles.headerTitle}>المساعد الإسلامي</Text>
-            <Text style={styles.headerSubtitle}>مدعوم بالذكاء الاصطناعي</Text>
-          </View>
-        </View>
-
-        <TouchableOpacity style={styles.clearButton} onPress={clearChat}>
-          <RefreshCw size={20} color="#ffffff" />
-        </TouchableOpacity>
-      </View>
-
-      {/* Messages Area */}
-      <ScrollView
-        ref={scrollViewRef}
-        style={styles.messagesContainer}
-        contentContainerStyle={styles.messagesContent}
-        showsVerticalScrollIndicator={false}>
-        {messages.map((message, index) => (
-          <View
-            key={message.id}
-            style={[
-              styles.messageWrapper,
-              message.role === "user"
-                ? styles.userMessageWrapper
-                : styles.aiMessageWrapper,
-            ]}>
-            <View
-              style={[
-                styles.messageBubble,
-                message.role === "user" ? styles.userMessage : styles.aiMessage,
-              ]}>
-              {message.role === "assistant" && (
-                <View style={styles.aiHeader}>
-                  <Sparkles size={12} color="#10b981" />
-                  <Text style={styles.aiLabel}>الذكاء الاصطناعي</Text>
-                </View>
-              )}
-              <Text
-                style={[
-                  styles.messageText,
-                  message.role === "user"
-                    ? styles.userMessageText
-                    : styles.aiMessageText,
-                ]}>
-                {message.content}
-              </Text>
-              <Text
-                style={[
-                  styles.messageTime,
-                  message.role === "user"
-                    ? styles.userMessageTime
-                    : styles.aiMessageTime,
-                ]}>
-                {formatTime(message.timestamp)}
-              </Text>
-            </View>
-          </View>
-        ))}
-
-        {/* Loading Indicator */}
-        {isLoading && (
-          <View style={[styles.messageWrapper, styles.aiMessageWrapper]}>
-            <View style={[styles.messageBubble, styles.aiMessage]}>
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="small" color="#10b981" />
-                <Text style={styles.loadingText}>جاري تحليل المصادر...</Text>
-              </View>
-            </View>
-          </View>
-        )}
-      </ScrollView>
-
-      {/* Helper Tip */}
-      <View style={styles.tipContainer}>
-        <View style={styles.tipIcon}>
-          <BookOpen size={14} color="#10b981" />
-        </View>
-        <Text style={styles.tipText}>
-          للحصول على أدق النتائج، يرجى تحديد السورة ورقم الآية.
-        </Text>
-      </View>
-
-      {/* Input Area */}
-      <View style={styles.inputContainer}>
-        <View style={styles.inputWrapper}>
-          <TextInput
-            style={styles.textInput}
-            placeholder="اسأل عن آية أو حكم فقهي..."
-            placeholderTextColor="#9ca3af"
-            value={input}
-            onChangeText={setInput}
-            multiline
-            textAlign="right"
-            editable={!isLoading}
-          />
+    <View style={styles.container}>
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoidContainer}
+        behavior={Platform.OS === "ios" ? "padding" : "padding"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 80}>
+        {/* Header */}
+        <View style={styles.header}>
           <TouchableOpacity
-            style={[
-              styles.sendButton,
-              (!input.trim() || isLoading) && styles.sendButtonDisabled,
-            ]}
-            onPress={handleSubmit}
-            disabled={!input.trim() || isLoading}>
-            <Send size={20} color="#ffffff" />
+            style={styles.backButton}
+            onPress={() => router.back()}>
+            <ArrowLeft size={24} color="#ffffff" />
+          </TouchableOpacity>
+
+          <View style={styles.headerContent}>
+            <View style={styles.headerIcon}>
+              <Sparkles size={20} color="#fbbf24" />
+            </View>
+            <View>
+              <Text style={styles.headerTitle}>المساعد الإسلامي</Text>
+              <Text style={styles.headerSubtitle}>مدعوم بالذكاء الاصطناعي</Text>
+            </View>
+          </View>
+
+          <TouchableOpacity style={styles.clearButton} onPress={clearChat}>
+            <RefreshCw size={20} color="#ffffff" />
           </TouchableOpacity>
         </View>
-      </View>
-    </KeyboardAvoidingView>
+
+        {/* Messages Area */}
+        <ScrollView
+          ref={scrollViewRef}
+          style={styles.messagesContainer}
+          contentContainerStyle={styles.messagesContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive">
+          {messages.map((message, index) => (
+            <View
+              key={message.id}
+              style={[
+                styles.messageWrapper,
+                message.role === "user"
+                  ? styles.userMessageWrapper
+                  : styles.aiMessageWrapper,
+              ]}>
+              <View
+                style={[
+                  styles.messageBubble,
+                  message.role === "user"
+                    ? styles.userMessage
+                    : styles.aiMessage,
+                ]}>
+                {message.role === "assistant" && (
+                  <View style={styles.aiHeader}>
+                    <Sparkles size={12} color="#10b981" />
+                    <Text style={styles.aiLabel}>الذكاء الاصطناعي</Text>
+                  </View>
+                )}
+                <Text
+                  style={[
+                    styles.messageText,
+                    message.role === "user"
+                      ? styles.userMessageText
+                      : styles.aiMessageText,
+                  ]}>
+                  {message.content}
+                </Text>
+                <Text
+                  style={[
+                    styles.messageTime,
+                    message.role === "user"
+                      ? styles.userMessageTime
+                      : styles.aiMessageTime,
+                  ]}>
+                  {formatTime(message.timestamp)}
+                </Text>
+              </View>
+            </View>
+          ))}
+
+          {/* Loading Indicator */}
+          {isLoading && (
+            <View style={[styles.messageWrapper, styles.aiMessageWrapper]}>
+              <View style={[styles.messageBubble, styles.aiMessage]}>
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="small" color="#10b981" />
+                  <Text style={styles.loadingText}>جاري تحليل المصادر...</Text>
+                </View>
+              </View>
+            </View>
+          )}
+        </ScrollView>
+
+        {/* Helper Tip */}
+        <View style={styles.tipContainer}>
+          <View style={styles.tipIcon}>
+            <BookOpen size={14} color="#10b981" />
+          </View>
+          <Text style={styles.tipText}>
+            للحصول على أدق النتائج، يرجى تحديد السورة ورقم الآية.
+          </Text>
+        </View>
+
+        {/* Input Area */}
+        <View
+          style={[
+            styles.inputContainer,
+            {
+              marginBottom:
+                Platform.OS === "android"
+                  ? Math.max(keyboardHeight * 0.3, 20)
+                  : keyboardHeight > 0
+                    ? 40
+                    : 0,
+            },
+          ]}>
+          <View style={styles.inputWrapper}>
+            <TextInput
+              ref={textInputRef}
+              style={styles.textInput}
+              placeholder="اسأل عن آية أو حكم فقهي..."
+              placeholderTextColor="#9ca3af"
+              value={input}
+              onChangeText={setInput}
+              multiline
+              textAlign="right"
+              editable={!isLoading}
+              maxLength={500}
+              returnKeyType="send"
+              blurOnSubmit={false}
+              onSubmitEditing={handleSubmit}
+              onFocus={() => {
+                // Multiple scroll attempts with different delays
+                setTimeout(() => scrollToBottom(), 100);
+                setTimeout(() => scrollToBottom(), 300);
+                setTimeout(() => scrollToBottom(), 600);
+                setTimeout(() => scrollToBottom(), 1000);
+              }}
+            />
+            <TouchableOpacity
+              style={[
+                styles.sendButton,
+                (!input.trim() || isLoading) && styles.sendButtonDisabled,
+              ]}
+              onPress={handleSubmit}
+              disabled={!input.trim() || isLoading}>
+              <Send size={20} color="#ffffff" />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -253,6 +321,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f8fafc",
+  },
+  keyboardAvoidContainer: {
+    flex: 1,
   },
   header: {
     flexDirection: "row",
@@ -305,6 +376,7 @@ const styles = StyleSheet.create({
   },
   messagesContent: {
     padding: 16,
+    paddingBottom: 150, // Increased padding for better keyboard clearance
   },
   messageWrapper: {
     marginBottom: 12,
@@ -403,8 +475,16 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "#e5e7eb",
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    paddingBottom: Platform.OS === "ios" ? 28 : 12,
+    paddingTop: 16,
+    paddingBottom: Platform.OS === "ios" ? 40 : 20,
+    // Ensure input container stays above keyboard
+    zIndex: 1000,
+    // Add shadow for better separation
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
   },
   inputWrapper: {
     flexDirection: "row",
@@ -414,16 +494,18 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#e5e7eb",
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 12,
+    minHeight: 60, // Increased minimum height
   },
   textInput: {
     flex: 1,
-    maxHeight: 100,
+    maxHeight: 120, // Increased max height
     fontSize: 16,
     color: "#374151",
     textAlignVertical: "center",
-    minHeight: 40,
-    paddingVertical: 8,
+    minHeight: 44,
+    paddingVertical: 10,
+    paddingHorizontal: 6,
   },
   sendButton: {
     width: 44,
