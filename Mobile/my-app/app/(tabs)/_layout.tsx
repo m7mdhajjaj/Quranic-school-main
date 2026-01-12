@@ -125,6 +125,12 @@ export default function TabLayout() {
             href: null, // Hide from tabs - accessible from drawer
           }}
         />
+        <Tabs.Screen
+          name="ai-chat"
+          options={{
+            href: null, // Hide from tabs - accessible from drawer
+          }}
+        />
       </Tabs>
     </View>
   );

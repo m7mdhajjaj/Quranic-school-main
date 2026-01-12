@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
   Image,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { router } from "expo-router";
 import { MessageSquare, Search, X, Users } from "lucide-react-native";
 import { useAuth } from "../../../Context/AuthContext";
 import ConversationItem from "@/components/chat/ConversationItem";
@@ -26,7 +26,6 @@ interface Contact {
 
 export default function ChatScreen() {
   const { user } = useAuth();
-  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [view, setView] = useState<"conversations" | "contacts">(
@@ -119,16 +118,13 @@ export default function ChatScreen() {
     // Navigate to chat window
     const targetInfo = getTargetInfo(conv);
     if (targetInfo) {
-      router.push({
-        pathname: "./[chatId]",
-        params: {
-          chatId: conv._id,
-          chatType: targetInfo.chatType,
-          targetId: targetInfo.targetId,
-          targetName: targetInfo.targetName,
-          targetAvatar: targetInfo.targetAvatar || "",
-        },
+      const params = new URLSearchParams({
+        chatType: targetInfo.chatType,
+        targetId: targetInfo.targetId,
+        targetName: targetInfo.targetName,
+        targetAvatar: targetInfo.targetAvatar || "",
       });
+      router.push(`/chat/${conv._id}?${params.toString()}`);
     }
   };
 
@@ -158,16 +154,14 @@ export default function ChatScreen() {
   };
 
   const handleSelectContact = (contact: any) => {
-    router.push({
-      pathname: "./[chatId]",
-      params: {
-        chatId: `new-${contact._id}`,
-        chatType: "DM",
-        targetId: contact._id,
-        targetName: `${contact.firstName} ${contact.lastName}`,
-        targetAvatar: contact.avatar?.url || "",
-      },
+    const chatId = `new-${contact._id}`;
+    const params = new URLSearchParams({
+      chatType: "DM",
+      targetId: contact._id,
+      targetName: `${contact.firstName} ${contact.lastName}`,
+      targetAvatar: contact.avatar?.url || "",
     });
+    router.push(`/chat/${chatId}?${params.toString()}`);
   };
 
   if (loading) {
