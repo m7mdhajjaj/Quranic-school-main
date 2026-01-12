@@ -1,4 +1,4 @@
-import api from './api';
+import api from "./api";
 
 // ============================================================================
 // TIMETABLE API (NEW CRUD SYSTEM)
@@ -7,7 +7,7 @@ import api from './api';
 // ⚠️ التعارض يعتمد على التاريخ المحدد (sessionDate) وليس اليوم
 // مثال: 12 يناير (اثنين) ≠ 19 يناير (اثنين) - لا تعارض بينهما
 
-const BASE_URL = '/timetable';
+const BASE_URL = "/timetable";
 
 // ============================================================================
 // INTERFACES
@@ -43,7 +43,7 @@ export interface Timetable {
   teacherId?: string | Teacher;
   sectionId?: string | Section;
   sessionDate: string; // ⚠️ التاريخ المحدد (مطلوب!)
-  sessionType?: 'hifz' | 'murajaah' | 'both';
+  sessionType?: "hifz" | "murajaah" | "both";
   isRecurring?: boolean;
   sectionInfo?: {
     memorizationSection?: string;
@@ -69,7 +69,7 @@ export interface AvailableHoursResponse {
   success: boolean;
   data: {
     isSummerTime: boolean;
-    season: 'summer' | 'winter';
+    season: "summer" | "winter";
     seasonAr: string;
     range: string;
     hours: string[];
@@ -81,9 +81,9 @@ export interface TeacherAvailableHoursResponse {
   success: boolean;
   data: {
     teacherId: string;
-    date: string;        // "12 يناير 2026"
-    dateShort: string;   // "12/1/2026"
-    day: string;         // "الاثنين"
+    date: string; // "12 يناير 2026"
+    dateShort: string; // "12/1/2026"
+    day: string; // "الاثنين"
     isSummerTime: boolean;
     allHours: string[];
     bookedHours: string[];
@@ -168,14 +168,16 @@ export const getAvailableHours = async (): Promise<AvailableHoursResponse> => {
  */
 export const getTeacherAvailableHours = async (
   teacherId: string,
-  date: string,           // ⚠️ التاريخ مطلوب! (YYYY-MM-DD)
-  excludeId?: string      // استثناء موعد (للتعديل)
+  date: string, // ⚠️ التاريخ مطلوب! (YYYY-MM-DD)
+  excludeId?: string // استثناء موعد (للتعديل)
 ): Promise<TeacherAvailableHoursResponse> => {
   const params: Record<string, string> = { teacherId, date };
   if (excludeId) {
     params.excludeId = excludeId;
   }
-  const response = await api.get(`${BASE_URL}/available-hours/teacher`, { params });
+  const response = await api.get(`${BASE_URL}/available-hours/teacher`, {
+    params,
+  });
   return response.data;
 };
 
@@ -185,10 +187,10 @@ export const getTeacherAvailableHours = async (
  */
 export const checkConflict = async (data: {
   teacherId: string;
-  sessionDate: string;    // ⚠️ التاريخ مطلوب!
+  sessionDate: string; // ⚠️ التاريخ مطلوب!
   startHour: string;
   endHour: string;
-  excludeId?: string;     // استثناء موعد (للتعديل)
+  excludeId?: string; // استثناء موعد (للتعديل)
 }): Promise<CheckConflictResponse> => {
   const response = await api.post(`${BASE_URL}/check-conflict`, data);
   return response.data;
@@ -201,9 +203,9 @@ export const checkConflict = async (data: {
 export interface GetTimetablesParams {
   teacherId?: string;
   groupId?: string;
-  date?: string;          // تاريخ محدد
-  startDate?: string;     // نطاق من
-  endDate?: string;       // نطاق إلى
+  date?: string; // تاريخ محدد
+  startDate?: string; // نطاق من
+  endDate?: string; // نطاق إلى
   sectionId?: string;
 }
 
@@ -220,7 +222,9 @@ export const getTimetables = async (
 /**
  * جلب موعد محدد
  */
-export const getTimetableById = async (id: string): Promise<{ success: boolean; data: Timetable }> => {
+export const getTimetableById = async (
+  id: string
+): Promise<{ success: boolean; data: Timetable }> => {
   const response = await api.get(`${BASE_URL}/${id}`);
   return response.data;
 };
@@ -253,7 +257,28 @@ export const getTeacherTimetables = async (
   teacherId: string,
   params?: { startDate?: string; endDate?: string }
 ): Promise<GetTimetablesResponse> => {
-  const response = await api.get(`${BASE_URL}/teacher/${teacherId}`, { params });
+  const response = await api.get(`${BASE_URL}/teacher/${teacherId}`, {
+    params,
+  });
+  return response.data;
+};
+
+/**
+ * جلب المواعيد الشهرية
+ * يجلب جميع المواعيد لشهر معين
+ */
+export const getMonthlyPlan = async (
+  month: number,
+  year: number
+): Promise<GetTimetablesResponse> => {
+  // حساب أول وآخر يوم في الشهر
+  const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
+  const lastDay = new Date(year, month, 0).getDate();
+  const endDate = `${year}-${String(month).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+
+  const response = await api.get(BASE_URL, {
+    params: { startDate, endDate },
+  });
   return response.data;
 };
 
@@ -262,7 +287,7 @@ export const getTeacherTimetables = async (
 // ============================================================================
 
 export interface CreateTimetableData {
-  sessionDate: string;    // ⚠️ مطلوب!
+  sessionDate: string; // ⚠️ مطلوب!
   startHour: string;
   endHour: string;
   teacherId: string;
@@ -270,7 +295,7 @@ export interface CreateTimetableData {
   sectionId?: string;
   note?: string;
   description?: string;
-  sessionType?: 'hifz' | 'murajaah' | 'both';
+  sessionType?: "hifz" | "murajaah" | "both";
 }
 
 /**
@@ -287,7 +312,7 @@ export const createTimetable = async (
     if (error.response?.status === 409) {
       throw {
         isConflict: true,
-        ...error.response.data
+        ...error.response.data,
       };
     }
     throw error;
@@ -304,7 +329,7 @@ export const createTimetableForSection = async (
     startHour: string;
     endHour: string;
     teacherId?: string;
-    sessionType?: 'hifz' | 'murajaah' | 'both';
+    sessionType?: "hifz" | "murajaah" | "both";
   }
 ): Promise<CreateTimetableResponse> => {
   try {
@@ -314,7 +339,7 @@ export const createTimetableForSection = async (
     if (error.response?.status === 409) {
       throw {
         isConflict: true,
-        ...error.response.data
+        ...error.response.data,
       };
     }
     throw error;
@@ -339,7 +364,7 @@ export const updateTimetable = async (
     if (error.response?.status === 409) {
       throw {
         isConflict: true,
-        ...error.response.data
+        ...error.response.data,
       };
     }
     throw error;
@@ -360,7 +385,7 @@ export const updateTimetableTime = async (
     if (error.response?.status === 409) {
       throw {
         isConflict: true,
-        ...error.response.data
+        ...error.response.data,
       };
     }
     throw error;
@@ -374,7 +399,9 @@ export const linkTimetableToSection = async (
   timetableId: string,
   sectionId: string
 ): Promise<{ success: boolean; message: string }> => {
-  const response = await api.post(`${BASE_URL}/${timetableId}/link/${sectionId}`);
+  const response = await api.post(
+    `${BASE_URL}/${timetableId}/link/${sectionId}`
+  );
   return response.data;
 };
 
@@ -385,7 +412,9 @@ export const linkTimetableToSection = async (
 /**
  * حذف موعد
  */
-export const deleteTimetable = async (id: string): Promise<{ success: boolean; message: string }> => {
+export const deleteTimetable = async (
+  id: string
+): Promise<{ success: boolean; message: string }> => {
   const response = await api.delete(`${BASE_URL}/${id}`);
   return response.data;
 };
@@ -399,4 +428,3 @@ export const unlinkTimetableFromSection = async (
   const response = await api.delete(`${BASE_URL}/${id}/unlink`);
   return response.data;
 };
-
