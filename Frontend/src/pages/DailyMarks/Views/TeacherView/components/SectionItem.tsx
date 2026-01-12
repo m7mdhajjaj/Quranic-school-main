@@ -107,7 +107,7 @@ const SectionItemComponent = ({
         {/* Dropdown Menu */}
         {onEditSection && (
           <div 
-            className="absolute top-4 left-4 z-10"
+            className="absolute top-4 left-4 z-[30]"
             onClick={(e) => e.stopPropagation()}
           >
             <DropdownMenu

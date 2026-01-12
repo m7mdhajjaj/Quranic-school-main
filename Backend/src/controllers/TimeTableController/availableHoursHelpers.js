@@ -12,41 +12,56 @@ const {
 const { hasTimeConflict, checkSessionConflict } = require("./Helper/conflictChecker");
 
 /**
- * جلب الأوقات المحجوزة للمعلم في يوم معين
+ * جلب الأوقات المحجوزة للمعلم في يوم معين (يدعم التواريخ المحددة)
  * @param {String} teacherId - معرف المعلم
- * @param {String} day - اليوم
+ * @param {String} day - اليوم (نصي: الأحد، الاثنين...)
  * @param {String} excludeSessionId - معرف الجلسة المستثناة
+ * @param {Date} dateToCheck - التاريخ المحدد للفحص (اختياري)
  * @returns {Promise<Object>} - كائن يحتوي على الأوقات المتاحة والمحجوزة
  */
-const getBookedHoursForTeacher = async (teacherId, day, excludeSessionId = null) => {
+const getBookedHoursForTeacher = async (teacherId, day, excludeSessionId = null, dateToCheck = null) => {
   try {
-    console.log(`🔍 [getBookedHoursForTeacher] البحث عن جلسات المعلم ${teacherId} في يوم ${day}`);
+    console.log(`🔍 [getBookedHoursForTeacher] البحث عن جلسات المعلم ${teacherId} في يوم ${day} (تاريخ: ${dateToCheck})`);
     
-    // جلب جميع الجلسات المحجوزة للمعلم في هذا اليوم
+    // بناء استعلام ذكي
     const query = {
       teacherId,
-      day,
+      day, // يجب أن يتطابق اليوم الأسبوعي دائماً
     };
+
+    if (dateToCheck) {
+      // ✅ المنطق الجديد:
+      // الجلسة محجوزة إذا كانت:
+      // 1. جلسة متكررة (isRecurring: true)
+      // 2. أو جلسة محددة بهذا التاريخ بالضبط (date == dateToCheck)
+      // 3. (مهم) الجلسات المحددة بتواريخ *أخرى* (مثل 12/11) لا يجب أن تحجز يوم (19/11)
+      
+      const targetDate = new Date(dateToCheck);
+      // ضبط الوقت للصفر للمقارنة
+      targetDate.setHours(0,0,0,0);
+      const nextDay = new Date(targetDate);
+      nextDay.setDate(nextDay.getDate() + 1);
+
+      query.$or = [
+        { isRecurring: true }, // الجلسات الدائمة تحجز في كل الأيام
+        { isRecurring: { $ne: true }, date: { $gte: targetDate, $lt: nextDay } } // الجلسة المحددة لهذا اليوم فقط
+      ];
+    } else {
+      // إذا لم يتم تحديد تاريخ، نفترض أننا نبحث بشكل عام
+      // في هذه الحالة، نعرض الجلسات المتكررة فقط كقاعدة عامة للشبكة الأسبوعية?
+      // أو نعرض كل شيء؟ الأفضل عرض المتكرر فقط لأن جلسات التواريخ هي استثناءات
+      // لكن حالياً سنبقيها بسيطة
+    }
     
     // استثناء الجلسة الحالية عند التعديل
     if (excludeSessionId) {
       query._id = { $ne: excludeSessionId };
-      console.log(`   ⚠️ استثناء الجلسة: ${excludeSessionId}`);
     }
     
     const bookedSessions = await TimeTable.find(query).lean();
-    console.log(`   📋 عدد الجلسات المحجوزة: ${bookedSessions.length}`);
-    
-    if (bookedSessions.length > 0) {
-      console.log(`   📝 تفاصيل الجلسات المحجوزة:`);
-      bookedSessions.forEach((s, idx) => {
-        console.log(`      ${idx + 1}. ${s.note}: ${s.startHour} - ${s.endHour}`);
-      });
-    }
     
     // جلب جميع الأوقات المتاحة
     const allHours = generateAllAvailableHours();
-    console.log(`   ⏰ إجمالي الأوقات في اليوم: ${allHours.length}`);
     
     // تحديد الأوقات المحجوزة
     const bookedHours = [];
@@ -62,11 +77,6 @@ const getBookedHoursForTeacher = async (teacherId, day, excludeSessionId = null)
       }
     }
     
-    console.log(`   🚫 الأوقات المحجوزة: ${bookedHours.length}`);
-    if (bookedHours.length > 0) {
-      console.log(`   📍 الأوقات المحجوزة بالتفصيل:`, bookedHours);
-    }
-    
     const result = {
       allHours,
       bookedHours,
@@ -76,8 +86,6 @@ const getBookedHoursForTeacher = async (teacherId, day, excludeSessionId = null)
       bookedSlots: bookedHours.length,
       availableSlots: allHours.length - bookedHours.length,
     };
-    
-    console.log(`   ✅ النتيجة النهائية: ${result.availableSlots} متاحة من ${result.totalSlots}`);
     
     return result;
   } catch (error) {

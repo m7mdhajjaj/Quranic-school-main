@@ -10,10 +10,12 @@ const { deleteTimetable } = require("./deleteTimetable");
 const { getAvailableHours } = require("./getAvailableHours");
 const { getAvailableHoursForTeacher } = require("./getAvailableHoursForTeacher");
 const { getGroupTimetable, getGroupTimetableByName } = require("./getGroupTimetable");
+const { getMonthlyPlan } = require("./getMonthlyPlan");
 
 module.exports = {
   // Read operations
   getAllTimetables,
+  getMonthlyPlan,
   getSessions: getAllTimetables, // backward compatibility
   getAvailableHours, // إرجاع الأوقات المتاحة (عامة)
   getAvailableHoursForTeacher, // إرجاع الأوقات المتاحة للمعلم في يوم معين

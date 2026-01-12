@@ -25,6 +25,19 @@ export interface Session {
   sessionType?: 'hifz' | 'murajaah' | 'both'; // حفظ، مراجعة، أو الاثنين
   createdAt?: string;
   updatedAt?: string;
+  // خصائص إضافية للخطة الشهرية
+  date?: string; // التاريخ المحدد للحصة (للتقويم الشهري)
+  originalId?: string; // معرف الحصة الأصلية في حال التكرار
+}
+
+export interface MonthlyPlanResponse {
+  success: boolean;
+  data: Session[];
+  meta: {
+    total: number;
+    month: string;
+    year: string;
+  };
 }
 
 export interface AvailableHoursResponse {
@@ -104,6 +117,12 @@ export const getAvailableHoursForTeacher = async (
 // Get all sessions - Backend filters by user role
 export const getAllSessions = async (): Promise<GetSessionsResponse | Session[]> => {
   const response = await api.get('/sessions');
+  return response.data;
+};
+
+// Get monthly plan - جلب الخطة الشهرية
+export const getMonthlyPlan = async (month: number, year: number): Promise<MonthlyPlanResponse> => {
+  const response = await api.get('/sessions/monthly', { params: { month, year } });
   return response.data;
 };
 

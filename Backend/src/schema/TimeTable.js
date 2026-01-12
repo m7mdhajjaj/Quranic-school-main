@@ -149,6 +149,18 @@ const TimeTableSchema = new mongoose.Schema(
 
     note: { type: String },
 
+    // ✅ الحقول الجديدة لدعم الحجز بتاريخ محدد
+    date: { 
+      type: Date, 
+      required: false,
+      index: true 
+    },
+    
+    isRecurring: {
+      type: Boolean,
+      default: true // القيمة الافتراضية true للحفاظ على النظام القديم (تكرار أسبوعي)
+    },
+
     description: {
       type: String,
       default: "",

@@ -10,9 +10,9 @@ const { isSummerTime } = require("./Helper/timeHelpers");
  */
 exports.getAvailableHoursForTeacher = async (req, res) => {
   try {
-    const { teacherId, day, excludeSessionId } = req.query;
+    const { teacherId, day, excludeSessionId, date } = req.query; // استلام التاريخ المحدد (date)
     
-    console.log('🔍 جلب الأوقات المتاحة للمعلم:', { teacherId, day, excludeSessionId });
+    console.log('🔍 جلب الأوقات المتاحة للمعلم:', { teacherId, day, excludeSessionId, date });
     
     if (!teacherId || !day) {
       return res.status(400).json({
@@ -22,7 +22,8 @@ exports.getAvailableHoursForTeacher = async (req, res) => {
       });
     }
     
-    const result = await getBookedHoursForTeacher(teacherId, day, excludeSessionId);
+    // تمرير التاريخ للوظيفة المساعدة
+    const result = await getBookedHoursForTeacher(teacherId, day, excludeSessionId, date);
     const summer = isSummerTime();
     
     console.log(`✅ نتائج المعلم في ${day}:`);

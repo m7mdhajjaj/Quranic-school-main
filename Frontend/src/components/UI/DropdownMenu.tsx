@@ -28,36 +28,51 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = memo(({
   const [isOpen, setIsOpen] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
   const triggerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const calculatePosition = useCallback(() => {
     if (!triggerRef.current) return;
     
+    // استخدام getBoundingClientRect يضمن الحصول على إحداثيات بالنسبة للـ Viewport
     const rect = triggerRef.current.getBoundingClientRect();
     
-    // استخدام fixed positioning لتجنب مشاكل overflow و z-index في الحاويات الأب
-    // الحساب يكون بالنسبة للـ Viewport
+    // بما أننا نستخدم position: fixed في الـ Portal، لا نحتاج لإضافة scrollX/Y
     
     let top = rect.bottom + 5; 
     let left = rect.left;
 
-    // محاذاة لليمين
+    // تعديل المحاذاة والاتجاه
     if (position === 'right' || position === 'bottom-right') {
-       left = rect.right - 192; // 192px = w-48 (12rem)
+       // محاذاة للجهة اليمنى (للغات LTR) أو اليسرى (RTL context if flipped?)
+       // ببساطة: نجعل الحافة اليمنى للقائمة مع الحافة اليمنى للزر
+       left = rect.right - 192; // 192px هو العرض الافتراضي w-48
     } else {
        // محاذاة لليسار
        left = rect.left;
     }
+
+    // تصحيح الخروج عن الشاشة عمودياً
+    if (top + 150 > window.innerHeight) {
+        // إذا كانت القائمة ستخرج من أسفل الشاشة، اقلبها للأعلى
+        top = rect.top - 5 - (items.length * 40 + 10); // تقدير الارتفاع
+    }
     
+    // تصحيح الخروج عن الشاشة أفقياً
+    if (left < 10) left = 10;
+    if (left + 192 > window.innerWidth) left = window.innerWidth - 202;
+
     setCoords({ top, left });
-  }, [position]);
+  }, [position, items.length]);
 
   const toggleMenu = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
-    if (!isOpen) {
+    
+    if (isOpen) {
+        setIsOpen(false);
+    } else {
         calculatePosition();
         setIsOpen(true);
-    } else {
-        setIsOpen(false);
     }
   }, [isOpen, calculatePosition]);
 
@@ -70,16 +85,23 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = memo(({
     setIsOpen(false);
     onClick();
   }, []);
-  
-  // إغلاق القائمة عند التمرير لتجنب انفصال القائمة عن الزر
+
+  // إغلاق القائمة عند التمرير أو تغيير الحجم أو الضغط على Escape
   useEffect(() => {
       if (isOpen) {
-          const onScroll = () => setIsOpen(false);
-          window.addEventListener('scroll', onScroll, true); // true for capture phase to catch scroll in any div
-          window.addEventListener('resize', onScroll);
+          const handleInteract = () => setIsOpen(false);
+          const handleKeyDown = (e: KeyboardEvent) => {
+              if (e.key === 'Escape') setIsOpen(false);
+          };
+          
+          window.addEventListener('scroll', handleInteract, true);
+          window.addEventListener('resize', handleInteract);
+          window.addEventListener('keydown', handleKeyDown);
+          
           return () => {
-              window.removeEventListener('scroll', onScroll, true);
-              window.removeEventListener('resize', onScroll);
+              window.removeEventListener('scroll', handleInteract, true);
+              window.removeEventListener('resize', handleInteract);
+              window.removeEventListener('keydown', handleKeyDown);
           }
       }
   }, [isOpen]);
@@ -98,17 +120,20 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = memo(({
   return (
     <>
       <div 
-        ref={triggerRef} 
-        onClick={toggleMenu} 
+        ref={triggerRef}
+        onClick={toggleMenu}
+        onMouseDown={(e) => e.stopPropagation()}
         className={trigger ? "cursor-pointer" : "inline-block"}
+        aria-haspopup="true"
+        aria-expanded={isOpen ? "true" : "false"}
       >
         {trigger ? (
           trigger
         ) : (
           <button
             type="button"
-            className={`bg-white/90 backdrop-blur-sm p-1.5 rounded-full shadow-sm hover:bg-white transition-all duration-200 hover:scale-105 ${buttonClassName}`}
-            title="المزيد"
+            className={`bg-white/90 backdrop-blur-sm p-1.5 rounded-full shadow-sm hover:bg-white transition-all duration-200 hover:scale-105 active:scale-95 ${buttonClassName}`}
+            title="خيارات"
           >
             <MoreVertical size={16} />
           </button>
@@ -117,35 +142,47 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = memo(({
 
       {isOpen && createPortal(
         <>
-          {/* Overlay شفاف للإغلاق عند النقر خارج القائمة */}
+          {/* Overlay - Z-index عالي جداً */}
           <div
-            className="fixed inset-0 z-[9998]"
+            className="fixed inset-0 z-[99999]"
             onClick={(e) => {
                 e.stopPropagation();
                 closeMenu();
             }}
+            onMouseDown={(e) => e.stopPropagation()}
+            onScroll={(e) => e.stopPropagation()}
+            aria-hidden="true"
           />
 
-          {/* القائمة المنسدلة - تستخدم Portal لتظهر فوق كل العناصر */}
+          {/* Menu Content - Z-index أعلى من الـ Overlay */}
           <div
-            className={`dropdown-menu-fixed bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden z-[9999] animate-fadeIn w-48 ${menuClassName}`}
-            data-coords-top={coords.top}
-            data-coords-left={coords.left}
+            ref={menuRef}
+            className={`fixed bg-white rounded-lg shadow-2xl border border-gray-200 overflow-hidden z-[100000] animate-fadeIn w-48 ${menuClassName}`}
+            style={{
+                top: coords.top,
+                left: coords.left,
+                minWidth: '12rem',
+            }}
+            role="menu"
             dir="rtl"
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
           >
-            {items.map((item, index) => (
-              <button
-                key={`${item.label}-${index}`}
-                onClick={(e) => handleItemClick(e, item.onClick)}
-                className={`w-full px-3 py-2 text-right flex items-center gap-2 transition-colors text-sm ${
-                  index > 0 ? 'border-t border-gray-100' : ''
-                } ${getVariantStyles(item.variant)} ${item.className || ''}`}
-                tabIndex={0}
-              >
-                {item.icon && <span className="flex-shrink-0">{item.icon}</span>}
-                <span className="font-medium">{item.label}</span>
-              </button>
-            ))}
+            <div className="py-1">
+                {items.map((item, index) => (
+                <button
+                    key={`${item.label}-${index}`}
+                    onClick={(e) => handleItemClick(e, item.onClick)}
+                    className={`w-full px-4 py-2 text-right flex items-center gap-3 transition-colors text-sm font-medium ${
+                        index > 0 ? 'border-t border-gray-50' : ''
+                    } ${getVariantStyles(item.variant)} ${item.className || ''}`}
+                    role="menuitem"
+                >
+                    {item.icon && <span className="flex-shrink-0 opacity-80">{item.icon}</span>}
+                    <span>{item.label}</span>
+                </button>
+                ))}
+            </div>
           </div>
         </>,
         document.body

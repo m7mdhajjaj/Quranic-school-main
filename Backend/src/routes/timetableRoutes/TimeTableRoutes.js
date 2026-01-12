@@ -23,6 +23,9 @@ router.get("/group/name/:groupName", protect, timetableController.getGroupTimeta
 // Get all timetables - مع المصادقة لفلترة البيانات حسب المستخدم
 router.get("/", protect, timetableController.getAllTimetables);
 
+// Get monthly plan - توليد خطة شهرية
+router.get("/monthly", protect, timetableController.getMonthlyPlan);
+
 // Create new timetable - يحتاج مصادقة لفحص تعارب حلقات المعلم
 router.post("/", protect, validateTimetableData, timetableController.createTimetable);
 
