@@ -54,6 +54,41 @@ exports.updateTimetable = async (req, res) => {
         updateData[field] = data[field];
       }
     }
+    
+    // ✅ 3.5. تحديث sessionType تلقائياً من Section إذا كان sectionId موجود ولم يُحدد sessionType
+    if (timetable.sectionId && !data.sessionType) {
+      const section = await Section.findById(timetable.sectionId);
+      if (section) {
+        const hasMemorization = !!(
+          section.memorizationSection || 
+          (section.memorizationMeta && section.memorizationMeta.length > 0)
+        );
+        const hasReview = !!(
+          section.reviewSection || 
+          (section.reviewMeta && section.reviewMeta.length > 0)
+        );
+        
+        let autoSessionType;
+        if (hasMemorization && hasReview) {
+          autoSessionType = 'both';
+        } else if (hasMemorization) {
+          autoSessionType = 'hifz';
+        } else if (hasReview) {
+          autoSessionType = 'murajaah';
+        }
+        
+        if (autoSessionType && autoSessionType !== timetable.sessionType) {
+          updateData.sessionType = autoSessionType;
+          console.log('📚 Auto-updating sessionType from section:', {
+            timetableId: id,
+            sectionId: timetable.sectionId,
+            hasMemorization,
+            hasReview,
+            sessionType: autoSessionType
+          });
+        }
+      }
+    }
 
     // ✅ 4. تحديث groupId إذا تغير note
     if (data.note && data.note !== timetable.note) {

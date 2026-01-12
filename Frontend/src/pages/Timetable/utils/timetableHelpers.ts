@@ -82,13 +82,14 @@ export const getDayNameFromDate = (dateStr: string): ArabicDay => {
 
 /**
  * تنسيق التاريخ للإرسال للـ API
- * @param date - كائن Date
+ * @param date - كائن Date أو string (ISO/YYYY-MM-DD)
  * @returns YYYY-MM-DD
  */
-export const formatDateForAPI = (date: Date): string => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
+export const formatDateForAPI = (date: Date | string): string => {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  const year = dateObj.getFullYear();
+  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+  const day = String(dateObj.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 };
 

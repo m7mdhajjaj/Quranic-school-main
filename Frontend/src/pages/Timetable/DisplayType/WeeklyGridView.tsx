@@ -54,8 +54,19 @@ const SessionCard: React.FC<{
       <div>
         {/* اسم الحلقة */}
         <div className="flex items-start justify-between mb-2 sm:mb-3 md:mb-4">
-          <div className={`font-bold text-gray-800 line-clamp-2 leading-tight ${compact ? 'text-xs sm:text-sm md:text-base' : 'text-sm sm:text-base md:text-lg'}`} title={session.note}>
-            {session.groupName || session.note || "حلقة"}
+          <div>
+            <div className={`font-bold text-gray-800 line-clamp-2 leading-tight ${compact ? 'text-xs sm:text-sm md:text-base' : 'text-sm sm:text-base md:text-lg'}`} title={session.note}>
+              {session.groupName || session.note || "حلقة"}
+            </div>
+            {/* اسم المعلم */}
+            {session.teacherId && typeof session.teacherId === 'object' && (
+              <div className="flex items-center gap-1 mt-1">
+                <span className="text-[9px] sm:text-[10px] text-gray-500">👨‍🏫</span>
+                <span className="text-[9px] sm:text-[10px] text-gray-600 font-medium">
+                  {session.teacherId.firstName} {session.teacherId.lastName}
+                </span>
+              </div>
+            )}
           </div>
           <div className={`w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full mt-1 sm:mt-1.5 ${dotClass}`} />
         </div>
@@ -63,7 +74,8 @@ const SessionCard: React.FC<{
         {/* معلومات المقطع */}
         {session.sectionDetails && (
           <div className="mb-2 sm:mb-3 space-y-1 sm:space-y-1.5">
-            {session.sectionDetails.memorizationSection && (
+            {/* عرض مقطع الحفظ فقط إذا كان نوع الحصة hifz أو both */}
+            {session.sectionDetails.memorizationSection && (session.sessionType === 'hifz' || session.sessionType === 'both') && (
               <div className="text-[10px] sm:text-xs flex items-center gap-1 sm:gap-1.5 bg-blue-50 text-blue-700 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md border border-blue-100">
                 <span className="text-xs sm:text-sm">📖</span>
                 <span className="font-medium">حفظ:</span>
@@ -72,7 +84,8 @@ const SessionCard: React.FC<{
                 </span>
               </div>
             )}
-            {session.sectionDetails.reviewSection && (
+            {/* عرض مقطع المراجعة فقط إذا كان نوع الحصة murajaah أو both */}
+            {session.sectionDetails.reviewSection && (session.sessionType === 'murajaah' || session.sessionType === 'both') && (
               <div className="text-[10px] sm:text-xs flex items-center gap-1 sm:gap-1.5 bg-amber-50 text-amber-700 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md border border-amber-100">
                 <span className="text-xs sm:text-sm">🔄</span>
                 <span className="font-medium">مراجعة:</span>

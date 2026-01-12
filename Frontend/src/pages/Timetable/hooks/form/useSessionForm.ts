@@ -13,7 +13,6 @@ import { useSearchParams } from "react-router-dom";
 interface UseSessionFormProps {
   editingSession: Session | null;
   role: UserRole;
-  teacherGroups?: string[];
   initialSectionId?: string;
   initialGroupName?: string;
 }
@@ -21,7 +20,6 @@ interface UseSessionFormProps {
 export const useSessionForm = ({ 
   editingSession, 
   role, 
-  teacherGroups = [], 
   initialSectionId, 
   initialGroupName 
 }: UseSessionFormProps) => {
@@ -98,29 +96,50 @@ export const useSessionForm = ({
   }, [formData.teacherId, formData.sessionDate, editingSession?._id]);
   
   // ============================================
-  // 📅 Auto-fill Date from Section
+  // 📅 Auto-fill Date and SessionType from Section
   // ============================================
   useEffect(() => {
     if (initialSectionId && !editingSession) {
       const fetchSectionDetails = async () => {
         try {
           const section = await getSectionById(initialSectionId);
-          if (section?.date) {
-            const dateObj = new Date(section.date);
-            const sessionDate = formatDateForAPI(dateObj);
+          if (section) {
+            const updates: Partial<SessionFormData> = {};
             
-            console.log('📅 Section Date Auto-fill:', {
+            // تحديد التاريخ
+            if (section.date) {
+              const dateObj = new Date(section.date);
+              const sessionDate = formatDateForAPI(dateObj);
+              updates.sessionDate = sessionDate;
+            }
+            
+            // تحديد نوع الحصة تلقائياً بناءً على المقاطع الموجودة
+            const hasMemorization = !!(section.memorizationSection || section.memorizationMeta?.length);
+            const hasReview = !!(section.reviewSection || section.reviewMeta?.length);
+            
+            if (hasMemorization && hasReview) {
+              updates.sessionType = 'both'; // كلاهما
+            } else if (hasMemorization) {
+              updates.sessionType = 'hifz'; // حفظ فقط
+            } else if (hasReview) {
+              updates.sessionType = 'murajaah'; // مراجعة فقط
+            }
+            
+            console.log('📅 Section Auto-fill:', {
               originalDate: section.date,
-              formattedDate: sessionDate,
+              formattedDate: updates.sessionDate,
+              hasMemorization,
+              hasReview,
+              sessionType: updates.sessionType,
             });
             
             setFormData(prev => ({
               ...prev,
-              sessionDate: sessionDate,
+              ...updates,
             }));
           }
         } catch (error) {
-          console.error("Failed to auto-fill date from section:", error);
+          console.error("Failed to auto-fill from section:", error);
         }
       };
       fetchSectionDetails();
@@ -200,7 +219,7 @@ export const useSessionForm = ({
       }
 
       setFormData({
-        sessionDate: editingSession.sessionDate || getTodayDate(),
+        sessionDate: editingSession.sessionDate ? formatDateForAPI(editingSession.sessionDate) : getTodayDate(),
         startHour: editingSession.startHour,
         endHour: editingSession.endHour,
         note: editingSession.note || "",
@@ -210,12 +229,6 @@ export const useSessionForm = ({
         groupId: groupIdValue, // ✅ هنا كان الخلل، الآن نستخرجه بشكل صحيح
         sectionId: editingSession.sectionId || "",
       });
-      
-      // إذا كان هناك مجموعة مختارة، تحديث الاسم في note
-      if (editingSession.teacherGroups && editingSession.teacherGroups.length > 0) {
-          // يمكن تفعيل هذا إذا كنا بحاجة لتعيين القيمة في واجهة المستخدم
-          // setSelectedGroup(editingSession.teacherGroups[0].name);
-      }
       
       if (role === "teacher" && editingSession.note) {
         setSelectedGroup(editingSession.note);
@@ -237,12 +250,56 @@ export const useSessionForm = ({
         groupId: "",
         sectionId: initialSectionId || "",
       }));
-      
-      if (role === "teacher" && teacherGroups.length > 0) {
-        setSelectedGroup(teacherGroups[0]);
-      }
     }
-  }, [editingSession, role, initialSectionId, initialGroupName, searchParams, teacherGroups]);
+  }, [editingSession, role, initialSectionId, initialGroupName, searchParams]);
+
+  // ============================================
+  // 🔄 تحديث sessionType عند تغيير sectionId يدوياً
+  // ============================================
+  useEffect(() => {
+    // تجنب التنفيذ عند التحميل الأولي أو عند تحرير موعد موجود
+    // أو إذا كان sectionId هو نفس initialSectionId (تم التعامل معه في useEffect السابق)
+    if (!formData.sectionId || editingSession || formData.sectionId === initialSectionId) return;
+    
+    const updateSessionTypeFromSection = async () => {
+      try {
+        const section = await getSectionById(formData.sectionId);
+        if (section) {
+          const hasMemorization = !!(section.memorizationSection || section.memorizationMeta?.length);
+          const hasReview = !!(section.reviewSection || section.reviewMeta?.length);
+          
+          let autoSessionType: 'hifz' | 'murajaah' | 'both' | undefined;
+          
+          if (hasMemorization && hasReview) {
+            autoSessionType = 'both';
+          } else if (hasMemorization) {
+            autoSessionType = 'hifz';
+          } else if (hasReview) {
+            autoSessionType = 'murajaah';
+          }
+          
+          // تحديث sessionType فقط إذا كان مختلفاً
+          if (autoSessionType && autoSessionType !== formData.sessionType) {
+            console.log('🔄 Auto-updating sessionType from section:', {
+              sectionId: formData.sectionId,
+              hasMemorization,
+              hasReview,
+              sessionType: autoSessionType,
+            });
+            
+            setFormData(prev => ({
+              ...prev,
+              sessionType: autoSessionType,
+            }));
+          }
+        }
+      } catch (error) {
+        console.error("Failed to update sessionType from section:", error);
+      }
+    };
+    
+    updateSessionTypeFromSection();
+  }, [formData.sectionId, editingSession, initialSectionId]); // الاعتماديات الضرورية فقط
 
   // دالة لإعادة تعيين النموذج (reset) - with useCallback
   const resetForm = useCallback(() => {

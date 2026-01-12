@@ -81,8 +81,12 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    // ✅ تقليل logging في production
-    if (import.meta.env.DEV) {
+    // ✅ تقليل logging في production و للمحاولات التجريبية في تسجيل الدخول
+    const isLoginAttempt = error.config?.url?.includes('/auth/login');
+    const is401 = error.response?.status === 401;
+    
+    // لا تعرض أخطاء 401 لمحاولات تسجيل الدخول (هذا سلوك متوقع)
+    if (import.meta.env.DEV && !(isLoginAttempt && is401)) {
       console.error('❌ API Error:', {
         url: error.config?.url,
         method: error.config?.method,
@@ -92,7 +96,7 @@ api.interceptors.response.use(
       });
     }
     
-    if (error.response?.status === 401) {
+    if (is401) {
       // Don't auto-redirect on verify endpoints or if already on login
       const isVerifyEndpoint = error.config?.url?.includes('/auth/verify');
       const isOnLogin = window.location.pathname.includes('/login');

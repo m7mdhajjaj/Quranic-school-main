@@ -74,9 +74,10 @@ const VALID_SESSION_TYPES: SessionType[] = ['hifz', 'murajaah', 'both'];
 const TIME_FORMAT_REGEX = /^(1[0-2]|[1-9]):[0-5][0-9]\s?(AM|PM|am|pm)$/i;
 
 /**
- * التحقق من صيغة التاريخ (YYYY-MM-DD)
+ * التحقق من صيغة التاريخ (YYYY-MM-DD أو ISO)
+ * يقبل كلا الصيغتين: 2026-01-12 أو 2026-01-12T00:00:00.000Z
  */
-const DATE_FORMAT_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+const DATE_FORMAT_REGEX = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d{3})?Z)?$/;
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -189,13 +190,15 @@ export const timetableValidationSchema = yup.object({
   sessionDate: yup
     .string()
     .required('التاريخ مطلوب')
-    .matches(DATE_FORMAT_REGEX, 'التاريخ يجب أن يكون بصيغة YYYY-MM-DD (مثل: 2026-01-12)')
+    .matches(DATE_FORMAT_REGEX, 'التاريخ يجب أن يكون بصيغة صحيحة (مثل: 2026-01-12)')
     .test(
       'is-valid-date',
       'التاريخ غير صحيح',
       (value) => {
         if (!value) return false;
-        const date = new Date(value);
+        // استخراج التاريخ من ISO format إذا لزم الأمر
+        const dateStr = value.includes('T') ? value.split('T')[0] : value;
+        const date = new Date(dateStr);
         return !isNaN(date.getTime());
       }
     )

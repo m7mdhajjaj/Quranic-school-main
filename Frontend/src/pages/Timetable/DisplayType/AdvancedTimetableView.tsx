@@ -84,6 +84,15 @@ export const AdvancedTimetableView: React.FC<AdvancedTimetableViewProps> = ({
                         <h4 className="font-bold text-gray-800 text-lg mb-1">
                            {session.groupName || session.note || "حلقة"}
                         </h4>
+                        {/* اسم المعلم */}
+                        {session.teacherId && typeof session.teacherId === 'object' && (
+                          <div className="flex items-center gap-1 mb-2">
+                            <span className="text-xs text-gray-500">👨‍🏫</span>
+                            <span className="text-xs text-gray-600 font-medium">
+                              {session.teacherId.firstName} {session.teacherId.lastName}
+                            </span>
+                          </div>
+                        )}
                         <div className="flex items-center gap-2 text-sm text-gray-500 font-mono bg-gray-50 w-fit px-2 py-1 rounded">
                           <Clock size={16} className="text-emerald-500" />
                           <span dir="ltr">{session.startHour} - {session.endHour}</span>
@@ -103,14 +112,16 @@ export const AdvancedTimetableView: React.FC<AdvancedTimetableViewProps> = ({
                     {/* تفاصيل المقطع */}
                     {(session.sectionDetails || session.sectionInfo) && (
                       <div className="flex flex-wrap gap-2 mt-2">
-                        {(session.sectionDetails?.memorizationSection || session.sectionInfo?.memorizationSection) && (
+                        {/* عرض مقطع الحفظ فقط إذا كان نوع الحصة hifz أو both */}
+                        {(session.sectionDetails?.memorizationSection || session.sectionInfo?.memorizationSection) && (session.sessionType === 'hifz' || session.sessionType === 'both') && (
                           <div className="flex items-center gap-2 text-sm text-blue-800 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100">
                             <span className="text-lg">📖</span>
                             <span className="font-bold">حفظ:</span>
                             <span>{session.sectionDetails?.memorizationSection || session.sectionInfo?.memorizationSection}</span>
                           </div>
                         )}
-                        {(session.sectionDetails?.reviewSection || session.sectionInfo?.reviewSection) && (
+                        {/* عرض مقطع المراجعة فقط إذا كان نوع الحصة murajaah أو both */}
+                        {(session.sectionDetails?.reviewSection || session.sectionInfo?.reviewSection) && (session.sessionType === 'murajaah' || session.sessionType === 'both') && (
                           <div className="flex items-center gap-2 text-sm text-amber-800 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-100">
                             <span className="text-lg">🔄</span>
                             <span className="font-bold">مراجعة:</span>

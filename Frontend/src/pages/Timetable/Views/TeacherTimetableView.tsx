@@ -241,7 +241,6 @@ export const TeacherTimetableView: React.FC<TeacherTimetableViewProps> = ({
         onSubmit={handleSubmit}
         editingSession={editingSession}
         role="teacher"
-        teacherGroups={teacherGroups}
       />
     </div>
   );

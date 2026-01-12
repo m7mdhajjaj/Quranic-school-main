@@ -1,7 +1,6 @@
 import { useSearchParams } from "react-router-dom";
 import { useSessionForm } from "./useSessionForm";
 import { useTeachers } from "../selection/useTeachers";
-import { useTeacherGroups } from "../selection/useTeacherGroups";
 import { useSessionModalLogic } from "./useSessionModalLogic";
 import { useTeacherSelection } from "../selection/useTeacherSelection";
 import { useSessionDuration } from "./useSessionDuration";
@@ -14,7 +13,6 @@ interface UseSessionModalControllerProps {
   onSubmit: (formData: SessionFormData, sessionId?: string) => Promise<boolean>;
   editingSession: Session | null;
   role: UserRole;
-  teacherGroups?: string[];
 }
 
 export const useSessionModalController = ({
@@ -22,8 +20,7 @@ export const useSessionModalController = ({
   onClose,
   onSubmit,
   editingSession,
-  role,
-  teacherGroups = [],
+  role
 }: UseSessionModalControllerProps) => {
   const [searchParams] = useSearchParams();
   const initialSectionId = searchParams.get('sectionId') || undefined;
@@ -41,7 +38,6 @@ export const useSessionModalController = ({
   } = useSessionForm({
     editingSession,
     role,
-    teacherGroups,
     initialSectionId,
     initialGroupName,
   });
@@ -52,15 +48,8 @@ export const useSessionModalController = ({
     enabled: role === "admin",
     onlyWithGroups: true,
   });
-
-  // 3. Teacher Groups Data Fetching
-  const { teacherGroups: teacherGroupsList, loadingGroups } = useTeacherGroups({
-    teacherId: formData.teacherId,
-    isOpen,
-    enabled: role === "admin",
-  });
   
-  // 4. Submission Logic
+  // 3. Submission Logic
   const { loading, handleSubmit, handleClose } = useSessionModalLogic({
     onSubmit,
     editingSession,
@@ -70,20 +59,20 @@ export const useSessionModalController = ({
     formData,
   });
 
-  // 5. Selected Teacher Helper
+  // 4. Selected Teacher Helper
   const { selectedTeacher } = useTeacherSelection({
     teachers,
     teacherId: formData.teacherId,
   });
 
-  // 6. Duration Calculation
+  // 5. Duration Calculation
   const duration = useSessionDuration({
     startHour: formData.startHour,
     endHour: formData.endHour,
     hours,
   });
 
-  // 7. Helper Values
+  // 6. Helper Values
   const selectedDayName = formData.sessionDate ? getDayNameFromDate(formData.sessionDate) : '';
 
   return {
@@ -97,8 +86,6 @@ export const useSessionModalController = ({
     duration,
     teachers,
     loadingTeachers,
-    teacherGroupsList,
-    loadingGroups,
     selectedTeacher,
     loading,
     handleSubmit,

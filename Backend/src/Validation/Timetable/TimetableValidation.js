@@ -369,12 +369,11 @@ const validateIsRecurring = (isRecurring) => {
 
 /**
  * Main validation middleware for timetable data
- * ⚠️ sessionDate مطلوب للإنشاء (أو sectionId لاشتقاقه)
+ * ✅ Unified validation for CREATE and UPDATE operations
+ * ⚠️ sessionDate required for creation (unless sectionId provided)
  */
 const validateTimetableData = async (req, res, next) => {
   try {
-    console.log('🔍 بدء التحقق من بيانات الجدول الزمني...');
-    
     const isUpdate = req.method === 'PUT' || req.method === 'PATCH';
     const rawData = req.body;
     
@@ -384,14 +383,14 @@ const validateTimetableData = async (req, res, next) => {
     const errors = [];
     const validatedData = {};
     
-    // ⚠️ التاريخ مطلوب للإنشاء (إلا إذا كان هناك sectionId)
+    // ⚠️ sessionDate required for creation (unless sectionId provided)
     if (!isUpdate) {
       if (!data.sessionDate && !data.sectionId) {
         errors.push('sessionDate أو sectionId مطلوب - يجب تحديد التاريخ');
       }
     }
     
-    // التحقق من sessionDate إذا موجود
+    // Validate sessionDate if provided
     if (data.sessionDate !== undefined) {
       const sessionDateValidation = validateSessionDate(data.sessionDate);
       if (!sessionDateValidation.isValid) {
@@ -401,7 +400,7 @@ const validateTimetableData = async (req, res, next) => {
       }
     }
     
-    // Validate day (اختياري - يُشتق من التاريخ)
+    // Validate day (optional - derived from date)
     if (data.day !== undefined) {
       const dayValidation = validateDay(data.day);
       if (!dayValidation.isValid) {
@@ -411,6 +410,7 @@ const validateTimetableData = async (req, res, next) => {
       }
     }
     
+    // Validate startHour (required for create, optional for update)
     if (!isUpdate || data.startHour !== undefined) {
       const startHourValidation = validateStartHour(data.startHour);
       if (!startHourValidation.isValid) {
@@ -420,6 +420,7 @@ const validateTimetableData = async (req, res, next) => {
       }
     }
     
+    // Validate endHour (required for create, optional for update)
     if (!isUpdate || data.endHour !== undefined) {
       const endHourValidation = validateEndHour(data.endHour);
       if (!endHourValidation.isValid) {
@@ -469,6 +470,16 @@ const validateTimetableData = async (req, res, next) => {
       }
     }
     
+    // Validate optional groupId field
+    if (data.groupId !== undefined && data.groupId !== null && data.groupId.toString().trim() !== '') {
+      const groupIdStr = data.groupId.toString().trim();
+      if (!/^[a-fA-F0-9]{24}$/.test(groupIdStr)) {
+        errors.push('معرف المجموعة غير صحيح');
+      } else {
+        validatedData.groupId = groupIdStr;
+      }
+    }
+    
     // Validate optional isRecurring field
     if (data.isRecurring !== undefined) {
       const isRecurringValidation = validateIsRecurring(data.isRecurring);
@@ -506,7 +517,6 @@ const validateTimetableData = async (req, res, next) => {
     
     // Check for validation errors
     if (errors.length > 0) {
-      console.log('❌ أخطاء في التحقق من بيانات الجدول الزمني:', errors);
       return res.status(400).json({
         success: false,
         message: 'بيانات الجدول الزمني غير صحيحة',
@@ -516,9 +526,6 @@ const validateTimetableData = async (req, res, next) => {
     
     // Add validated data to request
     req.validatedData = validatedData;
-    
-    console.log('✅ تم التحقق من بيانات الجدول الزمني بنجاح');
-    console.log('ℹ️ ملاحظة: فحص التعارب الزمني يتم في الـ controller');
     next();
     
   } catch (error) {

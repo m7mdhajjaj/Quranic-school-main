@@ -120,6 +120,10 @@ export const useLoginLogic = () => {
     try {
       let response;
       const loginErrors: string[] = [];
+      
+      if (import.meta.env.DEV) {
+        console.log('🔐 Attempting multi-role login for userId:', formData.userId);
+      }
 
       // Try student login first
       try {
@@ -128,6 +132,9 @@ export const useLoginLogic = () => {
           idNumber: formData.password,
           rememberMe: rememberMe,
         });
+        if (import.meta.env.DEV) {
+          console.log('✅ Student login successful');
+        }
       } catch (studentError) {
         const studentMsg = axios.isAxiosError(studentError)
           ? studentError.response?.data?.message
@@ -142,6 +149,9 @@ export const useLoginLogic = () => {
             userType: 'teacher',
             rememberMe: rememberMe,
           });
+          if (import.meta.env.DEV) {
+            console.log('✅ Teacher login successful');
+          }
         } catch (teacherError) {
           const teacherMsg = axios.isAxiosError(teacherError)
             ? teacherError.response?.data?.message
@@ -156,6 +166,9 @@ export const useLoginLogic = () => {
               userType: 'admin',
               rememberMe: rememberMe,
             });
+            if (import.meta.env.DEV) {
+              console.log('✅ Admin login successful');
+            }
           } catch (adminError) {
             const adminMsg = axios.isAxiosError(adminError)
               ? adminError.response?.data?.message

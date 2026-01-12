@@ -48,6 +48,7 @@ exports.createTimetable = async (req, res) => {
     let sessionDate = data.sessionDate ? new Date(data.sessionDate) : null;
     let finalGroupId = groupId;
     let finalNote = note;
+    let finalSessionType = sessionType;
 
     if (sectionId) {
       section = await Section.findById(sectionId)
@@ -64,6 +65,35 @@ exports.createTimetable = async (req, res) => {
       sessionDate = section.date;
       finalGroupId = finalGroupId || section.groupId?._id;
       finalNote = finalNote || section.group;
+      
+      // ✅ تحديد sessionType تلقائياً من المقطع إذا لم يكن محدداً
+      if (!finalSessionType) {
+        const hasMemorization = !!(
+          section.memorizationSection || 
+          (section.memorizationMeta && section.memorizationMeta.length > 0)
+        );
+        const hasReview = !!(
+          section.reviewSection || 
+          (section.reviewMeta && section.reviewMeta.length > 0)
+        );
+        
+        if (hasMemorization && hasReview) {
+          finalSessionType = 'both';
+        } else if (hasMemorization) {
+          finalSessionType = 'hifz';
+        } else if (hasReview) {
+          finalSessionType = 'murajaah';
+        } else {
+          finalSessionType = 'both'; // افتراضي
+        }
+        
+        console.log('📚 Auto-detected sessionType from section:', {
+          sectionId,
+          hasMemorization,
+          hasReview,
+          sessionType: finalSessionType
+        });
+      }
     }
 
     // ✅ 3. التحقق من وجود التاريخ (مطلوب!)
@@ -103,7 +133,7 @@ exports.createTimetable = async (req, res) => {
       groupId: finalGroupId,
       note: finalNote || "",
       description: description || "",
-      sessionType: sessionType || "both",
+      sessionType: finalSessionType || "both", // استخدام القيمة المحددة تلقائياً أو الافتراضية
       sectionId: sectionId || null,
       sessionDate: sessionDate, // ⚠️ التاريخ المحدد
       isRecurring: false // دائماً غير متكرر - كل تاريخ منفصل
