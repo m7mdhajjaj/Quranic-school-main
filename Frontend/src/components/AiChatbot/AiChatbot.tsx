@@ -25,6 +25,27 @@ export const AiChatbot: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // الحصول على دور المستخدم
+  const getUserRole = (): string | null => {
+    try {
+      const user = localStorage.getItem('user');
+      if (user) {
+        const userData = JSON.parse(user);
+        return userData.role;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  };
+
+  const userRole = getUserRole();
+
+  // إخفاء الشات بوت عن الأدمن
+  if (userRole === 'admin') {
+    return null;
+  }
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };

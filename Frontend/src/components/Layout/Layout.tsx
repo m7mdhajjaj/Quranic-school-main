@@ -127,7 +127,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         {showFooter && <Footer />}
       </div>
 
-      {/* Global AI Chatbot */}
+      {/* Global AI Chatbot - للمعلم والطالب فقط */}
       <AiChatbot />
     </div>
   );

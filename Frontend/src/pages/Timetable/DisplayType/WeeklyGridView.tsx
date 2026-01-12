@@ -6,8 +6,7 @@ import React from "react";
 import type { Session, UserRole } from "../types/timetable.types";
 import { WEEK_DAYS, formatDateForAPI } from "../utils";
 import { useWeeklyGrid } from "../hooks";
-import { Edit, Trash2, MoreVertical } from "lucide-react";
-import { DropdownMenu } from "@/components/UI/DropdownMenu";
+import { Edit, Trash2 } from "lucide-react";
 
 // ============================================================================
 // مكونات فرعية
@@ -112,7 +111,7 @@ const SessionCard: React.FC<{
         </div>
       </div>
 
-      <div className="mt-auto pt-2 sm:pt-2.5 md:pt-3 border-t border-gray-100/50 flex items-center justify-between">
+      <div className="mt-auto pt-2 sm:pt-2.5 md:pt-3 border-t border-gray-100/50 flex items-center justify-between gap-2">
         {/* نوع الحصة */}
         {session.sessionType && (
           <span className={`text-[9px] sm:text-[10px] px-1.5 sm:px-2 md:px-2.5 py-0.5 sm:py-1 rounded-full font-bold border flex items-center gap-0.5 sm:gap-1 ${typeClass}`}>
@@ -120,24 +119,28 @@ const SessionCard: React.FC<{
           </span>
         )}
 
-        {/* القائمة المنسدلة - للمعلم فقط */}
+        {/* أزرار الإجراءات - للمعلم فقط */}
         {role === "teacher" && (
           <div 
-            className="relative z-20 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0"
+            className="flex items-center gap-1 sm:gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform scale-95 group-hover:scale-100"
             onClick={(e) => e.stopPropagation()}
           >
-            <DropdownMenu
-              trigger={
-                <button className="bg-white hover:bg-gray-50 text-gray-400 hover:text-gray-600 p-1 sm:p-1.5 rounded-lg shadow-sm border border-gray-200 transition-all flex items-center justify-center" title="خيارات">
-                  <MoreVertical size={14} className="sm:w-4 sm:h-4" />
-                </button>
-              }
-              items={[
-                { label: "تعديل", icon: <Edit size={14} />, onClick: () => onEdit?.(session), className: "text-blue-600 hover:bg-blue-50 font-medium" },
-                { label: "حذف", icon: <Trash2 size={14} />, onClick: () => onDelete?.(session), variant: "danger", className: "font-medium" },
-              ]}
-              position="bottom-left"
-            />
+            <button 
+              onClick={() => onEdit?.(session)}
+              className="flex items-center gap-1 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded-lg shadow-sm transition-all text-[10px] sm:text-xs font-medium"
+              title="تعديل"
+            >
+              <Edit size={12} className="sm:w-3.5 sm:h-3.5" />
+              <span className="hidden sm:inline">تعديل</span>
+            </button>
+            <button 
+              onClick={() => onDelete?.(session)}
+              className="flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded-lg shadow-sm transition-all text-[10px] sm:text-xs font-medium"
+              title="حذف"
+            >
+              <Trash2 size={12} className="sm:w-3.5 sm:h-3.5" />
+              <span className="hidden sm:inline">حذف</span>
+            </button>
           </div>
         )}
       </div>
