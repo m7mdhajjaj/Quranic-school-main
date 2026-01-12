@@ -30,6 +30,7 @@ export const useSessionForm = ({ editingSession, role, teacherGroups = [], initi
   const getInitialSessionType = () => {
     if (editingSession?.sessionType) return editingSession.sessionType;
     const urlSessionType = searchParams.get('sessionType');
+    console.log('🎯 getInitialSessionType:', { urlSessionType, searchParams: searchParams.toString() });
     return urlSessionType as any || undefined;
   };
 
@@ -220,19 +221,23 @@ export const useSessionForm = ({ editingSession, role, teacherGroups = [], initi
       const currentUser = getCurrentUser();
       const defaultTeacherId = role === "teacher" && currentUser?._id ? currentUser._id : "";
       const urlSessionType = searchParams.get('sessionType') as any || undefined;
-      setFormData(prev => ({
-        // الاحتفاظ باليوم المُشتق من تاريخ المقطع إذا كان موجوداً، وإلا استخدام السبت كافتراضي
-        day: prev.day && prev.sectionId ? prev.day : WEEK_DAYS[0],
-        startHour: "", // المستخدم يختار
-        endHour: "",   // المستخدم يختار
-        note: initialGroupName || "",
-        description: "",
-        sessionType: urlSessionType,
-        teacherId: defaultTeacherId, // للمعلم: ID تلقائي، للأدمن: فارغ
-        sectionId: initialSectionId || "",
-        sessionDate: prev.sessionDate || sectionDate,
-        isRecurring: (prev.sessionDate || sectionDate) ? false : undefined,
-      }));
+      console.log('🔄 useEffect Add Mode - urlSessionType:', urlSessionType, 'searchParams:', searchParams.toString());
+      setFormData(prev => {
+        console.log('🔄 setFormData prev:', prev);
+        return {
+          // الاحتفاظ باليوم المُشتق من تاريخ المقطع إذا كان موجوداً، وإلا استخدام السبت كافتراضي
+          day: prev.day && prev.sectionId ? prev.day : WEEK_DAYS[0],
+          startHour: "", // المستخدم يختار
+          endHour: "",   // المستخدم يختار
+          note: initialGroupName || "",
+          description: "",
+          sessionType: urlSessionType,
+          teacherId: defaultTeacherId, // للمعلم: ID تلقائي، للأدمن: فارغ
+          sectionId: initialSectionId || "",
+          sessionDate: prev.sessionDate || sectionDate,
+          isRecurring: (prev.sessionDate || sectionDate) ? false : undefined,
+        };
+      });
       if (role === "teacher" && teacherGroups.length > 0) {
         setSelectedGroup(teacherGroups[0]);
       }

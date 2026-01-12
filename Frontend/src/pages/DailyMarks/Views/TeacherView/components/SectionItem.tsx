@@ -52,11 +52,25 @@ const SectionItemComponent = ({
     const hasMem = hasMemMeta || hasMemLegacy;
     const hasRev = hasRevMeta || hasRevLegacy;
     
+    console.log('🎯 SectionItem - handleAddSchedule:', {
+      hasMemMeta,
+      hasRevMeta,
+      hasMemLegacy,
+      hasRevLegacy,
+      hasMem,
+      hasRev,
+      memorizationSection: section.memorizationSection,
+      reviewSection: section.reviewSection,
+      memorizationMeta: sectionAny.memorizationMeta,
+      reviewMeta: sectionAny.reviewMeta,
+    });
+    
     if (hasMem && !hasRev) {
       sessionType = "hifz";
     } else if (!hasMem && hasRev) {
       sessionType = "murajaah";
     }
+    console.log('🎯 SectionItem - final sessionType:', sessionType);
     navigate(`/timetable?addSession=true&sectionId=${section._id}&groupName=${encodeURIComponent(section.group || "")}&sessionType=${sessionType}`);
   };
 
