@@ -214,7 +214,7 @@ export const WeeklyGridView: React.FC<WeeklyGridViewProps> = ({
                               
                               {/* اسم الحلقة */}
                               <div className="font-bold text-base text-gray-800 mb-2 truncate pl-2" title={session.note}>
-                                {session.note || "حلقة"}
+                                {session.groupName || session.note || "حلقة"}
                               </div>
                               
                               {/* ✅ معلومات المقطع (السورة والقطع) */}
@@ -223,12 +223,14 @@ export const WeeklyGridView: React.FC<WeeklyGridViewProps> = ({
                                   {session.sectionDetails.memorizationSection && (
                                     <div className="text-[10px] flex items-center gap-1 bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded border border-blue-100">
                                       <span>📖</span>
+                                      <span className="font-bold">حفظ:</span>
                                       <span className="truncate">{session.sectionDetails.memorizationSection}</span>
                                     </div>
                                   )}
                                   {session.sectionDetails.reviewSection && (
                                     <div className="text-[10px] flex items-center gap-1 bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded border border-amber-100">
                                       <span>🔄</span>
+                                      <span className="font-bold">مراجعة:</span>
                                       <span className="truncate">{session.sectionDetails.reviewSection}</span>
                                     </div>
                                   )}
@@ -319,7 +321,7 @@ export const WeeklyGridView: React.FC<WeeklyGridViewProps> = ({
                                   {/* اسم الحلقة */}
                                   <div className="flex items-start justify-between mb-4">
                                     <div className="font-bold text-lg text-gray-800 line-clamp-2 leading-tight" title={session.note}>
-                                        {session.note || "حلقة"}
+                                        {session.groupName || session.note || "حلقة"}
                                     </div>
                                     <div className={`w-2 h-2 rounded-full mt-1.5 ${
                                          session.sessionType === 'hifz' ? 'bg-blue-400' : 

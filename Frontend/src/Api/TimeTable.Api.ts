@@ -50,6 +50,12 @@ export interface Timetable {
     reviewSection?: string;
     marksStatus?: string;
   };
+  sectionDetails?: {
+    surahName?: string;
+    memorizationSection?: string;
+    reviewSection?: string;
+    marksStatus?: string;
+  };
   createdAt?: string;
   updatedAt?: string;
 }

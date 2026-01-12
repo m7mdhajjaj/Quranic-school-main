@@ -6,12 +6,14 @@ import {
   Clock, 
   MoreVertical,
   Edit,
+  Trash2,
   RefreshCw
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { WEEK_DAYS } from '../utils';
 import type { Session, UserRole } from '../types/timetable.types';
 import { DropdownMenu } from '@/components/UI/DropdownMenu';
+import { Modal } from '@/components/UI/Modal';
 import { useMonthlyTimetable } from '../hooks/useMonthlyTimetable';
 
 interface AdvancedTimetableViewProps {
@@ -44,8 +46,123 @@ export const AdvancedTimetableView: React.FC<AdvancedTimetableViewProps> = ({
 
   const isLoading = initialLoading || monthlyLoading;
 
+  // State for Day Modal
+  const [selectedDate, setSelectedDate] = React.useState<dayjs.Dayjs | null>(null);
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
+
+  const handleDayClick = (date: dayjs.Dayjs) => {
+    setSelectedDate(date);
+    setIsModalOpen(true);
+  };
+
+  const selectedSessions = selectedDate ? getDailySessions(selectedDate) : [];
+
   return (
     <div className="space-y-6" dir="rtl">
+      {/* Modal عرض تفاصيل اليوم */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={`مواعيد ${selectedDate?.format('dddd DD MMMM YYYY')}`}
+        size="lg"
+      >
+        <div className="space-y-4 max-h-[70vh] overflow-y-auto px-1">
+          {selectedSessions.length > 0 ? (
+            selectedSessions.map((session) => (
+              <div 
+                key={session._id} 
+                className={`
+                  relative border rounded-xl p-4 transition-all hover:shadow-md
+                  ${session.sessionType === 'hifz' ? 'bg-blue-50/30 border-blue-100 hover:border-blue-300' : 
+                    session.sessionType === 'murajaah' ? 'bg-amber-50/30 border-amber-100 hover:border-amber-300' :
+                    'bg-white border-gray-200 hover:border-emerald-300'}
+                `}
+              >
+                <div className="flex flex-col md:flex-row justify-between gap-4">
+                  {/* القسم الأيمن: التفاصيل */}
+                  <div className="flex-1 space-y-3">
+                    {/* العنوان والوقت */}
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h4 className="font-bold text-gray-800 text-lg mb-1">
+                           {session.groupName || session.note || "حلقة"}
+                        </h4>
+                        <div className="flex items-center gap-2 text-sm text-gray-500 font-mono bg-gray-50 w-fit px-2 py-1 rounded">
+                          <Clock size={16} className="text-emerald-500" />
+                          <span dir="ltr">{session.startHour} - {session.endHour}</span>
+                        </div>
+                      </div>
+
+                      {/* نوع الحصة */}
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
+                          session.sessionType === 'hifz' ? 'bg-blue-100 text-blue-700 border-blue-200' : 
+                          session.sessionType === 'murajaah' ? 'bg-amber-100 text-amber-700 border-amber-200' :
+                          'bg-purple-100 text-purple-700 border-purple-200'
+                      }`}>
+                          {session.sessionType === 'hifz' ? 'حفظ' : session.sessionType === 'murajaah' ? 'مراجعة' : 'شامل'}
+                      </span>
+                    </div>
+
+                    {/* تفاصيل المقطع */}
+                    {(session.sectionDetails || session.sectionInfo) && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {(session.sectionDetails?.memorizationSection || session.sectionInfo?.memorizationSection) && (
+                          <div className="flex items-center gap-2 text-sm text-blue-800 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100">
+                            <span className="text-lg">📖</span>
+                            <span className="font-bold">حفظ:</span>
+                            <span>{session.sectionDetails?.memorizationSection || session.sectionInfo?.memorizationSection}</span>
+                          </div>
+                        )}
+                        {(session.sectionDetails?.reviewSection || session.sectionInfo?.reviewSection) && (
+                          <div className="flex items-center gap-2 text-sm text-amber-800 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-100">
+                            <span className="text-lg">🔄</span>
+                            <span className="font-bold">مراجعة:</span>
+                            <span>{session.sectionDetails?.reviewSection || session.sectionInfo?.reviewSection}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* ملاحظات */}
+                    {session.description && (
+                      <p className="text-sm text-gray-600 bg-gray-50/50 p-2 rounded border border-gray-100 mt-2">
+                        {session.description}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* إجراءات */}
+                  {(role === "admin" || role === "teacher") && (
+                    <div className="flex md:flex-col gap-2 justify-center border-t md:border-t-0 md:border-r border-gray-100 pt-3 md:pt-0 md:pr-4">
+                      <button 
+                        onClick={() => { setIsModalOpen(false); onEdit?.(session); }}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition-colors text-sm font-medium w-full justify-center"
+                      >
+                        <Edit size={16} />
+                        تعديل
+                      </button>
+
+                      <button 
+                        onClick={() => { setIsModalOpen(false); onDelete?.(session); }}
+                        className="flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors text-sm font-medium w-full justify-center"
+                      >
+                        <Trash2 size={16} />
+                        حذف
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-10 text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+              <CalendarIcon className="w-12 h-12 mx-auto mb-3 opacity-20" />
+              <p>لا توجد مواعيد في هذا اليوم</p>
+            </div>
+          )}
+        </div>
+      </Modal>
+
       {/* رأس التقويم */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-4">
@@ -124,11 +241,12 @@ export const AdvancedTimetableView: React.FC<AdvancedTimetableViewProps> = ({
             
             return (
               <div 
-                key={index} 
+                key={index}
+                onClick={() => handleDayClick(dayInfo.date)} 
                 className={`
-                   min-h-[140px] bg-white p-2 relative group transition-colors flex flex-col gap-2
+                   min-h-[140px] bg-white p-2 relative group transition-all flex flex-col gap-2 cursor-pointer hover:bg-emerald-50/50
                    ${!dayInfo.isCurrentMonth ? 'bg-gray-50/50 opacity-60' : ''}
-                   ${isToday ? 'bg-emerald-50/20' : ''}
+                   ${isToday ? 'bg-emerald-50/20 ring-1 ring-emerald-200' : ''}
                 `}
               >
                 {/* Day Header */}
@@ -153,46 +271,75 @@ export const AdvancedTimetableView: React.FC<AdvancedTimetableViewProps> = ({
                   {sessionsForDay.map(session => (
                     <div 
                       key={session._id} 
-                      className="group/item relative bg-white border border-emerald-100/80 rounded-lg p-1.5 hover:shadow-md hover:border-emerald-300 transition-all cursor-default"
+                      className={`group/item relative bg-white border rounded-lg p-2 hover:shadow-md hover:border-emerald-300 transition-all cursor-default flex flex-col gap-1.5
+                        ${session.sessionType === 'hifz' ? 'border-blue-100 bg-blue-50/20' : 
+                          session.sessionType === 'murajaah' ? 'border-amber-100 bg-amber-50/20' :
+                          'border-emerald-100/80'}
+                      `}
                     >
-                      <div className="flex items-center justify-between gap-1">
-                        <div className="flex items-center gap-1 min-w-0">
-                           <Clock size={10} className="text-emerald-500 shrink-0" />
-                           <span className="text-[10px] font-bold text-gray-700 truncate dir-ltr font-mono">
-                             {session.startHour}
+                      {/* Header: Time & Actions */}
+                      <div className="flex items-center justify-between gap-1 border-b border-gray-100 pb-1">
+                        <div className="flex items-center gap-1 min-w-0 bg-gray-50 px-1.5 py-0.5 rounded text-[9px] text-gray-500 font-mono">
+                           <Clock size={9} className="text-gray-400 shrink-0" />
+                           <span className="truncate dir-ltr font-bold">
+                             {session.startHour} - {session.endHour}
                            </span>
                         </div>
                         
                         {(role === "admin" || role === "teacher") && (
-                            <div className="opacity-0 group-hover/item:opacity-100 transition-opacity absolute top-1 left-1 bg-white/80 rounded z-10">
+                            <div className="opacity-0 group-hover/item:opacity-100 transition-opacity absolute top-1 left-1 bg-white/95 rounded z-10 shadow-sm border border-gray-100">
                                 <DropdownMenu
                                     trigger={
-                                        <button className="p-0.5 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600" title="خيارات الجلسة">
+                                        <button className="p-1 hover:bg-gray-50 rounded text-gray-400 hover:text-gray-600" title="خيارات">
                                             <MoreVertical size={12} />
                                         </button>
                                     }
                                     items={[
                                         {
-                                          label: "تعديل الأصل",
-                                          icon: <Edit size={14} />,
-                                          onClick: () => {
-                                            const originalSession = { ...session };
-                                            onEdit?.(originalSession)
-                                          },
+                                          label: "تعديل",
+                                          icon: <Edit size={12} />,
+                                          onClick: () => onEdit?.(session),
+                                        },
+                                        {
+                                          label: "حذف",
+                                          icon: <Trash2 size={12} />,
+                                          onClick: () => onDelete?.(session),
+                                          variant: 'danger',
                                         },
                                     ]}
                                     position="bottom-left"
-                                    menuClassName="w-32 text-xs"
+                                    menuClassName="w-24 text-[10px]"
                                 />
                             </div>
                         )}
                       </div>
                       
-                      <div className="mt-1 text-[10px] text-gray-500 truncate" title={session.groupId || session.note}>
-                         <div className="font-medium text-emerald-700 truncate">
-                            {session.groupId || session.note}
-                         </div>
+                      {/* Batch Name */}
+                      <div className="text-[11px] font-bold text-gray-800 truncate" title={session.groupName || session.note}>
+                         {session.groupName || session.note || "حلقة"}
                       </div>
+
+                      {/* Section Details with Fallback */}
+                      {(session.sectionDetails || session.sectionInfo) && (
+                        <div className="space-y-1 mt-0.5">
+                          {(session.sectionDetails?.memorizationSection || session.sectionInfo?.memorizationSection) && (
+                            <div className="flex items-center gap-1 text-[9px] leading-tight text-blue-700 bg-blue-50 px-1 py-0.5 rounded border border-blue-100">
+                              <span className="shrink-0 font-bold">📖</span>
+                              <span className="truncate font-medium">
+                                {session.sectionDetails?.memorizationSection || session.sectionInfo?.memorizationSection}
+                              </span>
+                            </div>
+                          )}
+                          {(session.sectionDetails?.reviewSection || session.sectionInfo?.reviewSection) && (
+                            <div className="flex items-center gap-1 text-[9px] leading-tight text-amber-700 bg-amber-50 px-1 py-0.5 rounded border border-amber-100">
+                              <span className="shrink-0 font-bold">🔄</span>
+                              <span className="truncate font-medium">
+                                {session.sectionDetails?.reviewSection || session.sectionInfo?.reviewSection}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

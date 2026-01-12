@@ -23,6 +23,7 @@ export interface Session {
   startHour: string;        // وقت البداية (HH:MM AM/PM)
   endHour: string;          // وقت النهاية (HH:MM AM/PM)
   note?: string;            // اسم الحلقة (اختياري)
+  groupName?: string;       // ✅ اسم الحلقة (من العلاقة)
   description?: string;     // وصف أو ملاحظات إضافية
   sessionType?: SessionType; // حفظ، مراجعة، أو الاثنين
   groupId?: string;         // معرف الحلقة

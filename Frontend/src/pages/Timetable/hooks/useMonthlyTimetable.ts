@@ -35,6 +35,7 @@ const mapTimetableToSession = (timetable: Timetable): Session => {
     sessionDate: timetable.sessionDate,
     sessionType: timetable.sessionType,
     sectionInfo: timetable.sectionInfo,
+    sectionDetails: timetable.sectionDetails, // ✅ نقل تفاصيل المقطع
     teacherGroups: groupInfo ? [{ _id: groupInfo._id, name: groupInfo.name }] : [],
   };
 };

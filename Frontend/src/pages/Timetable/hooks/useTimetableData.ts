@@ -41,6 +41,8 @@ export const useTimetableData = () => {
           description: t.description,
           sessionType: t.sessionType,
           groupId: typeof t.groupId === 'object' ? t.groupId?._id : t.groupId,
+          // ✅ استخراج اسم الحلقة بشكل صحيح
+          groupName: typeof t.groupId === 'object' ? t.groupId?.name : t.note,
           teacherId: t.teacherId,
           sectionId: typeof t.sectionId === 'object' ? t.sectionId?._id : t.sectionId,
           // ✅ معلومات المقطع المُحسّنة من Backend
