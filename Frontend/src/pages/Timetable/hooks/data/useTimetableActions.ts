@@ -11,7 +11,7 @@ import {
 } from "@/Api/TimeTable.Api";
 import type { Session, SessionFormData } from "../../types/timetable.types";
 import { showConfirmDialog, showErrorMessage } from "@/utils/sweetalertUtils";
-import { showSuccessToast, showErrorToast } from "@/utils/toastUtils";
+import { showSuccessToast } from "@/utils/toastUtils";
 import { getCurrentUser, formatDateShort, getDayNameFromDate } from "../../utils";
 
 interface UseTimetableActionsProps {
@@ -76,10 +76,9 @@ export const useTimetableActions = ({
 
         return true;
       } catch (error: any) {
-        console.error("❌ خطأ في حفظ الموعد:", error);
         
         if (error?.isConflict) {
-          await showErrorMessage("تعارض في المواعيد!", error.message);
+          await showErrorMessage("⚠️ تعارض في المواعيد", error.message);
           return false;
         }
 
@@ -88,7 +87,7 @@ export const useTimetableActions = ({
           error?.message ||
           "حدث خطأ أثناء حفظ الحلقة";
 
-        showErrorToast(errorMsg);
+        await showErrorMessage("❌ خطأ في حفظ الموعد", errorMsg);
 
         return false;
       }
@@ -113,10 +112,9 @@ export const useTimetableActions = ({
 
         return true;
       } catch (error: any) {
-        console.error("❌ خطأ في تحديث الموعد:", error);
         
         if (error?.isConflict) {
-          await showErrorMessage("تعارض في المواعيد!", error.message);
+          await showErrorMessage("⚠️ تعارض في المواعيد", error.message);
           return false;
         }
 
@@ -125,7 +123,7 @@ export const useTimetableActions = ({
           error?.message ||
           "حدث خطأ أثناء تحديث الحلقة";
 
-        showErrorToast(errorMsg);
+        await showErrorMessage("❌ خطأ في تحديث الموعد", errorMsg);
 
         return false;
       }
@@ -163,9 +161,13 @@ export const useTimetableActions = ({
           showSuccessToast("تم حذف الموعد بنجاح ✓");
 
           return true;
-        } catch (error) {
-          console.error("Error deleting session:", error);
-          showErrorToast("حدث خطأ أثناء حذف الحلقة");
+        } catch (error: any) {
+          const errorMsg =
+            error?.response?.data?.message ||
+            error?.message ||
+            "حدث خطأ أثناء حذف الحلقة";
+          
+          await showErrorMessage("❌ خطأ في حذف الموعد", errorMsg);
           return false;
         }
       }

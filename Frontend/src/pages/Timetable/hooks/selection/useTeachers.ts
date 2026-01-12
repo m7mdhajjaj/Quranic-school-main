@@ -4,6 +4,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { getAllTeachers, type Teacher } from "@/Api/teacherApi";
+import { showErrorMessage } from "@/utils/sweetalertUtils";
 
 interface UseTeachersProps {
   isOpen: boolean;
@@ -34,8 +35,9 @@ export const useTeachers = ({ isOpen, enabled = true, onlyWithGroups = false }: 
         if (response.success && response.data) {
           setTeachers(response.data);
         }
-      } catch (error) {
-        console.error("Error fetching teachers:", error);
+      } catch (error: any) {
+        const errorMsg = error?.response?.data?.message || error?.message || "حدث خطأ في تحميل قائمة المعلمين";
+        await showErrorMessage("❌ خطأ في تحميل المعلمين", errorMsg);
       } finally {
         setLoadingTeachers(false);
       }

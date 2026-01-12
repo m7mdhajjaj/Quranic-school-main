@@ -4,6 +4,7 @@
 
 import { useState, useEffect } from "react";
 import { getGroupsByTeacherIdWithFilters } from "@/Api/groupApi";
+import { showErrorMessage } from "@/utils/sweetalertUtils";
 
 interface UseTeacherGroupsProps {
   teacherId: string | undefined;
@@ -50,8 +51,9 @@ export const useTeacherGroups = ({
         } else {
           setTeacherGroups([]);
         }
-      } catch (error) {
-        console.error("Error fetching teacher groups:", error);
+      } catch (error: any) {
+        const errorMsg = error?.response?.data?.message || error?.message || "حدث خطأ في تحميل حلقات المعلم";
+        await showErrorMessage("❌ خطأ في تحميل الحلقات", errorMsg);
         setTeacherGroups([]);
       } finally {
         setLoadingGroups(false);

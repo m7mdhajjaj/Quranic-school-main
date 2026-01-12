@@ -7,6 +7,7 @@ import { useState, useEffect, useCallback } from "react";
 import { getTimetables } from "@/Api/TimeTable.Api";
 import type { Session } from "../../types/timetable.types";
 import { getCurrentUser, getUserRole } from "../../utils";
+import { showErrorMessage } from "@/utils/sweetalertUtils";
 
 export const useTimetableData = () => {
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -29,7 +30,6 @@ export const useTimetableData = () => {
       const response = await getTimetables();
       
       if (response.success && response.data) {
-        console.log(`📅 تم جلب ${response.data.length} موعد من الباك إند`);
         // ⚠️ تحويل Timetable[] إلى Session[]
         const sessionsData = response.data.map((t: any) => ({
           _id: t._id,
@@ -61,9 +61,10 @@ export const useTimetableData = () => {
       } else {
         setSessions([]);
       }
-    } catch (error) {
-      console.error("❌ Error fetching sessions:", error);
-      setError("حدث خطأ في تحميل الحصص");
+    } catch (error: any) {
+      const errorMsg = error?.response?.data?.message || error?.message || "حدث خطأ في تحميل الحصص";
+      setError(errorMsg);
+      await showErrorMessage("❌ خطأ في تحميل البيانات", errorMsg);
       setSessions([]);
     } finally {
       setLoading(false);

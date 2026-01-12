@@ -82,8 +82,9 @@ export const useSessionForm = ({
         } else {
           setBookedHours([]);
         }
-      } catch (error) {
-        console.error("❌ خطأ في جلب الأوقات:", error);
+      } catch (error: any) {
+        const errorMsg = error?.response?.data?.message || error?.message || "حدث خطأ في تحميل الأوقات المتاحة";
+        await showErrorMessage("❌ خطأ في تحميل الأوقات", errorMsg);
         const fallbackHours = generateFallbackHours();
         setHours(fallbackHours);
         setBookedHours([]);
@@ -125,21 +126,15 @@ export const useSessionForm = ({
               updates.sessionType = 'murajaah'; // مراجعة فقط
             }
             
-            console.log('📅 Section Auto-fill:', {
-              originalDate: section.date,
-              formattedDate: updates.sessionDate,
-              hasMemorization,
-              hasReview,
-              sessionType: updates.sessionType,
-            });
+            // Section auto-fill completed
             
             setFormData(prev => ({
               ...prev,
               ...updates,
             }));
           }
-        } catch (error) {
-          console.error("Failed to auto-fill from section:", error);
+        } catch (error: any) {
+          // خطأ صامت - لا نظهر رسالة للمستخدم لأنه auto-fill اختياري
         }
       };
       fetchSectionDetails();
@@ -280,12 +275,7 @@ export const useSessionForm = ({
           
           // تحديث sessionType فقط إذا كان مختلفاً
           if (autoSessionType && autoSessionType !== formData.sessionType) {
-            console.log('🔄 Auto-updating sessionType from section:', {
-              sectionId: formData.sectionId,
-              hasMemorization,
-              hasReview,
-              sessionType: autoSessionType,
-            });
+            // Auto-updating sessionType from section
             
             setFormData(prev => ({
               ...prev,
@@ -293,8 +283,8 @@ export const useSessionForm = ({
             }));
           }
         }
-      } catch (error) {
-        console.error("Failed to update sessionType from section:", error);
+      } catch (error: any) {
+        // خطأ صامت - لا نظهر رسالة للمستخدم لأنه auto-update اختياري
       }
     };
     

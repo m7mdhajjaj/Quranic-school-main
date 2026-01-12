@@ -9,6 +9,7 @@ import 'dayjs/locale/ar';
 import { getMonthlyPlan } from '@/Api/TimeTable.Api';
 import type { Timetable } from '@/Api/TimeTable.Api';
 import type { Session } from '../../types/timetable.types';
+import { showErrorMessage } from '@/utils/sweetalertUtils';
 
 dayjs.locale('ar');
 
@@ -73,8 +74,9 @@ export const useMonthlyTimetable = (refreshTrigger?: any) => {
         const sessions = response.data.map(mapTimetableToSession);
         setMonthlySessions(sessions);
       }
-    } catch (error) {
-      console.error("Failed to fetch monthly plan", error);
+    } catch (error: any) {
+      const errorMsg = error?.response?.data?.message || error?.message || "حدث خطأ في تحميل الخطة الشهرية";
+      await showErrorMessage("❌ خطأ في تحميل البيانات", errorMsg);
     } finally {
       setLoading(false);
     }
