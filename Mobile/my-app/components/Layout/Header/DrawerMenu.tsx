@@ -33,6 +33,7 @@ import {
   FileText,
   Calendar,
   BookMarked,
+  Sparkles,
 } from "lucide-react-native";
 
 interface MenuItem {
@@ -71,6 +72,7 @@ export const DrawerMenu: React.FC<DrawerMenuProps> = ({ isOpen, onClose }) => {
         { to: "/admin/groups", label: "إدارة الحلقات", icon: BookOpen },
         { to: "/timetable", label: "مواعيد الحلقات", icon: Clock },
         { to: "/chat", label: "المحادثة", icon: MessageSquare },
+        { to: "/(tabs)/ai-chat", label: "المساعد الذكي", icon: Sparkles },
       ];
     }
 
@@ -88,6 +90,7 @@ export const DrawerMenu: React.FC<DrawerMenuProps> = ({ isOpen, onClose }) => {
       { to: "/(tabs)/warnings", label: "الإنذارات", icon: AlertTriangle },
       { to: "/(tabs)/points-game", label: "لعبة النقاط", icon: Trophy },
       { to: "/(tabs)/prayer-times", label: "مواقيت الصلاة", icon: Clock },
+      { to: "/(tabs)/ai-chat", label: "المساعد الذكي", icon: Sparkles },
       {
         to: "/(tabs)/quran",
         label: "القرآن الكريم",
@@ -225,6 +228,9 @@ const MenuItemComponent: React.FC<MenuItemComponentProps> = ({
 }) => {
   const Icon = item.icon;
 
+  // Special styling for AI Chat item
+  const isAiChat = item.label === "المساعد الذكي";
+
   if (item.subItems && item.subItems.length > 0) {
     return (
       <View>
@@ -264,12 +270,24 @@ const MenuItemComponent: React.FC<MenuItemComponentProps> = ({
 
   return (
     <TouchableOpacity
-      style={styles.menuItem}
+      style={[styles.menuItem, isAiChat && styles.aiChatMenuItem]}
       onPress={() => onNavigate(item.to)}>
       <View style={styles.menuItemContent}>
-        <Icon size={22} color="rgba(255, 255, 255, 0.7)" />
-        <Text style={styles.menuItemText}>{item.label}</Text>
+        <View style={isAiChat ? styles.aiChatIconWrapper : undefined}>
+          <Icon
+            size={22}
+            color={isAiChat ? "#fbbf24" : "rgba(255, 255, 255, 0.7)"}
+          />
+        </View>
+        <Text style={[styles.menuItemText, isAiChat && styles.aiChatText]}>
+          {item.label}
+        </Text>
       </View>
+      {isAiChat && (
+        <View style={styles.aiChatBadge}>
+          <Text style={styles.aiChatBadgeText}>AI</Text>
+        </View>
+      )}
     </TouchableOpacity>
   );
 };
@@ -424,5 +442,33 @@ const styles = StyleSheet.create({
   },
   logoutText: {
     color: "rgba(252, 165, 165, 1)",
+  },
+  // AI Chat specific styles
+  aiChatMenuItem: {
+    backgroundColor: "rgba(251, 191, 36, 0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(251, 191, 36, 0.3)",
+  },
+  aiChatIconWrapper: {
+    backgroundColor: "rgba(251, 191, 36, 0.2)",
+    borderRadius: 8,
+    padding: 4,
+  },
+  aiChatText: {
+    color: "rgba(254, 243, 199, 1)",
+    fontWeight: "600",
+  },
+  aiChatBadge: {
+    backgroundColor: "rgba(251, 191, 36, 1)",
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    minWidth: 24,
+    alignItems: "center",
+  },
+  aiChatBadgeText: {
+    color: "rgba(55, 65, 81, 1)",
+    fontSize: 10,
+    fontWeight: "bold",
   },
 });
