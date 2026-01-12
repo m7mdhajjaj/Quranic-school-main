@@ -13,12 +13,28 @@ const WEEK_DAYS = [
   "الجمعة",
 ];
 
-// props: sessions: Array<{ sessionDate, startHour, endHour, groupName, note, sessionType }>, currentDate: Date
-const WeeklyView = ({ sessions, currentDate }) => {
-  // حساب بداية الأسبوع (السبت)
+interface Session {
+  _id: string;
+  sessionDate: string;
+  startHour: string;
+  endHour: string;
+  note?: string;
+  groupName?: string;
+  sessionType?: "hifz" | "murajaah" | "both";
+}
+
+interface WeeklyViewProps {
+  sessions: Session[];
+  currentDate: Date;
+}
+
+const WeeklyView: React.FC<WeeklyViewProps> = ({ sessions, currentDate }) => {
+  // حساب بداية الأسبوع (السبت) - في JavaScript: السبت = 6
   const weekStart = useMemo(() => {
     const d = new Date(currentDate);
-    d.setDate(d.getDate() - d.getDay());
+    const day = d.getDay(); // 0=الأحد, 6=السبت
+    const diff = day === 6 ? 0 : day + 1; // المسافة من السبت
+    d.setDate(d.getDate() - diff);
     d.setHours(0, 0, 0, 0);
     return d;
   }, [currentDate]);
@@ -34,8 +50,8 @@ const WeeklyView = ({ sessions, currentDate }) => {
 
   // تجميع الحصص حسب اليوم
   const sessionsByDay = useMemo(() => {
-    const map = {};
-    weekDates.forEach((date, i) => {
+    const map: Record<string, Session[]> = {};
+    weekDates.forEach((date) => {
       const key = date.toISOString().split("T")[0];
       map[key] = [];
     });
@@ -59,16 +75,22 @@ const WeeklyView = ({ sessions, currentDate }) => {
         {weekDates.map((date, idx) => {
           const key = date.toISOString().split("T")[0];
           const daySessions = sessionsByDay[key] || [];
+          const isToday = new Date().toISOString().split("T")[0] === key;
           return (
-            <View key={key} style={styles.dayCol}>
-              <Text style={styles.dayName}>{WEEK_DAYS[idx]}</Text>
-              <Text style={styles.dayDate}>
+            <View key={key} style={[styles.dayCol, isToday && styles.todayCol]}>
+              <Text style={[styles.dayName, isToday && styles.todayText]}>
+                {WEEK_DAYS[idx]}
+              </Text>
+              <Text style={[styles.dayDate, isToday && styles.todayDate]}>
                 {date.getDate()} / {date.getMonth() + 1}
               </Text>
               {daySessions.length === 0 ? (
-                <Text style={styles.noSession}>لا يوجد</Text>
+                <View style={styles.noSessionContainer}>
+                  <Text style={styles.noSessionIcon}>📅</Text>
+                  <Text style={styles.noSession}>لا يوجد مواعيد</Text>
+                </View>
               ) : (
-                daySessions.map((s, i) => (
+                daySessions.map((s: Session, i: number) => (
                   <View
                     key={i}
                     style={[
@@ -85,12 +107,12 @@ const WeeklyView = ({ sessions, currentDate }) => {
                     <Text style={styles.sessionTime}>
                       {s.startHour} - {s.endHour}
                     </Text>
-                    <Text style={styles.sessionType}>
+                    <Text style={styles.sessionTypeText}>
                       {s.sessionType === "hifz"
-                        ? "حفظ"
+                        ? "📖 حفظ"
                         : s.sessionType === "murajaah"
-                          ? "مراجعة"
-                          : "شامل"}
+                          ? "🔄 مراجعة"
+                          : "📚 شامل"}
                     </Text>
                   </View>
                 ))
@@ -104,41 +126,147 @@ const WeeklyView = ({ sessions, currentDate }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { marginBottom: 24 },
+  container: {
+    marginBottom: 20,
+    backgroundColor: "#f8fafc",
+    borderRadius: 16,
+    padding: 16,
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    marginBottom: 8,
+    gap: 10,
+    marginBottom: 12,
+    paddingBottom: 12,
+    borderBottomWidth: 2,
+    borderBottomColor: "#10b981",
   },
-  headerText: { fontSize: 16, fontWeight: "700", color: "#10b981" },
-  daysRow: { flexDirection: "row" },
+  headerText: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#10b981",
+  },
+  daysRow: {
+    flexDirection: "row",
+  },
   dayCol: {
-    minWidth: 120,
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    marginRight: 8,
-    padding: 10,
+    minWidth: 150,
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    marginRight: 12,
+    padding: 14,
     alignItems: "center",
-    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    minHeight: 180,
   },
-  dayName: { fontWeight: "700", color: "#374151", fontSize: 14 },
-  dayDate: { color: "#6b7280", fontSize: 12, marginBottom: 6 },
-  noSession: { color: "#9ca3af", fontSize: 12, marginTop: 12 },
+  todayCol: {
+    borderColor: "#10b981",
+    borderWidth: 2,
+    backgroundColor: "#ecfdf5",
+  },
+  dayName: {
+    fontWeight: "700",
+    color: "#1f2937",
+    fontSize: 16,
+    marginBottom: 4,
+  },
+  todayText: {
+    color: "#10b981",
+  },
+  dayDate: {
+    color: "#6b7280",
+    fontSize: 13,
+    marginBottom: 14,
+    fontWeight: "600",
+  },
+  todayDate: {
+    color: "#059669",
+    fontWeight: "700",
+  },
+  noSessionContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f3f4f6",
+    borderRadius: 12,
+    padding: 20,
+    borderWidth: 2,
+    borderColor: "#e5e7eb",
+    borderStyle: "dashed",
+    width: "100%",
+    minHeight: 100,
+  },
+  noSessionIcon: {
+    fontSize: 32,
+    marginBottom: 8,
+    opacity: 0.5,
+  },
+  noSession: {
+    color: "#6b7280",
+    fontSize: 14,
+    fontWeight: "700",
+    textAlign: "center",
+  },
   sessionCard: {
     width: "100%",
-    marginTop: 8,
-    borderRadius: 8,
-    padding: 8,
+    marginTop: 10,
+    borderRadius: 12,
+    padding: 12,
     alignItems: "center",
-    borderWidth: 1,
+    borderWidth: 2,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 2,
   },
-  hifz: { backgroundColor: "#dbeafe", borderColor: "#60a5fa" },
-  murajaah: { backgroundColor: "#fef3c7", borderColor: "#fbbf24" },
-  both: { backgroundColor: "#e9d5ff", borderColor: "#a78bfa" },
-  sessionTitle: { fontWeight: "700", color: "#1e293b", fontSize: 13 },
-  sessionTime: { color: "#10b981", fontSize: 12, marginVertical: 2 },
-  sessionType: { fontSize: 11, color: "#6b7280" },
+  hifz: {
+    backgroundColor: "#dbeafe",
+    borderColor: "#3b82f6",
+  },
+  murajaah: {
+    backgroundColor: "#fef3c7",
+    borderColor: "#f59e0b",
+  },
+  both: {
+    backgroundColor: "#e9d5ff",
+    borderColor: "#a855f7",
+  },
+  sessionTitle: {
+    fontWeight: "700",
+    color: "#1e293b",
+    fontSize: 14,
+    textAlign: "center",
+    marginBottom: 6,
+  },
+  sessionTime: {
+    color: "#10b981",
+    fontSize: 13,
+    marginVertical: 4,
+    fontWeight: "700",
+    backgroundColor: "#ecfdf5",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  sessionTypeText: {
+    fontSize: 12,
+    color: "#6b7280",
+    fontWeight: "600",
+    marginTop: 4,
+  },
 });
 
 export default WeeklyView;
