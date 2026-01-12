@@ -29,10 +29,12 @@ export const useTimetableData = () => {
       setLoading(true);
       setError(null);
       
-      const response = await getAllSessions();
+      // جلب المواعيد مع فلترة الأسبوع الحالي (الباك إند يفلتر)
+      const response = await getAllSessions({ weekFilter: 'current' });
       
       // ✅ الـ API الجديد يرجع object مع success
       if (!Array.isArray(response) && response.success) {
+        console.log(`📅 تم جلب ${response.timetables?.length || 0} موعد من الباك إند`);
         setSessions(response.timetables || []);
         setTeacherGroups(response.teacherGroups || []); // للمعلم: أسماء حلقاته
       } else {

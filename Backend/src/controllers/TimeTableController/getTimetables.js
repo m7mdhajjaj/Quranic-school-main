@@ -71,7 +71,10 @@ exports.getAllTimetables = async (req, res) => {
         ...baseQuery,
         $or: [
           { isRecurring: true }, // المواعيد المتكررة تظهر دائماً
-          { isRecurring: { $ne: true }, sessionDate: null }, // مواعيد قديمة بدون sessionDate
+          { isRecurring: { $exists: false } }, // مواعيد قديمة بدون حقل isRecurring
+          { isRecurring: null }, // مواعيد بدون قيمة
+          { sessionDate: { $exists: false } }, // مواعيد بدون sessionDate (قديمة)
+          { sessionDate: null }, // مواعيد بدون تاريخ محدد
           { 
             isRecurring: false, 
             sessionDate: { $gte: startOfWeek, $lte: endOfWeek } 
@@ -89,7 +92,15 @@ exports.getAllTimetables = async (req, res) => {
         .sort({ day: 1, startHour: 1 });
     }
 
-    console.log(`✅ تم جلب ${timetables.length} موعد`);
+    console.log(`✅ تم جلب ${timetables.length} موعد (filter: ${weekFilter})`);
+    if (timetables.length > 0) {
+      console.log(`📋 أول موعد:`, {
+        day: timetables[0].day,
+        note: timetables[0].note,
+        isRecurring: timetables[0].isRecurring,
+        sessionDate: timetables[0].sessionDate
+      });
+    }
 
     res.json({ 
       success: true, 
