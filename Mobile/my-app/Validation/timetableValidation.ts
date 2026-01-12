@@ -133,7 +133,6 @@ export interface SessionFormData {
   sessionType?: SessionType;
   sectionId?: string; // معرف المقطع المرتبط
   sessionDate?: string; // التاريخ المحدد للحصة
-  isRecurring?: boolean; // true = متكرر أسبوعياً، false = محدد بتاريخ
 }
 
 /**
@@ -229,9 +228,6 @@ export const timetableValidationSchema = yup.object({
 
   // تاريخ الحصة - اختياري
   sessionDate: yup.string().label("تاريخ الحصة"),
-
-  // متكرر أسبوعياً - اختياري
-  isRecurring: yup.boolean().label("متكرر أسبوعياً"),
 });
 
 /**

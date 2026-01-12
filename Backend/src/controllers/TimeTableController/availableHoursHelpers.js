@@ -26,35 +26,34 @@ const getBookedHoursForTeacher = async (teacherId, day, excludeSessionId = null,
     // بناء استعلام ذكي
     const query = {
       teacherId,
-      day, // يجب أن يتطابق اليوم الأسبوعي دائماً
+      day,
     };
 
+    // ✅ المنطق الجديد: كل المواعيد محددة بتاريخ
+    // الأوقات المحجوزة تكون فقط للمواعيد في نفس التاريخ
     if (dateToCheck) {
-      // ✅ المنطق المحسّن:
-      // الجلسة تحجز الوقت في التاريخ المحدد إذا كانت:
-      // 1. جلسة متكررة أسبوعياً (isRecurring: true) - تحجز كل أسبوع
-      // 2. أو جلسة محددة بهذا التاريخ بالضبط (isRecurring: false && sessionDate == dateToCheck)
-      // 3. (مهم) الجلسات المحددة بتواريخ *أخرى* لا تحجز هذا التاريخ
-      
       const targetDate = new Date(dateToCheck);
-      // ضبط الوقت للصفر للمقارنة الدقيقة
       targetDate.setHours(0, 0, 0, 0);
       const nextDay = new Date(targetDate);
       nextDay.setDate(nextDay.getDate() + 1);
 
-      query.$or = [
-        { isRecurring: true }, // الجلسات المتكررة تحجز في كل الأسابيع
-        { 
-          isRecurring: false, 
-          sessionDate: { $gte: targetDate, $lt: nextDay } 
-        } // الجلسة المحددة لهذا التاريخ فقط
-      ];
+      // البحث عن مواعيد في نفس التاريخ بالضبط
+      query.sessionDate = { $gte: targetDate, $lt: nextDay };
       
-      console.log(`📅 فحص الأوقات المحجوزة للتاريخ ${targetDate.toLocaleDateString('ar-EG')}`);
+      console.log(`📅 فحص الأوقات المحجوزة للتاريخ ${targetDate.toLocaleDateString('ar-EG')} فقط`);
     } else {
-      // إذا لم يتم تحديد تاريخ، نعرض فقط الجلسات المتكررة (الجدول الأسبوعي العام)
-      query.isRecurring = true;
-      console.log(`📅 فحص الجلسات المتكررة (الجدول الأسبوعي العام)`);
+      // إذا لم يُحدد تاريخ، لا نُرجع أي أوقات محجوزة
+      console.log(`📅 لا يوجد تاريخ محدد - كل الأوقات متاحة`);
+      const allHours = generateAllAvailableHours();
+      return {
+        allHours,
+        bookedHours: [],
+        availableHours: allHours,
+        bookedSessions: [],
+        totalSlots: allHours.length,
+        bookedSlots: 0,
+        availableSlots: allHours.length,
+      };
     }
     
     // استثناء الجلسة الحالية عند التعديل

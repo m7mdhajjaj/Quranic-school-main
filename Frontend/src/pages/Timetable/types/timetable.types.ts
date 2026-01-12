@@ -22,7 +22,6 @@ export interface Session {
   teacherId?: string | Teacher; // معرف المعلم أو بياناته الكاملة
   sectionId?: string;
   sessionDate?: string; // التاريخ المحدد للحصة (من المقطع)
-  isRecurring?: boolean; // true = متكرر أسبوعياً، false = محدد بتاريخ
   createdAt?: string;
   updatedAt?: string;
 }
@@ -54,7 +53,6 @@ export interface SessionFormData {
   teacherId: string; // معرف المعلم مطلوب
   sectionId?: string; // معرف القسم المرتبط اختياري
   sessionDate?: string; // التاريخ المحدد للحصة
-  isRecurring?: boolean; // true = متكرر أسبوعياً، false = محدد بتاريخ
 }
 
 export interface TimetableState {

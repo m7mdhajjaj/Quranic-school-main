@@ -24,7 +24,6 @@ export interface Session {
   sectionId?: string;
   sessionDate?: string; // التاريخ المحدد للحصة (من المقطع)
   sessionType?: 'hifz' | 'murajaah' | 'both'; // حفظ، مراجعة، أو الاثنين
-  isRecurring?: boolean; // true = متكرر أسبوعياً، false = محدد بتاريخ
   createdAt?: string;
   updatedAt?: string;
   // خصائص إضافية للخطة الشهرية

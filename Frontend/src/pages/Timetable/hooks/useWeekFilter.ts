@@ -95,11 +95,6 @@ export const useWeekFilter = ({
     }
 
     return sessions.filter(session => {
-      // المواعيد المتكررة تظهر دائماً
-      if (session.isRecurring !== false) {
-        return true;
-      }
-      
       // المواعيد المحددة بتاريخ - تظهر فقط إذا كانت في الأسبوع المحدد
       if (session.sessionDate) {
         const sessionDate = new Date(session.sessionDate);

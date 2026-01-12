@@ -85,63 +85,90 @@ exports.updateTimetable = async (req, res) => {
       console.log(`✅ الصلاحيات صحيحة - يعدّل المعلم موعده الخاص`);
     }
 
+    // ✅ تحديث timetableData بالقيم المُحسوبة لاستخدامها في فحص التعارض
+    const finalDay = day || oldTimetable.day;
+    const finalStartHour = startHour || oldTimetable.startHour;
+    const finalEndHour = endHour || oldTimetable.endHour;
+    const finalSessionDate = sessionDate || oldTimetable.sessionDate;
+    const finalSectionId = sectionId || oldTimetable.sectionId;
+    const finalNote = note !== undefined ? note : oldTimetable.note;
+    
+    // تحديث timetableData للاستخدام في فحص التعارض
+    timetableData.day = finalDay;
+    timetableData.startHour = finalStartHour;
+    timetableData.endHour = finalEndHour;
+    timetableData.sessionDate = finalSessionDate;
+    timetableData.isRecurring = !finalSectionId;
+    timetableData.note = finalNote;
+
     // 1. فحص التعارب لجميع حلقات المعلم - الفحص الأساسي والأهم
     // استخدام teacherId من البيانات الجديدة أو القديمة
     const currentTeacherId = teacherId || oldTimetable.teacherId;
     if (currentTeacherId) {
+      console.log(`🔍 [تعديل] فحص تعارض للمعلم ${currentTeacherId}`);
+      console.log(`   📅 التاريخ: ${finalSessionDate}`);
+      console.log(`   ⏰ الوقت: ${finalStartHour} - ${finalEndHour}`);
+      console.log(`   🆔 استثناء الجلسة: ${id}`);
+      
       const conflictCheck = await checkSessionConflict(
         currentTeacherId,
-        day || oldTimetable.day,
-        startHour || oldTimetable.startHour,
-        endHour || oldTimetable.endHour,
+        finalDay,
+        finalStartHour,
+        finalEndHour,
         id, // استثناء الجلسة الحالية
-        sessionDate || oldTimetable.sessionDate // تمرير التاريخ
+        finalSessionDate // تمرير التاريخ
       );
       
       if (conflictCheck.hasConflict) {
         const conflictSession = conflictCheck.conflictingSession;
+        const dateStr = finalSessionDate 
+          ? new Date(finalSessionDate).toLocaleDateString('ar-EG')
+          : '';
         return res.status(409).json({
           success: false,
           error: "Teacher time conflict",
-          message: `المعلم لديه موعد آخر في نفس الوقت (${conflictSession.note}) يوم ${conflictSession.day} من ${conflictSession.startHour} إلى ${conflictSession.endHour}`,
+          message: `❗ تعارض في الموعد: المعلم لديه حلقة أخرى (${conflictSession.note || 'بدون اسم'}) ${dateStr ? `(تاريخ: ${dateStr})` : ''} من ${conflictSession.startHour} إلى ${conflictSession.endHour}. اختر وقتاً مختلفاً.`,
           conflictDetails: conflictSession
         });
       }
     }
 
     // 2. فحص التعارب مع مواعيد نفس الحلقة (فحص إضافي)
-    if (note && note.trim()) {
+    if (finalNote && finalNote.trim()) {
       const conflictCheck = await checkTimetableConflict(timetableData, id);
       if (conflictCheck.hasConflict) {
+        const cd = conflictCheck.conflictDetails;
+        const dateInfo = cd.sessionDate 
+          ? ` (${new Date(cd.sessionDate).toLocaleDateString('ar-EG')})`
+          : '';
         return res.status(409).json({
           success: false,
           error: "Time conflict",
-          message: `الحلقة (${note}) لديها موعد آخر في نفس الوقت يوم ${conflictCheck.conflictDetails.day} من ${conflictCheck.conflictDetails.startHour} إلى ${conflictCheck.conflictDetails.endHour}`,
-          conflictDetails: conflictCheck.conflictDetails
+          message: `❗ تعارض: الحلقة (${finalNote}) لديها موعد آخر ${dateInfo} من ${cd.startHour} إلى ${cd.endHour}. اختر وقتاً مختلفاً.`,
+          conflictDetails: cd
         });
       }
     }
 
     // البحث عن groupId الجديد
     let groupId = oldTimetable.groupId;
-    if (note && note.trim() && note.trim() !== oldTimetable.note?.trim()) {
-      const group = await Group.findOne({ name: note.trim() });
+    if (finalNote && finalNote.trim() && finalNote.trim() !== oldTimetable.note?.trim()) {
+      const group = await Group.findOne({ name: finalNote.trim() });
       if (group) {
         groupId = group._id;
       }
     }
 
-    // تحديث الموعد
-    const finalSectionId = sectionId || oldTimetable.sectionId;
+    // تحديث الموعد (نستخدم المتغيرات المُحسوبة مسبقاً)
     const updateData = { 
-        day: day || oldTimetable.day, // استخدام القيمة الجديدة أو القديمة
-        startHour: startHour || oldTimetable.startHour, 
-        endHour: endHour || oldTimetable.endHour, 
-        note: note || "", 
+        day: finalDay,
+        startHour: finalStartHour, 
+        endHour: finalEndHour, 
+        note: finalNote || "", 
         groupId,
         // تحديث البيانات المرتبطة بالمقطع
         sectionId: finalSectionId,
-        sessionDate: sessionDate,
+        sessionDate: finalSessionDate,
         // ✅ تحديث isRecurring بناءً على وجود sectionId
         isRecurring: !finalSectionId, // إذا كان مرتبط بمقطع = محدد بتاريخ، وإلا = متكرر
     };

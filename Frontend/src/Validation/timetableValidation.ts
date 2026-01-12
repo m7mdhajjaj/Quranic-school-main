@@ -212,11 +212,6 @@ export const timetableValidationSchema = yup.object({
     .string()
     .label('تاريخ الحصة'),
 
-  // متكرر أسبوعياً أم محدد بتاريخ - اختياري
-  isRecurring: yup
-    .boolean()
-    .label('متكرر أسبوعياً'),
-
   // وصف الحصة - اختياري
   description: yup
     .string()

@@ -73,19 +73,24 @@ exports.createTimetable = async (req, res) => {
     }
 
     // ✅ تحديث timetableData بالقيم المشتقة لاستخدامها في فحص التعارض
-    timetableData.sessionDate = sessionDate || timetableData.sessionDate;
+    const finalSessionDate = sessionDate || timetableData.sessionDate;
+    timetableData.sessionDate = finalSessionDate;
     timetableData.isRecurring = sectionId ? false : (timetableData.isRecurring !== false);
 
     // 1. فحص التعارب لجميع حلقات المعلم - الفحص الأساسي والأهم
     if (teacherId) {
-      const conflictCheck = await checkSessionConflict(teacherId, day, startHour, endHour, null, sessionDate);
+      // ✅ تمرير finalSessionDate لفحص التعارض بناءً على التاريخ
+      const conflictCheck = await checkSessionConflict(teacherId, day, startHour, endHour, null, finalSessionDate);
       
       if (conflictCheck.hasConflict) {
         const conflictSession = conflictCheck.conflictingSession;
+        const dateStr = finalSessionDate 
+          ? new Date(finalSessionDate).toLocaleDateString('ar-EG')
+          : '';
         return res.status(409).json({
           success: false,
           error: "Teacher time conflict",
-          message: `المعلم لديه موعد آخر في نفس الوقت (${conflictSession.note}) يوم ${conflictSession.day} من ${conflictSession.startHour} إلى ${conflictSession.endHour}`,
+          message: `❗ تعارض في الموعد: المعلم لديه حلقة أخرى (${conflictSession.note || 'بدون اسم'}) ${dateStr ? `(تاريخ: ${dateStr})` : ''} من ${conflictSession.startHour} إلى ${conflictSession.endHour}. اختر وقتاً مختلفاً.`,
           conflictDetails: conflictSession
         });
       }
@@ -95,11 +100,15 @@ exports.createTimetable = async (req, res) => {
     if (note && note.trim()) {
       const conflictCheck = await checkTimetableConflict(timetableData);
       if (conflictCheck.hasConflict) {
+        const cd = conflictCheck.conflictDetails;
+        const dateInfo = cd.sessionDate 
+          ? ` (${new Date(cd.sessionDate).toLocaleDateString('ar-EG')})`
+          : '';
         return res.status(409).json({
           success: false,
           error: "Time conflict",
-          message: `الحلقة (${note}) لديها موعد آخر في نفس الوقت يوم ${conflictCheck.conflictDetails.day} من ${conflictCheck.conflictDetails.startHour} إلى ${conflictCheck.conflictDetails.endHour}`,
-          conflictDetails: conflictCheck.conflictDetails
+          message: `❗ تعارض: الحلقة (${note}) لديها موعد آخر ${dateInfo} من ${cd.startHour} إلى ${cd.endHour}. اختر وقتاً مختلفاً.`,
+          conflictDetails: cd
         });
       }
     }
