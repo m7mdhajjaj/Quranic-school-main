@@ -120,8 +120,8 @@ const SessionCard: React.FC<{
           </span>
         )}
 
-        {/* القائمة المنسدلة */}
-        {(role === "admin" || role === "teacher") && (
+        {/* القائمة المنسدلة - للمعلم فقط */}
+        {role === "teacher" && (
           <div 
             className="relative z-20 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0"
             onClick={(e) => e.stopPropagation()}
@@ -191,7 +191,7 @@ const GridLegend: React.FC<{ role: UserRole }> = ({ role }) => (
         <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-purple-500" />
         <span className="font-bold text-purple-700 text-[10px] sm:text-sm">شامل</span>
       </div>
-      {role === "admin" && (
+      {role === "teacher" && (
         <span className="hidden sm:flex text-xs text-gray-400 items-center gap-1 sm:mr-auto bg-gray-50 px-2 py-1 rounded-md">
           <span>💡</span>
           مرر فوق البطاقة للخيارات

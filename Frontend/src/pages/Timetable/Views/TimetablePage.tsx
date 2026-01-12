@@ -4,7 +4,7 @@
 // هذه الصفحة Router فقط - توجه المستخدم للعرض المناسب حسب دوره
 
 import { useTimetableData, useTimetableActions } from "../hooks";
-import { StudentTimetableView, TeacherTimetableView, AdminTimetableView } from ".";
+import { StudentTimetableView, TeacherTimetableView } from ".";
 
 const TimetablePage = () => {
   // ✅ جلب البيانات من Backend
@@ -18,7 +18,7 @@ const TimetablePage = () => {
     refetchSessions,
   } = useTimetableData();
 
-  // ✅ العمليات (CRUD) - تتواصل مع Backend API
+  // ✅ العمليات (CRUD) - تتواصل مع Backend API (للمعلم فقط)
   const { addSession, editSession, removeSession } = useTimetableActions({
     setSessions,
   });
@@ -50,15 +50,12 @@ const TimetablePage = () => {
     );
   }
 
-  // Admin - إدارة كاملة لجميع المواعيد
+  // Admin - عرض قراءة فقط (مثل الطالب)
   return (
-    <AdminTimetableView
+    <StudentTimetableView
       sessions={sessions}
       loading={loading}
       error={error}
-      onAddSession={addSession}
-      onEditSession={editSession}
-      onDeleteSession={removeSession}
       refetchSessions={refetchSessions}
     />
   );

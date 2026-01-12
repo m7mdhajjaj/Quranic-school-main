@@ -298,10 +298,9 @@ exports.createStudent = async (req, res) => {
       });
     }
 
-    // تشفير كلمة المرور - استخدام رقم الهوية إذا لم تُدخل كلمة مرور
-    const rawPassword = req.body.password || req.body.idNumber || '1234';
-    console.log("🔐 تشفير كلمة المرور:", rawPassword ? "موجودة" : "غير موجودة");
-    console.log("🔑 كلمة المرور المستخدمة:", req.body.password ? "مخصصة" : "رقم الهوية");
+    // تشفير كلمة المرور - استخدام رقم الهوية كقيمة افتراضية
+    const rawPassword = req.body.idNumber || '1234';
+    console.log("🔐 تشفير كلمة المرور - استخدام رقم الهوية كقيمة افتراضية");
     const hashedPassword = await bcrypt.hash(rawPassword, 10);
 
     const studentData = {

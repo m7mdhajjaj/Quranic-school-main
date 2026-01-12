@@ -139,8 +139,8 @@ export const AdvancedTimetableView: React.FC<AdvancedTimetableViewProps> = ({
                     )}
                   </div>
 
-                  {/* إجراءات */}
-                  {(role === "admin" || role === "teacher") && (
+                  {/* إجراءات - للمعلم فقط */}
+                  {role === "teacher" && (
                     <div className="flex md:flex-col gap-2 justify-center border-t md:border-t-0 md:border-r border-gray-100 pt-3 md:pt-0 md:pr-4">
                       <button 
                         onClick={() => { closeDayModal(); onEdit?.(session); }}

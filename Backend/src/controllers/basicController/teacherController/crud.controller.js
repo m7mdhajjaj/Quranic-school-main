@@ -326,7 +326,8 @@ exports.createTeacher = async (req, res) => {
       });
     }
 
-    const rawPass = password || String(teacherId);
+    // تشفير كلمة المرور - استخدام teacherId كقيمة افتراضية
+    const rawPass = password || idNumber || String(teacherId);
     const hashed = await bcrypt.hash(rawPass, 10);
 
     // age
