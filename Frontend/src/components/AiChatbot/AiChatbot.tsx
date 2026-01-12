@@ -1,7 +1,17 @@
-import React from 'react';
-import { Send, X, Loader2, BookOpen, Sparkles } from 'lucide-react';
+import React, { useState } from 'react';
+import { Send, X, Loader2, BookOpen, Sparkles, Trash2, Copy, Mic, MicOff, Volume2, VolumeX, Check, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAiChatbot } from './useAiChatbot';
+import { showSuccessToast } from '../../utils/toastUtils';
+import { showErrorMessage } from '../../utils/sweetalertUtils';
+
+// Quick suggestions for common questions
+const QUICK_SUGGESTIONS = [
+  'تفسير سورة الفاتحة',
+  'ما هي آية الكرسي؟',
+  'تفسير سورة الإخلاص',
+  'أحكام الوضوء',
+];
 
 export const AiChatbot: React.FC = () => {
   const {
@@ -9,12 +19,56 @@ export const AiChatbot: React.FC = () => {
     messages,
     input,
     isLoading,
+    isListening,
+    isSpeaking,
     messagesEndRef,
     userRole,
     setIsOpen,
     setInput,
     handleSubmit,
+    handleClearChat,
+    handleCopyMessage,
+    handleQuickSuggestion,
+    handleSpeak,
+    handleStopSpeaking,
+    handleStartListening,
+    handleStopListening,
+    handleAddFavorite,
+    handleRemoveFavorite,
+    isFavorited,
   } = useAiChatbot();
+
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Handle copy with feedback
+  const onCopyMessage = async (messageId: string, content: string) => {
+    const success = await handleCopyMessage(content);
+    if (success) {
+      setCopiedId(messageId);
+      setTimeout(() => setCopiedId(null), 2000);
+    }
+  };
+
+  // Handle favorite toggle
+  const onToggleFavorite = async (messageId: string, question: string, answer: string) => {
+    const isFav = isFavorited(question);
+    
+    if (isFav) {
+      const result = await handleRemoveFavorite(question);
+      if (result.success) {
+        showSuccessToast(result.message);
+      } else {
+        showErrorMessage(result.message);
+      }
+    } else {
+      const result = await handleAddFavorite(question, answer);
+      if (result.success) {
+        showSuccessToast(result.message);
+      } else {
+        showErrorMessage(result.message);
+      }
+    }
+  };
 
   // إخفاء الشات بوت عن الأدمن
   if (userRole === 'admin') {
@@ -231,15 +285,29 @@ export const AiChatbot: React.FC = () => {
                     </div>
                   </motion.div>
                   
-                  <motion.button 
-                    whileHover={{ scale: 1.1, rotate: 90 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => setIsOpen(false)}
-                    className="p-2.5 text-white hover:bg-white/20 rounded-xl transition-all z-10 backdrop-blur-sm border border-white/20 shadow-lg"
-                    aria-label="إغلاق المساعد"
-                  >
-                    <X size={22} strokeWidth={2.5} />
-                  </motion.button>
+                  <div className="flex items-center gap-2">
+                    {/* زر حذف المحادثة */}
+                    <motion.button 
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={handleClearChat}
+                      className="p-2.5 text-white hover:bg-white/20 rounded-xl transition-all z-10 backdrop-blur-sm border border-white/20 shadow-lg"
+                      title="حذف المحادثة"
+                    >
+                      <Trash2 size={20} strokeWidth={2.5} />
+                    </motion.button>
+
+                    {/* زر الإغلاق */}
+                    <motion.button 
+                      whileHover={{ scale: 1.1, rotate: 90 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => setIsOpen(false)}
+                      className="p-2.5 text-white hover:bg-white/20 rounded-xl transition-all z-10 backdrop-blur-sm border border-white/20 shadow-lg"
+                      aria-label="إغلاق المساعد"
+                    >
+                      <X size={22} strokeWidth={2.5} />
+                    </motion.button>
+                  </div>
                 </div>
               </div>
 
@@ -314,6 +382,78 @@ export const AiChatbot: React.FC = () => {
                         )}
                         
                         <p className="text-sm leading-relaxed whitespace-pre-wrap relative z-10">{msg.content}</p>
+                        
+                        {/* أزرار الإجراءات للرسائل من AI */}
+                        {msg.role === 'assistant' && (
+                          <div className="flex items-center gap-2 mt-3 pt-2 border-t border-gray-100">
+                            {/* زر المفضلة */}
+                            <motion.button
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              onClick={() => {
+                                // Find the previous user message (question)
+                                const msgIndex = messages.findIndex(m => m.id === msg.id);
+                                const userMsg = msgIndex > 0 ? messages[msgIndex - 1] : null;
+                                if (userMsg && userMsg.role === 'user') {
+                                  onToggleFavorite(msg.id, userMsg.content, msg.content);
+                                }
+                              }}
+                              className={`p-1.5 rounded-lg transition-colors ${
+                                (() => {
+                                  const msgIndex = messages.findIndex(m => m.id === msg.id);
+                                  const userMsg = msgIndex > 0 ? messages[msgIndex - 1] : null;
+                                  return userMsg && isFavorited(userMsg.content)
+                                    ? 'bg-yellow-50 text-yellow-600 hover:bg-yellow-100'
+                                    : 'hover:bg-gray-100 text-gray-600 hover:text-yellow-600';
+                                })()
+                              }`}
+                              title={(() => {
+                                const msgIndex = messages.findIndex(m => m.id === msg.id);
+                                const userMsg = msgIndex > 0 ? messages[msgIndex - 1] : null;
+                                return userMsg && isFavorited(userMsg.content) ? 'إزالة من المفضلة' : 'إضافة للمفضلة';
+                              })()}
+                            >
+                              <Star 
+                                size={14} 
+                                fill={(() => {
+                                  const msgIndex = messages.findIndex(m => m.id === msg.id);
+                                  const userMsg = msgIndex > 0 ? messages[msgIndex - 1] : null;
+                                  return userMsg && isFavorited(userMsg.content) ? 'currentColor' : 'none';
+                                })()} 
+                              />
+                            </motion.button>
+
+                            {/* زر النسخ */}
+                            <motion.button
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              onClick={() => onCopyMessage(msg.id, msg.content)}
+                              className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-600 hover:text-emerald-600"
+                              title="نسخ الرسالة"
+                            >
+                              {copiedId === msg.id ? (
+                                <Check size={14} className="text-green-600" />
+                              ) : (
+                                <Copy size={14} />
+                              )}
+                            </motion.button>
+
+                            {/* زر القراءة الصوتية */}
+                            <motion.button
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              onClick={() => isSpeaking ? handleStopSpeaking() : handleSpeak(msg.content)}
+                              className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-600 hover:text-emerald-600"
+                              title={isSpeaking ? "إيقاف القراءة" : "استماع للرسالة"}
+                            >
+                              {isSpeaking ? (
+                                <VolumeX size={14} />
+                              ) : (
+                                <Volume2 size={14} />
+                              )}
+                            </motion.button>
+                          </div>
+                        )}
                         
                         <motion.span 
                           initial={{ opacity: 0 }}
@@ -396,6 +536,34 @@ export const AiChatbot: React.FC = () => {
                 {/* خلفية خفيفة */}
                 <div className="absolute inset-0 bg-gradient-to-r from-emerald-50/30 via-transparent to-teal-50/30"></div>
                 
+                {/* Quick Suggestions */}
+                {messages.length === 1 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-3 relative z-10"
+                    dir="rtl"
+                  >
+                    <p className="text-xs text-gray-600 font-semibold mb-2 flex items-center gap-2">
+                      <Sparkles size={14} className="text-emerald-600" />
+                      اقتراحات سريعة:
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {QUICK_SUGGESTIONS.map((suggestion, index) => (
+                        <motion.button
+                          key={index}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => handleQuickSuggestion(suggestion)}
+                          className="px-3 py-1.5 text-xs bg-white hover:bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-700 font-medium transition-colors shadow-sm"
+                        >
+                          {suggestion}
+                        </motion.button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+                
                 <motion.div 
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -415,58 +583,97 @@ export const AiChatbot: React.FC = () => {
                   </div>
                 </motion.div>
                 
-                <form onSubmit={handleSubmit} className="flex gap-3 relative z-10" dir="rtl">
-                  <motion.input
-                    whileFocus={{ scale: 1.01, y: -2 }}
-                    type="text"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    placeholder="اسأل عن آية أو حكم فقهي..."
-                    className="flex-1 p-4 border-2 border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-300 transition-all bg-white shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={{ direction: 'rtl', textAlign: 'right' }}
-                    disabled={isLoading}
-                  />
-                  
-                  <motion.button
-                    type="submit"
-                    disabled={isLoading || !input.trim()}
-                    whileHover={!isLoading && input.trim() ? { scale: 1.05, rotate: -5 } : {}}
-                    whileTap={!isLoading && input.trim() ? { scale: 0.95 } : {}}
-                    className={`p-4 rounded-2xl flex items-center justify-center transition-all duration-300 relative overflow-hidden ${
-                      isLoading || !input.trim()
-                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                        : 'bg-gradient-to-br from-emerald-500 via-teal-500 to-emerald-600 text-white hover:shadow-2xl shadow-lg'
-                    }`}
-                    style={
-                      !isLoading && input.trim() 
-                        ? { boxShadow: '0 8px 30px rgba(16, 185, 129, 0.4)' }
-                        : {}
-                    }
-                    aria-label="إرسال الرسالة"
-                  >
-                    {/* تأثير لامع للزر */}
-                    {!isLoading && input.trim() && (
-                      <motion.div
-                        animate={{
-                          x: ['-100%', '200%'],
-                        }}
-                        transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
-                        className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-12"
-                      />
-                    )}
-                    
+                <form onSubmit={handleSubmit} className="flex flex-col gap-3 relative z-10" dir="rtl">
+                  {/* Voice Recording Info */}
+                  {isListening && (
                     <motion.div
-                      animate={isLoading ? { rotate: 360 } : { x: [0, -3, 0] }}
-                      transition={isLoading ? { duration: 1, repeat: Infinity, ease: "linear" } : { duration: 1.5, repeat: Infinity }}
-                      className="relative z-10"
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex items-center justify-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl"
                     >
-                      {isLoading ? (
-                        <Loader2 size={20} />
-                      ) : (
-                        <Send size={20} />
-                      )}
+                      <motion.div
+                        animate={{ scale: [1, 1.2, 1] }}
+                        transition={{ duration: 0.8, repeat: Infinity }}
+                        className="w-3 h-3 bg-red-500 rounded-full"
+                      />
+                      <span className="text-sm font-bold text-red-600">جاري التسجيل... تحدث الآن</span>
                     </motion.div>
-                  </motion.button>
+                  )}
+
+                  <div className="flex gap-2">
+                    {/* Voice Input Button - واضح وكبير */}
+                    <motion.button
+                      type="button"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={isListening ? handleStopListening : handleStartListening}
+                      className={`p-4 rounded-2xl flex items-center justify-center transition-all duration-300 min-w-[60px] ${
+                        isListening
+                          ? 'bg-gradient-to-br from-red-500 to-red-600 text-white shadow-lg shadow-red-500/50'
+                          : 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg hover:shadow-emerald-500/50'
+                      }`}
+                      title={isListening ? "إيقاف التسجيل" : "🎤 اضغط للتحدث"}
+                    >
+                      <motion.div
+                        animate={isListening ? { scale: [1, 1.3, 1] } : {}}
+                        transition={{ duration: 0.5, repeat: Infinity }}
+                      >
+                        {isListening ? <MicOff size={24} /> : <Mic size={24} />}
+                      </motion.div>
+                    </motion.button>
+
+                    <motion.input
+                      whileFocus={{ scale: 1.01, y: -2 }}
+                      type="text"
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      placeholder={isListening ? "استمع..." : "اكتب سؤالك أو اضغط 🎤 للتحدث"}
+                      className="flex-1 p-4 border-2 border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-300 transition-all bg-white shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{ direction: 'rtl', textAlign: 'right' }}
+                      disabled={isLoading || isListening}
+                    />
+                  
+                    <motion.button
+                      type="submit"
+                      disabled={isLoading || !input.trim() || isListening}
+                      whileHover={!isLoading && input.trim() && !isListening ? { scale: 1.05, rotate: -5 } : {}}
+                      whileTap={!isLoading && input.trim() && !isListening ? { scale: 0.95 } : {}}
+                      className={`p-4 rounded-2xl flex items-center justify-center transition-all duration-300 relative overflow-hidden min-w-[60px] ${
+                        isLoading || !input.trim() || isListening
+                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                          : 'bg-gradient-to-br from-emerald-500 via-teal-500 to-emerald-600 text-white hover:shadow-2xl shadow-lg'
+                      }`}
+                      style={
+                        !isLoading && input.trim() && !isListening
+                          ? { boxShadow: '0 8px 30px rgba(16, 185, 129, 0.4)' }
+                          : {}
+                      }
+                      aria-label="إرسال الرسالة"
+                    >
+                      {/* تأثير لامع للزر */}
+                      {!isLoading && input.trim() && !isListening && (
+                        <motion.div
+                          animate={{
+                            x: ['-100%', '200%'],
+                          }}
+                          transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
+                          className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-12"
+                        />
+                      )}
+                      
+                      <motion.div
+                        animate={isLoading ? { rotate: 360 } : { x: [0, -3, 0] }}
+                        transition={isLoading ? { duration: 1, repeat: Infinity, ease: "linear" } : { duration: 1.5, repeat: Infinity }}
+                        className="relative z-10"
+                      >
+                        {isLoading ? (
+                          <Loader2 size={24} />
+                        ) : (
+                          <Send size={24} />
+                        )}
+                      </motion.div>
+                    </motion.button>
+                  </div>
                 </form>
               </div>
             </motion.div>
@@ -476,3 +683,5 @@ export const AiChatbot: React.FC = () => {
     </>
   );
 };
+
+export default AiChatbot;

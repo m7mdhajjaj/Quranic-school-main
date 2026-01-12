@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import api from '../../Api/api';
+import { sendAiChatMessage, addFavorite, getFavorites, deleteFavorite } from '../../Api/aiChatApi';
+import { validateData, chatMessageSchema, addFavoriteSchema } from '../../Validation/aiChatValidation';
 
 // Types for chat messages
 export interface Message {
@@ -10,20 +11,25 @@ export interface Message {
 }
 
 export const useAiChatbot = () => {
+  const initialMessage: Message = {
+    id: '1',
+    role: 'assistant',
+    content: 'السلام عليكم! أنا مساعدك لتفسير القرآن الكريم. \n\n💡 يمكنك السؤال بأي طريقة:\n• تفسير سورة الإخلاص\n• سورة البقرة آية 255\n• الآية الأولى من سورة طه\n• ما تفسير آية الكرسي\n• اشرح لي سورة الفاتحة',
+    timestamp: new Date()
+  };
+
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      role: 'assistant',
-      content: 'السلام عليكم! أنا مساعدك لتفسير القرآن الكريم. \n\n💡 يمكنك السؤال بأي طريقة:\n• تفسير سورة الإخلاص\n• سورة البقرة آية 255\n• الآية الأولى من سورة طه\n• ما تفسير آية الكرسي\n• اشرح لي سورة الفاتحة',
-      timestamp: new Date()
-    }
-  ]);
+  const [messages, setMessages] = useState<Message[]>([initialMessage]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [favorites, setFavorites] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
+  const synthRef = useRef<SpeechSynthesis | null>(null);
 
-  // الحصول على دور المستخدم
+  // Get user role
   const getUserRole = (): string | null => {
     try {
       const user = localStorage.getItem('user');
@@ -39,6 +45,65 @@ export const useAiChatbot = () => {
 
   const userRole = getUserRole();
 
+  // Initialize speech synthesis
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      synthRef.current = window.speechSynthesis;
+    }
+
+    // Initialize speech recognition
+    if (typeof window !== 'undefined') {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        recognitionRef.current = new SpeechRecognition();
+        recognitionRef.current.lang = 'ar-SA'; // Arabic Saudi
+        recognitionRef.current.continuous = false; // Stop after one phrase
+        recognitionRef.current.interimResults = true; // Show interim results
+        recognitionRef.current.maxAlternatives = 3; // Get multiple alternatives
+
+        recognitionRef.current.onresult = (event: any) => {
+          let finalTranscript = '';
+          let interimTranscript = '';
+
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+              finalTranscript += transcript;
+            } else {
+              interimTranscript += transcript;
+            }
+          }
+
+          // Use final transcript if available, otherwise show interim
+          if (finalTranscript) {
+            setInput(finalTranscript.trim());
+            setIsListening(false);
+          } else if (interimTranscript) {
+            setInput(interimTranscript.trim());
+          }
+        };
+
+        recognitionRef.current.onerror = (event: any) => {
+          console.error('Speech recognition error:', event.error);
+          setIsListening(false);
+        };
+
+        recognitionRef.current.onend = () => {
+          setIsListening(false);
+        };
+      }
+    }
+
+    return () => {
+      if (synthRef.current) {
+        synthRef.current.cancel();
+      }
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, []);
+
   // Auto scroll to bottom when messages change
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -53,10 +118,17 @@ export const useAiChatbot = () => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
+    // Validate message
+    const validation = await validateData(chatMessageSchema, { message: input.trim() });
+    if (!validation.isValid) {
+      console.error('Validation errors:', validation.errors);
+      return;
+    }
+
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: input,
+      content: input.trim(),
       timestamp: new Date()
     };
 
@@ -65,18 +137,18 @@ export const useAiChatbot = () => {
     setIsLoading(true);
 
     try {
-      const response = await api.post('/ai-chat', { message: userMessage.content });
+      const data = await sendAiChatMessage(userMessage.content);
 
-      if (response.data.success) {
+      if (data.success) {
         const aiMessage: Message = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content: response.data.data.message,
+          content: data.data.message,
           timestamp: new Date()
         };
         setMessages(prev => [...prev, aiMessage]);
       } else {
-        throw new Error(response.data.message);
+        throw new Error(data.message);
       }
     } catch (error) {
       console.error('Chat error:', error);
@@ -92,12 +164,156 @@ export const useAiChatbot = () => {
     }
   };
 
+  // Load favorites on mount
+  useEffect(() => {
+    loadFavorites();
+  }, []);
+
+  const loadFavorites = async () => {
+    try {
+      const data = await getFavorites();
+      if (data.success) {
+        // Store message IDs that are favorited
+        const favIds = data.data.map((fav: any) => fav.question);
+        setFavorites(favIds);
+      }
+    } catch (error) {
+      console.error('Error loading favorites:', error);
+    }
+  };
+
+  // Add to favorites
+  const handleAddFavorite = async (question: string, answer: string) => {
+    try {
+      // Validate data
+      const validation = await validateData(addFavoriteSchema, { question, answer });
+      if (!validation.isValid) {
+        return { success: false, message: Object.values(validation.errors || {})[0] };
+      }
+
+      const data = await addFavorite({ question, answer });
+
+      if (data.success) {
+        setFavorites(prev => [...prev, question]);
+        return { success: true, message: 'تم إضافة الرسالة إلى المفضلة' };
+      }
+      return { success: false, message: data.message };
+    } catch (error: any) {
+      console.error('Error adding favorite:', error);
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'حدث خطأ أثناء إضافة المفضلة' 
+      };
+    }
+  };
+
+  // Remove from favorites
+  const handleRemoveFavorite = async (question: string) => {
+    try {
+      // Find the favorite by question
+      const data = await getFavorites({ search: question, limit: 1 });
+
+      if (data.success && data.data.length > 0) {
+        const favoriteId = data.data[0]._id;
+        const deleteData = await deleteFavorite(favoriteId);
+        
+        if (deleteData.success) {
+          setFavorites(prev => prev.filter(q => q !== question));
+          return { success: true, message: 'تم إزالة الرسالة من المفضلة' };
+        }
+      }
+      return { success: false, message: 'لم يتم العثور على المفضلة' };
+    } catch (error: any) {
+      console.error('Error removing favorite:', error);
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'حدث خطأ أثناء إزالة المفضلة' 
+      };
+    }
+  };
+
+  // Check if message is favorited
+  const isFavorited = (question: string) => {
+    return favorites.includes(question);
+  };
+
+  // Clear chat history
+  const handleClearChat = () => {
+    setMessages([initialMessage]);
+  };
+
+  // Copy message to clipboard
+  const handleCopyMessage = async (content: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      return true;
+    } catch (error) {
+      console.error('Copy failed:', error);
+      return false;
+    }
+  };
+
+  // Handle quick suggestion click
+  const handleQuickSuggestion = (suggestion: string) => {
+    setInput(suggestion);
+  };
+
+  // Text-to-Speech
+  const handleSpeak = (text: string) => {
+    if (!synthRef.current) return;
+
+    // Stop any ongoing speech
+    synthRef.current.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'ar-SA'; // Arabic Saudi
+    utterance.rate = 0.85; // Slightly slower for better clarity
+    utterance.pitch = 1.0; // Normal pitch
+    utterance.volume = 1.0; // Full volume
+
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+
+    synthRef.current.speak(utterance);
+  };
+
+  // Stop speaking
+  const handleStopSpeaking = () => {
+    if (synthRef.current) {
+      synthRef.current.cancel();
+      setIsSpeaking(false);
+    }
+  };
+
+  // Voice input
+  const handleStartListening = () => {
+    if (!recognitionRef.current) return;
+
+    try {
+      setIsListening(true);
+      recognitionRef.current.start();
+    } catch (error) {
+      console.error('Speech recognition error:', error);
+      setIsListening(false);
+    }
+  };
+
+  const handleStopListening = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    }
+  };
+
   return {
     // State
     isOpen,
     messages,
     input,
     isLoading,
+    isListening,
+    isSpeaking,
     messagesEndRef,
     userRole,
     
@@ -105,5 +321,15 @@ export const useAiChatbot = () => {
     setIsOpen,
     setInput,
     handleSubmit,
+    handleClearChat,
+    handleCopyMessage,
+    handleQuickSuggestion,
+    handleSpeak,
+    handleStopSpeaking,
+    handleStartListening,
+    handleStopListening,
+    handleAddFavorite,
+    handleRemoveFavorite,
+    isFavorited,
   };
 };
