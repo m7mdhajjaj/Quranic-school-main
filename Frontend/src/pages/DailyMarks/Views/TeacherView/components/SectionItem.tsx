@@ -1,9 +1,11 @@
-import React, { memo } from "react";
 import { Card } from "@/components/UI";
 import { DropdownMenu } from "@/components/UI/DropdownMenu";
 import { Calendar, Edit, Trash2, Users, RotateCcw, BookOpen, Clock, AlertTriangle } from "lucide-react";
-import type { Section } from "../../../types/types";
-import type { MarkStatus } from "../../../components/SectionStatusBadge";
+import type { Section as SectionBase } from "../../../types/types";
+
+type Section = SectionBase & {
+  memorizationMeta?: any[];
+};
 import { useNavigate } from "react-router-dom";
 
 interface SectionItemProps {
@@ -60,6 +62,15 @@ const SectionItemComponent = ({
     navigate(`/timetable?addSession=true&sectionId=${section._id}&groupName=${encodeURIComponent(section.group || "")}&sessionType=${sessionType}`);
   };
 
+  const handleEditSchedule = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const timetable = section.timetableId as any;
+    if (!timetable || typeof timetable === 'string') return;
+    
+    // Navigate to timetable page with edit mode
+    navigate(`/timetable?editSession=${timetable._id}`);
+  };
+
   const statusConfig = {
     completed: {
       iconColor: "text-emerald-600",
@@ -95,75 +106,71 @@ const SectionItemComponent = ({
   return (
     <Card
       onClick={() => onSectionSelect(section)}
-      className={`cursor-pointer hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] active:scale-100 border-2 bg-gradient-to-br from-white via-emerald-50/40 to-teal-50/30 ${
+      className={`cursor-pointer hover:shadow-lg transition-all duration-200 border bg-white ${
         marksStatus === "completed" 
-          ? "border-emerald-500 hover:border-emerald-600" 
+          ? "border-emerald-400 hover:border-emerald-500" 
           : marksStatus === "in_progress"
-          ? "border-amber-500 hover:border-amber-600"
-          : "border-gray-400 hover:border-gray-500"
+          ? "border-amber-400 hover:border-amber-500"
+          : "border-gray-200 hover:border-gray-300"
       }`}
     >
-      <div className="p-6 relative">
+      <div className="p-5 relative">
         {/* Dropdown Menu */}
         {onEditSection && (
           <div 
-            className="absolute top-4 left-4 z-10"
+            className="absolute top-3 left-3 z-10"
             onClick={(e) => e.stopPropagation()}
           >
             <DropdownMenu
               items={[
                 {
                   label: "تعديل المقطع",
-                  icon: <Edit size={18} />,
+                  icon: <Edit size={16} />,
                   onClick: () => onEditSection(section),
                   variant: "warning",
                 },
                 {
                   label: "حذف المقطع",
-                  icon: <Trash2 size={18} />,
-                  onClick: () => {
-                    if (onDeleteSection) {
-                      onDeleteSection(section._id);
-                    }
-                  },
+                  icon: <Trash2 size={16} />,
+                  onClick: () => onDeleteSection?.(section._id),
                   variant: "danger",
                 },
               ]}
               position="left"
-              buttonClassName="hover:bg-emerald-100"
-              menuClassName="shadow-2xl"
+              buttonClassName="hover:bg-gray-100"
             />
           </div>
         )}
 
         {/* Header with Date */}
-        <div className="mb-4 pr-0">
-          <div className="flex items-center gap-2 mb-2">
-            <Calendar className={config.iconColor} size={20} />
-            <h3 className="text-lg font-bold text-gray-800">{shortDate}</h3>
+        <div className="mb-3">
+          <div className="flex items-center gap-2 mb-1">
+            <Calendar className={config.iconColor} size={18} />
+            <h3 className="text-base font-bold text-gray-800">{shortDate}</h3>
           </div>
           <p className="text-xs text-gray-500">{formattedDate}</p>
         </div>
 
         {/* Status Badge */}
-        <div className="mb-4">
-          <span className={`inline-flex items-center gap-2 px-3 py-1.5 ${config.statusBadgeBg} ${config.statusBadgeText} rounded-lg text-xs font-bold border ${config.statusBadgeBorder}`}>
-            <div className={`w-2 h-2 ${config.statusDot} rounded-full animate-pulse`}></div>
+        <div className="mb-3">
+          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 ${config.statusBadgeBg} ${config.statusBadgeText} rounded-md text-xs font-semibold border ${config.statusBadgeBorder}`}>
+            <div className={`w-1.5 h-1.5 ${config.statusDot} rounded-full`}></div>
             {config.statusText}
           </span>
+          
           {marksProgress && marksStatus === "in_progress" && (
-            <div className="mt-3">
-              <div className="flex items-center justify-between text-xs text-gray-600 mb-1.5">
+            <div className="mt-2">
+              <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
                 <span>التقدم</span>
-                <span className="font-semibold">{marksProgress.percentage}%</span>
+                <span className="font-medium">{marksProgress.percentage}%</span>
               </div>
-              <progress
-                value={Math.min(marksProgress.percentage, 100)}
-                max={100}
-                aria-label="تقدم رصد العلامات"
-                className="w-full h-2.5 overflow-hidden rounded-full shadow-inner [&::-webkit-progress-bar]:bg-gray-200 [&::-webkit-progress-bar]:rounded-full [&::-webkit-progress-value]:bg-amber-500 [&::-webkit-progress-value]:rounded-full"
-              />
-              <p className="text-xs text-gray-500 mt-1.5">
+              <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-amber-500 rounded-full transition-all"
+                  style={{ width: `${Math.min(marksProgress.percentage, 100)}%` }}
+                />
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
                 {marksProgress.studentsWithMarks} من {marksProgress.totalStudents} طالب
               </p>
             </div>
@@ -171,27 +178,24 @@ const SectionItemComponent = ({
         </div>
         
         {/* Sections Info */}
-        <div className="space-y-3 mb-5">
-          <div className="bg-white/80 p-3.5 rounded-lg border border-teal-200 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <BookOpen size={16} className="text-teal-600" />
+        <div className="space-y-2 mb-4">
+          <div className="bg-teal-50 p-3 rounded-lg border border-teal-100">
+            <div className="flex items-center gap-1.5 mb-1">
+              <BookOpen size={14} className="text-teal-600" />
               <span className="text-xs font-semibold text-teal-700">مقطع الحفظ</span>
             </div>
             {section.memorizationMeta && section.memorizationMeta.length > 0 ? (
-               <div className="space-y-2">
-                  <p className="text-sm font-medium text-gray-800 pr-1 line-clamp-2 leading-relaxed">{section.memorizationSection}</p>
-                  {/* ✅ Show AI Scheduler Notes (Auto-Repair) */}
+               <div className="space-y-1.5">
+                  <p className="text-sm text-gray-800 line-clamp-2">{section.memorizationSection}</p>
                   {section.memorizationMeta.some((m: any) => m.completionNote) && (
-                      <div className="bg-amber-50 border border-amber-100 rounded p-2 mt-2" onClick={e => e.stopPropagation()}>
+                      <div className="bg-amber-50 border border-amber-100 rounded p-2" onClick={e => e.stopPropagation()}>
                           <div className="flex items-start gap-1.5">
-                              <span className="text-[10px] bg-amber-200 text-amber-800 px-1.5 rounded font-bold shrink-0 mt-0.5">تنبيه</span>
-                              <div className="text-xs text-amber-800 space-y-1">
+                              <span className="text-[10px] bg-amber-200 text-amber-800 px-1.5 rounded font-bold shrink-0">تنبيه</span>
+                              <div className="text-xs text-amber-700">
                                   {section.memorizationMeta
                                       .filter((m: any) => m.completionNote)
                                       .map((m: any, i: number) => (
-                                      <p key={i} className="leading-tight">
-                                           {m.completionNote}
-                                      </p>
+                                      <p key={i}>{m.completionNote}</p>
                                   ))}
                               </div>
                           </div>
@@ -199,53 +203,60 @@ const SectionItemComponent = ({
                   )}
                </div>
             ) : (
-                <p className="text-sm font-medium text-gray-800 pr-1 line-clamp-2 leading-relaxed">{section.memorizationSection || "لا يوجد"}</p>
+                <p className="text-sm text-gray-800 line-clamp-2">{section.memorizationSection || "لا يوجد"}</p>
             )}
           </div>
-          <div className="bg-white/80 p-3.5 rounded-lg border border-emerald-200 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <RotateCcw size={16} className="text-emerald-600" />
+          
+          <div className="bg-emerald-50 p-3 rounded-lg border border-emerald-100">
+            <div className="flex items-center gap-1.5 mb-1">
+              <RotateCcw size={14} className="text-emerald-600" />
               <span className="text-xs font-semibold text-emerald-700">مقطع المراجعة</span>
             </div>
-            <p className="text-sm font-medium text-gray-800 pr-1 line-clamp-2 leading-relaxed">{section.reviewSection || "لا يوجد"}</p>
+            <p className="text-sm text-gray-800 line-clamp-2">{section.reviewSection || "لا يوجد"}</p>
           </div>
         </div>
         
         {/* Scheduled Time Info */}
         {section.timetableId && typeof section.timetableId !== 'string' && (
-          <div className="mb-4 mt-2 bg-cyan-50/50 border border-cyan-200 rounded-lg p-3 relative z-20 shadow-sm" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center gap-2 text-cyan-800">
-               <Clock size={16} className="text-cyan-600" />
-               <span className="text-xs font-bold">موعد الحلقة:</span>
-            </div>
-            <div className="flex items-center gap-2 mt-1 text-sm text-cyan-700 font-medium mr-6">
-                <span>{(section.timetableId as any).day}</span>
-                <span className="text-cyan-300">|</span>
-                <span dir="rtl" className="font-mono text-xs">{(section.timetableId as any).startHour} - {(section.timetableId as any).endHour}</span>
+          <div className="mb-3 bg-cyan-50 border border-cyan-100 rounded-lg p-2.5" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-cyan-800">
+                 <Clock size={14} className="text-cyan-600" />
+                 <span className="text-xs font-semibold">موعد الحلقة:</span>
+                 <span className="text-xs">{(section.timetableId as any).day}</span>
+                 <span className="text-cyan-300">|</span>
+                 <span className="text-xs font-mono">{(section.timetableId as any).startHour} - {(section.timetableId as any).endHour}</span>
+              </div>
+              <button
+                onClick={handleEditSchedule}
+                className="text-xs text-cyan-600 hover:text-cyan-800 hover:bg-cyan-100 px-2 py-1 rounded transition-colors font-medium"
+              >
+                تعديل
+              </button>
             </div>
           </div>
         )}
 
-        {/* Schedule Wrapper Warning - Show if NO timetableId (regardless of hasSchedule flag to be safe) */}
-        {(!section.timetableId) && (
-           <div className="mb-4 mt-2 bg-amber-50/50 border border-amber-200 rounded-lg p-3 relative z-20 shadow-sm" onClick={(e) => e.stopPropagation()}>
-             <div className="flex items-start gap-2 mb-2">
-               <AlertTriangle className="text-amber-500 shrink-0 mt-0.5" size={16} />
-               <p className="text-xs text-amber-700 font-medium leading-tight">لم يتم تحديد موعد لهذه الحلقة في الجدول</p>
+        {/* Schedule Warning */}
+        {!section.timetableId && (
+           <div className="mb-3 bg-amber-50 border border-amber-100 rounded-lg p-2.5" onClick={(e) => e.stopPropagation()}>
+             <div className="flex items-center gap-1.5 mb-2">
+               <AlertTriangle className="text-amber-500" size={14} />
+               <p className="text-xs text-amber-700 font-medium">لم يتم تحديد موعد للحلقة</p>
              </div>
              <button
                onClick={handleAddSchedule}
-               className="w-full py-1.5 px-3 bg-white border border-amber-200 text-amber-600 rounded-md text-xs font-bold hover:bg-amber-50 hover:text-amber-700 transition-colors flex items-center justify-center gap-2 shadow-sm"
+               className="w-full py-1.5 bg-white border border-amber-200 text-amber-600 rounded text-xs font-semibold hover:bg-amber-50 transition-colors flex items-center justify-center gap-1.5"
              >
-               <Clock size={14} />
-               <span>إضافة موعد للحلقة</span>
+               <Clock size={12} />
+               إضافة موعد
              </button>
            </div>
         )}
 
         {/* Action Hint */}
-        <div className="flex items-center justify-center gap-2 text-sm text-emerald-600 pt-4 border-t border-emerald-200/60 font-semibold">
-          <Users size={18} />
+        <div className="flex items-center justify-center gap-2 text-xs text-emerald-600 pt-3 border-t border-gray-100 font-medium">
+          <Users size={16} />
           <span>اضغط لعرض الطلاب والعلامات</span>
         </div>
       </div>

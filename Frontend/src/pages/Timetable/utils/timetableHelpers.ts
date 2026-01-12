@@ -1,8 +1,24 @@
 // ============================================================================
 // Timetable Helpers - دوال مساعدة لجدول الحصص
 // ============================================================================
+// ⚠️ النظام الجديد: يعتمد على sessionDate (التاريخ المحدد) وليس day (اسم اليوم)
 
 import type { User } from "../types/timetable.types";
+
+/**
+ * أيام الأسبوع بالعربية
+ */
+export const WEEK_DAYS = [
+  "السبت",
+  "الأحد",
+  "الاثنين",
+  "الثلاثاء",
+  "الأربعاء",
+  "الخميس",
+  "الجمعة",
+] as const;
+
+export type ArabicDay = typeof WEEK_DAYS[number];
 
 /**
  * تحديد إذا كان التوقيت صيفي أو شتوي
@@ -48,18 +64,105 @@ export const generateHours = (isSummer?: boolean): string[] => {
   return hours;
 };
 
+// ============================================================================
+// 📅 دوال التاريخ الجديدة (بدلاً من day)
+// ============================================================================
+
 /**
- * أيام الأسبوع بالعربية - يجب أن تطابق schema enum في Backend
+ * الحصول على اسم اليوم العربي من التاريخ
+ * @param dateStr - التاريخ (ISO أو YYYY-MM-DD)
  */
-export const WEEK_DAYS = [
-  "السبت",
-  "الأحد",
-  "الاثنين",
-  "الثلاثاء",
-  "الأربعاء",
-  "الخميس",
-  "الجمعة",
-] as const;
+export const getDayNameFromDate = (dateStr: string): ArabicDay => {
+  const date = new Date(dateStr);
+  const jsDay = date.getDay(); // 0 = Sunday, 6 = Saturday
+  // تحويل: Sunday(0) -> الأحد(1), Saturday(6) -> السبت(0)
+  const arabicIndex = (jsDay + 1) % 7;
+  return WEEK_DAYS[arabicIndex];
+};
+
+/**
+ * تنسيق التاريخ للإرسال للـ API
+ * @param date - كائن Date
+ * @returns YYYY-MM-DD
+ */
+export const formatDateForAPI = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+/**
+ * تنسيق التاريخ للعرض بالعربية
+ * @param dateStr - التاريخ (ISO أو YYYY-MM-DD)
+ */
+export const formatDateForDisplay = (dateStr: string): string => {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('ar-SA', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+};
+
+/**
+ * تنسيق التاريخ المختصر للعرض
+ * @param dateStr - التاريخ (ISO أو YYYY-MM-DD)
+ */
+export const formatDateShort = (dateStr: string): string => {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('ar-SA', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  });
+};
+
+/**
+ * الحصول على تاريخ اليوم بصيغة YYYY-MM-DD
+ */
+export const getTodayDate = (): string => {
+  return formatDateForAPI(new Date());
+};
+
+/**
+ * التحقق إذا كان تاريخان في نفس اليوم
+ */
+export const isSameDay = (date1: string, date2: string): boolean => {
+  const d1 = new Date(date1);
+  const d2 = new Date(date2);
+  return (
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate()
+  );
+};
+
+/**
+ * إنشاء تواريخ أسبوع من تاريخ معين (السبت - الجمعة)
+ */
+export const getWeekDates = (referenceDate: Date = new Date()): Date[] => {
+  const dates: Date[] = [];
+  const currentDay = referenceDate.getDay();
+  // حساب بداية الأسبوع (السبت)
+  const daysToSaturday = currentDay === 6 ? 0 : currentDay + 1;
+  const saturday = new Date(referenceDate);
+  saturday.setDate(referenceDate.getDate() - daysToSaturday);
+  saturday.setHours(0, 0, 0, 0);
+  
+  for (let i = 0; i < 7; i++) {
+    const day = new Date(saturday);
+    day.setDate(saturday.getDate() + i);
+    dates.push(day);
+  }
+  
+  return dates;
+};
+
+// ============================================================================
+// دوال المستخدم والمعلم
+// ============================================================================
 
 /**
  * الحصول على أسماء المعلم المحتملة للمطابقة
@@ -120,42 +223,34 @@ export const getUserRole = (): "student" | "teacher" | "admin" => {
   return user?.role || "student";
 };
 
+// ============================================================================
+// دوال الوقت
+// ============================================================================
+
 /**
  * تحويل الوقت من صيغة 12 ساعة إلى دقائق للمقارنة
- * يدعم صيغة 12-hour مع AM/PM
- * النطاق الزمني المدعوم:
- * - صيفي: 12:00 PM (الظهر) إلى 9:00 PM
- * - شتوي: 11:00 AM إلى 8:00 PM
  */
 export const timeToMinutes = (timeStr: string): number => {
   if (!timeStr) return 0;
   
-  // إزالة المسافات وتحويل لصيغة موحدة
   const cleanTime = timeStr.trim().toLowerCase();
-  
-  // استخراج الساعات والدقائق
   const timePart = cleanTime.replace(/\s*(am|pm)\s*/i, '');
   const [hoursStr, minutesStr] = timePart.split(':');
   const hours = parseInt(hoursStr) || 0;
   const minutes = parseInt(minutesStr) || 0;
   
-  // التحقق من AM أو PM
   const isPM = cleanTime.includes('pm');
   const isAM = cleanTime.includes('am');
   
   let totalHours = hours;
   
   if (isPM && hours !== 12) {
-    // PM: أضف 12 ساعة (ما عدا 12 PM)
     totalHours = hours + 12;
   } else if (isAM && hours === 12) {
-    // 12 AM = 0 (منتصف الليل)
     totalHours = 0;
   } else if (isPM && hours === 12) {
-    // 12 PM = 12 (الظهر)
     totalHours = 12;
   } else if (isAM) {
-    // AM: 11 AM يبقى 11
     totalHours = hours;
   }
   
@@ -164,7 +259,6 @@ export const timeToMinutes = (timeStr: string): number => {
 
 /**
  * فحص إذا كان الوقت يقع ضمن جلسة محجوزة
- * الوقت يعتبر محجوز إذا كان >= وقت البداية و < وقت النهاية
  */
 export const isTimeInBookedRange = (
   timeToCheck: string,
@@ -189,18 +283,14 @@ export const isValidTime = (timeStr: string): boolean => {
   const summer = isSummerTime();
   
   if (isAM) {
-    // AM مسموح فقط في الشتاء (11:00 AM - 11:30 AM)
     return !summer && hour === 11;
   }
   
   if (isPM) {
-    // PM مسموح في الصيف والشتاء
     if (summer) {
-      // صيفي: 12:00 PM - 9:00 PM
       return hour === 12 || (hour >= 1 && hour <= 9);
     } else {
-      // شتوي: 12:00 PM - 9:00 PM
-      return hour === 12 || (hour >= 1 && hour <= 9);
+      return hour === 12 || (hour >= 1 && hour <= 8);
     }
   }
   

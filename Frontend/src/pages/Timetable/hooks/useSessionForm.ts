@@ -1,11 +1,12 @@
 // ============================================================================
 // useSessionForm - هوك لإدارة حالة فورم الجلسة
 // ============================================================================
+// ⚠️ النظام الجديد: يعتمد على sessionDate (التاريخ المحدد) وليس day
 
 import { useState, useEffect } from "react";
 import type { Session, SessionFormData, UserRole } from "../types/timetable.types";
-import { WEEK_DAYS, getCurrentUser } from "../utils";
-import { getAvailableHours, getAvailableHoursForTeacher } from "@/Api/TimeTable.Api";
+import { getCurrentUser, formatDateForAPI, getTodayDate } from "../utils";
+import { getAvailableHours, getTeacherAvailableHours } from "@/Api/TimeTable.Api";
 import { getSectionById } from "@/Api/DailyMark/sectionApi";
 import { useSearchParams } from "react-router-dom";
 
@@ -17,11 +18,18 @@ interface UseSessionFormProps {
   initialGroupName?: string;
 }
 
-export const useSessionForm = ({ editingSession, role, teacherGroups = [], initialSectionId, initialGroupName }: UseSessionFormProps) => {
+export const useSessionForm = ({ 
+  editingSession, 
+  role, 
+  teacherGroups = [], 
+  initialSectionId, 
+  initialGroupName 
+}: UseSessionFormProps) => {
   const [searchParams] = useSearchParams();
-  // جلب كل الأوقات + الأوقات المحجوزة من الـ Backend
+  
+  // جلب الأوقات المتاحة + المحجوزة من الـ Backend
   const [hours, setHours] = useState<string[]>([]);
-  const [bookedHours, setBookedHours] = useState<string[]>([]); // الأوقات المحجوزة (للتعطيل)
+  const [bookedHours, setBookedHours] = useState<string[]>([]);
   const [loadingHours, setLoadingHours] = useState(true);
   
   // Logic to determine initial sessionType
@@ -31,23 +39,22 @@ export const useSessionForm = ({ editingSession, role, teacherGroups = [], initi
     return urlSessionType as any || undefined;
   };
 
+  // ⚠️ النموذج الجديد - sessionDate مطلوب!
   const [formData, setFormData] = useState<SessionFormData>(() => ({
-    day: WEEK_DAYS[0],
+    sessionDate: getTodayDate(), // ⚠️ تاريخ اليوم كقيمة افتراضية
     startHour: "",
     endHour: "",
     note: initialGroupName || "",
     description: "",
     sessionType: getInitialSessionType(),
     teacherId: "",
+    groupId: "",
     sectionId: initialSectionId || "",
   }));
   
   // ============================================
   // 🔄 جلب الأوقات من Backend API
   // ============================================
-  // يجلب:
-  // 1. جميع الأوقات المتاحة حسب الموسم (صيفي/شتوي) من /sessions/available-hours
-  // 2. الأوقات المحجوزة للمعلم من /sessions/available-hours-teacher
   useEffect(() => {
     const fetchAvailableHours = async () => {
       try {
@@ -59,29 +66,26 @@ export const useSessionForm = ({ editingSession, role, teacherGroups = [], initi
           setHours(generalResponse.data.hours);
         }
         
-        // 🔍 Step 2: جلب الأوقات المحجوزة للمعلم (إن وُجد)
-        if (formData.teacherId && formData.day) {
-          const excludeId = editingSession?._id; // استثناء الجلسة الحالية عند التعديل
-          const teacherResponse = await getAvailableHoursForTeacher(
+        // 🔍 Step 2: جلب الأوقات المحجوزة للمعلم في التاريخ المحدد
+        if (formData.teacherId && formData.sessionDate) {
+          const excludeId = editingSession?._id;
+          const teacherResponse = await getTeacherAvailableHours(
             formData.teacherId,
-            formData.day,
+            formData.sessionDate, // ⚠️ إرسال التاريخ بدلاً من اليوم
             excludeId
           );
           
           if (teacherResponse.success) {
-            // 🚫 حساب الأوقات المحجوزة = كل الأوقات - الأوقات المتاحة
             const allHours = generalResponse.data.hours;
             const availableHours = teacherResponse.data.availableHours;
             const booked = allHours.filter(h => !availableHours.includes(h));
             setBookedHours(booked);
           }
         } else {
-          // ℹ️ لا يوجد محجوزات إذا لم يُحدد معلم أو يوم
           setBookedHours([]);
         }
       } catch (error) {
         console.error("❌ خطأ في جلب الأوقات:", error);
-        // Fallback: استخدام توليد محلي إذا فشل الـ API
         const fallbackHours = generateFallbackHours();
         setHours(fallbackHours);
         setBookedHours([]);
@@ -91,10 +95,10 @@ export const useSessionForm = ({ editingSession, role, teacherGroups = [], initi
     };
     
     fetchAvailableHours();
-  }, [formData.teacherId, formData.day, editingSession?._id]);
+  }, [formData.teacherId, formData.sessionDate, editingSession?._id]);
   
   // ============================================
-  // � Auto-fill Day from Section Date
+  // 📅 Auto-fill Date from Section
   // ============================================
   useEffect(() => {
     if (initialSectionId && !editingSession) {
@@ -103,44 +107,42 @@ export const useSessionForm = ({ editingSession, role, teacherGroups = [], initi
           const section = await getSectionById(initialSectionId);
           if (section?.date) {
             const dateObj = new Date(section.date);
-            const jsDay = dateObj.getDay(); // 0 = Sunday
-            // WEEK_DAYS starts with Saturday (0)
-            // Sat(6) -> 0, Sun(0) -> 1
-            const dayIndex = (jsDay + 1) % 7;
-            const targetDay = WEEK_DAYS[dayIndex];
+            const sessionDate = formatDateForAPI(dateObj);
+            
+            console.log('📅 Section Date Auto-fill:', {
+              originalDate: section.date,
+              formattedDate: sessionDate,
+            });
             
             setFormData(prev => ({
               ...prev,
-              day: targetDay
+              sessionDate: sessionDate,
             }));
           }
         } catch (error) {
-          console.error("Failed to auto-fill day from section:", error);
+          console.error("Failed to auto-fill date from section:", error);
         }
       };
-      
       fetchSectionDetails();
     }
   }, [initialSectionId, editingSession]);
 
   // ============================================
-  // �🔄 Fallback: توليد الأوقات محلياً (إذا فشل الـ API)
+  // 🔄 Fallback: توليد الأوقات محلياً
   // ============================================
   const generateFallbackHours = (): string[] => {
     const now = new Date();
-    const month = now.getMonth() + 1; // 1-12
-    const isSummer = month >= 5 && month <= 9; // مايو-سبتمبر
+    const month = now.getMonth() + 1;
+    const isSummer = month >= 5 && month <= 9;
     const fallbackHours: string[] = [];
     
     if (isSummer) {
-      // ☀️ صيفي: 12:00 PM - 9:00 PM
       for (let h = 12; h <= 21; h++) {
         const display12 = h === 12 ? 12 : h > 12 ? h - 12 : h;
         fallbackHours.push(`${display12}:00 PM`);
         if (h < 21) fallbackHours.push(`${display12}:30 PM`);
       }
     } else {
-      // ❄️ شتوي: 11:00 AM - 8:00 PM
       fallbackHours.push('11:00 AM', '11:30 AM');
       for (let h = 12; h <= 20; h++) {
         const display12 = h === 12 ? 12 : h > 12 ? h - 12 : h;
@@ -157,11 +159,8 @@ export const useSessionForm = ({ editingSession, role, teacherGroups = [], initi
   // ============================================
   // ⏰ دالة لتحديث وقت البداية
   // ============================================
-  // عند اختيار وقت بداية، تحدث وقت النهاية تلقائياً للسلوت التالي
-  // مثال: إذا اختار 12:00 PM، يُحدّث النهاية تلقائياً إلى 12:30 PM
   const handleStartHourChange = (newStartHour: string) => {
     const startIndex = hours.indexOf(newStartHour);
-    // اختيار الوقت التالي تلقائياً (slot بعده)
     const nextHour = startIndex >= 0 && startIndex < hours.length - 1 
       ? hours[startIndex + 1] 
       : hours[startIndex];
@@ -174,52 +173,62 @@ export const useSessionForm = ({ editingSession, role, teacherGroups = [], initi
   };
   
   // ============================================
-  // 🔄 تحديث النموذج عند التعديل أو إعادة التعيين
+  // 📅 دالة لتحديث التاريخ
+  // ============================================
+  const handleDateChange = (newDate: string) => {
+    setFormData({
+      ...formData,
+      sessionDate: newDate,
+    });
+  };
+  
+  // ============================================
+  // 🔄 تحديث النموذج عند التعديل
   // ============================================
   useEffect(() => {
     if (editingSession) {
-      // 📝 وضع التعديل: ملء النموذج ببيانات الجلسة الموجودة
       const teacherIdValue = typeof editingSession.teacherId === 'string' 
         ? editingSession.teacherId 
         : editingSession.teacherId?._id || "";
       
       setFormData({
-        day: editingSession.day,
-        startHour: editingSession.startHour, // محدد مسبقاً - وقت الحلقة الحالي
-        endHour: editingSession.endHour,     // محدد مسبقاً - وقت الحلقة الحالي
-        note: editingSession.note,
+        sessionDate: editingSession.sessionDate || getTodayDate(),
+        startHour: editingSession.startHour,
+        endHour: editingSession.endHour,
+        note: editingSession.note || "",
         description: editingSession.description || "",
         sessionType: editingSession.sessionType,
         teacherId: teacherIdValue,
+        groupId: editingSession.groupId || "",
         sectionId: editingSession.sectionId || "",
       });
       
-      if (role === "teacher") {
+      if (role === "teacher" && editingSession.note) {
         setSelectedGroup(editingSession.note);
       }
     } else {
-      // ➕ وضع الإضافة: تعيين قيم افتراضية
+      // ➕ وضع الإضافة
       const currentUser = getCurrentUser();
       const defaultTeacherId = role === "teacher" && currentUser?._id ? currentUser._id : "";
       const urlSessionType = searchParams.get('sessionType') as any || undefined;
       
-      setFormData({
-        day: WEEK_DAYS[0], // اليوم الأول (السبت)
-        startHour: "", // المستخدم يختار
-        endHour: "",   // المستخدم يختار
+      setFormData(prev => ({
+        sessionDate: prev.sessionDate || getTodayDate(),
+        startHour: "",
+        endHour: "",
         note: initialGroupName || "",
         description: "",
         sessionType: urlSessionType,
-        teacherId: defaultTeacherId, // للمعلم: ID تلقائي، للأدمن: فارغ
+        teacherId: defaultTeacherId,
+        groupId: "",
         sectionId: initialSectionId || "",
-      });
+      }));
       
       if (role === "teacher" && teacherGroups.length > 0) {
         setSelectedGroup(teacherGroups[0]);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editingSession, role, initialSectionId, initialGroupName, searchParams]);
+  }, [editingSession, role, initialSectionId, initialGroupName, searchParams, teacherGroups]);
 
   // دالة لإعادة تعيين النموذج (reset)
   const resetForm = () => {
@@ -227,16 +236,16 @@ export const useSessionForm = ({ editingSession, role, teacherGroups = [], initi
     const defaultTeacherId = role === "teacher" && currentUser?._id ? currentUser._id : "";
     
     setFormData({
-      day: WEEK_DAYS[0],
+      sessionDate: getTodayDate(),
       startHour: "",
       endHour: "",
       note: initialGroupName || "",
       description: "",
       sessionType: undefined,
       teacherId: defaultTeacherId,
+      groupId: "",
       sectionId: initialSectionId || "",
     });
-    
     setSelectedGroup("");
     setBookedHours([]);
   };
@@ -247,9 +256,10 @@ export const useSessionForm = ({ editingSession, role, teacherGroups = [], initi
     selectedGroup,
     setSelectedGroup,
     hours,
-    bookedHours, // الأوقات المحجوزة (للتعطيل في الـ UI)
+    bookedHours,
     loadingHours,
     handleStartHourChange,
-    resetForm, // دالة لإعادة تعيين النموذج
+    handleDateChange, // 📅 جديد
+    resetForm,
   };
 };

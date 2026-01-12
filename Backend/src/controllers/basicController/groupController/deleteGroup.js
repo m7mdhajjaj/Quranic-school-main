@@ -6,6 +6,11 @@ const Group = require("../../../schema/Group");
 const Teacher = require("../../../schema/Teacher");
 const Student = require("../../../schema/Student");
 const TimeTable = require("../../../schema/TimeTable");
+const DailyPoints = require("../../../schema/DailyPoints");
+const ExamSchedule = require("../../../schema/ExamSchedule");
+const ExamMark = require("../../../schema/ExamMark");
+const Warning = require("../../../schema/Warning");
+const Ranking = require("../../../schema/Ranking");
 const { invalidateStudentCountsCache } = require("./cache");
 const { successResponse, notFoundResponse, handleError, emitSocketEvent } = require("./utils");
 
@@ -41,6 +46,29 @@ exports.deleteGroup = async (req, res) => {
 
     // ✅ حذف المواعيد المرتبطة بالحلقة
     await TimeTable.deleteMany({ groupId: id });
+
+    // ✅ حذف النقاط اليومية المرتبطة بالحلقة (باستخدام اسم الحلقة)
+    await DailyPoints.deleteMany({ group: group.name });
+    console.log(`✅ تم حذف النقاط اليومية للحلقة: ${group.name}`);
+
+    // ✅ حذف الامتحانات وعلاماتها المرتبطة بالحلقة
+    const groupExams = await ExamSchedule.find({ group: group.name }).select('_id');
+    const examIds = groupExams.map(exam => exam._id);
+    if (examIds.length > 0) {
+      // حذف العلامات التفصيلية أولاً
+      await ExamMark.deleteMany({ exam: { $in: examIds } });
+      // حذف جداول الامتحانات
+      await ExamSchedule.deleteMany({ _id: { $in: examIds } });
+      console.log(`✅ تم حذف ${examIds.length} امتحان وعلاماتها المرتبطة بالحلقة`);
+    }
+
+    // ✅ حذف التحذيرات المرتبطة بالحلقة
+    await Warning.deleteMany({ groupId: id });
+    console.log(`✅ تم حذف التحذيرات المرتبطة بالحلقة`);
+
+    // ✅ حذف التصنيفات المرتبطة بالحلقة
+    await Ranking.deleteMany({ group: group.name });
+    console.log(`✅ تم حذف التصنيفات المرتبطة بالحلقة`);
 
     // حذف الحلقة
     await Group.findByIdAndDelete(id);

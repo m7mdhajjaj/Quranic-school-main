@@ -1,34 +1,61 @@
 // ============================================
-// TIMETABLE CONTROLLER - INDEX FILE
+// TIMETABLE CONTROLLER - INDEX FILE (NEW)
 // ============================================
-// هذا الملف يجمع جميع عمليات المواعيد من الملفات المنفصلة
+// نظام جديد لإدارة المواعيد مع ربط مباشر بالمقاطع
 
-const { getAllTimetables } = require("./getTimetables");
-const { createTimetable } = require("./createTimetable");
-const { updateTimetable } = require("./updateTimetable");
-const { deleteTimetable } = require("./deleteTimetable");
-const { getAvailableHours } = require("./getAvailableHours");
-const { getAvailableHoursForTeacher } = require("./getAvailableHoursForTeacher");
-const { getGroupTimetable, getGroupTimetableByName } = require("./getGroupTimetable");
+const { 
+  createTimetable, 
+  createTimetableForSection 
+} = require("./create.controller");
+
+const { 
+  getTimetables, 
+  getTimetableById, 
+  getTimetableBySection,
+  getGroupTimetable,
+  getTeacherTimetables
+} = require("./get.controller");
+
+const { 
+  updateTimetable,
+  updateTimetableTime,
+  linkTimetableToSection
+} = require("./update.controller");
+
+const { 
+  deleteTimetable,
+  unlinkTimetableFromSection
+} = require("./delete.controller");
+
+const {
+  getAvailableHours,
+  getTeacherAvailableHours,
+  checkConflict
+} = require("./availability.controller");
 
 module.exports = {
-  // Read operations
-  getAllTimetables,
-  getSessions: getAllTimetables, // backward compatibility
-  getAvailableHours, // إرجاع الأوقات المتاحة (عامة)
-  getAvailableHoursForTeacher, // إرجاع الأوقات المتاحة للمعلم في يوم معين
-  getGroupTimetable, // إرجاع جدول حلقة معينة
-  getGroupTimetableByName, // إرجاع جدول حلقة باسمها
-
-  // Create operations
-  createTimetable,
-  addSession: createTimetable, // backward compatibility
-
-  // Update operations
-  updateTimetable,
-  updateSession: updateTimetable, // backward compatibility
-
-  // Delete operations
-  deleteTimetable,
-  deleteSession: deleteTimetable, // backward compatibility
+  // ============ CREATE ============
+  createTimetable,           // إنشاء موعد جديد
+  createTimetableForSection, // إنشاء موعد لمقطع محدد
+  
+  // ============ READ ============
+  getTimetables,             // جلب جميع المواعيد (مع فلترة)
+  getTimetableById,          // جلب موعد محدد
+  getTimetableBySection,     // جلب موعد مقطع
+  getGroupTimetable,         // جدول حلقة معينة
+  getTeacherTimetables,      // مواعيد معلم معين
+  
+  // ============ UPDATE ============
+  updateTimetable,           // تحديث موعد كامل
+  updateTimetableTime,       // تحديث الوقت فقط
+  linkTimetableToSection,    // ربط موعد بمقطع
+  
+  // ============ DELETE ============
+  deleteTimetable,           // حذف موعد
+  unlinkTimetableFromSection, // فك ربط موعد من مقطع
+  
+  // ============ AVAILABILITY ============
+  getAvailableHours,         // الأوقات المتاحة (عامة)
+  getTeacherAvailableHours,  // أوقات المعلم المتاحة
+  checkConflict              // فحص التعارض
 };

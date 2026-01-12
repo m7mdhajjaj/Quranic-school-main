@@ -225,7 +225,7 @@ export const SessionModal: React.FC<SessionModalProps> = ({
                 </div>
               </div>
               {/* اليوم */}
-              {!formData.sectionId && !(role === "teacher" && editingSession) && (
+              {!formData.sectionId && !(role === "teacher" && editingSession) ? (
               <div className="mb-5">
                 <label className="block text-sm font-bold text-blue-900 mb-3">اليوم</label>
                 <div className="grid grid-cols-3 sm:grid-cols-7 gap-2">
@@ -244,7 +244,25 @@ export const SessionModal: React.FC<SessionModalProps> = ({
                   ))}
                 </div>
               </div>
-              )}
+              ) : formData.sectionId && formData.sessionDate ? (
+              /* عرض اليوم المُشتق من تاريخ المقطع */
+              <div className="mb-5">
+                <label className="block text-sm font-bold text-blue-900 mb-3">اليوم (مُشتق من تاريخ المقطع)</label>
+                <div className="flex items-center gap-3 p-4 bg-blue-100 rounded-lg border-2 border-blue-300">
+                  <Calendar className="w-6 h-6 text-blue-600" />
+                  <div className="flex flex-col">
+                    <span className="text-lg font-bold text-blue-900">{formData.day}</span>
+                    <span className="text-sm text-blue-600">
+                      {new Date(formData.sessionDate).toLocaleDateString('ar-SA', { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              ) : null}
 
               {/* Time Picker أفقي */}
               <div className="space-y-5">

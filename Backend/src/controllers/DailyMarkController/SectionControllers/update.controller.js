@@ -1,5 +1,7 @@
 const Section = require("../../../schema/DailyMark/Section");
 const TimeTable = require("../../../schema/TimeTable");
+const Group = require("../../../schema/Group");
+const Teacher = require("../../../schema/Teacher");
 const { notifySectionUpdated } = require("../../../Notifications");
 const sequenceService = require("../../../services/DailyMark/SectionSequenceService");
 const {
@@ -21,6 +23,42 @@ exports.updateSection = async (req, res) => {
 
     // Use validated data from middleware
     const updateData = req.validatedData || req.body;
+
+    // ✅ جلب groupId من اسم الحلقة (إذا تم تحديث اسم الحلقة)
+    if (updateData.group && updateData.group !== section.group) {
+      const groupDoc = await Group.findOne({ name: updateData.group.trim() });
+      if (groupDoc) {
+        updateData.groupId = groupDoc._id;
+        console.log(`🔗 تم تحديث groupId إلى: ${groupDoc._id}`);
+      }
+    }
+
+    // ✅ جلب teacherId من اسم المعلم (إذا تم تحديث اسم المعلم)
+    if (updateData.teacher && updateData.teacher !== section.teacher) {
+      const nameParts = updateData.teacher.trim().split(' ');
+      let teacherDoc = null;
+      
+      if (nameParts.length >= 2) {
+        teacherDoc = await Teacher.findOne({
+          firstName: nameParts[0],
+          lastName: nameParts.slice(1).join(' ')
+        });
+      }
+      
+      if (!teacherDoc) {
+        teacherDoc = await Teacher.findOne({
+          $or: [
+            { firstName: updateData.teacher.trim() },
+            { lastName: updateData.teacher.trim() }
+          ]
+        });
+      }
+      
+      if (teacherDoc) {
+        updateData.teacherId = teacherDoc._id;
+        console.log(`🔗 تم تحديث teacherId إلى: ${teacherDoc._id}`);
+      }
+    }
 
     // ============================================
     // 🛡️ Advanced Conflict Check (Update) - V3: Date-Aware
@@ -97,16 +135,63 @@ exports.updateSection = async (req, res) => {
         new: true, 
         runValidators: true // ✅ Ensure schema validators run (dateKey, canonicalKey auto-generation)
       }
-    ).populate('timetableId', 'day startHour endHour sessionType');
+    )
+    .populate('timetableId', 'day startHour endHour sessionType')
+    .populate('groupId', 'name')
+    .populate('teacherId', 'firstName lastName');
 
-    // ✅ Sync date with TimeTable if linked
-    // إذا تغير التاريخ وكان هناك موعد مرتبط، نحدّث تاريخ الموعد أيضاً ليظل متطابقاً
-    if (updatedSection.timetableId && updateData.date && 
-        new Date(updateData.date).getTime() !== new Date(oldSection.date).getTime()) {
-      // Async update
-      TimeTable.findByIdAndUpdate(updatedSection.timetableId, {
-        sessionDate: updatedSection.date
-      }).catch(err => console.error("Timetable sync error:", err));
+    // ✅ Auto-sync TimeTable if linked
+    if (updatedSection.timetableId) {
+      const timetableUpdates = {};
+      
+      // 1. Sync date if changed
+      if (updateData.date && new Date(updateData.date).getTime() !== new Date(oldSection.date).getTime()) {
+        timetableUpdates.sessionDate = updatedSection.date;
+      }
+      
+      // 2. Sync groupId and note if group changed
+      if (updateData.groupId || updateData.group) {
+        timetableUpdates.groupId = updatedSection.groupId;
+        timetableUpdates.note = updatedSection.group;
+      }
+      
+      // 3. Sync teacherId if teacher changed
+      if (updateData.teacherId) {
+        timetableUpdates.teacherId = updatedSection.teacherId;
+      }
+      
+      // 4. Auto-sync sessionType based on section content
+      const hasMem = (updateData.memorizationMeta || section.memorizationMeta)?.length > 0;
+      const hasRev = (updateData.reviewMeta || section.reviewMeta)?.length > 0;
+      
+      let newSessionType;
+      if (hasMem && hasRev) {
+        newSessionType = 'both';
+      } else if (hasMem) {
+        newSessionType = 'hifz';
+      } else if (hasRev) {
+        newSessionType = 'murajaah';
+      }
+      
+      if (newSessionType) {
+        timetableUpdates.sessionType = newSessionType;
+      }
+      
+      // 5. Sync sectionInfo for quick display
+      timetableUpdates.sectionInfo = {
+        memorizationSection: updatedSection.memorizationSection,
+        reviewSection: updatedSection.reviewSection,
+        marksStatus: updatedSection.marksStatus,
+      };
+      
+      // Apply updates if any
+      if (Object.keys(timetableUpdates).length > 0) {
+        TimeTable.findByIdAndUpdate(
+          typeof updatedSection.timetableId === 'object' ? updatedSection.timetableId._id : updatedSection.timetableId,
+          timetableUpdates
+        ).catch(err => console.error("Timetable sync error:", err));
+        console.log(`🔄 TimeTable synced with Section ${updatedSection._id}`);
+      }
     }
 
     // إرسال إشعارات لجميع طلاب الحلقة (Fire-and-forget)

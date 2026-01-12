@@ -1,14 +1,44 @@
 // ============================================================================
 // Session Organizer - تنظيم وفرز الحصص
 // ============================================================================
+// ⚠️ النظام الجديد: يعتمد على sessionDate (التاريخ المحدد)
 
 import type { Session } from '../types/timetable.types';
-import { WEEK_DAYS } from './timetableHelpers';
+import { WEEK_DAYS, getDayNameFromDate } from './timetableHelpers';
 
 /**
- * تنظيم الحصص حسب اليوم
+ * تنظيم الحصص حسب التاريخ
  * @param sessions - مصفوفة الحصص
- * @returns كائن يحتوي على الحصص مجمعة حسب اليوم
+ * @returns كائن يحتوي على الحصص مجمعة حسب التاريخ (YYYY-MM-DD)
+ */
+export const organizeSessionsByDate = (sessions: Session[]): Record<string, Session[]> => {
+  const organized: Record<string, Session[]> = {};
+  
+  sessions.forEach(session => {
+    if (!session.sessionDate) return;
+    
+    const dateKey = session.sessionDate.split('T')[0]; // YYYY-MM-DD
+    if (!organized[dateKey]) {
+      organized[dateKey] = [];
+    }
+    organized[dateKey].push(session);
+  });
+  
+  // ترتيب الحصص داخل كل يوم حسب وقت البداية
+  Object.keys(organized).forEach(dateKey => {
+    organized[dateKey].sort((a, b) => {
+      const aTime = a.startHour.toLowerCase();
+      const bTime = b.startHour.toLowerCase();
+      return aTime.localeCompare(bTime);
+    });
+  });
+  
+  return organized;
+};
+
+/**
+ * تنظيم الحصص حسب اسم اليوم (للتوافق مع العرض الأسبوعي)
+ * ⚠️ يستخدم sessionDate للحصول على اسم اليوم
  */
 export const organizeSessionsByDay = (sessions: Session[]): Record<string, Session[]> => {
   const organized: Record<string, Session[]> = {};
@@ -18,10 +48,11 @@ export const organizeSessionsByDay = (sessions: Session[]): Record<string, Sessi
     organized[day] = [];
   });
   
-  // تجميع الحصص حسب اليوم
+  // ⚠️ تجميع الحصص حسب اليوم المشتق من sessionDate
   sessions.forEach(session => {
-    if (organized[session.day]) {
-      organized[session.day].push(session);
+    const dayName = session.day || (session.sessionDate ? getDayNameFromDate(session.sessionDate) : null);
+    if (dayName && organized[dayName]) {
+      organized[dayName].push(session);
     }
   });
   
@@ -39,21 +70,30 @@ export const organizeSessionsByDay = (sessions: Session[]): Record<string, Sessi
 
 /**
  * فلترة الحصص حسب معايير معينة
- * @param sessions - مصفوفة الحصص
- * @param filters - المعايير المطلوبة
- * @returns الحصص المفلترة
+ * ⚠️ يدعم الفلترة بالتاريخ (sessionDate)
  */
 export const filterSessions = (
   sessions: Session[],
   filters: {
-    day?: string;
+    sessionDate?: string;  // ⚠️ فلترة بالتاريخ
+    day?: string;          // للتوافق - يُشتق من sessionDate
     teacherId?: string;
     sessionType?: string;
     groupName?: string;
   }
 ): Session[] => {
   return sessions.filter(session => {
-    if (filters.day && session.day !== filters.day) return false;
+    // ⚠️ فلترة بالتاريخ
+    if (filters.sessionDate) {
+      const sessionDateKey = session.sessionDate?.split('T')[0];
+      if (sessionDateKey !== filters.sessionDate) return false;
+    }
+    
+    // فلترة باليوم (للتوافق)
+    if (filters.day) {
+      const dayName = session.day || (session.sessionDate ? getDayNameFromDate(session.sessionDate) : null);
+      if (dayName !== filters.day) return false;
+    }
     
     if (filters.teacherId) {
       const sessionTeacherId = typeof session.teacherId === 'object' 

@@ -68,10 +68,10 @@ const SectionCardSkeleton = () => (
   <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm h-full flex flex-col justify-between animate-pulse">
     <div className="flex justify-between items-start mb-4">
       <div className="space-y-2">
-        <div className="h-4 w-32 bg-gray-200 rounded" /> {/* Date */}
-        <div className="h-3 w-20 bg-gray-100 rounded" /> {/* Day/Time */}
+        <div className="h-4 w-32 bg-gray-200 rounded" />
+        <div className="h-3 w-20 bg-gray-100 rounded" />
       </div>
-      <div className="h-6 w-24 bg-emerald-50 rounded-full border border-emerald-100" /> {/* Status Badge */}
+      <div className="h-6 w-24 bg-emerald-50 rounded-full border border-emerald-100" />
     </div>
     
     <div className="space-y-3 mb-4">
@@ -85,7 +85,7 @@ const SectionCardSkeleton = () => (
     </div>
 
     <div className="pt-4 border-t border-gray-100 flex justify-between items-center">
-        <div className="h-8 w-24 bg-gray-100 rounded" /> {/* Action button placeholder */}
+        <div className="h-8 w-24 bg-gray-100 rounded" />
         <div className="flex gap-2">
             <div className="h-8 w-8 bg-gray-100 rounded-full" />
             <div className="h-8 w-8 bg-gray-100 rounded-full" />
@@ -95,22 +95,11 @@ const SectionCardSkeleton = () => (
 );
 
 export const SectionsGridSkeleton = ({ count = 6 }: { count?: number }) => (
-    <div className="animate-fade-in space-y-6">
-         {/* Filter Bar Skeleton */}
-        <div className="flex gap-2 overflow-x-auto pb-2">
-            {[1, 2, 3, 4].map(i => (
-                <div key={i} className="h-10 w-24 bg-gray-200 rounded-lg shrink-0 animate-pulse border border-gray-200" />
-            ))}
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Array.from({ length: Math.max(1, count) }).map((_, i) => (
-                <div key={i} className="h-48">
-                    <SectionCardSkeleton />
-                </div>
-            ))}
-        </div>
-    </div>
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {Array.from({ length: Math.max(1, count) }).map((_, i) => (
+      <SectionCardSkeleton key={i} />
+    ))}
+  </div>
 );
 
 export const DailyMarksPageSkeleton = () => (

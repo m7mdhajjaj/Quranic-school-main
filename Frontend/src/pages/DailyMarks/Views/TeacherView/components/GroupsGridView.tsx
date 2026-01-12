@@ -1,6 +1,5 @@
 import { Card } from "@/components/UI";
 import { Users, BookOpen } from "lucide-react";
-import { CardSkeleton } from "@/components/skeletons";
 
 interface GroupsGridViewProps {
   groupsWithStats: Array<{
@@ -14,32 +13,7 @@ interface GroupsGridViewProps {
   isLoading?: boolean;
 }
 
-export const GroupsGridSkeleton = ({ count = 6 }: { count?: number }) => {
-  return (
-    <div className="animate-fade-in">
-      <div className="mb-6">
-        <div className="h-8 w-48 bg-gray-200 rounded mb-2 animate-pulse" />
-        <div className="h-4 w-64 bg-gray-100 rounded animate-pulse" />
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {Array.from({ length: Math.max(1, count) }).map((_, i) => (
-          <CardSkeleton key={i} hasImage={false} contentLines={3} />
-        ))}
-      </div>
-    </div>
-  );
-};
 
-export const GroupsGridCardsSkeleton = ({ count = 6 }: { count?: number }) => {
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {Array.from({ length: Math.max(1, count) }).map((_, i) => (
-        <CardSkeleton key={i} hasImage={false} contentLines={3} />
-      ))}
-    </div>
-  );
-};
 
 /**
  * عرض Grid للحلقات مع إحصائياتها

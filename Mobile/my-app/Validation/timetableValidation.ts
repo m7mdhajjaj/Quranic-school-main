@@ -131,6 +131,8 @@ export interface SessionFormData {
   note: string;
   teacherId: string;
   sessionType?: SessionType;
+  sectionId?: string; // معرف المقطع المرتبط
+  sessionDate?: string; // التاريخ المحدد للحصة
 }
 
 /**
@@ -217,6 +219,15 @@ export const timetableValidationSchema = yup.object({
       "نوع الحصة يجب أن يكون: hifz (حفظ) أو murajaah (مراجعة) أو both (الاثنين)"
     )
     .label("نوع الحصة"),
+
+  // معرف المقطع - اختياري
+  sectionId: yup
+    .string()
+    .matches(/^[a-fA-F0-9]{24}$/, "معرف المقطع غير صحيح")
+    .label("معرف المقطع"),
+
+  // تاريخ الحصة - اختياري
+  sessionDate: yup.string().label("تاريخ الحصة"),
 });
 
 /**

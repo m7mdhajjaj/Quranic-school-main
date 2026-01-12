@@ -1,10 +1,12 @@
 // ============================================================================
 // WeeklyGridView - عرض شبكة أسبوعية للجدول (مثل Google Calendar)
 // ============================================================================
+// ⚠️ النظام الجديد: يعتمد على sessionDate (التاريخ المحدد)
 
 import React, { useMemo } from "react";
 import type { Session, UserRole } from "../types/timetable.types";
-import { WEEK_DAYS, generateHours, isSummerTime } from "../utils";
+import { WEEK_DAYS, generateHours, isSummerTime, getWeekDates, formatDateForAPI } from "../utils";
+import { useWeekFilter } from "../hooks";
 import { Edit, Trash2, MoreVertical } from "lucide-react";
 import { DropdownMenu } from "@/components/UI/DropdownMenu";
 
@@ -23,69 +25,80 @@ export const WeeklyGridView: React.FC<WeeklyGridViewProps> = ({
   onEdit,
   onDelete,
 }) => {
-  // تحديد التوقيت الحالي تلقائياً
   const currentIsSummer = useMemo(() => isSummerTime(), []);
   const hours = useMemo(() => generateHours(currentIsSummer), [currentIsSummer]);
 
-  // تنظيم الحصص - الحصة تظهر في سلوت البداية فقط مع معلومات الامتداد
+  const { 
+    weekRange,
+    weekRangeFormatted, 
+    filteredSessions 
+  } = useWeekFilter({ 
+    sessions, 
+    enableClientFilter: true
+  });
+
+  // ⚠️ إنشاء قائمة بتواريخ الأسبوع الحالي
+  const weekDates = useMemo(() => getWeekDates(weekRange.startOfWeek), [weekRange]);
+
+  // ⚠️ تنظيم الحصص حسب التاريخ (sessionDate) وليس اليوم
   const sessionGrid = useMemo(() => {
     const grid: Record<string, Record<string, { session: Session; rowSpan: number }[]>> = {};
     
-    // تهيئة الشبكة
-    WEEK_DAYS.forEach(day => {
-      grid[day] = {};
+    // تهيئة الشبكة باستخدام تواريخ الأسبوع
+    weekDates.forEach((date) => {
+      const dateKey = formatDateForAPI(date);
+      grid[dateKey] = {};
       hours.forEach(hour => {
-        grid[day][hour] = [];
+        grid[dateKey][hour] = [];
       });
     });
 
-    // ترتيب الحصص حسب وقت البداية لضمان عرض صحيح
-    const sortedSessions = [...sessions].sort((a, b) => {
+    // ترتيب الحصص حسب وقت البداية
+    const sortedSessions = [...filteredSessions].sort((a, b) => {
       const aIndex = hours.indexOf(a.startHour);
       const bIndex = hours.indexOf(b.startHour);
       if (aIndex !== bIndex) return aIndex - bIndex;
-      // إذا كانت نفس وقت البداية، رتب حسب وقت النهاية
       const aEndIndex = hours.indexOf(a.endHour);
       const bEndIndex = hours.indexOf(b.endHour);
       return aEndIndex - bEndIndex;
     });
 
-    // ملء الشبكة - الحصة تظهر في سلوت البداية فقط
+    // ⚠️ ملء الشبكة باستخدام sessionDate
     sortedSessions.forEach(session => {
-      if (!grid[session.day]) return;
+      if (!session.sessionDate) return;
+      
+      // استخراج التاريخ فقط (بدون الوقت)
+      const sessionDateKey = session.sessionDate.split('T')[0];
+      
+      if (!grid[sessionDateKey]) return;
       
       const startIndex = hours.indexOf(session.startHour);
       const endIndex = hours.indexOf(session.endHour);
       
-      if (startIndex !== -1 && endIndex !== -1 && startIndex <= endIndex && grid[session.day][session.startHour]) {
-        // حساب عدد السلوتات (rowSpan) - يشمل سلوت البداية وسلوت النهاية
-        // مثلا: من 12:00 لـ 12:30 = 2 سلوت (12:00 و 12:30)
-        const rowSpan = endIndex - startIndex + 1;
-        grid[session.day][session.startHour].push({ session, rowSpan });
+      if (startIndex !== -1 && endIndex !== -1 && startIndex <= endIndex && grid[sessionDateKey][session.startHour]) {
+        const rowSpan = endIndex - startIndex;
+        grid[sessionDateKey][session.startHour].push({ session, rowSpan });
       }
     });
 
     return grid;
-  }, [sessions, hours]);
+  }, [filteredSessions, hours, weekDates]);
 
-  // دالة للتحقق إذا كان السلوت مشغول بحصة ممتدة من سلوت سابق
-  const isSlotOccupied = (day: string, currentHour: string): boolean => {
+  // دالة للتحقق إذا كان السلوت مشغول بحصة ممتدة
+  const isSlotOccupied = (dateKey: string, currentHour: string): boolean => {
     const currentIndex = hours.indexOf(currentHour);
     if (currentIndex === -1) return false;
 
-    // البحث في جميع السلوتات السابقة عن حصص ممتدة لهذا السلوت
     for (let i = 0; i < currentIndex; i++) {
       const prevHour = hours[i];
-      const sessionsInPrevSlot = sessionGrid[day]?.[prevHour] || [];
+      const sessionsInPrevSlot = sessionGrid[dateKey]?.[prevHour] || [];
       
       for (const { session } of sessionsInPrevSlot) {
         const sessionStartIndex = hours.indexOf(session.startHour);
         const sessionEndIndex = hours.indexOf(session.endHour);
         
-        // التحقق إذا كان السلوت الحالي ضمن نطاق الحصة (بين البداية والنهاية، غير شامل البداية)
-        // السلوت الحالي يجب أن يكون بعد البداية وقبل أو يساوي النهاية
         if (sessionStartIndex !== -1 && sessionEndIndex !== -1) {
-          if (currentIndex > sessionStartIndex && currentIndex <= sessionEndIndex) {
+          if (currentIndex > sessionStartIndex && currentIndex < sessionEndIndex) {
             return true;
           }
         }
@@ -115,7 +128,9 @@ export const WeeklyGridView: React.FC<WeeklyGridViewProps> = ({
              </div>
              <div>
                 <h3 className="text-xl font-bold text-white tracking-wide">الجدول الأسبوعي</h3>
-                <p className="text-xs text-emerald-100 font-medium opacity-90">تنظيم وتنسيق المواعيد الدراسية</p>
+                <p className="text-xs text-emerald-100 font-medium opacity-90">
+                  {weekRangeFormatted}
+                </p>
              </div>
           </div>
           
@@ -145,16 +160,26 @@ export const WeeklyGridView: React.FC<WeeklyGridViewProps> = ({
                     <span>الوقت</span>
                   </div>
                 </th>
-                {WEEK_DAYS.map((day) => (
-                  <th
-                    key={day}
-                    className="bg-gray-50/80 border-b border-l border-gray-200 p-4 text-sm font-extrabold text-gray-700 shadow-sm min-w-[160px] group transition-colors hover:bg-emerald-50/30">
-                    <div className="flex items-center justify-center gap-2 transition-transform group-hover:-translate-y-0.5 duration-300">
-                        <span className="w-2 h-2 rounded-full bg-emerald-400 group-hover:scale-125 transition-transform"></span>
-                        {day}
-                    </div>
-                  </th>
-                ))}
+                {/* ⚠️ عرض أيام الأسبوع مع التواريخ */}
+                {weekDates.map((date, index) => {
+                  const dayName = WEEK_DAYS[index];
+                  const dateStr = date.toLocaleDateString('ar-SA', { day: 'numeric', month: 'short' });
+                  const dateKey = formatDateForAPI(date);
+                  
+                  return (
+                    <th
+                      key={dateKey}
+                      className="bg-gray-50/80 border-b border-l border-gray-200 p-4 text-sm font-extrabold text-gray-700 shadow-sm min-w-[160px] group transition-colors hover:bg-emerald-50/30">
+                      <div className="flex flex-col items-center gap-1 transition-transform group-hover:-translate-y-0.5 duration-300">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-emerald-400 group-hover:scale-125 transition-transform"></span>
+                          {dayName}
+                        </div>
+                        <span className="text-xs text-gray-400 font-normal">{dateStr}</span>
+                      </div>
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
           <tbody>
@@ -163,20 +188,22 @@ export const WeeklyGridView: React.FC<WeeklyGridViewProps> = ({
                 <td className="sticky right-0 bg-white group-hover/row:bg-emerald-50/30 transition-colors border-b border-gray-100 border-l border-gray-200 p-4 text-xs font-bold text-gray-400 text-center z-10 shadow-[4px_0_10px_-4px_rgba(0,0,0,0.05)] font-mono">
                   {hour}
                 </td>
-                {WEEK_DAYS.map((day) => {
-                  // تحقق إذا كان السلوت مشغول بحصة ممتدة من سلوت سابق
-                  if (isSlotOccupied(day, hour)) {
-                    return null; // لا نعرض td لأن الحصة ممتدة من الصف السابق
+                {/* ⚠️ استخدام تواريخ الأسبوع بدلاً من أيام */}
+                {weekDates.map((date) => {
+                  const dateKey = formatDateForAPI(date);
+                  
+                  // تحقق إذا كان السلوت مشغول بحصة ممتدة
+                  if (isSlotOccupied(dateKey, hour)) {
+                    return null;
                   }
 
-                  const daySessions = sessionGrid[day]?.[hour] || [];
+                  const daySessions = sessionGrid[dateKey]?.[hour] || [];
                   
-                  // إذا كان هناك أكثر من حصة في نفس الوقت، نحتاج لعرضهم بطريقة مختلفة
+                  // إذا كان هناك أكثر من حصة في نفس الوقت
                   if (daySessions.length > 1) {
-                    // عرض الحصص المتعددة بشكل رأسي مع ارتفاع مناسب
                     return (
                       <td
-                        key={`${day}-${hour}`}
+                        key={`${dateKey}-${hour}`}
                         className="border-b border-l border-gray-100 p-2 align-top relative bg-transparent hover:bg-gray-50/50 transition-colors">
                         <div className="space-y-2">
                           {daySessions.map(({ session }) => (
@@ -269,7 +296,7 @@ export const WeeklyGridView: React.FC<WeeklyGridViewProps> = ({
                   
                   return (
                     <td
-                      key={`${day}-${hour}`}
+                      key={`${dateKey}-${hour}`}
                       rowSpan={daySessions.length > 0 ? daySessions[0].rowSpan : 1}
                       className="border-b border-l border-gray-100 p-2 lg:p-3 align-top h-[180px] relative bg-transparent hover:bg-gray-50/50 transition-colors">
                       {daySessions.length > 0 ? (

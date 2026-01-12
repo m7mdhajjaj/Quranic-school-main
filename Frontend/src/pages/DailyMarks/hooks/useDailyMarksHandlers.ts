@@ -305,27 +305,22 @@ export const useDailyMarksHandlers = ({
              handleCompletionSuccess(meta.completedSurahs);
         }
 
-        // 3. Prompt for Schedule Update
-        const confirmResult = await showConfirmMessage(
-          "تحديث الجدول",
-          "هل تود تعديل موعد الجدول المرتبط بهذا المقطع؟",
-          "نعم، عدّل الموعد",
-          "لا، شكراً"
-        );
-  
-        if (confirmResult.isConfirmed) {
-          // Determine session type
-          let sessionType = "both";
-          const hasMem = editingSection.memorizationSection && editingSection.memorizationSection.trim() !== "";
-          const hasRev = editingSection.reviewSection && editingSection.reviewSection.trim() !== "";
-          
-          if (hasMem && !hasRev) {
-            sessionType = "hifz";
-          } else if (!hasMem && hasRev) {
-            sessionType = "murajaah";
+        // 3. Prompt for Schedule Update (only if section has a timetable)
+        const timetableId = updatedSection.timetableId 
+          ? (typeof updatedSection.timetableId === 'object' ? updatedSection.timetableId._id : updatedSection.timetableId)
+          : null;
+
+        if (timetableId) {
+          const confirmResult = await showConfirmMessage(
+            "تحديث الجدول",
+            "هل تود تعديل موعد الجدول المرتبط بهذا المقطع؟",
+            "نعم، عدّل الموعد",
+            "لا، شكراً"
+          );
+    
+          if (confirmResult.isConfirmed) {
+            navigate(`/timetable?editSession=${timetableId}`);
           }
-  
-          navigate(`/timetable?editSession=true&sectionId=${editingSection._id}&groupName=${encodeURIComponent(selectedGroup)}&sessionType=${sessionType}`);
         }
       }
 

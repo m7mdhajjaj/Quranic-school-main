@@ -31,7 +31,7 @@ import { AveragesSection } from './components/AveragesSection';
 import { StudentView } from './Views/StudentView';
 import { ModalsContainer } from './modals/ModalsContainer';
 import { GroupsGridView } from './Views/TeacherView/components/GroupsGridView';
-import { DailyMarksPageSkeleton } from './components/DailyMarksSkeletons';
+import { DailyMarksPageSkeleton } from '../../components/skeletons/DailyMarksSkeletons';
 
 // Lazy load heavy component
 const TeacherView = lazy(() =>
@@ -296,7 +296,7 @@ const DailyMarksPage = () => {
             selectedStudentId={selectedStudentId}
             sectionsCount={sectionsCount}
             averages={averages}
-            loading={loadingMarks || isPending}
+            loading={loadingMarks}
           />
         )}
 
@@ -321,7 +321,7 @@ const DailyMarksPage = () => {
               teacherGroups={teacherGroups}
               sections={sections}
               marks={marks}
-              loadingMarks={loadingMarks || isPending || loading}
+              loadingMarks={loadingMarks || loading}
               onBulkMarks={() => {}}
               onGroupSelect={(g) => setGroupWithUrl(g, false)}
               onAddSection={handleAddSectionClick}

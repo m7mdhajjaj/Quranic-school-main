@@ -1,7 +1,5 @@
 // ============================================
-// SESSION ROUTES - REDIRECT TO TIMETABLE
+// TIMETABLE ROUTES INDEX
 // ============================================
-// هذا الملف يعيد تصدير routes الجدول الزمني
-// تم الاحتفاظ به للتوافق مع الكود القديم
 
-module.exports = require(".");
+module.exports = require("./TimeTableRoutes");

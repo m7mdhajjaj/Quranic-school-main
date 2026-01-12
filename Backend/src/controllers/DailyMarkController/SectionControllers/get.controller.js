@@ -55,7 +55,9 @@ exports.getSections = async (req, res) => {
 
     const sections = await Section.find(filter)
       .sort({ date: -1 })
-      .populate('timetableId', 'day startHour endHour sessionType');
+      .populate('timetableId', 'day startHour endHour sessionType')
+      .populate('groupId', 'name')
+      .populate('teacherId', 'firstName lastName');
       
     sendSuccess(res, sections, "تم جلب المقاطع بنجاح");
   } catch (error) {
@@ -69,7 +71,9 @@ exports.getSections = async (req, res) => {
 exports.getSection = async (req, res) => {
   try {
     const section = await Section.findById(req.params.id)
-      .populate('timetableId', 'day startHour endHour sessionType');
+      .populate('timetableId', 'day startHour endHour sessionType')
+      .populate('groupId', 'name')
+      .populate('teacherId', 'firstName lastName');
     if (!section) {
       return sendNotFound(res, "المقطع");
     }
@@ -153,6 +157,8 @@ exports.getFilteredSections = async (req, res) => {
     const sections = await Section.find(sectionFilter)
       .populate("teacher", "firstName lastName")
       .populate("timetableId", "day startHour endHour sessionType")
+      .populate("groupId", "name")
+      .populate("teacherId", "firstName lastName")
       .sort({ date: -1 })
       .lean();
 
@@ -169,6 +175,8 @@ exports.getFilteredSections = async (req, res) => {
             // Fetch updated section
             const updatedSection = await Section.findById(section._id)
               .populate("timetableId", "day startHour endHour sessionType")
+              .populate("groupId", "name")
+              .populate("teacherId", "firstName lastName")
               .lean();
             return {
               ...updatedSection,

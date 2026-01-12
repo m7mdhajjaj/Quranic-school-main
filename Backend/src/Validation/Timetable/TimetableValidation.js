@@ -1,7 +1,8 @@
 // ============================================
-// TIMETABLE VALIDATION
+// TIMETABLE VALIDATION (NEW)
 // ============================================
 // Validation middleware for timetable/session scheduling
+// ⚠️ التعارض يعتمد على التاريخ المحدد (sessionDate) وليس اليوم
 
 /**
  * تحديد إذا كان التوقيت صيفي أو شتوي (تلقائي)
@@ -22,11 +23,33 @@ const isRequired = (value) => {
 };
 
 /**
+ * Validate sessionDate (التاريخ المحدد - مطلوب للمواعيد الجديدة)
+ */
+const validateSessionDate = (sessionDate) => {
+  if (!sessionDate) {
+    return { isValid: true, value: undefined }; // اختياري - يمكن اشتقاقه من sectionId
+  }
+
+  const dateStr = sessionDate.toString().trim();
+  const date = new Date(dateStr);
+  
+  if (isNaN(date.getTime())) {
+    return { 
+      isValid: false, 
+      message: 'التاريخ غير صحيح. يجب أن يكون بصيغة YYYY-MM-DD مثل 2026-01-12' 
+    };
+  }
+
+  return { isValid: true, value: date };
+};
+
+/**
  * Validate day name (Arabic only - matching schema enum)
+ * ⚠️ اليوم اختياري - يُشتق تلقائياً من التاريخ
  */
 const validateDay = (day) => {
   if (!isRequired(day)) {
-    // If not provided, return valid (controller will handle derivation or error if context missing)
+    // If not provided, return valid (controller will handle derivation from sessionDate)
     return { isValid: true, value: undefined };
   }
 
@@ -327,13 +350,32 @@ const validateSectionId = (sectionId) => {
 };
 
 /**
+ * Validate isRecurring (optional boolean)
+ */
+const validateIsRecurring = (isRecurring) => {
+  if (isRecurring === undefined || isRecurring === null) {
+    return { isValid: true, value: undefined }; // Optional - will be set by controller
+  }
+
+  if (typeof isRecurring !== 'boolean') {
+    return { 
+      isValid: false, 
+      message: 'isRecurring يجب أن يكون true أو false' 
+    };
+  }
+
+  return { isValid: true, value: isRecurring };
+};
+
+/**
  * Main validation middleware for timetable data
+ * ⚠️ sessionDate مطلوب للإنشاء (أو sectionId لاشتقاقه)
  */
 const validateTimetableData = async (req, res, next) => {
   try {
     console.log('🔍 بدء التحقق من بيانات الجدول الزمني...');
     
-    const isUpdate = req.method === 'PUT';
+    const isUpdate = req.method === 'PUT' || req.method === 'PATCH';
     const rawData = req.body;
     
     // Sanitize input data
@@ -342,8 +384,25 @@ const validateTimetableData = async (req, res, next) => {
     const errors = [];
     const validatedData = {};
     
-    // Validate required fields for creation, optional for updates
-    if (!isUpdate || data.day !== undefined) {
+    // ⚠️ التاريخ مطلوب للإنشاء (إلا إذا كان هناك sectionId)
+    if (!isUpdate) {
+      if (!data.sessionDate && !data.sectionId) {
+        errors.push('sessionDate أو sectionId مطلوب - يجب تحديد التاريخ');
+      }
+    }
+    
+    // التحقق من sessionDate إذا موجود
+    if (data.sessionDate !== undefined) {
+      const sessionDateValidation = validateSessionDate(data.sessionDate);
+      if (!sessionDateValidation.isValid) {
+        errors.push(sessionDateValidation.message);
+      } else {
+        validatedData.sessionDate = sessionDateValidation.value;
+      }
+    }
+    
+    // Validate day (اختياري - يُشتق من التاريخ)
+    if (data.day !== undefined) {
       const dayValidation = validateDay(data.day);
       if (!dayValidation.isValid) {
         errors.push(dayValidation.message);
@@ -410,6 +469,16 @@ const validateTimetableData = async (req, res, next) => {
       }
     }
     
+    // Validate optional isRecurring field
+    if (data.isRecurring !== undefined) {
+      const isRecurringValidation = validateIsRecurring(data.isRecurring);
+      if (!isRecurringValidation.isValid) {
+        errors.push(isRecurringValidation.message);
+      } else {
+        validatedData.isRecurring = isRecurringValidation.value;
+      }
+    }
+    
     // Validate required teacherId field for creation
     if (!isUpdate || data.teacherId !== undefined) {
       if (!isUpdate && !data.teacherId) {
@@ -462,8 +531,182 @@ const validateTimetableData = async (req, res, next) => {
   }
 };
 
+/**
+ * Middleware للتحقق من البيانات عند إنشاء موعد لمقطع
+ * (فقط startHour و endHour مطلوبين - التاريخ من المقطع)
+ */
+const validateSessionDateMiddleware = async (req, res, next) => {
+  try {
+    const data = sanitizeTimetableData(req.body);
+    const errors = [];
+    const validatedData = {};
+
+    // التحقق من ساعة البداية (مطلوبة)
+    const startHourValidation = validateStartHour(data.startHour);
+    if (!startHourValidation.isValid) {
+      errors.push(startHourValidation.message);
+    } else {
+      validatedData.startHour = startHourValidation.value;
+    }
+
+    // التحقق من ساعة النهاية (مطلوبة)
+    const endHourValidation = validateEndHour(data.endHour);
+    if (!endHourValidation.isValid) {
+      errors.push(endHourValidation.message);
+    } else {
+      validatedData.endHour = endHourValidation.value;
+    }
+
+    // التحقق من منطق الوقت
+    if (validatedData.startHour && validatedData.endHour) {
+      const timeLogicValidation = validateTimeLogic(
+        validatedData.startHour, 
+        validatedData.endHour
+      );
+      if (!timeLogicValidation.isValid) {
+        errors.push(timeLogicValidation.message);
+      }
+    }
+
+    // اختياري: teacherId
+    if (data.teacherId) {
+      const teacherIdValidation = validateTeacherId(data.teacherId);
+      if (!teacherIdValidation.isValid) {
+        errors.push(teacherIdValidation.message);
+      } else {
+        validatedData.teacherId = teacherIdValidation.value;
+      }
+    }
+
+    // اختياري: sessionType
+    if (data.sessionType) {
+      const sessionTypeValidation = validateSessionType(data.sessionType);
+      if (!sessionTypeValidation.isValid) {
+        errors.push(sessionTypeValidation.message);
+      } else {
+        validatedData.sessionType = sessionTypeValidation.value;
+      }
+    }
+
+    if (errors.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'بيانات غير صحيحة',
+        errors
+      });
+    }
+
+    req.validatedData = validatedData;
+    next();
+
+  } catch (error) {
+    console.error('❌ خطأ:', error);
+    res.status(500).json({
+      success: false,
+      message: 'خطأ في التحقق من البيانات',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Middleware للتحقق من بيانات فحص التعارض
+ * ⚠️ sessionDate مطلوب!
+ */
+const validateCheckConflict = async (req, res, next) => {
+  try {
+    const data = sanitizeTimetableData(req.body);
+    const errors = [];
+    const validatedData = {};
+
+    // ⚠️ التاريخ مطلوب للتحقق من التعارض
+    if (!data.sessionDate) {
+      errors.push('sessionDate مطلوب - يجب تحديد التاريخ للتحقق من التعارض');
+    } else {
+      const sessionDateValidation = validateSessionDate(data.sessionDate);
+      if (!sessionDateValidation.isValid) {
+        errors.push(sessionDateValidation.message);
+      } else {
+        validatedData.sessionDate = sessionDateValidation.value;
+      }
+    }
+
+    // teacherId مطلوب
+    if (!data.teacherId) {
+      errors.push('teacherId مطلوب');
+    } else {
+      const teacherIdValidation = validateTeacherId(data.teacherId);
+      if (!teacherIdValidation.isValid) {
+        errors.push(teacherIdValidation.message);
+      } else {
+        validatedData.teacherId = teacherIdValidation.value;
+      }
+    }
+
+    // startHour مطلوب
+    const startHourValidation = validateStartHour(data.startHour);
+    if (!startHourValidation.isValid) {
+      errors.push(startHourValidation.message);
+    } else {
+      validatedData.startHour = startHourValidation.value;
+    }
+
+    // endHour مطلوب
+    const endHourValidation = validateEndHour(data.endHour);
+    if (!endHourValidation.isValid) {
+      errors.push(endHourValidation.message);
+    } else {
+      validatedData.endHour = endHourValidation.value;
+    }
+
+    // التحقق من منطق الوقت
+    if (validatedData.startHour && validatedData.endHour) {
+      const timeLogicValidation = validateTimeLogic(
+        validatedData.startHour, 
+        validatedData.endHour
+      );
+      if (!timeLogicValidation.isValid) {
+        errors.push(timeLogicValidation.message);
+      }
+    }
+
+    // اختياري: excludeId (لاستثناء موعد عند التعديل)
+    if (data.excludeId) {
+      if (!/^[a-fA-F0-9]{24}$/.test(data.excludeId)) {
+        errors.push('excludeId غير صحيح');
+      } else {
+        validatedData.excludeId = data.excludeId;
+      }
+    }
+
+    if (errors.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'بيانات غير صحيحة للتحقق من التعارض',
+        errors
+      });
+    }
+
+    req.validatedData = validatedData;
+    next();
+
+  } catch (error) {
+    console.error('❌ خطأ:', error);
+    res.status(500).json({
+      success: false,
+      message: 'خطأ في التحقق من البيانات',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
+  // Middleware
   validateTimetableData,
+  validateSessionDate: validateSessionDateMiddleware,
+  validateCheckConflict,
+  
+  // Helper functions
   sanitizeTimetableData,
   validateDay,
   validateStartHour,
@@ -472,5 +715,7 @@ module.exports = {
   validateTeacherId,
   validateSessionType,
   validateSectionId,
-  validateTimeLogic
+  validateIsRecurring,
+  validateTimeLogic,
+  isSummerTime
 };

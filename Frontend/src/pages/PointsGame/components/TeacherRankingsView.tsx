@@ -24,10 +24,11 @@ export const TeacherRankingsView = memo(
         {/* اختيار الحلقة */}
         {groups.length > 0 && (
           <div className="bg-white rounded-2xl shadow-lg p-4">
-            <label className="block text-sm font-bold text-gray-700 mb-2">
+            <label htmlFor="group-select" className="block text-sm font-bold text-gray-700 mb-2">
               اختر الحلقة
             </label>
             <select
+              id="group-select"
               value={selectedGroupId}
               onChange={(e) => onGroupChange?.(e.target.value)}
               className="w-full px-4 py-3 border-2 border-emerald-200 rounded-xl focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all text-right bg-white">

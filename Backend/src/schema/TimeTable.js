@@ -174,7 +174,9 @@ const TimeTableSchema = new mongoose.Schema(
     },
 
     // =========================
-    // ✅ إضافات ربط المقطع بالموعد
+    // ✅ الربط مع المقطع (Section)
+    // العلاقة: Section 1 ──→ 1 TimeTable
+    // كل مقطع له موعد واحد فقط
     // =========================
 
     sectionId: {
@@ -186,10 +188,25 @@ const TimeTableSchema = new mongoose.Schema(
       index: true,
     },
 
+    // ✅ تاريخ المقطع (يُنسخ من Section.date)
     sessionDate: {
       type: Date,
-      required: false, // ✅ نخزن تاريخ المقطع هنا لتوحيد (تاريخ + وقت)
+      required: false,
       index: true,
+    },
+
+    // ✅ نوع الموعد: متكرر أسبوعياً (true) أو محدد بتاريخ (false)
+    isRecurring: {
+      type: Boolean,
+      default: false, // ✅ الافتراضي: محدد بتاريخ (لأن كل مقطع له تاريخ)
+      index: true,
+    },
+    
+    // ✅ معلومات المقطع المنسوخة (للعرض السريع بدون populate)
+    sectionInfo: {
+      memorizationSection: { type: String }, // مقطع الحفظ
+      reviewSection: { type: String },       // مقطع المراجعة
+      marksStatus: { type: String },         // حالة الدرجات
     },
   },
   { timestamps: true }
@@ -200,6 +217,69 @@ TimeTableSchema.index({ day: 1, startHour: 1, endHour: 1 });
 TimeTableSchema.index({ groupId: 1 });
 TimeTableSchema.index({ teacherId: 1 });
 TimeTableSchema.index({ note: 1 });
+TimeTableSchema.index({ sectionId: 1, sessionDate: 1 }); // ✅ للبحث السريع بالمقطع والتاريخ
+
+// ✅ عند حفظ TimeTable: مزامنة البيانات مع Section
+TimeTableSchema.pre("save", async function (next) {
+  // إذا كان هناك sectionId، انسخ معلومات المقطع
+  if (this.sectionId && this.isModified("sectionId")) {
+    try {
+      const Section = mongoose.model("Section");
+      const section = await Section.findById(this.sectionId);
+      
+      if (section) {
+        // نسخ معلومات المقطع للعرض السريع
+        this.sectionInfo = {
+          memorizationSection: section.memorizationSection,
+          reviewSection: section.reviewSection,
+          marksStatus: section.marksStatus,
+        };
+        
+        // نسخ التاريخ من المقطع
+        if (section.date && !this.sessionDate) {
+          this.sessionDate = section.date;
+        }
+        
+        // نسخ groupId من المقطع إذا موجود
+        if (section.groupId && !this.groupId) {
+          this.groupId = section.groupId;
+        }
+        
+        // نسخ اسم الحلقة من المقطع
+        if (section.group && !this.note) {
+          this.note = section.group;
+        }
+        
+        console.log(`🔗 TimeTable: تم نسخ معلومات المقطع ${this.sectionId}`);
+      }
+    } catch (err) {
+      console.error("خطأ في مزامنة TimeTable مع Section:", err);
+    }
+  }
+  next();
+});
+
+// ✅ بعد حفظ TimeTable: تحديث Section المرتبط
+TimeTableSchema.post("save", async function (doc) {
+  if (doc.sectionId) {
+    try {
+      const Section = mongoose.model("Section");
+      await Section.findByIdAndUpdate(doc.sectionId, {
+        hasSchedule: true,
+        scheduleStatus: "scheduled",
+        timetableId: doc._id,
+        scheduleInfo: {
+          day: doc.day,
+          startHour: doc.startHour,
+          endHour: doc.endHour,
+        },
+      });
+      console.log(`✅ Section ${doc.sectionId}: تم ربطه بـ TimeTable ${doc._id}`);
+    } catch (err) {
+      console.error("خطأ في تحديث Section بعد حفظ TimeTable:", err);
+    }
+  }
+});
 
 // ✅ إذا حذفنا TimeTable: نفك الربط من Section تلقائيًا
 TimeTableSchema.pre("findOneAndDelete", async function (next) {

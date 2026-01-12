@@ -1,10 +1,36 @@
 // ============================================
-// TIMETABLE VALIDATION - Frontend
+// TIMETABLE VALIDATION - Frontend (NEW)
 // ============================================
 // Validation للجدول الزمني (TimeTable) بنفس منطق Backend
+// ⚠️ التعارض يعتمد على التاريخ المحدد (sessionDate) وليس اليوم
 
 import * as yup from 'yup';
-import type { SessionFormData, SessionType } from '../pages/Timetable/types/timetable.types';
+
+// ============================================================================
+// TYPES
+// ============================================================================
+
+export type SessionType = 'hifz' | 'murajaah' | 'both';
+
+export interface TimetableFormData {
+  sessionDate: string;      // ⚠️ مطلوب! (YYYY-MM-DD)
+  startHour: string;
+  endHour: string;
+  teacherId: string;
+  groupId?: string;
+  sectionId?: string;
+  note?: string;
+  description?: string;
+  sessionType?: SessionType;
+}
+
+export interface CheckConflictData {
+  teacherId: string;
+  sessionDate: string;      // ⚠️ مطلوب!
+  startHour: string;
+  endHour: string;
+  excludeId?: string;
+}
 
 // تخصيص رسائل Yup بالعربية
 yup.setLocale({
@@ -20,8 +46,12 @@ yup.setLocale({
   },
 });
 
+// ============================================================================
+// CONSTANTS
+// ============================================================================
+
 /**
- * أيام الأسبوع الصحيحة (يجب أن تطابق Backend enum)
+ * أيام الأسبوع الصحيحة (للعرض فقط - اليوم يُشتق من التاريخ)
  */
 const VALID_DAYS = [
   'السبت',
@@ -44,11 +74,20 @@ const VALID_SESSION_TYPES: SessionType[] = ['hifz', 'murajaah', 'both'];
 const TIME_FORMAT_REGEX = /^(1[0-2]|[1-9]):[0-5][0-9]\s?(AM|PM|am|pm)$/i;
 
 /**
+ * التحقق من صيغة التاريخ (YYYY-MM-DD)
+ */
+const DATE_FORMAT_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/**
  * تحديد إذا كان التوقيت صيفي أو شتوي (تلقائي)
  * الصيفي: من مايو (5) إلى سبتمبر (9)
  * الشتوي: من أكتوبر (10) إلى أبريل (4)
  */
-const isSummerTime = (): boolean => {
+export const isSummerTime = (): boolean => {
   const now = new Date();
   const month = now.getMonth() + 1; // 1-12
   return month >= 5 && month <= 9;
@@ -59,7 +98,7 @@ const isSummerTime = (): boolean => {
  * صيفي: 12:00 PM - 9:00 PM
  * شتوي: 11:00 AM - 8:00 PM
  */
-const isValidWorkingHour = (timeStr: string): boolean => {
+export const isValidWorkingHour = (timeStr: string): boolean => {
   const match = timeStr.match(/^([0-9]{1,2}):([0-5][0-9])\s?(AM|PM|am|pm)$/i);
   if (!match) return false;
 
@@ -88,50 +127,79 @@ const isValidWorkingHour = (timeStr: string): boolean => {
 };
 
 /**
+ * تحويل الوقت إلى دقائق للمقارنة
+ */
+export const timeToMinutes = (timeStr: string): number => {
+  const match = timeStr.match(/^([0-9]{1,2}):([0-5][0-9])\s?(AM|PM|am|pm)$/i);
+  if (!match) return -1;
+
+  let hour = parseInt(match[1]);
+  const minutes = parseInt(match[2]);
+  const period = match[3].toLowerCase();
+
+  // تحويل إلى 24 ساعة
+  if (period === 'pm' && hour !== 12) {
+    hour += 12;
+  } else if (period === 'am' && hour === 12) {
+    hour = 0;
+  }
+
+  return hour * 60 + minutes;
+};
+
+/**
  * التحقق من أن وقت الانتهاء بعد وقت البداية
  */
-const isEndTimeAfterStartTime = (startHour: string, endHour: string): boolean => {
-  // تحويل الوقت إلى دقائق للمقارنة
-  const timeToMinutes = (timeStr: string): number => {
-    const match = timeStr.match(/^([0-9]{1,2}):([0-5][0-9])\s?(AM|PM|am|pm)$/i);
-    if (!match) return -1;
-
-    let hour = parseInt(match[1]);
-    const minutes = parseInt(match[2]);
-    const period = match[3].toLowerCase();
-
-    // تحويل إلى 24 ساعة
-    if (period === 'pm' && hour !== 12) {
-      // 1 PM = 13, 2 PM = 14, ..., 9 PM = 21
-      hour += 12;
-    } else if (period === 'am' && hour === 12) {
-      // 12 AM = 0 (منتصف الليل)
-      hour = 0;
-    } else if (period === 'pm' && hour === 12) {
-      // 12 PM = 12 (الظهر)
-      hour = 12;
-    }
-    // AM: 11 AM = 11 (يبقى كما هو)
-
-    return hour * 60 + minutes;
-  };
-
+export const isEndTimeAfterStartTime = (startHour: string, endHour: string): boolean => {
   const startMinutes = timeToMinutes(startHour);
   const endMinutes = timeToMinutes(endHour);
-
   return startMinutes < endMinutes;
 };
 
 /**
- * Yup Schema للـ TimeTable
+ * اشتقاق اليوم بالعربية من تاريخ
+ */
+export const getDayFromDate = (dateStr: string): string => {
+  const date = new Date(dateStr);
+  return VALID_DAYS[date.getDay() === 0 ? 0 : date.getDay()];
+};
+
+/**
+ * تنسيق التاريخ للعرض
+ */
+export const formatDateArabic = (dateStr: string): string => {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('ar-SA', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
+};
+
+// ============================================================================
+// VALIDATION SCHEMAS
+// ============================================================================
+
+/**
+ * Yup Schema للـ TimeTable الجديد
+ * ⚠️ sessionDate مطلوب!
  */
 export const timetableValidationSchema = yup.object({
-  // اليوم - مطلوب ويجب أن يكون أحد أيام الأسبوع
-  day: yup
+  // ⚠️ التاريخ - مطلوب!
+  sessionDate: yup
     .string()
-    .required('اليوم مطلوب')
-    .oneOf(VALID_DAYS as unknown as string[], 'اليوم غير صحيح')
-    .label('اليوم'),
+    .required('التاريخ مطلوب')
+    .matches(DATE_FORMAT_REGEX, 'التاريخ يجب أن يكون بصيغة YYYY-MM-DD (مثل: 2026-01-12)')
+    .test(
+      'is-valid-date',
+      'التاريخ غير صحيح',
+      (value) => {
+        if (!value) return false;
+        const date = new Date(value);
+        return !isNaN(date.getTime());
+      }
+    )
+    .label('التاريخ'),
 
   // ساعة البداية - مطلوبة وضمن أوقات العمل
   startHour: yup
@@ -140,7 +208,12 @@ export const timetableValidationSchema = yup.object({
     .matches(TIME_FORMAT_REGEX, 'ساعة البداية يجب أن تكون بصيغة HH:MM AM/PM (مثل: 12:00 PM)')
     .test(
       'is-valid-working-hour',
-      'أوقات العمل من 12:00 PM إلى 9:00 AM فقط',
+      () => {
+        const isSummer = isSummerTime();
+        return isSummer 
+          ? '☀️ التوقيت الصيفي: 12:00 PM - 9:00 PM فقط'
+          : '❄️ التوقيت الشتوي: 11:00 AM - 8:00 PM فقط';
+      },
       (value) => {
         if (!value) return false;
         return isValidWorkingHour(value);
@@ -158,8 +231,8 @@ export const timetableValidationSchema = yup.object({
       () => {
         const isSummer = isSummerTime();
         return isSummer 
-          ? '☀️ التوقيت الصيفي الحالي: 12:00 PM - 9:00 PM فقط'
-          : '❄️ التوقيت الشتوي الحالي: 11:00 AM - 8:00 PM فقط';
+          ? '☀️ التوقيت الصيفي: 12:00 PM - 9:00 PM فقط'
+          : '❄️ التوقيت الشتوي: 11:00 AM - 8:00 PM فقط';
       },
       (value) => {
         if (!value) return false;
@@ -177,20 +250,36 @@ export const timetableValidationSchema = yup.object({
     )
     .label('ساعة النهاية'),
 
-  // اسم الحلقة (note) - مطلوب
-  note: yup
-    .string()
-    .required('اسم الحلقة مطلوب')
-    .min(2, 'اسم الحلقة يجب أن يحتوي على حرفين على الأقل')
-    .max(200, 'اسم الحلقة يجب ألا يتجاوز 200 حرف')
-    .label('اسم الحلقة'),
-
   // معرف المعلم - مطلوب
   teacherId: yup
     .string()
     .required('معرف المعلم مطلوب')
     .matches(/^[a-fA-F0-9]{24}$/, 'معرف المعلم غير صحيح')
     .label('معرف المعلم'),
+
+  // معرف الحلقة - اختياري
+  groupId: yup
+    .string()
+    .matches(/^[a-fA-F0-9]{24}$/, 'معرف الحلقة غير صحيح')
+    .label('معرف الحلقة'),
+
+  // معرف المقطع - اختياري
+  sectionId: yup
+    .string()
+    .matches(/^[a-fA-F0-9]{24}$/, 'معرف المقطع غير صحيح')
+    .label('معرف المقطع'),
+
+  // اسم الحلقة (note) - اختياري
+  note: yup
+    .string()
+    .max(200, 'اسم الحلقة يجب ألا يتجاوز 200 حرف')
+    .label('اسم الحلقة'),
+
+  // وصف الحصة - اختياري
+  description: yup
+    .string()
+    .max(500, 'الوصف يجب ألا يتجاوز 500 حرف')
+    .label('الوصف'),
 
   // نوع الحصة - اختياري
   sessionType: yup
@@ -203,10 +292,78 @@ export const timetableValidationSchema = yup.object({
 });
 
 /**
+ * Schema للتحقق من التعارض
+ * ⚠️ sessionDate مطلوب!
+ */
+export const checkConflictSchema = yup.object({
+  teacherId: yup
+    .string()
+    .required('معرف المعلم مطلوب')
+    .matches(/^[a-fA-F0-9]{24}$/, 'معرف المعلم غير صحيح'),
+  
+  sessionDate: yup
+    .string()
+    .required('التاريخ مطلوب للتحقق من التعارض')
+    .matches(DATE_FORMAT_REGEX, 'التاريخ يجب أن يكون بصيغة YYYY-MM-DD'),
+  
+  startHour: yup
+    .string()
+    .required('ساعة البداية مطلوبة')
+    .matches(TIME_FORMAT_REGEX, 'صيغة الوقت غير صحيحة'),
+  
+  endHour: yup
+    .string()
+    .required('ساعة النهاية مطلوبة')
+    .matches(TIME_FORMAT_REGEX, 'صيغة الوقت غير صحيحة'),
+  
+  excludeId: yup
+    .string()
+    .matches(/^[a-fA-F0-9]{24}$/, 'معرف الموعد غير صحيح'),
+});
+
+/**
+ * Schema لإنشاء موعد لمقطع (التاريخ من المقطع)
+ */
+export const createForSectionSchema = yup.object({
+  startHour: yup
+    .string()
+    .required('ساعة البداية مطلوبة')
+    .matches(TIME_FORMAT_REGEX, 'ساعة البداية يجب أن تكون بصيغة HH:MM AM/PM')
+    .test('is-valid-working-hour', 'الوقت خارج أوقات العمل', isValidWorkingHour),
+  
+  endHour: yup
+    .string()
+    .required('ساعة النهاية مطلوبة')
+    .matches(TIME_FORMAT_REGEX, 'ساعة النهاية يجب أن تكون بصيغة HH:MM AM/PM')
+    .test('is-valid-working-hour', 'الوقت خارج أوقات العمل', isValidWorkingHour)
+    .test(
+      'is-after-start',
+      'ساعة النهاية يجب أن تكون بعد ساعة البداية',
+      function (value) {
+        const { startHour } = this.parent;
+        if (!value || !startHour) return true;
+        return isEndTimeAfterStartTime(startHour, value);
+      }
+    ),
+  
+  teacherId: yup
+    .string()
+    .matches(/^[a-fA-F0-9]{24}$/, 'معرف المعلم غير صحيح'),
+  
+  sessionType: yup
+    .mixed<SessionType>()
+    .oneOf([...VALID_SESSION_TYPES, undefined] as SessionType[]),
+});
+
+// ============================================================================
+// VALIDATION FUNCTIONS
+// ============================================================================
+
+/**
  * دالة للتحقق من بيانات TimeTable
  */
 export const validateTimetableData = async (
-  data: SessionFormData
+  data: TimetableFormData
 ): Promise<{ isValid: boolean; errors?: Record<string, string> }> => {
   try {
     await timetableValidationSchema.validate(data, { abortEarly: false });
@@ -226,10 +383,33 @@ export const validateTimetableData = async (
 };
 
 /**
+ * دالة للتحقق من بيانات فحص التعارض
+ */
+export const validateCheckConflict = async (
+  data: CheckConflictData
+): Promise<{ isValid: boolean; errors?: Record<string, string> }> => {
+  try {
+    await checkConflictSchema.validate(data, { abortEarly: false });
+    return { isValid: true };
+  } catch (error) {
+    if (error instanceof yup.ValidationError) {
+      const errors: Record<string, string> = {};
+      error.inner.forEach((err) => {
+        if (err.path) {
+          errors[err.path] = err.message;
+        }
+      });
+      return { isValid: false, errors };
+    }
+    return { isValid: false, errors: { general: 'حدث خطأ في التحقق من البيانات' } };
+  }
+};
+
+/**
  * دالة مساعدة للتحقق من حقل معين
  */
 export const validateField = async (
-  fieldName: keyof SessionFormData,
+  fieldName: keyof TimetableFormData,
   value: unknown
 ): Promise<{ isValid: boolean; error?: string }> => {
   try {
@@ -247,16 +427,18 @@ export const validateField = async (
 /**
  * دالة مساعدة لتنظيف البيانات (XSS protection)
  */
-export const sanitizeTimetableData = (data: SessionFormData): SessionFormData => {
+export const sanitizeTimetableData = (data: TimetableFormData): TimetableFormData => {
   return {
     ...data,
-    note: data.note
-      .trim()
-      .replace(/[<>]/g, '') // إزالة علامات HTML
-      .replace(/javascript:/gi, ''), // إزالة javascript protocols
+    sessionDate: data.sessionDate.trim(),
     startHour: data.startHour.trim(),
     endHour: data.endHour.trim(),
-    day: data.day.trim(),
+    note: data.note
+      ? data.note.trim().replace(/[<>]/g, '').replace(/javascript:/gi, '')
+      : undefined,
+    description: data.description
+      ? data.description.trim().replace(/[<>]/g, '').replace(/javascript:/gi, '')
+      : undefined,
   };
 };
 
