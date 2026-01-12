@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,6 +9,8 @@ import {
   Platform,
   Image,
   ActivityIndicator,
+  ScrollView,
+  Keyboard,
 } from "react-native";
 import { useLoginLogic } from "./hooks";
 import ForgotPasswordModal from "../../../components/ForgotPasswordModal";
@@ -25,102 +27,136 @@ const Login = () => {
   } = useLoginLogic();
 
   const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      "keyboardDidShow",
+      () => setKeyboardVisible(true)
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      "keyboardDidHide",
+      () => setKeyboardVisible(false)
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
 
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}>
-      <View style={styles.content}>
-        {/* Logo Section */}
-        <View style={styles.logoContainer}>
-          {logoLoading ? (
-            <ActivityIndicator size="large" color="#059669" />
-          ) : logoUrl ? (
-            <Image source={{ uri: logoUrl }} style={styles.logo} />
-          ) : (
-            <View style={styles.logoPlaceholder}>
-              <Text style={styles.logoText}>📖</Text>
-            </View>
-          )}
-          <Text style={styles.appName}>مدرسة القرآن الكريم</Text>
-          <Text style={styles.appSubtitle}>نظام إدارة المدرسة</Text>
-        </View>
-
-        {/* Welcome Text */}
-        <View style={styles.welcomeContainer}>
-          <Text style={styles.welcomeTitle}>مرحباً بعودتك</Text>
-          <Text style={styles.welcomeSubtitle}>سجل الدخول لإدارة بياناتك</Text>
-        </View>
-
-        {/* Login Card */}
-        <View style={styles.card}>
-          {/* User ID Input */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>رقم المستخدم</Text>
-            <View style={styles.inputWrapper}>
-              <Text style={styles.inputIcon}>👤</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="أدخل رقم المستخدم"
-                placeholderTextColor="#9ca3af"
-                value={formData.userId}
-                onChangeText={(text) => handleChange("userId", text)}
-                autoCapitalize="none"
-                editable={!isLoading}
-              />
-            </View>
-          </View>
-
-          {/* Password Input */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>كلمة المرور</Text>
-            <View style={styles.inputWrapper}>
-              <Text style={styles.inputIcon}>🔒</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="أدخل كلمة المرور"
-                placeholderTextColor="#9ca3af"
-                value={formData.password}
-                onChangeText={(text) => handleChange("password", text)}
-                secureTextEntry
-                editable={!isLoading}
-              />
-            </View>
-          </View>
-
-          {/* Forgot Password */}
-          <TouchableOpacity
-            style={styles.forgotPassword}
-            onPress={() => setShowForgotPasswordModal(true)}>
-            <Text style={styles.forgotPasswordText}>نسيت كلمة المرور؟</Text>
-          </TouchableOpacity>
-
-          {/* Error Message */}
-          {error && (
-            <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>{error}</Text>
+      behavior={Platform.OS === "ios" ? "padding" : "padding"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        bounces={false}>
+        <View
+          style={[
+            styles.content,
+            keyboardVisible && styles.contentKeyboardOpen,
+          ]}>
+          {/* Logo Section - Hide when keyboard is open */}
+          {!keyboardVisible && (
+            <View style={styles.logoContainer}>
+              {logoLoading ? (
+                <ActivityIndicator size="large" color="#059669" />
+              ) : logoUrl ? (
+                <Image source={{ uri: logoUrl }} style={styles.logo} />
+              ) : (
+                <View style={styles.logoPlaceholder}>
+                  <Text style={styles.logoText}>📖</Text>
+                </View>
+              )}
+              <Text style={styles.appName}>مدرسة القرآن الكريم</Text>
+              <Text style={styles.appSubtitle}>نظام إدارة المدرسة</Text>
             </View>
           )}
 
-          {/* Sign In Button */}
-          <TouchableOpacity
-            style={[
-              styles.signInButton,
-              isLoading && styles.signInButtonDisabled,
-            ]}
-            onPress={handleSubmit}
-            disabled={isLoading}>
-            {isLoading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <>
-                <Text style={styles.signInButtonText}>تسجيل الدخول</Text>
-                <Text style={styles.signInButtonIcon}>←</Text>
-              </>
+          {/* Welcome Text - Hide when keyboard is open */}
+          {!keyboardVisible && (
+            <View style={styles.welcomeContainer}>
+              <Text style={styles.welcomeTitle}>مرحباً بعودتك</Text>
+              <Text style={styles.welcomeSubtitle}>
+                سجل الدخول لإدارة بياناتك
+              </Text>
+            </View>
+          )}
+
+          {/* Login Card */}
+          <View style={styles.card}>
+            {/* User ID Input */}
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>رقم المستخدم</Text>
+              <View style={styles.inputWrapper}>
+                <Text style={styles.inputIcon}>👤</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="أدخل رقم المستخدم"
+                  placeholderTextColor="#9ca3af"
+                  value={formData.userId}
+                  onChangeText={(text) => handleChange("userId", text)}
+                  autoCapitalize="none"
+                  editable={!isLoading}
+                />
+              </View>
+            </View>
+
+            {/* Password Input */}
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>كلمة المرور</Text>
+              <View style={styles.inputWrapper}>
+                <Text style={styles.inputIcon}>🔒</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="أدخل كلمة المرور"
+                  placeholderTextColor="#9ca3af"
+                  value={formData.password}
+                  onChangeText={(text) => handleChange("password", text)}
+                  secureTextEntry
+                  editable={!isLoading}
+                />
+              </View>
+            </View>
+
+            {/* Forgot Password */}
+            <TouchableOpacity
+              style={styles.forgotPassword}
+              onPress={() => setShowForgotPasswordModal(true)}>
+              <Text style={styles.forgotPasswordText}>نسيت كلمة المرور؟</Text>
+            </TouchableOpacity>
+
+            {/* Error Message */}
+            {error && (
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
             )}
-          </TouchableOpacity>
+
+            {/* Sign In Button */}
+            <TouchableOpacity
+              style={[
+                styles.signInButton,
+                isLoading && styles.signInButtonDisabled,
+              ]}
+              onPress={handleSubmit}
+              disabled={isLoading}>
+              {isLoading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <>
+                  <Text style={styles.signInButtonText}>تسجيل الدخول</Text>
+                  <Text style={styles.signInButtonIcon}>←</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      </ScrollView>
 
       {/* Forgot Password Modal */}
       <ForgotPasswordModal
@@ -138,12 +174,23 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#d1fae5", // Light green background
   },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+    paddingVertical: 20,
+  },
   content: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 24,
-    paddingTop: 40, // Space for status bar (clock, battery, etc.)
+    paddingTop: 40,
+    paddingBottom: 40,
+  },
+  contentKeyboardOpen: {
+    paddingTop: 10,
+    paddingBottom: 10,
+    justifyContent: "flex-start",
   },
   logoContainer: {
     alignItems: "center",
