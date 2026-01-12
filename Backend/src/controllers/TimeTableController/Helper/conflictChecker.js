@@ -36,21 +36,44 @@ const hasTimeConflict = (start1, end1, start2, end2) => {
   return hasConflict;
 };
 
+
 /**
- * فحص التعارب مع المواعيد الموجودة لنفس الحلقة
+ * فحص التعارب مع المواعيد الموجودة لنفس الحلقة مع مراعاة التاريخ (sessionDate)
  * @param {Object} timetableData - بيانات الموعد الجديد
  * @param {String} currentTimetableId - معرف الموعد الحالي (للتحديث)
  * @returns {Promise<Object>} - {hasConflict: boolean, conflictDetails: Object}
  */
 const checkTimetableConflict = async (timetableData, currentTimetableId = null) => {
   try {
-    const { day, startHour, endHour, note } = timetableData;
+    const { day, startHour, endHour, note, sessionDate, isRecurring } = timetableData;
 
-    console.log("🔍 فحص التعارب للحلقة:", { day, startHour, endHour, note });
+    console.log("🔍 فحص التعارب للحلقة:", { day, startHour, endHour, note, sessionDate, isRecurring });
 
-    // البحث عن جميع المواعيد في نفس اليوم
-    const existingTimetables = await TimeTable.find({ day });
-    console.log("📋 عدد المواعيد الموجودة في نفس اليوم:", existingTimetables.length);
+    // تحديد نوع الموعد الجديد
+    const isNewSessionRecurring = isRecurring !== false && !sessionDate;
+    const newDate = sessionDate ? new Date(sessionDate) : null;
+    
+    // بناء الـ query بناءً على نوع الموعد
+    let query = { day };
+    
+    if (!isNewSessionRecurring && newDate) {
+      // الموعد الجديد محدد بتاريخ - نبحث عن:
+      // 1. المواعيد المتكررة في نفس اليوم (ستتعارض مع أي تاريخ في هذا اليوم)
+      // 2. المواعيد المحددة بنفس التاريخ
+      const targetDate = new Date(newDate);
+      targetDate.setHours(0, 0, 0, 0);
+      const nextDay = new Date(targetDate);
+      nextDay.setDate(nextDay.getDate() + 1);
+      
+      query.$or = [
+        { day, isRecurring: true },
+        { day, isRecurring: false, sessionDate: { $gte: targetDate, $lt: nextDay } }
+      ];
+      delete query.day; // لأننا نستخدمه في $or
+    }
+    
+    const existingTimetables = await TimeTable.find(query);
+    console.log("📋 عدد المواعيد الموجودة:", existingTimetables.length);
 
     for (const existing of existingTimetables) {
       // تجاهل الموعد الحالي عند التحديث
@@ -60,35 +83,57 @@ const checkTimetableConflict = async (timetableData, currentTimetableId = null) 
       }
 
       // فحص التعارب فقط مع مواعيد نفس الحلقة (note)
-      // إذا كان note فارغ، لا نفحص التعارب (مواعيد عامة)
       if (!note || !note.trim() || !existing.note || !existing.note.trim()) {
         console.log("⏭️ تجاهل موعد بدون حلقة");
         continue;
       }
 
-      console.log("🔎 مقارنة مع موعد موجود:", { 
-        existingNote: existing.note, 
-        existingTime: `${existing.startHour} - ${existing.endHour}` 
-      });
-
       // التحقق من التطابق في الحلقة
       if (existing.note.trim() === note.trim()) {
-        console.log("✅ نفس الحلقة - فحص التعارب الزمني");
-        const conflict = hasTimeConflict(startHour, endHour, existing.startHour, existing.endHour);
-        console.log("⏰ نتيجة فحص التعارب:", conflict);
-        
-        if (conflict) {
-          console.log("❌ يوجد تعارب!");
-          return {
-            hasConflict: true,
-            conflictDetails: {
-              day: existing.day,
-              startHour: existing.startHour,
-              endHour: existing.endHour,
-              note: existing.note,
-              timetableId: existing._id
-            }
-          };
+        const existingDate = existing.sessionDate ? new Date(existing.sessionDate) : null;
+        const isExistingRecurring = existing.isRecurring !== false && !existingDate;
+
+        console.log(`🔎 فحص مع موعد: ${existing.note} (${existing.startHour}-${existing.endHour}), متكرر: ${isExistingRecurring}, تاريخ: ${existingDate?.toDateString()}`);
+
+        // منطق التعارض المُحسّن:
+        let shouldCheckTimeConflict = false;
+
+        // 1. كلاهما متكرر
+        if (isNewSessionRecurring && isExistingRecurring) {
+          shouldCheckTimeConflict = true;
+          console.log("   📌 كلاهما متكرر - فحص الوقت");
+        }
+        // 2. كلاهما محدد بتاريخ - تعارض فقط إذا نفس التاريخ
+        else if (!isNewSessionRecurring && !isExistingRecurring) {
+          if (newDate && existingDate && newDate.toDateString() === existingDate.toDateString()) {
+            shouldCheckTimeConflict = true;
+            console.log("   📌 كلاهما بنفس التاريخ - فحص الوقت");
+          } else {
+            console.log("   ⏭️ تواريخ مختلفة - لا تعارض");
+          }
+        }
+        // 3. واحد متكرر والثاني محدد بتاريخ
+        else {
+          shouldCheckTimeConflict = true;
+          console.log("   📌 أحدهما متكرر - فحص الوقت");
+        }
+
+        if (shouldCheckTimeConflict) {
+          const conflict = hasTimeConflict(startHour, endHour, existing.startHour, existing.endHour);
+          if (conflict) {
+            return {
+              hasConflict: true,
+              conflictDetails: {
+                day: existing.day,
+                startHour: existing.startHour,
+                endHour: existing.endHour,
+                note: existing.note,
+                timetableId: existing._id,
+                sessionDate: existing.sessionDate,
+                isRecurring: isExistingRecurring
+              }
+            };
+          }
         }
       }
     }
@@ -162,17 +207,40 @@ const checkTeacherTimetableConflict = async (teacherId, day, startHour, endHour,
  * @param {String} startHour - وقت البداية
  * @param {String} endHour - وقت النهاية
  * @param {String} excludeSessionId - معرف الجلسة المستثناة (للتحديث)
+ * @param {Date} dateToCheck - التاريخ المحدد للفحص (اختياري)
  * @returns {Promise<Object>} - {hasConflict: boolean, conflictingSession: Object}
  */
-const checkSessionConflict = async (teacherId, day, startHour, endHour, excludeSessionId = null) => {
+const checkSessionConflict = async (teacherId, day, startHour, endHour, excludeSessionId = null, dateToCheck = null) => {
   try {
-    console.log(`🔍 [checkSessionConflict] فحص تضارب للمعلم ${teacherId} في ${day}`);
+    console.log(`🔍 [checkSessionConflict] فحص تضارب للمعلم ${teacherId} في ${day} (تاريخ: ${dateToCheck})`);
     
     // جلب جميع الجلسات المحجوزة للمعلم في هذا اليوم
     const query = {
       teacherId,
-      day,
+      day, // يجب أن يتطابق اليوم الأسبوعي دائماً
     };
+    
+    // ✅ تطبيق نفس منطق getBookedHoursForTeacher
+    if (dateToCheck) {
+      const targetDate = new Date(dateToCheck);
+      targetDate.setHours(0, 0, 0, 0);
+      const nextDay = new Date(targetDate);
+      nextDay.setDate(nextDay.getDate() + 1);
+
+      query.$or = [
+        { isRecurring: true }, // الجلسات المتكررة تحجز في كل الأسابيع
+        { 
+          isRecurring: false, 
+          sessionDate: { $gte: targetDate, $lt: nextDay } 
+        } // الجلسة المحددة لهذا التاريخ فقط
+      ];
+      
+      console.log(`   📅 فحص مع مراعاة التاريخ ${targetDate.toLocaleDateString('ar-EG')}`);
+    } else {
+      // إذا لم يتم تحديد تاريخ، نفحص فقط الجلسات المتكررة
+      query.isRecurring = true;
+      console.log(`   📅 فحص الجلسات المتكررة فقط`);
+    }
     
     // استثناء الجلسة الحالية عند التعديل
     if (excludeSessionId) {

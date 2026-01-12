@@ -53,11 +53,13 @@ exports.createTimetable = async (req, res) => {
         // التأكد من التاريخ ككائن Date
         const dateObj = new Date(sessionDate);
         if (!isNaN(dateObj.getTime())) {
+          // استخدام getDay() بدلاً من getUTCDay() لأن التاريخ يُحفظ بالتوقيت المحلي
+          // هذا يضمن الحصول على اليوم الصحيح بغض النظر عن timezone
           const dayIndex = dateObj.getDay(); // 0 = الأحد
           day = arabicDays[dayIndex];
           // تحديث الكائن الأصلي أيضاً لأنه يستخدم في التحقق من التعارض
           timetableData.day = day;
-          console.log(`🤖 تم اشتقاق اليوم تلقائياً: ${day} من التاريخ ${sessionDate}`);
+          console.log(`🤖 تم اشتقاق اليوم تلقائياً: ${day} من التاريخ ${sessionDate} (Local)`);
         }
       }
     }
@@ -70,9 +72,13 @@ exports.createTimetable = async (req, res) => {
       });
     }
 
+    // ✅ تحديث timetableData بالقيم المشتقة لاستخدامها في فحص التعارض
+    timetableData.sessionDate = sessionDate || timetableData.sessionDate;
+    timetableData.isRecurring = sectionId ? false : (timetableData.isRecurring !== false);
+
     // 1. فحص التعارب لجميع حلقات المعلم - الفحص الأساسي والأهم
     if (teacherId) {
-      const conflictCheck = await checkSessionConflict(teacherId, day, startHour, endHour);
+      const conflictCheck = await checkSessionConflict(teacherId, day, startHour, endHour, null, sessionDate);
       
       if (conflictCheck.hasConflict) {
         const conflictSession = conflictCheck.conflictingSession;
@@ -121,6 +127,8 @@ exports.createTimetable = async (req, res) => {
       // ✅ حقول الربط الجديد
       sectionId: sectionId || undefined,
       sessionDate: sessionDate || undefined,
+      // ✅ تحديد نوع الموعد: متكرر (أسبوعياً) أو محدد بتاريخ (لمرة واحدة)
+      isRecurring: !sectionId, // إذا كان مرتبط بمقطع = محدد بتاريخ، وإلا = متكرر أسبوعياً
     });
     
     await timetable.save();

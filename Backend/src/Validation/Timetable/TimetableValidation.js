@@ -327,6 +327,24 @@ const validateSectionId = (sectionId) => {
 };
 
 /**
+ * Validate isRecurring (optional boolean)
+ */
+const validateIsRecurring = (isRecurring) => {
+  if (isRecurring === undefined || isRecurring === null) {
+    return { isValid: true, value: undefined }; // Optional - will be set by controller
+  }
+
+  if (typeof isRecurring !== 'boolean') {
+    return { 
+      isValid: false, 
+      message: 'isRecurring يجب أن يكون true أو false' 
+    };
+  }
+
+  return { isValid: true, value: isRecurring };
+};
+
+/**
  * Main validation middleware for timetable data
  */
 const validateTimetableData = async (req, res, next) => {
@@ -410,6 +428,16 @@ const validateTimetableData = async (req, res, next) => {
       }
     }
     
+    // Validate optional isRecurring field
+    if (data.isRecurring !== undefined) {
+      const isRecurringValidation = validateIsRecurring(data.isRecurring);
+      if (!isRecurringValidation.isValid) {
+        errors.push(isRecurringValidation.message);
+      } else {
+        validatedData.isRecurring = isRecurringValidation.value;
+      }
+    }
+    
     // Validate required teacherId field for creation
     if (!isUpdate || data.teacherId !== undefined) {
       if (!isUpdate && !data.teacherId) {
@@ -472,5 +500,6 @@ module.exports = {
   validateTeacherId,
   validateSessionType,
   validateSectionId,
+  validateIsRecurring,
   validateTimeLogic
 };

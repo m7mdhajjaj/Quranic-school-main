@@ -23,6 +23,8 @@ export const useSessionForm = ({ editingSession, role, teacherGroups = [], initi
   const [hours, setHours] = useState<string[]>([]);
   const [bookedHours, setBookedHours] = useState<string[]>([]); // الأوقات المحجوزة (للتعطيل)
   const [loadingHours, setLoadingHours] = useState(true);
+  // إضافة: حفظ تاريخ المقطع (إن وجد)
+  const [sectionDate, setSectionDate] = useState<string | undefined>(undefined);
   
   // Logic to determine initial sessionType
   const getInitialSessionType = () => {
@@ -40,6 +42,8 @@ export const useSessionForm = ({ editingSession, role, teacherGroups = [], initi
     sessionType: getInitialSessionType(),
     teacherId: "",
     sectionId: initialSectionId || "",
+    sessionDate: undefined,
+    isRecurring: undefined,
   }));
   
   // ============================================
@@ -103,22 +107,36 @@ export const useSessionForm = ({ editingSession, role, teacherGroups = [], initi
           const section = await getSectionById(initialSectionId);
           if (section?.date) {
             const dateObj = new Date(section.date);
+            // استخدام getDay() بدلاً من getUTCDay() لأن التاريخ يُحفظ بالتوقيت المحلي
             const jsDay = dateObj.getDay(); // 0 = Sunday
             // WEEK_DAYS starts with Saturday (0)
             // Sat(6) -> 0, Sun(0) -> 1
             const dayIndex = (jsDay + 1) % 7;
             const targetDay = WEEK_DAYS[dayIndex];
+            const isoDate = dateObj.toISOString();
             
+            // 🔍 Debug: تتبع حساب اليوم
+            console.log('📅 Section Date Debug:', {
+              originalDate: section.date,
+              dateObj: dateObj.toString(),
+              jsDay,
+              dayIndex,
+              targetDay,
+              isoDate
+            });
+            
+            setSectionDate(isoDate);
             setFormData(prev => ({
               ...prev,
-              day: targetDay
+              day: targetDay,
+              sessionDate: isoDate,
+              isRecurring: false,
             }));
           }
         } catch (error) {
           console.error("Failed to auto-fill day from section:", error);
         }
       };
-      
       fetchSectionDetails();
     }
   }, [initialSectionId, editingSession]);
@@ -182,7 +200,6 @@ export const useSessionForm = ({ editingSession, role, teacherGroups = [], initi
       const teacherIdValue = typeof editingSession.teacherId === 'string' 
         ? editingSession.teacherId 
         : editingSession.teacherId?._id || "";
-      
       setFormData({
         day: editingSession.day,
         startHour: editingSession.startHour, // محدد مسبقاً - وقت الحلقة الحالي
@@ -192,8 +209,9 @@ export const useSessionForm = ({ editingSession, role, teacherGroups = [], initi
         sessionType: editingSession.sessionType,
         teacherId: teacherIdValue,
         sectionId: editingSession.sectionId || "",
+        sessionDate: editingSession.sessionDate,
+        isRecurring: editingSession.isRecurring,
       });
-      
       if (role === "teacher") {
         setSelectedGroup(editingSession.note);
       }
@@ -202,9 +220,9 @@ export const useSessionForm = ({ editingSession, role, teacherGroups = [], initi
       const currentUser = getCurrentUser();
       const defaultTeacherId = role === "teacher" && currentUser?._id ? currentUser._id : "";
       const urlSessionType = searchParams.get('sessionType') as any || undefined;
-      
-      setFormData({
-        day: WEEK_DAYS[0], // اليوم الأول (السبت)
+      setFormData(prev => ({
+        // الاحتفاظ باليوم المُشتق من تاريخ المقطع إذا كان موجوداً، وإلا استخدام السبت كافتراضي
+        day: prev.day && prev.sectionId ? prev.day : WEEK_DAYS[0],
         startHour: "", // المستخدم يختار
         endHour: "",   // المستخدم يختار
         note: initialGroupName || "",
@@ -212,21 +230,21 @@ export const useSessionForm = ({ editingSession, role, teacherGroups = [], initi
         sessionType: urlSessionType,
         teacherId: defaultTeacherId, // للمعلم: ID تلقائي، للأدمن: فارغ
         sectionId: initialSectionId || "",
-      });
-      
+        sessionDate: prev.sessionDate || sectionDate,
+        isRecurring: (prev.sessionDate || sectionDate) ? false : undefined,
+      }));
       if (role === "teacher" && teacherGroups.length > 0) {
         setSelectedGroup(teacherGroups[0]);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editingSession, role, initialSectionId, initialGroupName, searchParams]);
+  }, [editingSession, role, initialSectionId, initialGroupName, searchParams, sectionDate, teacherGroups]);
 
   // دالة لإعادة تعيين النموذج (reset)
   const resetForm = () => {
     const currentUser = getCurrentUser();
     const defaultTeacherId = role === "teacher" && currentUser?._id ? currentUser._id : "";
-    
-    setFormData({
+    setFormData(prev => ({
       day: WEEK_DAYS[0],
       startHour: "",
       endHour: "",
@@ -235,8 +253,9 @@ export const useSessionForm = ({ editingSession, role, teacherGroups = [], initi
       sessionType: undefined,
       teacherId: defaultTeacherId,
       sectionId: initialSectionId || "",
-    });
-    
+      sessionDate: sectionDate,
+      isRecurring: sectionDate ? false : undefined,
+    }));
     setSelectedGroup("");
     setBookedHours([]);
   };

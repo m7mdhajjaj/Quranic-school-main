@@ -30,27 +30,31 @@ const getBookedHoursForTeacher = async (teacherId, day, excludeSessionId = null,
     };
 
     if (dateToCheck) {
-      // ✅ المنطق الجديد:
-      // الجلسة محجوزة إذا كانت:
-      // 1. جلسة متكررة (isRecurring: true)
-      // 2. أو جلسة محددة بهذا التاريخ بالضبط (date == dateToCheck)
-      // 3. (مهم) الجلسات المحددة بتواريخ *أخرى* (مثل 12/11) لا يجب أن تحجز يوم (19/11)
+      // ✅ المنطق المحسّن:
+      // الجلسة تحجز الوقت في التاريخ المحدد إذا كانت:
+      // 1. جلسة متكررة أسبوعياً (isRecurring: true) - تحجز كل أسبوع
+      // 2. أو جلسة محددة بهذا التاريخ بالضبط (isRecurring: false && sessionDate == dateToCheck)
+      // 3. (مهم) الجلسات المحددة بتواريخ *أخرى* لا تحجز هذا التاريخ
       
       const targetDate = new Date(dateToCheck);
-      // ضبط الوقت للصفر للمقارنة
-      targetDate.setHours(0,0,0,0);
+      // ضبط الوقت للصفر للمقارنة الدقيقة
+      targetDate.setHours(0, 0, 0, 0);
       const nextDay = new Date(targetDate);
       nextDay.setDate(nextDay.getDate() + 1);
 
       query.$or = [
-        { isRecurring: true }, // الجلسات الدائمة تحجز في كل الأيام
-        { isRecurring: { $ne: true }, date: { $gte: targetDate, $lt: nextDay } } // الجلسة المحددة لهذا اليوم فقط
+        { isRecurring: true }, // الجلسات المتكررة تحجز في كل الأسابيع
+        { 
+          isRecurring: false, 
+          sessionDate: { $gte: targetDate, $lt: nextDay } 
+        } // الجلسة المحددة لهذا التاريخ فقط
       ];
+      
+      console.log(`📅 فحص الأوقات المحجوزة للتاريخ ${targetDate.toLocaleDateString('ar-EG')}`);
     } else {
-      // إذا لم يتم تحديد تاريخ، نفترض أننا نبحث بشكل عام
-      // في هذه الحالة، نعرض الجلسات المتكررة فقط كقاعدة عامة للشبكة الأسبوعية?
-      // أو نعرض كل شيء؟ الأفضل عرض المتكرر فقط لأن جلسات التواريخ هي استثناءات
-      // لكن حالياً سنبقيها بسيطة
+      // إذا لم يتم تحديد تاريخ، نعرض فقط الجلسات المتكررة (الجدول الأسبوعي العام)
+      query.isRecurring = true;
+      console.log(`📅 فحص الجلسات المتكررة (الجدول الأسبوعي العام)`);
     }
     
     // استثناء الجلسة الحالية عند التعديل

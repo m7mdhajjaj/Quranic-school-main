@@ -22,7 +22,9 @@ export interface Session {
   groupId?: string;
   teacherId?: string | Teacher; // معرف المعلم أو بياناته الكاملة
   sectionId?: string;
+  sessionDate?: string; // التاريخ المحدد للحصة (من المقطع)
   sessionType?: 'hifz' | 'murajaah' | 'both'; // حفظ، مراجعة، أو الاثنين
+  isRecurring?: boolean; // true = متكرر أسبوعياً، false = محدد بتاريخ
   createdAt?: string;
   updatedAt?: string;
   // خصائص إضافية للخطة الشهرية
@@ -92,6 +94,15 @@ export interface GetSessionsResponse {
   success: boolean;
   timetables: Session[];
   teacherGroups: string[];
+  meta?: {
+    total: number;
+    filter: string;
+  };
+}
+
+export interface GetSessionsParams {
+  weekFilter?: 'current' | 'all';
+  weekStart?: string; // ISO date string
 }
 
 // Get available hours - الأوقات المتاحة حسب التوقيت الحالي (عامة)
@@ -104,19 +115,23 @@ export const getAvailableHours = async (): Promise<AvailableHoursResponse> => {
 export const getAvailableHoursForTeacher = async (
   teacherId: string,
   day: string,
-  excludeSessionId?: string
+  excludeSessionId?: string,
+  date?: string // إضافة معامل التاريخ المحدد
 ): Promise<TeacherAvailableHoursResponse> => {
   const params: any = { teacherId, day };
   if (excludeSessionId) {
     params.excludeSessionId = excludeSessionId;
   }
+  if (date) {
+    params.date = date; // تمرير التاريخ المحدد للباك اند
+  }
   const response = await api.get('/sessions/available-hours-teacher', { params });
   return response.data;
 };
 
-// Get all sessions - Backend filters by user role
-export const getAllSessions = async (): Promise<GetSessionsResponse | Session[]> => {
-  const response = await api.get('/sessions');
+// Get all sessions - Backend filters by user role and week
+export const getAllSessions = async (params?: GetSessionsParams): Promise<GetSessionsResponse | Session[]> => {
+  const response = await api.get('/sessions', { params });
   return response.data;
 };
 

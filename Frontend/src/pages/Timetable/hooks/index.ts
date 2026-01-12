@@ -12,3 +12,5 @@ export { useTeacherGroups } from "./useTeacherGroups";
 export { useSessionModalLogic } from "./useSessionModalLogic";
 export { useTeacherSelection } from "./useTeacherSelection";
 export { useSessionDuration } from "./useSessionDuration";
+export { useWeekFilter, getWeekRange, formatWeekRange } from "./useWeekFilter";
+export type { WeekRange } from "./useWeekFilter";

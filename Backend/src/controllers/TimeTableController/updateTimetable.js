@@ -60,10 +60,11 @@ exports.updateTimetable = async (req, res) => {
           const arabicDays = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
           const dateObj = new Date(sessionDate);
           if (!isNaN(dateObj.getTime())) {
-            const dayIndex = dateObj.getDay();
+            // استخدام getDay() بدلاً من getUTCDay() لأن التاريخ يُحفظ بالتوقيت المحلي
+            const dayIndex = dateObj.getDay(); // 0 = Sunday
             day = arabicDays[dayIndex];
             timetableData.day = day; // تحديث reference
-            console.log(`🤖 Update: تم اشتقاق اليوم تلقائياً: ${day}`);
+            console.log(`🤖 Update: تم اشتقاق اليوم تلقائياً: ${day} (Local)`);
           }
         }
     }
@@ -93,7 +94,8 @@ exports.updateTimetable = async (req, res) => {
         day || oldTimetable.day,
         startHour || oldTimetable.startHour,
         endHour || oldTimetable.endHour,
-        id // استثناء الجلسة الحالية
+        id, // استثناء الجلسة الحالية
+        sessionDate || oldTimetable.sessionDate // تمرير التاريخ
       );
       
       if (conflictCheck.hasConflict) {
@@ -130,6 +132,7 @@ exports.updateTimetable = async (req, res) => {
     }
 
     // تحديث الموعد
+    const finalSectionId = sectionId || oldTimetable.sectionId;
     const updateData = { 
         day: day || oldTimetable.day, // استخدام القيمة الجديدة أو القديمة
         startHour: startHour || oldTimetable.startHour, 
@@ -137,8 +140,10 @@ exports.updateTimetable = async (req, res) => {
         note: note || "", 
         groupId,
         // تحديث البيانات المرتبطة بالمقطع
-        sectionId: sectionId || oldTimetable.sectionId,
-        sessionDate: sessionDate
+        sectionId: finalSectionId,
+        sessionDate: sessionDate,
+        // ✅ تحديث isRecurring بناءً على وجود sectionId
+        isRecurring: !finalSectionId, // إذا كان مرتبط بمقطع = محدد بتاريخ، وإلا = متكرر
     };
     if (sessionType !== undefined) {
       updateData.sessionType = sessionType; // ✅ تحديث sessionType فقط إذا تم إرساله

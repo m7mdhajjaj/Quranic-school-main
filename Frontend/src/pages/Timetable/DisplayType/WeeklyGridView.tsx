@@ -5,6 +5,7 @@
 import React, { useMemo } from "react";
 import type { Session, UserRole } from "../types/timetable.types";
 import { WEEK_DAYS, generateHours, isSummerTime } from "../utils";
+import { useWeekFilter } from "../hooks";
 import { Edit, Trash2, MoreVertical } from "lucide-react";
 import { DropdownMenu } from "@/components/UI/DropdownMenu";
 
@@ -27,6 +28,15 @@ export const WeeklyGridView: React.FC<WeeklyGridViewProps> = ({
   const currentIsSummer = useMemo(() => isSummerTime(), []);
   const hours = useMemo(() => generateHours(currentIsSummer), [currentIsSummer]);
 
+  // ✅ استخدام hook الفلترة - الباك إند يفلتر، لكن نحتفظ بالـ client filter كـ fallback
+  const { 
+    weekRangeFormatted, 
+    filteredSessions 
+  } = useWeekFilter({ 
+    sessions, 
+    enableClientFilter: true // fallback في حالة عدم دعم الباك إند
+  });
+
   // تنظيم الحصص - الحصة تظهر في سلوت البداية فقط مع معلومات الامتداد
   const sessionGrid = useMemo(() => {
     const grid: Record<string, Record<string, { session: Session; rowSpan: number }[]>> = {};
@@ -40,7 +50,7 @@ export const WeeklyGridView: React.FC<WeeklyGridViewProps> = ({
     });
 
     // ترتيب الحصص حسب وقت البداية لضمان عرض صحيح
-    const sortedSessions = [...sessions].sort((a, b) => {
+    const sortedSessions = [...filteredSessions].sort((a, b) => {
       const aIndex = hours.indexOf(a.startHour);
       const bIndex = hours.indexOf(b.startHour);
       if (aIndex !== bIndex) return aIndex - bIndex;
@@ -66,7 +76,7 @@ export const WeeklyGridView: React.FC<WeeklyGridViewProps> = ({
     });
 
     return grid;
-  }, [sessions, hours]);
+  }, [filteredSessions, hours]);
 
   // دالة للتحقق إذا كان السلوت مشغول بحصة ممتدة من سلوت سابق
   const isSlotOccupied = (day: string, currentHour: string): boolean => {
@@ -115,7 +125,9 @@ export const WeeklyGridView: React.FC<WeeklyGridViewProps> = ({
              </div>
              <div>
                 <h3 className="text-xl font-bold text-white tracking-wide">الجدول الأسبوعي</h3>
-                <p className="text-xs text-emerald-100 font-medium opacity-90">تنظيم وتنسيق المواعيد الدراسية</p>
+                <p className="text-xs text-emerald-100 font-medium opacity-90">
+                  {weekRangeFormatted}
+                </p>
              </div>
           </div>
           
