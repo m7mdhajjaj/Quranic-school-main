@@ -10,7 +10,6 @@ import { SectionItem } from './SectionItem';
 import { AiRepairButton } from '../../../components/AiRepairButton';
 import { CompletedSurahsModal } from '../../../components/CompletedSurahsModal';
 import { useState } from 'react';
-import { SectionsGridSkeleton } from '../../../../../components/skeletons/DailyMarksSkeletons';
 
 interface SectionsGridViewProps {
   selectedGroup: string;
@@ -200,16 +199,14 @@ export const SectionsGridView = ({
       </div>
 
       {/* Sections Cards */}
-      {loadingMarks && sections.length === 0 ? (
-        <SectionsGridSkeleton count={6} />
-      ) : sections.length === 0 ? (
+      {sections.length === 0 && !loadingMarks ? (
         <Card className="p-12 text-center">
           <BookOpen className="w-16 h-16 mx-auto text-gray-400 mb-4" />
           <p className="text-gray-600 font-medium">
             لا توجد مقاطع في هذه الحلقة
           </p>
         </Card>
-      ) : filteredSectionsByStatus.length === 0 ? (
+      ) : filteredSectionsByStatus.length === 0 && !loadingMarks ? (
         <Card className="p-12 text-center">
           <Filter className="w-16 h-16 mx-auto text-gray-400 mb-4" />
           <p className="text-gray-600 font-medium">
