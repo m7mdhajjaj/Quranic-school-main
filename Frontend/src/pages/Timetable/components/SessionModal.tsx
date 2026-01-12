@@ -1,6 +1,7 @@
 // ============================================================================
 // SessionModal - نافذة إضافة/تعديل موعد الحلقة
 // ============================================================================
+// ⚠️ النظام الجديد: يعتمد على sessionDate (التاريخ المحدد)
 
 import React from "react";
 import { Modal } from "@/components/UI/Modal";
@@ -10,7 +11,7 @@ import type {
   SessionFormData,
   UserRole,
 } from "../types/timetable.types";
-import { WEEK_DAYS, isSummerTime } from "../utils";
+import { isSummerTime, getDayNameFromDate, getTodayDate } from "../utils";
 import { Calendar, Clock, Users, UserCircle } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { 
@@ -44,8 +45,8 @@ export const SessionModal: React.FC<SessionModalProps> = ({
   const initialSectionId = searchParams.get('sectionId') || undefined;
   const initialGroupName = searchParams.get('groupName') || undefined;
 
-  // ✅ استخدام الـ hooks المنفصلة لتنظيم أفضل
-  const { formData, setFormData, hours, bookedHours, handleStartHourChange, resetForm } = useSessionForm({
+  // ✅ استخدام الـ hooks المنفصلة
+  const { formData, setFormData, hours, bookedHours, handleStartHourChange, handleDateChange, resetForm } = useSessionForm({
     editingSession,
     role,
     teacherGroups,
@@ -56,17 +57,15 @@ export const SessionModal: React.FC<SessionModalProps> = ({
   const { teachers, loadingTeachers } = useTeachers({
     isOpen,
     enabled: role === "admin",
-    onlyWithGroups: true, // جلب المعلمين الذين لديهم حلقات فقط
+    onlyWithGroups: true,
   });
 
-  // ✅ جلب حلقات المعلم المختار (للأدمن فقط)
   const { teacherGroups: teacherGroupsList, loadingGroups } = useTeacherGroups({
     teacherId: formData.teacherId,
     isOpen,
     enabled: role === "admin",
   });
   
-  // ✅ منطق المودال (validation + submit + close)
   const { loading, handleSubmit, handleClose } = useSessionModalLogic({
     onSubmit,
     editingSession,
@@ -76,18 +75,19 @@ export const SessionModal: React.FC<SessionModalProps> = ({
     formData,
   });
 
-  // ✅ منطق اختيار المعلم
   const { selectedTeacher } = useTeacherSelection({
     teachers,
     teacherId: formData.teacherId,
   });
 
-  // ✅ حساب مدة الحصة
   const duration = useSessionDuration({
     startHour: formData.startHour,
     endHour: formData.endHour,
     hours,
   });
+
+  // ⚠️ الحصول على اسم اليوم من التاريخ المختار
+  const selectedDayName = formData.sessionDate ? getDayNameFromDate(formData.sessionDate) : '';
 
   return (
     <Modal
@@ -96,10 +96,9 @@ export const SessionModal: React.FC<SessionModalProps> = ({
       title={editingSession ? "✏️ تعديل موعد حلقة" : "➕ إضافة موعد حلقة"}
       size="4xl">
       <form onSubmit={handleSubmit} className="flex flex-col h-full">
-        {/* محتوى المودال - قابل للتمرير */}
         <div className="flex-1 overflow-y-auto px-1">
           <div className="space-y-6">
-            {/* 1️⃣ قسم معلومات المعلم والحلقة - الأول */}
+            {/* 1️⃣ قسم معلومات المعلم والحلقة */}
             {(role === "admin" || role === "teacher") && (
               <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-4 border-2 border-emerald-200">
                 <h3 className="text-base font-bold text-emerald-900 mb-4 flex items-center gap-2">
@@ -124,7 +123,6 @@ export const SessionModal: React.FC<SessionModalProps> = ({
                         value={formData.teacherId}
                         onChange={(e) => {
                           const newTeacherId = e.target.value;
-                          // عند تغيير المعلم، نعيد تعيين اسم الحلقة (note) لأن الحلقات تختلف
                           setFormData({ ...formData, teacherId: newTeacherId, note: "" });
                         }}
                         aria-label="اختر المعلم"
@@ -200,12 +198,12 @@ export const SessionModal: React.FC<SessionModalProps> = ({
               </div>
             )}
 
-            {/* 2️⃣ قسم اختيار اليوم والأوقات */}
+            {/* 2️⃣ قسم اختيار التاريخ والأوقات */}
             <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border-2 border-blue-200">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-base font-bold text-blue-900 flex items-center gap-2">
                   <Calendar className="w-5 h-5" />
-                  {role === "admin" ? "2️⃣ اختر اليوم والأوقات" : "معلومات الحصة"}
+                  {role === "admin" ? "2️⃣ اختر التاريخ والأوقات" : "معلومات الحصة"}
                 </h3>
                 {/* عرض التوقيت الحالي */}
                 <div className="flex flex-col items-end gap-1 bg-white px-3 py-2 rounded-lg border-2 border-blue-300">
@@ -217,39 +215,37 @@ export const SessionModal: React.FC<SessionModalProps> = ({
                   </span>
                 </div>
               </div>
-              {/* اليوم */}
+              
+              {/* ⚠️ اختيار التاريخ (بدلاً من اليوم) */}
               {!formData.sectionId && (
               <div className="mb-5">
-                <label className="block text-sm font-bold text-blue-900 mb-3">
-                  اليوم{' '}
+                <label htmlFor="session-date-input" className="block text-sm font-bold text-blue-900 mb-3">
+                  التاريخ *
                   {formData.sectionId && (
-                    <span className="text-xs font-normal text-red-500 bg-red-50 px-2 py-0.5 rounded-full">
+                    <span className="text-xs font-normal text-red-500 bg-red-50 px-2 py-0.5 rounded-full mr-2">
                       (مرتبط بتاريخ المقطع)
                     </span>
                   )}
                 </label>
-                <div className="grid grid-cols-3 sm:grid-cols-7 gap-2">
-                  {WEEK_DAYS.map((day) => {
-                    const isLocked = !!formData.sectionId;
-                    const isSelected = formData.day === day;
-                    
-                    return (
-                      <button
-                        key={day}
-                        type="button"
-                        onClick={() => !isLocked && setFormData({ ...formData, day })}
-                        disabled={isLocked}
-                        className={`px-3 py-3 rounded-lg text-sm font-bold transition-all min-w-0 ${
-                          isSelected
-                            ? 'bg-blue-600 text-white shadow-lg scale-105'
-                            : 'bg-white text-blue-700 border-2 border-blue-200'
-                        } ${!isLocked && !isSelected ? 'hover:bg-blue-100' : ''} ${
-                          isLocked ? 'cursor-not-allowed' : ''
-                        } ${isLocked && !isSelected ? 'opacity-40 grayscale' : ''}`}>
-                        <span className="block truncate">{day}</span>
-                      </button>
-                    );
-                  })}
+                <div className="flex items-center gap-4">
+                  <input
+                    id="session-date-input"
+                    type="date"
+                    value={formData.sessionDate}
+                    onChange={(e) => handleDateChange(e.target.value)}
+                    disabled={!!formData.sectionId}
+                    min={getTodayDate()}
+                    aria-label="اختر تاريخ الحصة"
+                    className={`flex-1 px-4 py-3 border-2 border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base ${
+                      formData.sectionId ? 'bg-gray-100 cursor-not-allowed' : ''
+                    }`}
+                  />
+                  {/* عرض اسم اليوم المختار */}
+                  {selectedDayName && (
+                    <div className="bg-blue-600 text-white px-4 py-3 rounded-lg font-bold text-base shadow-lg">
+                      📅 {selectedDayName}
+                    </div>
+                  )}
                 </div>
               </div>
               )}

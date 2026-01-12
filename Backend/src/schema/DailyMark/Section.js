@@ -83,8 +83,23 @@ const sectionSchema = new mongoose.Schema(
     // ما بنغيّر date ولا أي اسم قديم—بس بنضيف field جديد
     dateKey: { type: String, index: true },
 
-    group: { type: String, index: true, trim: true },
-    teacher: { type: String, trim: true },
+    group: { type: String, index: true, trim: true }, // اسم الحلقة (للتوافق مع الكود القديم)
+    
+    // ✅ ربط مباشر بالحلقة عبر ObjectId
+    groupId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Group",
+      index: true,
+    },
+    
+    teacher: { type: String, trim: true }, // اسم المعلم (للتوافق مع الكود القديم)
+    
+    // ✅ ربط مباشر بالمعلم عبر ObjectId
+    teacherId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Teacher",
+      index: true,
+    },
 
     // 2. Legacy Text Fields
     reviewSection: { type: String, trim: true },
@@ -103,7 +118,7 @@ const sectionSchema = new mongoose.Schema(
       percentage: { type: Number, default: 0, min: 0, max: 100 },
     },
 
-    // 4. Scheduling Integration
+    // 4. Scheduling Integration (ربط المقطع بالموعد)
     hasSchedule: { type: Boolean, default: false, index: true },
     scheduleStatus: {
       type: String,
@@ -115,6 +130,15 @@ const sectionSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "TimeTable",
       index: true,
+      unique: true, // ✅ كل مقطع له موعد واحد فقط
+      sparse: true, // ✅ السماح بمقاطع بدون موعد
+    },
+    
+    // ✅ معلومات الموعد المنسوخة من TimeTable (للعرض السريع)
+    scheduleInfo: {
+      day: { type: String, enum: ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"] },
+      startHour: { type: String },
+      endHour: { type: String },
     },
 
     // 5. New Structured Data (Source of Truth)
@@ -211,6 +235,29 @@ sectionSchema.pre("validate", function (next) {
   };
 
   next();
+});
+
+// ✅ مزامنة بيانات Section مع TimeTable المرتبط عند التحديث
+sectionSchema.post("save", async function (doc) {
+  // إذا كان هناك TimeTable مرتبط، حدّث معلوماته
+  if (doc.timetableId) {
+    try {
+      const TimeTable = mongoose.model("TimeTable");
+      await TimeTable.findByIdAndUpdate(doc.timetableId, {
+        sessionDate: doc.date,
+        groupId: doc.groupId,
+        note: doc.group,
+        sectionInfo: {
+          memorizationSection: doc.memorizationSection,
+          reviewSection: doc.reviewSection,
+          marksStatus: doc.marksStatus,
+        },
+      });
+      console.log(`🔄 TimeTable ${doc.timetableId}: تم تحديث معلومات المقطع`);
+    } catch (err) {
+      console.error("خطأ في مزامنة Section مع TimeTable:", err);
+    }
+  }
 });
 
 // Clean up TimeTable if Section is deleted

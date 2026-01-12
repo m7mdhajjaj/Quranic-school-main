@@ -3,6 +3,7 @@
 // ============================================================================
 const Section = require("../../../schema/DailyMark/Section");
 const DailyMark = require("../../../schema/DailyMark/DailyMark");
+const TimeTable = require("../../../schema/TimeTable");
 const { notifySectionDeleted } = require("../../../Notifications");
 const aiSchedulerService = require("../../../services/DailyMark/AiSchedulerService");
 const {
@@ -19,6 +20,12 @@ exports.deleteSection = async (req, res) => {
     const section = await Section.findById(req.params.id);
     if (!section) {
       return sendNotFound(res, "المقطع");
+    }
+
+    // ✅ حذف TimeTable المرتبط (إذا وجد)
+    if (section.timetableId) {
+      await TimeTable.findByIdAndDelete(section.timetableId);
+      console.log(`🗑️ تم حذف TimeTable المرتبط: ${section.timetableId}`);
     }
 
     // استخراج معلومات السور المتأثرة قبل الحذف

@@ -1,13 +1,10 @@
 // ============================================================================
 // useTimetableData - هوك لجلب وإدارة بيانات الجدول من Backend
 // ============================================================================
-// يجلب الحصص من الـ API مع الفلترة التلقائية حسب دور المستخدم:
-// - الطالب: يرى حلقته فقط
-// - المعلم: يرى حلقاته فقط
-// - الإداري: يرى جميع الحلقات
+// ⚠️ النظام الجديد: يعتمد على sessionDate (التاريخ المحدد)
 
 import { useState, useEffect, useCallback } from "react";
-import { getAllSessions } from "@/Api/TimeTable.Api";
+import { getTimetables } from "@/Api/TimeTable.Api";
 import type { Session } from "../types/timetable.types";
 import { getCurrentUser, getUserRole } from "../utils";
 
@@ -23,24 +20,37 @@ export const useTimetableData = () => {
   // ============================================
   // 📡 جلب الحصص من الـ Backend API
   // ============================================
-  // Backend يقوم تلقائياً بفلترة البيانات حسب المستخدم (Student/Teacher/Admin)
   const fetchSessions = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       
-      // جلب المواعيد مع فلترة الأسبوع الحالي (الباك إند يفلتر)
-      const response = await getAllSessions({ weekFilter: 'current' });
+      // جلب المواعيد
+      const response = await getTimetables();
       
-      // ✅ الـ API الجديد يرجع object مع success
-      if (!Array.isArray(response) && response.success) {
-        console.log(`📅 تم جلب ${response.timetables?.length || 0} موعد من الباك إند`);
-        setSessions(response.timetables || []);
-        setTeacherGroups(response.teacherGroups || []); // للمعلم: أسماء حلقاته
+      if (response.success && response.data) {
+        console.log(`📅 تم جلب ${response.data.length} موعد من الباك إند`);
+        // ⚠️ تحويل Timetable[] إلى Session[]
+        const sessionsData = response.data.map((t: any) => ({
+          _id: t._id,
+          sessionDate: t.sessionDate,
+          day: t.day,
+          startHour: t.startHour,
+          endHour: t.endHour,
+          note: t.note,
+          description: t.description,
+          sessionType: t.sessionType,
+          groupId: typeof t.groupId === 'object' ? t.groupId?._id : t.groupId,
+          teacherId: t.teacherId,
+          sectionId: typeof t.sectionId === 'object' ? t.sectionId?._id : t.sectionId,
+        }));
+        setSessions(sessionsData);
+        
+        // استخراج أسماء الحلقات للمعلم
+        const groupNames = [...new Set(sessionsData.map((s: any) => s.note).filter(Boolean))] as string[];
+        setTeacherGroups(groupNames);
       } else {
-        // 🔄 Fallback للـ API القديم (array مباشر)
-        const data = Array.isArray(response) ? response : [];
-        setSessions(data);
+        setSessions([]);
       }
     } catch (error) {
       console.error("❌ Error fetching sessions:", error);
@@ -64,6 +74,6 @@ export const useTimetableData = () => {
     teacherGroups,
     user,
     role,
-    refetchSessions: fetchSessions, // للاستدعاء يدوياً عند الحاجة
+    refetchSessions: fetchSessions,
   };
 };

@@ -1,6 +1,7 @@
 // ============================================================================
 // useWeekFilter - هوك لفلترة المواعيد حسب الأسبوع
 // ============================================================================
+// ⚠️ النظام الجديد: يعتمد على sessionDate (التاريخ المحدد)
 
 import { useMemo, useState, useCallback } from "react";
 import type { Session } from "../types/timetable.types";
@@ -49,14 +50,14 @@ export const formatWeekRange = (weekRange: WeekRange): string => {
 
 interface UseWeekFilterOptions {
   sessions: Session[];
-  enableClientFilter?: boolean; // تفعيل الفلترة في الفرونت (fallback)
+  enableClientFilter?: boolean;
 }
 
 interface UseWeekFilterReturn {
   weekRange: WeekRange;
   weekRangeFormatted: string;
   filteredSessions: Session[];
-  currentWeekStart: string; // ISO string لإرساله للـ API
+  currentWeekStart: string;
   goToNextWeek: () => void;
   goToPrevWeek: () => void;
   goToCurrentWeek: () => void;
@@ -67,46 +68,38 @@ export const useWeekFilter = ({
   sessions, 
   enableClientFilter = false 
 }: UseWeekFilterOptions): UseWeekFilterReturn => {
-  // التاريخ المرجعي للأسبوع (يمكن تغييره للتنقل بين الأسابيع)
   const [referenceDate, setReferenceDate] = useState<Date>(new Date());
 
-  // حساب نطاق الأسبوع
   const weekRange = useMemo(() => getWeekRange(referenceDate), [referenceDate]);
-
-  // تنسيق نطاق الأسبوع للعرض
   const weekRangeFormatted = useMemo(() => formatWeekRange(weekRange), [weekRange]);
-
-  // ISO string لبداية الأسبوع (لإرساله للـ API)
   const currentWeekStart = useMemo(
     () => weekRange.startOfWeek.toISOString(),
     [weekRange]
   );
 
-  // هل نحن في الأسبوع الحالي؟
   const isCurrentWeek = useMemo(() => {
     const todayWeek = getWeekRange(new Date());
     return weekRange.startOfWeek.getTime() === todayWeek.startOfWeek.getTime();
   }, [weekRange]);
 
-  // فلترة المواعيد (client-side fallback)
+  // ⚠️ الفلترة بناءً على sessionDate
   const filteredSessions = useMemo(() => {
     if (!enableClientFilter) {
-      return sessions; // الباك إند يفلتر
+      return sessions;
     }
 
     return sessions.filter(session => {
-      // المواعيد المحددة بتاريخ - تظهر فقط إذا كانت في الأسبوع المحدد
-      if (session.sessionDate) {
-        const sessionDate = new Date(session.sessionDate);
-        return sessionDate >= weekRange.startOfWeek && sessionDate <= weekRange.endOfWeek;
+      // ⚠️ sessionDate مطلوب في النظام الجديد
+      if (!session.sessionDate) {
+        console.warn('⚠️ Session without sessionDate:', session._id);
+        return false;
       }
       
-      // مواعيد قديمة بدون sessionDate - تظهر دائماً
-      return true;
+      const sessionDate = new Date(session.sessionDate);
+      return sessionDate >= weekRange.startOfWeek && sessionDate <= weekRange.endOfWeek;
     });
   }, [sessions, weekRange, enableClientFilter]);
 
-  // التنقل للأسبوع التالي
   const goToNextWeek = useCallback(() => {
     setReferenceDate(prev => {
       const next = new Date(prev);
@@ -115,7 +108,6 @@ export const useWeekFilter = ({
     });
   }, []);
 
-  // التنقل للأسبوع السابق
   const goToPrevWeek = useCallback(() => {
     setReferenceDate(prev => {
       const prev2 = new Date(prev);
@@ -124,7 +116,6 @@ export const useWeekFilter = ({
     });
   }, []);
 
-  // العودة للأسبوع الحالي
   const goToCurrentWeek = useCallback(() => {
     setReferenceDate(new Date());
   }, []);

@@ -152,6 +152,7 @@ app.use(
 app.use('/api/exam-schedule/marks', require('./routes/ExamScheduleRoutes/ExamMarkRoutes/examMarkRoutes'));
 app.use('/api/exam-schedule', require('./routes/ExamScheduleRoutes/examRoutes'));
 app.use('/api/sessions', require('./routes/timetableRoutes/TimeTableRoutes'));
+app.use('/api/timetable', require('./routes/timetableRoutes/TimeTableRoutes')); // New timetable API
 app.use('/api/groups', require('./routes/groupRoutes'));
 app.use('/api/dashboard', require('./routes/dashboardRoutes'));
 app.use('/api/points-game', require('./routes/pointsGameRoutes')); // لعبة النقاط والشارات

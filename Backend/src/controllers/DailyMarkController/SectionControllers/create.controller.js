@@ -1,4 +1,6 @@
 const Section = require("../../../schema/DailyMark/Section");
+const Group = require("../../../schema/Group");
+const Teacher = require("../../../schema/Teacher");
 const { notifySectionAdded } = require("../../../Notifications");
 const { updateSectionMarksStatus } = require("./sectionMarksStatus");
 const sequenceService = require("../../../services/DailyMark/SectionSequenceService"); // Import New Service
@@ -31,6 +33,44 @@ exports.createSection = async (req, res) => {
       memorizationMeta: req.body.memorizationMeta,
       reviewMeta: req.body.reviewMeta,
     };
+
+    // ✅ جلب groupId من اسم الحلقة (إذا لم يكن موجود)
+    if (sectionData.group && !sectionData.groupId) {
+      const groupDoc = await Group.findOne({ name: sectionData.group.trim() });
+      if (groupDoc) {
+        sectionData.groupId = groupDoc._id;
+        console.log(`🔗 تم ربط Section بـ Group: ${groupDoc._id}`);
+      }
+    }
+
+    // ✅ جلب teacherId من اسم المعلم (إذا لم يكن موجود)
+    if (sectionData.teacher && !sectionData.teacherId) {
+      // البحث عن المعلم بالاسم الكامل أو جزء منه
+      const nameParts = sectionData.teacher.trim().split(' ');
+      let teacherDoc = null;
+      
+      if (nameParts.length >= 2) {
+        teacherDoc = await Teacher.findOne({
+          firstName: nameParts[0],
+          lastName: nameParts.slice(1).join(' ')
+        });
+      }
+      
+      if (!teacherDoc) {
+        // محاولة البحث بالاسم الأول فقط
+        teacherDoc = await Teacher.findOne({
+          $or: [
+            { firstName: sectionData.teacher.trim() },
+            { lastName: sectionData.teacher.trim() }
+          ]
+        });
+      }
+      
+      if (teacherDoc) {
+        sectionData.teacherId = teacherDoc._id;
+        console.log(`🔗 تم ربط Section بـ Teacher: ${teacherDoc._id}`);
+      }
+    }
 
     // ============================================
     // 🛡️ Advanced Conflict Check (Group Level) - V3: Date-Aware + Backfilling
@@ -115,12 +155,23 @@ exports.createSection = async (req, res) => {
     const completedRev = sequenceService.detectCompletedSurahs(sectionData.reviewMeta, 'review');
     const allCompleted = [...completedMem, ...completedRev];
 
+    // ✅ تحديد نوع الجلسة تلقائياً بناءً على المحتوى
+    const hasMem = sectionData.memorizationMeta?.length > 0;
+    const hasRev = sectionData.reviewMeta?.length > 0;
+    let suggestedSessionType = 'both';
+    if (hasMem && !hasRev) suggestedSessionType = 'hifz';
+    else if (!hasMem && hasRev) suggestedSessionType = 'murajaah';
+
     res.status(201).json({
       success: true,
       message: "تم إنشاء المقطع بنجاح. هل تريد تحديد موعد لهذا المقطع؟",
-      data: newSection, // Send created object directly
+      data: newSection,
       meta: {
         askForSchedule: true,
+        sectionId: newSection._id,
+        groupId: newSection.groupId,
+        teacherId: newSection.teacherId,
+        suggestedSessionType, // ✅ نوع الجلسة المقترح
         completedSurahs: allCompleted 
       }
     });

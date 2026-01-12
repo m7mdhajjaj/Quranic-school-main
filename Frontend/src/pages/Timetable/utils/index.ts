@@ -2,6 +2,7 @@
 // Timetable Utils - Index
 // ============================================================================
 // ملف مركزي لتصدير جميع دوال المساعدة
+// ⚠️ النظام الجديد: يعتمد على sessionDate (التاريخ المحدد)
 
 // Duration helpers
 export {
@@ -36,4 +37,12 @@ export {
   isValidTime,
   timeToMinutes,
   isTimeInBookedRange,
+  // 📅 دوال التاريخ الجديدة
+  getDayNameFromDate,
+  formatDateForAPI,
+  formatDateForDisplay,
+  formatDateShort,
+  getTodayDate,
+  isSameDay,
+  getWeekDates,
 } from './timetableHelpers';
