@@ -7,6 +7,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Header } from "@/components/Layout";
+import CustomTabBar from "@/components/Navigation/CustomTabBar";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -16,11 +17,11 @@ export default function TabLayout() {
       <Header />
       <Tabs
         screenOptions={{
-          tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
+          tabBarActiveTintColor: "#10b981",
           headerShown: false,
           tabBarButton: HapticTab,
           tabBarStyle: {
-            display: "none", // إخفاء شريط التنقل السفلي
+            display: "none", // إخفاء الـ default tab bar
           },
         }}>
         <Tabs.Screen
@@ -33,105 +34,112 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="explore"
-          options={{
-            title: "استكشف",
-            tabBarIcon: ({ color }) => (
-              <IconSymbol size={28} name="paperplane.fill" color={color} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="home"
-          options={{
-            href: null, // Hide from tabs
-          }}
-        />
-        <Tabs.Screen
-          name="news"
-          options={{
-            href: null, // Hide from tabs - accessible from drawer
-          }}
-        />
-        <Tabs.Screen
-          name="goals"
-          options={{
-            href: null, // Hide from tabs - accessible from drawer
-          }}
-        />
-        <Tabs.Screen
-          name="prayer-times"
-          options={{
-            href: null, // Hide from tabs - accessible from drawer
-          }}
-        />
-        <Tabs.Screen
-          name="quran"
-          options={{
-            href: null, // Hide from tabs - accessible from drawer
-          }}
-        />
-        <Tabs.Screen
-          name="quran-audio"
-          options={{
-            href: null, // Hide from tabs - accessible from drawer
-          }}
-        />
-        <Tabs.Screen
-          name="azkar"
-          options={{
-            href: null, // Hide from tabs - accessible from drawer
-          }}
-        />
-        <Tabs.Screen
           name="dailyMarks"
           options={{
-            href: null, // Hide from tabs - accessible from drawer
+            title: "العلامات اليومية",
+          }}
+        />
+        <Tabs.Screen
+          name="attendance"
+          options={{
+            title: "الحضور والغياب",
           }}
         />
         <Tabs.Screen
           name="chat"
           options={{
-            href: null, // Hide from tabs - accessible from drawer
+            title: "المحادثة",
+          }}
+        />
+        {/* Hidden Screens - accessible from drawer only */}
+        <Tabs.Screen
+          name="explore"
+          options={{
+            href: null,
+          }}
+        />
+        <Tabs.Screen
+          name="home"
+          options={{
+            href: null,
+          }}
+        />
+        <Tabs.Screen
+          name="news"
+          options={{
+            href: null,
+          }}
+        />
+        <Tabs.Screen
+          name="goals"
+          options={{
+            href: null,
+          }}
+        />
+        <Tabs.Screen
+          name="prayer-times"
+          options={{
+            href: null,
+          }}
+        />
+        <Tabs.Screen
+          name="quran"
+          options={{
+            href: null,
+          }}
+        />
+        <Tabs.Screen
+          name="quran-audio"
+          options={{
+            href: null,
+          }}
+        />
+        <Tabs.Screen
+          name="azkar"
+          options={{
+            href: null,
           }}
         />
         <Tabs.Screen
           name="ranking"
           options={{
-            href: null, // Hide from tabs - accessible from drawer
+            href: null,
           }}
         />
         <Tabs.Screen
           name="reports"
           options={{
-            href: null, // Hide from tabs - accessible from drawer
+            href: null,
           }}
         />
         <Tabs.Screen
           name="points-game"
           options={{
-            href: null, // Hide from tabs - accessible from drawer
+            href: null,
           }}
         />
         <Tabs.Screen
           name="exam-schedule"
           options={{
-            href: null, // Hide from tabs - accessible from drawer
+            href: null,
           }}
         />
         <Tabs.Screen
           name="warnings"
           options={{
-            href: null, // Hide from tabs - accessible from drawer
+            href: null,
           }}
         />
         <Tabs.Screen
           name="ai-chat"
           options={{
-            href: null, // Hide from tabs - accessible from drawer
+            href: null,
           }}
         />
       </Tabs>
+
+      {/* Custom Bottom Tab Bar */}
+      <CustomTabBar />
     </View>
   );
 }
