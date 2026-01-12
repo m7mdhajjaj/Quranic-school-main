@@ -3,7 +3,7 @@ import type { StudentViewProps } from '../types/types';
 import { SectionsTable } from '../components/SectionsTable';
 import { AveragesBar } from '../components/AveragesBar';
 import { Card } from '@/components/UI';
-import { AveragesBarSkeleton } from '../components/DailyMarksSkeletons';
+import { AveragesBarSkeleton } from '../../../components/skeletons/DailyMarksSkeletons';
 
 /**
  * Header component for Student View

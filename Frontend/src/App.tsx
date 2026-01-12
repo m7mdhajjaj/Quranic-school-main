@@ -234,7 +234,7 @@ const TeacherRoutes: React.FC = () => {
         <Route 
           path="/daily-marks" 
           element={
-            <React.Suspense fallback={<LoadingFallback message="جاري تحميل العلامات اليومية..." />}>
+            <React.Suspense fallback={null}>
               <DailyMarks />
             </React.Suspense>
           } 
@@ -387,7 +387,7 @@ const StudentRoutes: React.FC = () => {
         <Route 
           path="/daily-marks" 
           element={
-            <React.Suspense fallback={<LoadingFallback message="جاري تحميل العلامات اليومية..." />}>
+            <React.Suspense fallback={null}>
               <DailyMarks />
             </React.Suspense>
           } 

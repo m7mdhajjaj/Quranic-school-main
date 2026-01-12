@@ -6,7 +6,7 @@ import { memo } from "react";
 import { RefreshCw, Plus, Edit, Trash2, RotateCcw, BookOpen, Calendar, ChevronRight, ChevronLeft, Users, FileCheck, FileEdit } from "lucide-react";
 import { getMarkColor, formatDateWithDay } from "../utils";
 import { useMonthNavigation, useMarkFinder } from "../hooks";
-import { TableSkeleton } from "./DailyMarksSkeletons";
+import { TableSkeleton } from "../../../components/skeletons/DailyMarksSkeletons";
 
 // Extended section type with mark for table rendering
 type SectionWithMark = Section & { mark?: Mark };

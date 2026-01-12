@@ -10,7 +10,7 @@ import { SectionItem } from './SectionItem';
 import { AiRepairButton } from '../../../components/AiRepairButton';
 import { CompletedSurahsModal } from '../../../components/CompletedSurahsModal';
 import { useState } from 'react';
-import { SectionsGridSkeleton } from '../../../components/DailyMarksSkeletons';
+import { SectionsGridSkeleton } from '../../../../../components/skeletons/DailyMarksSkeletons';
 
 interface SectionsGridViewProps {
   selectedGroup: string;
