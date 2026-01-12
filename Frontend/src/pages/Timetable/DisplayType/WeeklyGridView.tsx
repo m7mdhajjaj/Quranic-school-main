@@ -60,7 +60,7 @@ export const WeeklyGridView: React.FC<WeeklyGridViewProps> = ({
       if (startIndex !== -1 && endIndex !== -1 && startIndex <= endIndex && grid[session.day][session.startHour]) {
         // حساب عدد السلوتات (rowSpan) - يشمل سلوت البداية وسلوت النهاية
         // مثلا: من 12:00 لـ 12:30 = 2 سلوت (12:00 و 12:30)
-        const rowSpan = endIndex - startIndex + 1;
+        const rowSpan = endIndex - startIndex;
         grid[session.day][session.startHour].push({ session, rowSpan });
       }
     });
@@ -85,7 +85,7 @@ export const WeeklyGridView: React.FC<WeeklyGridViewProps> = ({
         // التحقق إذا كان السلوت الحالي ضمن نطاق الحصة (بين البداية والنهاية، غير شامل البداية)
         // السلوت الحالي يجب أن يكون بعد البداية وقبل أو يساوي النهاية
         if (sessionStartIndex !== -1 && sessionEndIndex !== -1) {
-          if (currentIndex > sessionStartIndex && currentIndex <= sessionEndIndex) {
+          if (currentIndex > sessionStartIndex && currentIndex < sessionEndIndex) {
             return true;
           }
         }

@@ -11,7 +11,7 @@ import {
   formatDuration,
   organizeSessionsByDay,
 } from '../utils';
-import { Edit, Trash2, Clock, Calendar, User, MoreVertical } from 'lucide-react';
+import { Edit, Trash2, Calendar, MoreVertical } from 'lucide-react';
 import { DropdownMenu } from '@/components/UI/DropdownMenu';
 
 interface AdvancedTimetableViewProps {
