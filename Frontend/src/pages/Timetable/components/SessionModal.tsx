@@ -60,7 +60,7 @@ export const SessionModal: React.FC<SessionModalProps> = (props) => {
       size="4xl">
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {/* محتوى المودال */}
-        <div className="space-y-6 max-h-[calc(80vh-120px)] overflow-y-auto px-1">
+        <div className="space-y-6 max-h-[calc(80vh-120px)] overflow-y-auto px-1 scrollbar-hide">
           <div className="space-y-6">
             {/* 1️⃣ قسم معلومات المعلم (للمدير فقط) */}
             {role === "admin" && (
@@ -177,7 +177,7 @@ export const SessionModal: React.FC<SessionModalProps> = (props) => {
                     <Clock className="w-4 h-4" />
                     وقت البداية
                   </label>
-                  <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-9 gap-2 max-h-56 overflow-y-auto p-3 bg-white rounded-lg border-2 border-blue-200">
+                  <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-9 gap-2 max-h-56 overflow-y-auto p-3 bg-white rounded-lg border-2 border-blue-200 scrollbar-hide">
                     {hours.map((hour) => {
                       const isBooked = bookedHours.includes(hour);
                       return (
@@ -210,7 +210,7 @@ export const SessionModal: React.FC<SessionModalProps> = (props) => {
                     <Clock className="w-4 h-4" />
                     وقت النهاية
                   </label>
-                  <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-9 gap-2 max-h-56 overflow-y-auto p-3 bg-white rounded-lg border-2 border-blue-200">
+                  <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-9 gap-2 max-h-56 overflow-y-auto p-3 bg-white rounded-lg border-2 border-blue-200 scrollbar-hide">
                     {hours.map((hour) => {
                       const isBooked = bookedHours.includes(hour);
                       const isBeforeStart = hours.indexOf(hour) <= hours.indexOf(formData.startHour);

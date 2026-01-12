@@ -97,7 +97,7 @@ export const Modal: React.FC<ModalProps> = ({
         )}
         
         {/* Modal Body with smooth scrolling */}
-        <div className={`p-6 overflow-y-auto flex-1 min-h-0 scroll-smooth overscroll-contain ${bodyClassName || ''} custom-scrollbar`}>
+        <div className={`p-6 overflow-y-auto flex-1 min-h-0 scroll-smooth overscroll-contain ${bodyClassName || ''} scrollbar-hide`}>
            {children}
         </div>
         
