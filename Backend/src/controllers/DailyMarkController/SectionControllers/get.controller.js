@@ -32,20 +32,26 @@ exports.getSections = async (req, res) => {
       filter.teacher = teacher;
     }
 
-    // ✅ V3: Weekly Filter (Current Week: Sat -> Fri)
+    // ✅ V3: Weekly Filter (Current Week: Sat -> Fri) - Using UTC for consistency
     if (period === 'week') {
       const d = new Date();
+      // ✅ FIX: Use UTC-based date calculations
+      const todayKey = d.toISOString().split('T')[0];
+      const todayUTC = new Date(todayKey + 'T12:00:00.000Z'); // Noon UTC to avoid edge cases
+      
       // Calculate start of week (Saturday)
-      const dayIndex = d.getDay(); // 0-6
+      const dayIndex = todayUTC.getUTCDay(); // 0-6
       const distFromSat = (dayIndex + 1) % 7;
       
-      const startOfWeek = new Date(d);
-      startOfWeek.setDate(d.getDate() - distFromSat);
-      startOfWeek.setHours(0, 0, 0, 0);
+      const startOfWeek = new Date(todayUTC);
+      startOfWeek.setUTCDate(todayUTC.getUTCDate() - distFromSat);
+      startOfWeek.setUTCHours(0, 0, 0, 0);
       
       const endOfWeek = new Date(startOfWeek);
-      endOfWeek.setDate(startOfWeek.getDate() + 7);
-      endOfWeek.setHours(0, 0, 0, 0);
+      endOfWeek.setUTCDate(startOfWeek.getUTCDate() + 7);
+      endOfWeek.setUTCHours(0, 0, 0, 0);
+
+      console.log(`📅 [Weekly Filter] Range: ${startOfWeek.toISOString()} to ${endOfWeek.toISOString()}`);
 
       filter.date = { 
         $gte: startOfWeek, 
@@ -114,26 +120,28 @@ exports.getFilteredSections = async (req, res) => {
     // Initial date filter
     let dateFilter = buildDateFilter(month, year, day, startDate, endDate);
     
-    // ✅ V3: Weekly Filter Override (Current Week: Sat -> Fri)
+    // ✅ V3: Weekly Filter Override (Current Week: Sat -> Fri) - Using UTC for consistency
     if (period === 'week') {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0); // Reset time to ensure clean date calculation
+      const now = new Date();
+      // ✅ FIX: Use UTC-based date calculations
+      const todayKey = now.toISOString().split('T')[0];
+      const todayUTC = new Date(todayKey + 'T12:00:00.000Z'); // Noon UTC to avoid edge cases
 
       // Calculate start of week (Saturday)
       // dayIndex: 0 (Sun) ... 6 (Sat)
       // distFromSat: Sun(0)->1, Mon(1)->2, ..., Fri(5)->6, Sat(6)->0
-      const dayIndex = today.getDay();
+      const dayIndex = todayUTC.getUTCDay();
       const distFromSat = (dayIndex + 1) % 7;
       
-      const startOfWeek = new Date(today);
-      startOfWeek.setDate(today.getDate() - distFromSat);
-      startOfWeek.setHours(0, 0, 0, 0); // Start of Saturday (00:00:00)
+      const startOfWeek = new Date(todayUTC);
+      startOfWeek.setUTCDate(todayUTC.getUTCDate() - distFromSat);
+      startOfWeek.setUTCHours(0, 0, 0, 0); // Start of Saturday (00:00:00)
       
       const endOfWeek = new Date(startOfWeek);
-      endOfWeek.setDate(startOfWeek.getDate() + 6); // End of Friday
-      endOfWeek.setHours(23, 59, 59, 999); // End of Friday (23:59:59)
+      endOfWeek.setUTCDate(startOfWeek.getUTCDate() + 6); // End of Friday
+      endOfWeek.setUTCHours(23, 59, 59, 999); // End of Friday (23:59:59)
 
-      console.log(`📅 Applying Weekly Filter: ${startOfWeek.toDateString()} -> ${endOfWeek.toDateString()}`);
+      console.log(`📅 [Filtered Sections] Weekly Filter: ${startOfWeek.toISOString()} -> ${endOfWeek.toISOString()}`);
 
       // Override dateFilter to strict Range
       dateFilter = { 

@@ -30,8 +30,11 @@ const AbsencePage = () => {
     endDate,
     setDateRange,
     monthlyStats,
+    weeklyStats, // Get weekly stats
     teacherGroups,
     availableDates,
+    isAttendanceTaken, // 🆕 هل تم أخذ الحضور لهذا التاريخ؟
+    setIsAttendanceTaken, // 🆕 للتحديث بعد الحفظ
     fetchStudentsForTeacher,
     fetchStudentAbsenceStats,
     fetchAvailableDates,
@@ -151,6 +154,10 @@ const AbsencePage = () => {
   const dateTooOld = useMemo(() => isDateTooOld(date), [date]);
   const daysAgo = useMemo(() => getDaysAgo(date), [date]);
 
+  // 🆕 حساب إذا يجب تعطيل زر الحفظ
+  // الزر معطل إذا: الحضور مسجل مسبقاً ولا توجد تغييرات
+  const isSaveDisabled = isAttendanceTaken && !hasUnsavedChanges;
+
   // استخدام hook لحفظ الحضور
   const { isSaving, handleSave } = useAttendanceSave({
     visibleStudents,
@@ -158,7 +165,10 @@ const AbsencePage = () => {
     presentCount,
     absentCount,
     attendanceRate,
-    onSaveSuccess: () => setHasUnsavedChanges(false),
+    onSaveSuccess: () => {
+      setHasUnsavedChanges(false);
+      setIsAttendanceTaken(true); // 🆕 بعد الحفظ، الحضور أصبح مسجلاً
+    },
     isDateTooOld: dateTooOld,
     daysAgo,
   });
@@ -220,7 +230,12 @@ const AbsencePage = () => {
             <TeacherAttendanceViewSkeleton />
           )
         ) : currentUser?.role === "student" ? (
-          <StudentView monthlyStats={monthlyStats} />
+          <StudentView 
+            monthlyStats={monthlyStats} 
+            weeklyStats={weeklyStats}
+            onRefresh={() => fetchStudentAbsenceStats(currentUser._id)}
+            isRefreshing={isLoadingDate} // Reusing isLoadingDate or add specific state
+          />
         ) : currentUser?.role === "admin" ? (
           <AdminView />
         ) : (
@@ -252,6 +267,8 @@ const AbsencePage = () => {
                 toggleAllStudents={toggleAllStudents}
                 toggleStudentPresence={toggleStudentPresence}
                 hasUnsavedChanges={hasUnsavedChanges}
+                isSaveDisabled={isSaveDisabled} // 🆕
+                isAttendanceTaken={isAttendanceTaken} // 🆕
               />
             )}
           </>

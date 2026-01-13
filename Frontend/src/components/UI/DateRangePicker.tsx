@@ -359,8 +359,8 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
             
             // 🆕 منطق التعطيل المحدث
             let isDisabled = false;
-            if (enabledDates && enabledDates.length > 0) {
-              // إذا كانت هناك قائمة بالتواريخ المتاحة، عطّل كل التواريخ الأخرى
+            if (enabledDates) {
+              // إذا كانت هناك قائمة بالتواريخ المتاحة (حتى لو فارغة)، عطّل كل التواريخ الأخرى
               isDisabled = !enabledDates.includes(date.format('YYYY-MM-DD'));
             } else if (maxDate) {
               // إذا لم تكن هناك قائمة، استخدم maxDate

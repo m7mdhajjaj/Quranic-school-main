@@ -21,38 +21,54 @@ exports.getStudentAttendanceStats = async (req, res) => {
     }
 
     const groupName = student.group;
+    console.log("📊 [Stats] Student:", studentId, "Group:", groupName);
 
-    // 2. dates from Sections (The source of truth for "Total Days")
-    // لجلب المقاطع التي تمت لهذا الجروب
-    // We only care about sections that have happened (date <= now)
+    // 2. dates from Sections (Fetching ALL to avoid DB timezone filtering issues)
+    // We strictly filter in memory based on "End of Today"
     const sections = await Section.find({
-      group: groupName,
-      date: { $lte: new Date() } // Only past/current sections
+      group: groupName
     }).select("date");
 
+    console.log("📅 [Stats] Found", sections.length, "sections for group:", groupName);
+
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+
     // Extract unique dates from sections (Set to handle multiple sections per day if any)
-    const sectionDatesMap = new Map(); // key="YYYY-MM-DD" -> Date Object
+    const sectionDatesMap = new Set(); 
+    const allSectionDatesMap = new Set(); // Include Future dates for Weekly Schedule view
+
     sections.forEach(sec => {
       const dateStr = sec.date.toISOString().split('T')[0];
-      if (!sectionDatesMap.has(dateStr)) {
-         sectionDatesMap.set(dateStr, sec.date);
+      allSectionDatesMap.add(dateStr);
+
+      if (sec.date <= endOfToday) {
+          sectionDatesMap.add(dateStr);
       }
     });
 
+    console.log("📅 [Stats] Section dates (all):", [...allSectionDatesMap]);
+
     // 3. Get all attendance records for this student
     const records = await Attendance.find({ studentId });
+    console.log("📋 [Stats] Found", records.length, "attendance records for student");
+    
     // Map existing attendance by Date String
     const attendanceMap = new Map();
     records.forEach(r => {
       const dateStr = r.date.toISOString().split('T')[0];
       attendanceMap.set(dateStr, r);
+      // 🔍 تشخيص: طباعة كل سجل حضور
+      console.log(`  📋 Attendance: ${dateStr} -> isPresent: ${r.isPresent}`);
     });
 
-    // 4. Build Statistics based on Section Dates
+    // 4. Build Statistics based on UNION of Section Dates and Attendance Dates
+    // This ensures historical absences (from previous groups) are counted
+    const allDates = new Set([...sectionDatesMap, ...attendanceMap.keys()]);
     const grouped = {};
 
-    for (const [dateStr, dateObj] of sectionDatesMap) {
-      const date = new Date(dateObj);
+    for (const dateStr of allDates) {
+      const date = new Date(dateStr);
       const month = date.getMonth();
       const year = date.getFullYear();
       const key = `${year}-${month}`;
@@ -67,43 +83,84 @@ exports.getStudentAttendanceStats = async (req, res) => {
         };
       }
 
-      grouped[key].total++; // Count every Section day as a required day
+      // Logic:
+      // 1. If Attendance exists:
+      //    - Count as Total Day.
+      //    - If !isPresent -> Absence.
+      // 2. If Attendance MISSING but Section Exists:
+      //    - Count as Total Day (Required Day).
+      //    - Assume Present (Auto-fill logic).
 
-      // Check Attendance
-      // If record exists, check isPresent.
-      // If record does NOT exist: 
-      //    - If "Yesterday" or before: The auto-fill cron should have filled it. If not, assume Absent? Or Present?
-      //    - If "Same Day" (Today): If not taken yet, do we count it?
-      //    Let's assume: If record missing and date is Today, ignore (count=0 for this day? No, total++ but absence?).
-      //    Better: Use attendance record status. If missing, assume absent for stats safety ?? 
-      //    BUT user said "auto-fill as Present". So rely on mapped record.
-      
       const record = attendanceMap.get(dateStr);
-      
+      const isSectionDay = sectionDatesMap.has(dateStr);
+
       if (record) {
-        if (!record.isPresent) {
-           grouped[key].absences++;
-           grouped[key].dates.push(date);
-        }
-      } else {
-        // No record exists.
-        // If it's today, maybe not taken yet.
-        // If it's past, maybe cron failed or recent data.
-        // System convention: Missing record = Absent? Or just not counted?
-        // User requested: "Take attendance based on Section dates."
-        // We will count it in TOTAL. If no Present record, it effectively lowers the "Attendance Rate".
-        // BUT we won't mark it as "Absence" count unless we are sure.
-        // Percentage = (Total - Absences) / Total. 
-        // If record missing, is it Present or Absent?
-        // Let's assume Absent for calculation rigor, or maybe create "Unknown" state?
-        // For simplicity: Treat missing record as Absent in calculation? 
-        // No, that hurts "Today" stats. 
-        // Logic: specific to "Absent Students". 
-        // Let's count Absences ONLY if record.isPresent === false.
-        // So a missing record acts as "Present" in the formula (Total - Absences).
-        // This is safer for "Auto Present" logic.
+          grouped[key].total++;
+          if (!record.isPresent) {
+             grouped[key].absences++;
+             grouped[key].dates.push(date);
+          }
+      } else if (isSectionDay) {
+          // Required day but no record -> Assume Present
+          grouped[key].total++;
       }
     }
+
+    // --- Calculate Weekly Stats (String Based) ---
+    const today = new Date();
+    // Safety HACK: Set time to Noon (12:00) to avoid timezone shift issues when converting to UTC date string
+    // This ensures that "Saturday" local doesn't become "Friday" UTC if we are in positive timezone and it's early morning
+    today.setHours(12, 0, 0, 0);
+    
+    const dayOfWeek = today.getDay(); // 0=Sun, 6=Sat
+    // Offset to make Saturday the start (Sat=0, Sun=1, ..., Fri=6)
+    const diffToSat = (dayOfWeek + 1) % 7;
+    
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - diffToSat);
+    
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6); 
+
+    console.log("📆 [Weekly] Week:", weekStart.toISOString().split('T')[0], "to", weekEnd.toISOString().split('T')[0]);
+
+    const weekDateStrings = new Set();
+    const currentMapDate = new Date(weekStart);
+    
+    // Generate 7 days strings for the current week
+    for(let i=0; i<7; i++) {
+        weekDateStrings.add(currentMapDate.toISOString().split('T')[0]);
+        currentMapDate.setDate(currentMapDate.getDate() + 1);
+    }
+
+    console.log("📆 [Weekly] Week date strings:", [...weekDateStrings]);
+
+    let weeklyTotal = 0;
+    let weeklyAbsences = 0;
+    const weeklyAbsenceDates = [];
+
+    // Calculate Stats STRICTLY based on this week's Sections
+    // "Total Days" = Number of sections in this week.
+    for (const dateStr of weekDateStrings) {
+        // 1. Check if there is a Section for this day (Scheduled, past or future)
+        if (allSectionDatesMap.has(dateStr)) {
+            weeklyTotal++;
+            console.log(`  ✅ [Weekly] Section found for: ${dateStr}`);
+            
+            // 2. Check for Absence on this Section Day
+            const record = attendanceMap.get(dateStr);
+            console.log(`  🔍 [Weekly] Attendance for ${dateStr}:`, record ? `isPresent: ${record.isPresent}` : 'NO RECORD');
+            
+            if (record && !record.isPresent) {
+                weeklyAbsences++;
+                weeklyAbsenceDates.push(record.date);
+                console.log(`  ❌ [Weekly] ABSENCE recorded for: ${dateStr}`);
+            }
+        }
+    }
+
+    console.log("📊 [Weekly] RESULT: Total:", weeklyTotal, "Absences:", weeklyAbsences);
+
 
     // Convert to array
     const stats = Object.entries(grouped).map(([k, v]) => {
@@ -139,9 +196,24 @@ exports.getStudentAttendanceStats = async (req, res) => {
       return aIdx - bIdx;
     });
 
+    // Calculate Weekly Rates
+    const weeklyPresenceCount = weeklyTotal - weeklyAbsences;
+    const weeklyAbsenceRate = weeklyTotal > 0 ? Math.round((weeklyAbsences / weeklyTotal) * 1000) / 10 : 0;
+    const weeklyAttendanceRate = weeklyTotal > 0 ? Math.round((weeklyPresenceCount / weeklyTotal) * 1000) / 10 : 0;
+
     res.json({
       success: true,
-      data: stats
+      data: stats,
+      weeklyStats: {
+          totalDays: weeklyTotal,
+          absenceCount: weeklyAbsences,
+          presenceCount: weeklyPresenceCount,
+          rate: weeklyAbsenceRate,
+          attendanceRate: weeklyAttendanceRate,
+          weekStart: weekStart.toISOString().split('T')[0],
+          weekEnd: weekEnd.toISOString().split('T')[0],
+          absenceDates: weeklyAbsenceDates // Include dates
+      }
     });
   } catch (error) {
     console.error("Error in getStudentAttendanceStats:", error);

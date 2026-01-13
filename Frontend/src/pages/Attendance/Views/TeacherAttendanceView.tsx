@@ -24,6 +24,8 @@ interface TeacherAttendanceViewProps {
   toggleAllStudents: () => void;
   toggleStudentPresence: (id: string) => void;
   hasUnsavedChanges: boolean;
+  isSaveDisabled: boolean; // 🆕
+  isAttendanceTaken: boolean; // 🆕
 }
 
 export const TeacherAttendanceView = ({
@@ -46,6 +48,8 @@ export const TeacherAttendanceView = ({
   toggleAllStudents,
   toggleStudentPresence,
   hasUnsavedChanges,
+  isSaveDisabled, // 🆕
+  isAttendanceTaken, // 🆕
 }: TeacherAttendanceViewProps) => {
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -68,6 +72,8 @@ export const TeacherAttendanceView = ({
         isSaving={isSaving}
         isLoading={isLoadingDate}
         hasUnsavedChanges={hasUnsavedChanges}
+        isSaveDisabled={isSaveDisabled}
+        isAttendanceTaken={isAttendanceTaken}
       />
 
       {/* جدول الطلاب */}

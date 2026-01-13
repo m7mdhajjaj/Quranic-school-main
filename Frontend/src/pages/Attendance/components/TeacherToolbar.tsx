@@ -22,6 +22,8 @@ export const TeacherToolbar = ({
   isSaving,
   isLoading = false,
   hasUnsavedChanges = false,
+  isSaveDisabled = false, // 🆕
+  isAttendanceTaken = false, // 🆕
 }: TeacherToolbarProps) => {
   return (
     <>
@@ -52,7 +54,7 @@ export const TeacherToolbar = ({
             onChange={onDateRangeChange} 
             className="w-full"
             singleDate={true}
-            enabledDates={availableDates.length > 0 ? availableDates : undefined}
+            enabledDates={availableDates}
           />
         </div>
       </div>
@@ -132,12 +134,22 @@ export const TeacherToolbar = ({
               </div>
             )}
             
+            {/* 🆕 رسالة توضيحية عند تعطيل الزر بسبب عدم وجود تغييرات */}
+            {isAttendanceTaken && !hasUnsavedChanges && !isDateTooOld && (
+              <div className="flex items-center gap-2 text-blue-600 bg-blue-50 px-4 py-2.5 rounded-lg text-xs font-medium w-full sm:w-auto border border-blue-200">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="font-semibold">تم حفظ الحضور - عدّل لتفعيل الحفظ</span>
+              </div>
+            )}
+            
             <button
               onClick={onSave}
-              disabled={isDateTooOld || isSaving || !hasUnsavedChanges}
+              disabled={isDateTooOld || isSaving || isSaveDisabled}
               className={`
                 w-full sm:w-auto px-6 py-2.5 rounded-xl font-bold text-white shadow-sm flex items-center justify-center gap-2 transition-all
-                ${isDateTooOld || isSaving || !hasUnsavedChanges
+                ${isDateTooOld || isSaving || isSaveDisabled
                   ? 'bg-gray-300 cursor-not-allowed'
                   : 'bg-emerald-600 hover:bg-emerald-700 hover:shadow-md active:scale-95'
                 }

@@ -69,15 +69,22 @@ export const getAbsentStudentsToday = async (): Promise<AbsentStudentsTodayRespo
   return response.data;
 };
 
-// Bulk create/update attendance records
+// Bulk create/update attendance records (Upsert - سجل واحد لكل طالب/تاريخ)
+export interface BulkSaveAttendanceResponse {
+  message: string;
+  stats?: {
+    new: number;      // عدد السجلات الجديدة
+    updated: number;  // عدد السجلات المُعدّلة
+  };
+}
+
 export const bulkSaveAttendance = async (data: {
   date: string;
   records: Array<{
     studentId: string;
-    date: string;
     isPresent: boolean;
   }>;
-}): Promise<any> => {
+}): Promise<BulkSaveAttendanceResponse> => {
   const response = await api.post('/attendance', data);
   return response.data;
 };
@@ -109,6 +116,12 @@ export interface TeacherGroupsFullDataResponse {
       totalStudents: number;
     }>;
     students: AttendanceStudent[];
+    // 🆕 معلومات الحضور للتاريخ المحدد
+    attendanceInfo?: {
+      date: string;
+      isAttendanceTaken: boolean; // ✅ هل تم أخذ الحضور؟
+      totalRecords: number;
+    };
     summary: {
       totalGroups: number;
       groupsWithStudents: number;

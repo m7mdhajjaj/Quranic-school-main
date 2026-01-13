@@ -67,15 +67,18 @@ export const useAttendanceSave = ({
         allStudentsCount: visibleStudents.length,
       });
 
-      // إرسال البيانات للـ API
-      await bulkSaveAttendance({ date, records });
+      // إرسال البيانات للـ API (Upsert - تعديل أو إنشاء)
+      const result = await bulkSaveAttendance({ date, records });
 
       // تنفيذ callback النجاح
       onSaveSuccess();
 
-      // عرض رسالة النجاح - Toast بسيط وواضح
+      // عرض رسالة النجاح مع تفاصيل الـ Upsert
+      const statsInfo = result.stats 
+        ? ` (جديد: ${result.stats.new}, معدّل: ${result.stats.updated})`
+        : '';
       showSuccessToast(
-        `✅ تم حفظ الحضور بنجاح - حاضر: ${presentCount} | غائب: ${absentCount}`
+        `✅ تم حفظ الحضور بنجاح${statsInfo} - حاضر: ${presentCount} | غائب: ${absentCount}`
       );
     } catch (e) {
       console.error("❌ خطأ في حفظ الحضور:", e);

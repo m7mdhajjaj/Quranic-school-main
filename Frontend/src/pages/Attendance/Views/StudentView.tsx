@@ -2,11 +2,15 @@
 import { useState, useMemo } from "react";
 import { AR_MONTHS } from "../utils/dateHelpers";
 import { useStudentStats } from "../hooks";
-import { Calendar, AlertCircle, CheckCircle2, TrendingUp, CalendarDays } from "lucide-react";
+import { Calendar, CheckCircle2, CalendarDays, AlertCircle } from "lucide-react";
 import type { StudentViewProps } from "../types/absence.types";
+import { TotalAbsenceCard, AbsenceRateCard, WeeklyStatsCard } from "../components/StudentStatsCards";
 
-export const StudentView = ({ monthlyStats }: StudentViewProps) => {
-  // السنة والشهر المختارين
+export const StudentView = ({ monthlyStats, weeklyStats, onRefresh, isRefreshing }: StudentViewProps) => {
+  // وضع العرض: 'weekly' للأسبوع الحالي، 'monthly' للتاريخ المحدد
+  const [viewMode, setViewMode] = useState<'weekly' | 'monthly'>('weekly');
+
+  // السنة والشهر المختارين (فقط للوضع الشهري)
   const [yearMonth, setYearMonth] = useState<string>(
     new Date().toISOString().substring(0, 7)
   );
@@ -20,25 +24,24 @@ export const StudentView = ({ monthlyStats }: StudentViewProps) => {
     [yearMonth]
   );
 
-  // استخدام hook منفصل لحساب الإحصائيات
-  const { filteredMonthlyStats, yearTotals } = useStudentStats({
+  // استخدام hook منفصل لحساب الإحصائيات مع تمرير وضع العرض
+  const { filteredMonthlyStats, yearTotals, currentViewStats } = useStudentStats({
     monthlyStats,
+    weeklyStats,
     selectedYear,
     selectedMonthIndex,
+    viewMode
   });
 
-  // الحصول على السنوات المتاحة (السنة الحالية + آخر 5 سنوات)
+  // الحصول على السنوات المتاحة
   const availableYears = useMemo(() => {
     const currentYear = new Date().getFullYear();
     const years: number[] = [];
-    
-    // إنشاء مصفوفة من السنة الحالية لـ 5 سنوات ماضية
     for (let i = 0; i <= 5; i++) {
       years.push(currentYear - i);
     }
-    
-    return years; // مرتبة تلقائياً (2025, 2024, 2023, 2022, 2021, 2020)
-  }, []); // لا يعتمد على monthlyStats، فقط السنة الحالية
+    return years;
+  }, []);
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -50,171 +53,112 @@ export const StudentView = ({ monthlyStats }: StudentViewProps) => {
         </div>
         
         <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-3 bg-white/20 backdrop-blur-sm rounded-2xl">
-              <Calendar className="w-8 h-8 text-white" />
-            </div>
-          <div>
-              <h2 className="text-3xl font-bold text-white">سجل الحضور والغياب</h2>
-              <p className="text-emerald-50 text-sm mt-1">تابع حضورك الشهري والسنوي</p>
-            </div>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+             <div className="flex items-center gap-3">
+                <div className="p-3 bg-white/20 backdrop-blur-sm rounded-2xl">
+                  <Calendar className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-3xl font-bold text-white">سجل الحضور والغياب</h2>
+                  <p className="text-emerald-50 text-sm mt-1">تابع إحصائياتك الأسبوعية أو الشهرية</p>
+                </div>
+             </div>
+             
+             {/* Toggle Switch (Weekly vs Monthly) */}
+             <div className="flex p-1 bg-white/20 backdrop-blur-md rounded-xl">
+               <button
+                 onClick={() => setViewMode('weekly')}
+                 className={`px-4 py-2 rounded-lg text-sm font-bold transition-all duration-300 ${
+                   viewMode === 'weekly' 
+                     ? 'bg-white text-emerald-700 shadow-lg' 
+                     : 'text-white hover:bg-white/10'
+                 }`}
+               >
+                 الأسبوع الحالي
+               </button>
+               <button
+                 onClick={() => setViewMode('monthly')}
+                 className={`px-4 py-2 rounded-lg text-sm font-bold transition-all duration-300 ${
+                   viewMode === 'monthly' 
+                     ? 'bg-white text-emerald-700 shadow-lg' 
+                     : 'text-white hover:bg-white/10'
+                 }`}
+               >
+                 التقرير الشهري
+               </button>
+             </div>
           </div>
           
-          {/* اختيار الشهر والسنة */}
-          <div className="mt-6">
+          {/* اختيار الشهر والسنة - يظهر فقط في الوضع الشهري */}
+          <div className={`mt-6 transition-all duration-500 overflow-hidden ${viewMode === 'monthly' ? 'max-h-24 opacity-100' : 'max-h-0 opacity-0'}`}>
             <label className="block text-sm font-semibold text-white mb-2 flex items-center gap-2">
               <CalendarDays className="w-4 h-4" />
-              اختر الشهر والسنة
+              تصفية حسب التاريخ
             </label>
             <div className="flex flex-col sm:flex-row gap-3">
-              {/* اختيار الشهر */}
               <select
                 aria-label="Select month"
                 value={selectedMonthIndex}
                 onChange={(e) => {
                   const newMonth = parseInt(e.target.value, 10);
-                  setYearMonth(
-                    `${selectedYear}-${String(newMonth + 1).padStart(2, "0")}`
-                  );
+                  setYearMonth(`${selectedYear}-${String(newMonth + 1).padStart(2, "0")}`);
                 }}
                 className="flex-1 sm:flex-initial bg-white/95 backdrop-blur-sm border-0 rounded-xl px-4 py-3 text-gray-800 font-medium shadow-lg focus:outline-none focus:ring-4 focus:ring-white/30 transition-all">
                 {AR_MONTHS.map((label, idx) => (
-                  <option key={idx} value={idx}>
-                    {label}
-                  </option>
+                  <option key={idx} value={idx}>{label}</option>
                 ))}
               </select>
 
-              {/* اختيار السنة */}
               <select
                 aria-label="Select year"
                 value={selectedYear}
                 onChange={(e) => {
                   const newYear = parseInt(e.target.value, 10);
-                  setYearMonth(
-                    `${newYear}-${String(selectedMonthIndex + 1).padStart(2, "0")}`
-                  );
+                  setYearMonth(`${newYear}-${String(selectedMonthIndex + 1).padStart(2, "0")}`);
                 }}
                 className="flex-1 sm:flex-initial sm:w-32 bg-white/95 backdrop-blur-sm border-0 rounded-xl px-4 py-3 text-gray-800 font-medium shadow-lg focus:outline-none focus:ring-4 focus:ring-white/30 transition-all">
                 {availableYears.map((year) => (
-                  <option key={year} value={year}>
-                    {year}
-                  </option>
+                  <option key={year} value={year}>{year}</option>
                 ))}
               </select>
             </div>
-            </div>
           </div>
         </div>
+      </div>
 
       {/* عنوان القسم */}
       <div className="flex items-center gap-3 px-2">
         <div className="h-1 w-12 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-full"></div>
-        <h3 className="text-lg font-bold text-gray-800">الإحصائيات الإجمالية - عام {selectedYear}</h3>
+        <h3 className="text-lg font-bold text-gray-800">
+          {viewMode === 'weekly' ? 'ملخص الأسبوع الحالي' : `إحصائيات شهر ${AR_MONTHS[selectedMonthIndex]} ${selectedYear}`}
+        </h3>
         <div className="h-1 flex-1 bg-gradient-to-r from-teal-600 to-emerald-700 rounded-full"></div>
       </div>
 
-      {/* إجمالي السنة - Stat Cards عصرية متناسقة */}
+      {/* Grid للإحصائيات المتغيرة حسب الـ ViewMode */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* إجمالي الغياب */}
-        <div className="group relative overflow-hidden bg-gradient-to-br from-rose-50 via-pink-50 to-red-100 rounded-3xl p-6 shadow-lg hover:shadow-2xl transition-all duration-500 border border-rose-200">
-          <div className="absolute top-0 left-0 w-full h-full opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-            <div className="absolute -top-10 -right-10 w-32 h-32 bg-rose-300 rounded-full blur-3xl"></div>
-          </div>
-          
-          <div className="relative z-10">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-gradient-to-br from-rose-500/10 to-pink-500/10 backdrop-blur-sm rounded-2xl">
-                <AlertCircle className="w-6 h-6 text-rose-600" />
-              </div>
-              <div className="px-3 py-1 bg-rose-100 rounded-full border border-rose-200">
-                <span className="text-xs font-bold text-rose-700">عدد الأيام</span>
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <p className="text-sm font-semibold text-rose-700">إجمالي الغياب</p>
-              <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-black bg-gradient-to-br from-rose-600 to-pink-600 bg-clip-text text-transparent">
-              {yearTotals.absenceCount}
-                </span>
-                <span className="text-sm text-rose-500 font-semibold">يوم</span>
-              </div>
-              <p className="text-xs text-rose-600/70 font-medium">للسنة {selectedYear}</p>
-            </div>
-          </div>
-        </div>
+        {/* إجمالي الغياب (للفترة المختارة) */}
+        <TotalAbsenceCard 
+          count={currentViewStats.absenceCount} 
+          label={viewMode === 'weekly' ? 'غيابات هذا الأسبوع' : `غيابات عام ${selectedYear}`} 
+        />
 
-        {/* إجمالي الأيام */}
-        <div className="group relative overflow-hidden bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-100 rounded-3xl p-6 shadow-lg hover:shadow-2xl transition-all duration-500 border border-emerald-200">
-          <div className="absolute top-0 left-0 w-full h-full opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-            <div className="absolute -top-10 -right-10 w-32 h-32 bg-emerald-300 rounded-full blur-3xl"></div>
-          </div>
-          
-          <div className="relative z-10">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 backdrop-blur-sm rounded-2xl">
-                <Calendar className="w-6 h-6 text-emerald-600" />
-              </div>
-              <div className="px-3 py-1 bg-emerald-100 rounded-full border border-emerald-200">
-                <span className="text-xs font-bold text-emerald-700">المجموع</span>
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <p className="text-sm font-semibold text-emerald-700">إجمالي الأيام</p>
-              <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-black bg-gradient-to-br from-emerald-600 to-teal-600 bg-clip-text text-transparent">
-              {yearTotals.totalDays}
-                </span>
-                <span className="text-sm text-emerald-500 font-semibold">يوم</span>
-              </div>
-              <p className="text-xs text-emerald-600/70 font-medium">للسنة {selectedYear}</p>
-            </div>
-          </div>
-        </div>
+        {/* إجمالي الأيام (المقام) */}
+        <WeeklyStatsCard 
+          totalDays={currentViewStats.totalDays} 
+          absenceCount={currentViewStats.absenceCount}
+          label={viewMode === 'weekly' ? 'مقاطع هذا الأسبوع' : 'إجمالي المقاطع'}
+        />
 
         {/* نسبة الغياب */}
-        <div className="group relative overflow-hidden bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-100 rounded-3xl p-6 shadow-lg hover:shadow-2xl transition-all duration-500 border border-amber-200">
-          <div className="absolute top-0 left-0 w-full h-full opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-            <div className="absolute -top-10 -right-10 w-32 h-32 bg-amber-300 rounded-full blur-3xl"></div>
-          </div>
-          
-          <div className="relative z-10">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-gradient-to-br from-amber-500/10 to-orange-500/10 backdrop-blur-sm rounded-2xl">
-                <TrendingUp className="w-6 h-6 text-amber-600" />
-              </div>
-              <div className="px-3 py-1 bg-amber-100 rounded-full border border-amber-200">
-                <span className="text-xs font-bold text-amber-700">النسبة</span>
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <p className="text-sm font-semibold text-amber-700">نسبة الغياب الإجمالية</p>
-              <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-black bg-gradient-to-br from-amber-600 to-orange-600 bg-clip-text text-transparent">
-                  {yearTotals.rate.toFixed(1)}
-                </span>
-                <span className="text-2xl bg-gradient-to-br from-amber-500 to-orange-500 bg-clip-text text-transparent font-black">%</span>
-              </div>
-              <p className="text-xs text-amber-600/70 font-medium">
-                {yearTotals.absenceCount} غياب من أصل {yearTotals.totalDays} يوم دراسة
-              </p>
-              
-              {/* Progress Bar */}
-              <div className="mt-3 w-full bg-amber-200/50 rounded-full h-2.5 overflow-hidden shadow-inner">
-                <div 
-                  className="h-full bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 rounded-full transition-all duration-1000 shadow-lg"
-                  style={{ width: `${Math.min(yearTotals.rate, 100)}%` }}
-                ></div>
-              </div>
-            </div>
-            </div>
-            </div>
-        </div>
+        <AbsenceRateCard 
+          rate={currentViewStats.rate} 
+          absenceCount={currentViewStats.absenceCount} 
+          totalDays={currentViewStats.totalDays} 
+        />
+      </div>
 
-      {/* سجل الحضور - Timeline عصري */}
+      {/* تفاصيل الغياب - قائمة التواريخ */}
       <div className="bg-white rounded-3xl shadow-xl border border-emerald-100 overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 py-6 px-8">
@@ -222,120 +166,107 @@ export const StudentView = ({ monthlyStats }: StudentViewProps) => {
             <div className="p-2 bg-white/10 backdrop-blur-sm rounded-xl">
               <CalendarDays className="w-6 h-6" />
             </div>
-            سجل الحضور الشهري
+            {viewMode === 'weekly' ? 'تفاصيل غياب الأسبوع' : 'سجل الحضور الشهري'}
           </h2>
-          <p className="text-emerald-50 text-sm mt-2">تفاصيل حضورك وغيابك للشهر المحدد</p>
+          <p className="text-emerald-50 text-sm mt-2">
+            {viewMode === 'weekly' 
+              ? 'الأيام التي تغيبت فيها خلال هذا الأسبوع' 
+              : 'تفاصيل حضورك وغيابك للشهر المحدد'}
+          </p>
         </div>
 
-        {/* Content */}
+        {/* Content Area */}
         <div className="p-6 md:p-8">
-              {filteredMonthlyStats.length === 0 ? (
-            /* Empty State جميل */
-            <div className="text-center py-16">
-              <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-full mb-6">
-                <CheckCircle2 className="w-10 h-10 text-emerald-600" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-800 mb-2">لا توجد بيانات</h3>
-              <p className="text-gray-500 max-w-md mx-auto">
-                {monthlyStats.length > 0 
-                  ? `لا توجد بيانات لشهر ${AR_MONTHS[selectedMonthIndex]} ${selectedYear}. جرب شهر آخر من القائمة أعلاه.`
-                  : 'لم يتم رصد أي حضور أو غياب بعد. سيتم تحديث السجل بشكل تلقائي عند رصد المعلم للحضور.'
-                }
-              </p>
-            </div>
-              ) : (
-            /* Timeline View */
-            <div className="space-y-6">
-              {filteredMonthlyStats.map((m, index) => (
-                <div 
-                  key={m.month} 
-                  className="group animate-in fade-in slide-in-from-right duration-500"
-                  style={{ animationDelay: `${index * 100}ms` }}
-                >
-                  {/* Month Card */}
-                  <div className="relative bg-gradient-to-br from-slate-50 to-gray-50 rounded-2xl p-6 border border-slate-200 hover:shadow-xl transition-all duration-300">
-                    {/* Month Badge */}
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl">
-                          <Calendar className="w-5 h-5 text-white" />
+          {/* منطق العرض الأسبوعي */}
+          {viewMode === 'weekly' && (
+            <div>
+              {currentViewStats.absenceDates && currentViewStats.absenceDates.length > 0 ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 p-3 bg-red-50 text-red-700 rounded-xl border border-red-100 w-fit">
+                     <AlertCircle className="w-5 h-5" />
+                     <span className="font-bold">فيا يلي تواريخ الغياب المسجلة لهذا الأسبوع:</span>
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    {currentViewStats.absenceDates.map((date, idx) => (
+                      <div key={idx} className="flex items-center gap-3 px-5 py-3 bg-white border border-red-200 rounded-xl shadow-sm hover:shadow-md transition-all">
+                        <div className="p-2 bg-red-100 rounded-lg">
+                          <Calendar className="w-5 h-5 text-red-600" />
                         </div>
-                        <h3 className="text-lg font-bold text-gray-800">{m.month}</h3>
-                      </div>
-                      
-                      {/* Status Badge */}
-                      <div className={`px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 ${
-                            m.absenceCount === 0
-                          ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
-                              : m.absenceCount <= 2
-                          ? "bg-amber-100 text-amber-700 border border-amber-200"
-                          : "bg-red-100 text-red-700 border border-red-200"
-                          }`}>
-                        {m.absenceCount === 0 ? (
-                          <>
-                            <CheckCircle2 className="w-4 h-4" />
-                            <span>حضور مثالي</span>
-                          </>
-                        ) : (
-                          <>
-                            <AlertCircle className="w-4 h-4" />
-                            <span>{m.absenceCount} أيام غياب</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Stats Grid */}
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                      {/* أيام الغياب */}
-                      <div className="bg-white rounded-xl p-4 border border-gray-100 text-center hover:shadow-md transition-shadow">
-                        <div className="text-2xl font-black text-red-600 mb-1">
-                          {m.absenceCount}
+                        <div className="flex flex-col">
+                          <span className="font-bold text-gray-800">
+                            {new Date(date).toLocaleDateString('ar-EG', { weekday: 'long' })}
+                          </span>
+                          <span className="text-xs text-gray-500 font-medium">
+                            {new Date(date).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' })}
+                          </span>
                         </div>
-                        <div className="text-xs font-medium text-gray-600">أيام الغياب</div>
                       </div>
-
-                      {/* إجمالي الأيام */}
-                      <div className="bg-white rounded-xl p-4 border border-gray-100 text-center hover:shadow-md transition-shadow">
-                        <div className="text-2xl font-black text-emerald-600 mb-1">
-                        {m.totalDays}
-                        </div>
-                        <div className="text-xs font-medium text-gray-600">إجمالي الأيام</div>
-                      </div>
-                    </div>
-
-                    {/* تواريخ الغياب */}
-                    {m.absenceDates && m.absenceDates.length > 0 && (
-                      <div className="mt-4 p-4 bg-red-50/50 rounded-xl border border-red-100">
-                        <div className="flex items-center gap-2 mb-3">
-                          <AlertCircle className="w-4 h-4 text-red-600" />
-                          <span className="text-sm font-bold text-red-800">تواريخ الغياب</span>
-                        </div>
-                            <div className="flex flex-wrap gap-2">
-                              {m.absenceDates.map((date, idx) => (
-                            <div 
-                              key={idx} 
-                              className="group/date relative px-4 py-2 bg-white border-2 border-red-200 rounded-xl hover:border-red-400 hover:shadow-md transition-all duration-300"
-                            >
-                              <div className="flex items-center gap-2">
-                                <Calendar className="w-3.5 h-3.5 text-red-500" />
-                                <span className="text-sm font-semibold text-red-700">
-                                  {new Date(date).toLocaleDateString('ar-EG', { 
-                                    weekday: 'short', 
-                                    day: 'numeric',
-                                    month: 'short'
-                                  })}
-                                </span>
-                              </div>
-                            </div>
-                              ))}
-                            </div>
-                          </div>
-                    )}
+                    ))}
                   </div>
                 </div>
-              ))}
+              ) : (
+                <div className="text-center py-12">
+                   <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-100 rounded-full mb-4">
+                      <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+                   </div>
+                   <h3 className="text-xl font-bold text-gray-800">حضورك مكتمل هذا الأسبوع!</h3>
+                   <p className="text-gray-500">بداية موفقة، استمر في الالتزام 💪</p>
+                </div>
+              )}
             </div>
+          )}
+
+          {/* منطق العرض الشهري (Timeline القديم) */}
+          {viewMode === 'monthly' && (
+             <div className="space-y-6">
+               {filteredMonthlyStats.length === 0 ? (
+                  <div className="text-center py-16">
+                    <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-full mb-6">
+                      <Calendar className="w-10 h-10 text-gray-400" />
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-800 mb-2">لا توجد بيانات لهذا الشهر</h3>
+                    <p className="text-gray-500">اختر شهراً آخر من القائمة أعلاه</p>
+                  </div>
+               ) : (
+                 filteredMonthlyStats.map((m, index) => (
+                    <div key={m.month} className="animate-in fade-in slide-in-from-right duration-500">
+                      {/* Reuse the existing card logic for monthly detail */}
+                       <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200">
+                          <div className="flex flex-wrap gap-4 items-center justify-between mb-6">
+                            <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                              <span className="w-2 h-8 bg-emerald-500 rounded-full"></span>
+                              تفاصيل شهر {AR_MONTHS[selectedMonthIndex]}
+                            </h3>
+                            <div className={`px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 ${
+                                m.absenceCount === 0 ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
+                              }`}>
+                                {m.absenceCount === 0 ? <CheckCircle2 className="w-4 h-4"/> : <AlertCircle className="w-4 h-4"/>}
+                                {m.absenceCount === 0 ? "حضور كامل" : `إجمالي التغيب: ${m.absenceCount} يوم`}
+                            </div>
+                          </div>
+                          
+                          {/* تواريخ الغياب الشهرية */}
+                          {m.absenceDates && m.absenceDates.length > 0 ? (
+                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                                {m.absenceDates.map((date, i) => (
+                                  <div key={i} className="flex items-center gap-3 px-4 py-3 bg-white rounded-xl border border-gray-200">
+                                     <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                     <span className="font-bold text-gray-700">
+                                       {new Date(date).toLocaleDateString('ar-EG', { weekday: 'short', day: 'numeric' })}
+                                     </span>
+                                  </div>
+                                ))}
+                             </div>
+                          ) : (
+                             <div className="text-center py-8 text-gray-400 font-medium bg-white rounded-xl border border-dashed border-gray-300">
+                                لا توجد أيام غياب مسجلة
+                             </div>
+                          )}
+                       </div>
+                    </div>
+                 ))
+               )}
+             </div>
           )}
         </div>
 
@@ -343,17 +274,7 @@ export const StudentView = ({ monthlyStats }: StudentViewProps) => {
         <div className="p-6 bg-gradient-to-br from-teal-50 to-cyan-50 border-t border-teal-100">
           <div className="flex items-start gap-4 p-4 bg-white/70 backdrop-blur-sm rounded-2xl border border-teal-200">
             <div className="flex-shrink-0 p-2 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-xl">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6 text-white"
-              viewBox="0 0 20 20"
-              fill="currentColor">
-              <path
-                fillRule="evenodd"
-                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                clipRule="evenodd"
-              />
-            </svg>
+             <AlertCircle className="h-6 w-6 text-white" />
             </div>
             <div>
               <p className="text-sm text-teal-900 font-bold mb-2 flex items-center gap-2">
@@ -371,3 +292,4 @@ export const StudentView = ({ monthlyStats }: StudentViewProps) => {
     </div>
   );
 };
+

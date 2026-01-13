@@ -31,17 +31,19 @@ exports.getTeacherGroupsForAttendance = async (req, res) => {
     }
     const teacherName = `${teacher.firstName} ${teacher.lastName}`;
 
-    // 3. Prepare Date Range for "Today's" Attendance
-    let targetDateStart, targetDateEnd;
+    // 3. Prepare Date Range for "Today's" Attendance - ✅ FIX: Use UTC dates
+    let targetDateStart, targetDateEnd, dateKey;
     if (date) {
-      targetDateStart = new Date(date);
-      targetDateStart.setHours(0, 0, 0, 0);
+      const inputDate = new Date(date);
+      dateKey = inputDate.toISOString().split('T')[0];
     } else {
-      targetDateStart = new Date();
-      targetDateStart.setHours(0, 0, 0, 0);
+      dateKey = new Date().toISOString().split('T')[0];
     }
-    targetDateEnd = new Date(targetDateStart);
-    targetDateEnd.setDate(targetDateStart.getDate() + 1);
+    targetDateStart = new Date(dateKey + 'T00:00:00.000Z');
+    targetDateEnd = new Date(dateKey + 'T00:00:00.000Z');
+    targetDateEnd.setUTCDate(targetDateEnd.getUTCDate() + 1);
+
+    console.log(`📅 [TeacherGroups] Date range: ${targetDateStart.toISOString()} to ${targetDateEnd.toISOString()}, dateKey: ${dateKey}`);
 
     // 🆕 4. التحقق من وجود Section في التاريخ المطلوب
     const teacherGroups = await Group.find({ 
@@ -58,13 +60,10 @@ exports.getTeacherGroupsForAttendance = async (req, res) => {
       });
     }
 
-    // التحقق من وجود مقطع في التاريخ المحدد لأي من حلقات المعلم
+    // التحقق من وجود مقطع في التاريخ المحدد لأي من حلقات المعلم - ✅ Use dateKey
     const sectionOnDate = await Section.findOne({
       group: { $in: groupNames },
-      date: {
-        $gte: targetDateStart,
-        $lt: targetDateEnd
-      }
+      dateKey: dateKey
     });
 
     if (!sectionOnDate) {
@@ -347,6 +346,16 @@ exports.getTeacherGroupsForAttendance = async (req, res) => {
       gender: s.gender
     })));
 
+    // 🆕 التحقق إذا تم أخذ الحضور لهذا التاريخ
+    // يعتبر الحضور مسجل إذا كان هناك سجل واحد على الأقل لأي طالب في هذا التاريخ
+    const hasExistingAttendance = studentsList.some(s => {
+      // نتحقق إذا الطالب لديه سجل محفوظ (ليس افتراضي)
+      const studentRow = results.find(r => r.student && r.student._id.toString() === s._id.toString());
+      return studentRow && studentRow.todayAttendance;
+    });
+
+    console.log(`📋 [Attendance] Date: ${dateKey}, isAttendanceTaken: ${hasExistingAttendance}`);
+
     return res.json({
       success: true,
       data: {
@@ -356,6 +365,12 @@ exports.getTeacherGroupsForAttendance = async (req, res) => {
         },
         groups,
         students: studentsList,
+        // 🆕 معلومات إضافية للـ Frontend
+        attendanceInfo: {
+          date: dateKey,
+          isAttendanceTaken: hasExistingAttendance, // ✅ هل تم أخذ الحضور؟
+          totalRecords: hasExistingAttendance ? studentsList.length : 0
+        },
         summary: {
           totalStudents: studentsList.length,
           presentToday,

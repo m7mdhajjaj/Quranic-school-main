@@ -32,6 +32,17 @@ export interface MonthlyAbsence {
   absenceDates: string[]; // قائمة بتواريخ الغياب
 }
 
+export interface WeeklyAbsence {
+  totalDays: number;
+  absenceCount: number;
+  presenceCount: number;
+  rate: number;
+  attendanceRate: number;
+  weekStart: string;
+  weekEnd: string;
+  absenceDates: string[];
+}
+
 export interface YearTotals {
   absenceCount: number;
   totalDays: number;
@@ -95,6 +106,8 @@ export interface TeacherToolbarProps {
   isSaving: boolean;
   isLoading?: boolean;
   hasUnsavedChanges?: boolean;
+  isSaveDisabled?: boolean; // 🆕 تعطيل زر الحفظ
+  isAttendanceTaken?: boolean; // 🆕 هل تم أخذ الحضور سابقاً
 }
 
 // StudentsTable Component
@@ -108,4 +121,7 @@ export interface StudentsTableProps {
 // StudentView Component
 export interface StudentViewProps {
   monthlyStats: MonthlyAbsence[];
+  weeklyStats?: WeeklyAbsence | null;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
 }

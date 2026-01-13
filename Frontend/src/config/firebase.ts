@@ -16,6 +16,10 @@ const firebaseConfig = {
 // VAPID Key for web push (get from Firebase Console > Cloud Messaging > Web Push certificates)
 const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY || '';
 
+if (!VAPID_KEY) {
+  console.warn('⚠️ VITE_FIREBASE_VAPID_KEY is missing. Push notifications may fail. Generate a key pair in Firebase Console > Project Settings > Cloud Messaging > Web Push certificates.');
+}
+
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
@@ -82,10 +86,15 @@ export const getExistingToken = async (): Promise<string | null> => {
       return null;
     }
 
-    const token = await getToken(messaging, {
-      vapidKey: VAPID_KEY,
+    const getTokenOptions: any = {
       serviceWorkerRegistration: registration
-    });
+    };
+    
+    if (VAPID_KEY) {
+      getTokenOptions.vapidKey = VAPID_KEY;
+    }
+
+    const token = await getToken(messaging, getTokenOptions);
     
     if (token) {
       // Only log if token is different from last logged
@@ -128,10 +137,15 @@ export const requestNotificationPermission = async (): Promise<string | null> =>
       }
 
       // Get FCM token
-      const token = await getToken(messaging, {
-        vapidKey: VAPID_KEY,
+      const getTokenOptions: any = {
         serviceWorkerRegistration: registration
-      });
+      };
+      
+      if (VAPID_KEY) {
+        getTokenOptions.vapidKey = VAPID_KEY;
+      }
+
+      const token = await getToken(messaging, getTokenOptions);
       
       if (token) {
         console.log('📱 FCM Token:', token);

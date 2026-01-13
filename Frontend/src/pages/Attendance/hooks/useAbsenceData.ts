@@ -16,6 +16,9 @@ export const useAbsenceData = () => {
   const [date, setDate] = useState<string>(todayISO());
   const [startDate, setStartDate] = useState<string | null>(todayISO());
   const [endDate, setEndDate] = useState<string | null>(todayISO());
+  
+  // 🆕 هل تم أخذ الحضور لهذا التاريخ؟
+  const [isAttendanceTaken, setIsAttendanceTaken] = useState<boolean>(false);
 
   const setDateRange = (start: string | null, end: string | null) => {
     setStartDate(start);
@@ -26,6 +29,16 @@ export const useAbsenceData = () => {
   };
 
   const [monthlyStats, setMonthlyStats] = useState<MonthlyAbsence[]>([]);
+  const [weeklyStats, setWeeklyStats] = useState<{
+    totalDays: number;
+    absenceCount: number;
+    presenceCount: number;
+    rate: number;
+    attendanceRate: number;
+    weekStart: string;
+    weekEnd: string;
+    absenceDates: (string | Date)[];
+  } | null>(null);
   const [teacherGroups, setTeacherGroups] = useState<Array<{ 
     _id: string; 
     name: string; 
@@ -70,10 +83,15 @@ export const useAbsenceData = () => {
         
         // مسح بيانات الطلاب عند الفشل
         setStudents([]);
+        setIsAttendanceTaken(false); // 🆕 reset
         return;
       }
 
-      const { groups, students } = result.data;
+      const { groups, students, attendanceInfo } = result.data;
+      
+      // 🆕 حفظ حالة الحضور لهذا التاريخ
+      setIsAttendanceTaken(attendanceInfo?.isAttendanceTaken ?? false);
+      console.log(`📋 [useAbsenceData] isAttendanceTaken: ${attendanceInfo?.isAttendanceTaken}`);
       
       // حفظ الحلقات
       setTeacherGroups(groups.map(g => ({ 
@@ -81,7 +99,6 @@ export const useAbsenceData = () => {
         name: g.name,
         status: g.status || 'active', // Default to active if not provided
         totalStudents: g.totalStudents || 0,
-        overallAttendanceRate: g.overallAttendanceRate || 0 // 🆕 Added
       })));
 
       // البيانات جاهزة للاستخدام مباشرة! 🎉
@@ -101,7 +118,6 @@ export const useAbsenceData = () => {
         isPresent: s.isPresent,
         totalAbsences: s.totalAbsences,
         absenceDates: s.absenceDates,
-        attendanceRate: s.attendanceRate // 🆕 Added
       }));
 
       setStudents(formatted);
@@ -124,13 +140,18 @@ export const useAbsenceData = () => {
       
       if (result.success && result.data) {
         setMonthlyStats(result.data);
+        if (result.weeklyStats) {
+            setWeeklyStats(result.weeklyStats);
+        }
       } else {
         setMonthlyStats([]);
+        setWeeklyStats(null);
         setError('تعذر جلب إحصائيات الغياب');
       }
     } catch (e) {
       console.error(e);
       setMonthlyStats([]);
+      setWeeklyStats(null);
       setError('تعذر جلب إحصائيات الغياب');
     }
   }, []);
@@ -183,8 +204,11 @@ export const useAbsenceData = () => {
     endDate,
     setDateRange,
     monthlyStats,
+    weeklyStats, // Export
     teacherGroups,
     availableDates,
+    isAttendanceTaken, // 🆕 هل تم أخذ الحضور لهذا التاريخ؟
+    setIsAttendanceTaken, // 🆕 للتحديث بعد الحفظ
     fetchStudentsForTeacher,
     fetchStudentAbsenceStats,
     fetchAvailableDates,

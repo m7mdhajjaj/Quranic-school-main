@@ -24,11 +24,14 @@ exports.getStudentAttendance = async (req, res) => {
 // Get absent students for today with full name, teacher, and group
 exports.getAbsentStudentsToday = async (req, res) => {
   try {
-    // الحصول على اليوم الحالي
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const nextDay = new Date(today);
-    nextDay.setDate(today.getDate() + 1);
+    // ✅ FIX: Use UTC-based date for consistent matching
+    const now = new Date();
+    const todayKey = now.toISOString().split('T')[0]; // YYYY-MM-DD in UTC
+    const today = new Date(todayKey + 'T00:00:00.000Z');
+    const nextDay = new Date(todayKey + 'T00:00:00.000Z');
+    nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+
+    console.log(`📅 [AbsentToday] Searching: ${today.toISOString()} to ${nextDay.toISOString()}`);
 
     // استخدام Aggregation لجلب البيانات بشكل محسّن مع اسم المعلم الثلاثي
     const absentStudents = await Attendance.aggregate([
