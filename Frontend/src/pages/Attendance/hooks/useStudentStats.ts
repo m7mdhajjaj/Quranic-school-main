@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { AR_MONTHS } from '../utils/dateHelpers';
 import type { UseStudentStatsProps } from '../types/absence.types';
 
@@ -30,6 +30,8 @@ interface ExtendedUseStudentStatsProps extends UseStudentStatsProps {
   weeklyStats?: WeeklyStatsData | null;
   currentMonthStats?: CurrentMonthStatsData | null;
   viewMode: 'weekly' | 'monthly';
+  currentUserId: string;
+  fetchStudentAbsenceStats: (studentId: string, month?: number, year?: number) => Promise<void>;
 }
 
 // =====================================
@@ -131,24 +133,90 @@ export const useStudentStats = ({
   currentMonthStats,
   selectedYear,
   selectedMonthIndex,
-  viewMode
+  viewMode,
+  currentUserId,
+  fetchStudentAbsenceStats
 }: ExtendedUseStudentStatsProps) => {
+  
+  // ========================
+  // UI States
+  // ========================
+  const [internalViewMode, setInternalViewMode] = useState<'weekly' | 'monthly'>(viewMode);
+  const [yearMonth, setYearMonth] = useState<string>(
+    new Date().toISOString().substring(0, 7)
+  );
+
+  // ========================
+  // Computed Values
+  // ========================
+  const computedYear = useMemo(
+    () => parseInt(yearMonth.split("-")[0], 10),
+    [yearMonth]
+  );
+  
+  const computedMonthIndex = useMemo(
+    () => Math.max(0, parseInt(yearMonth.split("-")[1], 10) - 1),
+    [yearMonth]
+  );
+
+  const availableYears = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    const years: number[] = [];
+    for (let i = 0; i <= 5; i++) {
+      years.push(currentYear - i);
+    }
+    return years;
+  }, []);
+
+  // استخدام القيم المحسوبة أو المُمررة
+  const finalYear = selectedYear ?? computedYear;
+  const finalMonthIndex = selectedMonthIndex ?? computedMonthIndex;
+  const finalViewMode = viewMode ?? internalViewMode;
   
   // فلترة السجل للشهر المحدد
   const filteredMonthlyStats = useMemo(
-    () => filterMonthlyStatsByDate(monthlyStats, selectedYear, selectedMonthIndex),
-    [monthlyStats, selectedYear, selectedMonthIndex]
+    () => filterMonthlyStatsByDate(monthlyStats, finalYear, finalMonthIndex),
+    [monthlyStats, finalYear, finalMonthIndex]
   );
 
   // حساب الإحصائيات الحالية بناءً على وضع العرض
   const currentViewStats = useMemo(() => {
-    return viewMode === 'weekly'
+    return finalViewMode === 'weekly'
       ? getWeeklyViewStats(weeklyStats)
-      : getMonthlyViewStats(currentMonthStats, filteredMonthlyStats, selectedYear, selectedMonthIndex);
-  }, [viewMode, weeklyStats, currentMonthStats, filteredMonthlyStats, selectedYear, selectedMonthIndex]);
+      : getMonthlyViewStats(currentMonthStats, filteredMonthlyStats, finalYear, finalMonthIndex);
+  }, [finalViewMode, weeklyStats, currentMonthStats, filteredMonthlyStats, finalYear, finalMonthIndex]);
+
+  // ========================
+  // Event Handlers
+  // ========================
+  const handleViewModeChange = useCallback((mode: 'weekly' | 'monthly') => {
+    setInternalViewMode(mode);
+    if (mode === 'weekly') {
+      fetchStudentAbsenceStats(currentUserId);
+    }
+  }, [currentUserId, fetchStudentAbsenceStats]);
+
+  const handleMonthChange = useCallback((newMonthIndex: number) => {
+    setYearMonth(`${finalYear}-${String(newMonthIndex + 1).padStart(2, "0")}`);
+    fetchStudentAbsenceStats(currentUserId, newMonthIndex, finalYear);
+  }, [currentUserId, finalYear, fetchStudentAbsenceStats]);
+
+  const handleYearChange = useCallback((newYear: number) => {
+    setYearMonth(`${newYear}-${String(finalMonthIndex + 1).padStart(2, "0")}`);
+    fetchStudentAbsenceStats(currentUserId, finalMonthIndex, newYear);
+  }, [currentUserId, finalMonthIndex, fetchStudentAbsenceStats]);
 
   return {
     filteredMonthlyStats,
-    currentViewStats
+    currentViewStats,
+    // UI State & Values
+    viewMode: finalViewMode,
+    selectedYear: finalYear,
+    selectedMonthIndex: finalMonthIndex,
+    availableYears,
+    // Handlers
+    handleViewModeChange,
+    handleMonthChange,
+    handleYearChange
   };
 };

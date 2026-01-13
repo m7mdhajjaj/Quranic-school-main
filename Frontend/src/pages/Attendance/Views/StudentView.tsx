@@ -1,5 +1,4 @@
 // components/StudentView.tsx
-import { useState, useMemo } from "react";
 import { AR_MONTHS } from "../utils/dateHelpers";
 import { useStudentStats } from "../hooks";
 import { Calendar, CheckCircle2, CalendarDays, AlertCircle } from "lucide-react";
@@ -13,42 +12,28 @@ export const StudentView = ({
   currentUserId,
   fetchStudentAbsenceStats,
 }: StudentViewProps) => {
-  // وضع العرض: 'weekly' للأسبوع الحالي، 'monthly' للتاريخ المحدد
-  const [viewMode, setViewMode] = useState<'weekly' | 'monthly'>('weekly');
-
-  // السنة والشهر المختارين (فقط للوضع الشهري)
-  const [yearMonth, setYearMonth] = useState<string>(
-    new Date().toISOString().substring(0, 7)
-  );
-
-  const selectedYear = useMemo(
-    () => parseInt(yearMonth.split("-")[0], 10),
-    [yearMonth]
-  );
-  const selectedMonthIndex = useMemo(
-    () => Math.max(0, parseInt(yearMonth.split("-")[1], 10) - 1),
-    [yearMonth]
-  );
-
-  // استخدام hook منفصل لحساب الإحصائيات مع تمرير وضع العرض
-  const { filteredMonthlyStats, currentViewStats } = useStudentStats({
+  
+  // كل المنطق في الـ hook
+  const {
+    filteredMonthlyStats,
+    currentViewStats,
+    viewMode,
+    selectedYear,
+    selectedMonthIndex,
+    availableYears,
+    handleViewModeChange,
+    handleMonthChange,
+    handleYearChange
+  } = useStudentStats({
     monthlyStats,
     weeklyStats,
     currentMonthStats,
-    selectedYear,
-    selectedMonthIndex,
-    viewMode
+    selectedYear: undefined,
+    selectedMonthIndex: undefined,
+    viewMode: 'weekly',
+    currentUserId,
+    fetchStudentAbsenceStats
   });
-
-  // الحصول على السنوات المتاحة
-  const availableYears = useMemo(() => {
-    const currentYear = new Date().getFullYear();
-    const years: number[] = [];
-    for (let i = 0; i <= 5; i++) {
-      years.push(currentYear - i);
-    }
-    return years;
-  }, []);
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -74,7 +59,7 @@ export const StudentView = ({
              {/* Toggle Switch (Weekly vs Monthly) */}
              <div className="flex p-1 bg-white/20 backdrop-blur-md rounded-xl">
                <button
-                 onClick={() => setViewMode('weekly')}
+                 onClick={() => handleViewModeChange('weekly')}
                  className={`px-4 py-2 rounded-lg text-sm font-bold transition-all duration-300 ${
                    viewMode === 'weekly' 
                      ? 'bg-white text-emerald-700 shadow-lg' 
@@ -84,7 +69,7 @@ export const StudentView = ({
                  الأسبوع الحالي
                </button>
                <button
-                 onClick={() => setViewMode('monthly')}
+                 onClick={() => handleViewModeChange('monthly')}
                  className={`px-4 py-2 rounded-lg text-sm font-bold transition-all duration-300 ${
                    viewMode === 'monthly' 
                      ? 'bg-white text-emerald-700 shadow-lg' 
@@ -106,12 +91,7 @@ export const StudentView = ({
               <select
                 aria-label="Select month"
                 value={selectedMonthIndex}
-                onChange={(e) => {
-                  const newMonth = parseInt(e.target.value, 10);
-                  setYearMonth(`${selectedYear}-${String(newMonth + 1).padStart(2, "0")}`);
-                  // جلب البيانات من Backend للشهر الجديد
-                  fetchStudentAbsenceStats(currentUserId, newMonth, selectedYear);
-                }}
+                onChange={(e) => handleMonthChange(parseInt(e.target.value, 10))}
                 className="flex-1 sm:flex-initial bg-white/95 backdrop-blur-sm border-0 rounded-xl px-4 py-3 text-gray-800 font-medium shadow-lg focus:outline-none focus:ring-4 focus:ring-white/30 transition-all">
                 {AR_MONTHS.map((label, idx) => (
                   <option key={idx} value={idx}>{label}</option>
@@ -121,12 +101,7 @@ export const StudentView = ({
               <select
                 aria-label="Select year"
                 value={selectedYear}
-                onChange={(e) => {
-                  const newYear = parseInt(e.target.value, 10);
-                  setYearMonth(`${newYear}-${String(selectedMonthIndex + 1).padStart(2, "0")}`);
-                  // جلب البيانات من Backend للسنة الجديدة
-                  fetchStudentAbsenceStats(currentUserId, selectedMonthIndex, newYear);
-                }}
+                onChange={(e) => handleYearChange(parseInt(e.target.value, 10))}
                 className="flex-1 sm:flex-initial sm:w-32 bg-white/95 backdrop-blur-sm border-0 rounded-xl px-4 py-3 text-gray-800 font-medium shadow-lg focus:outline-none focus:ring-4 focus:ring-white/30 transition-all">
                 {availableYears.map((year) => (
                   <option key={year} value={year}>{year}</option>
