@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "transparent",
-    transition: "all 0.3s ease",
+    
   },
   activeIconContainer: {
     backgroundColor: "#10b981",
