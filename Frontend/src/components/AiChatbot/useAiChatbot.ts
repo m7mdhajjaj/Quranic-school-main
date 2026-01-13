@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { sendAiChatMessage, addFavorite, getFavorites, deleteFavorite, generateSpeech } from '../../Api/aiChatApi';
+import { sendAiChatMessage, addFavorite, getFavorites, deleteFavorite, generateSpeech, transcribeAudio } from '../../Api/aiChatApi';
 import { validateData, chatMessageSchema, addFavoriteSchema } from '../../Validation/aiChatValidation';
 
 // Types for chat messages
@@ -26,8 +26,9 @@ export const useAiChatbot = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const recognitionRef = useRef<any>(null);
+  
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Get user role
   const getUserRole = (): string | null => {
@@ -45,58 +46,12 @@ export const useAiChatbot = () => {
 
   const userRole = getUserRole();
 
-  // Initialize speech recognition (Browser Built-in)
+  // Cleanup audio on unmount
   useEffect(() => {
-    // Initialize speech recognition
-    if (typeof window !== 'undefined') {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      if (SpeechRecognition) {
-        recognitionRef.current = new SpeechRecognition();
-        recognitionRef.current.lang = 'ar-SA'; // Arabic Saudi
-        recognitionRef.current.continuous = false; // Stop after one phrase
-        recognitionRef.current.interimResults = true; // Show interim results
-        recognitionRef.current.maxAlternatives = 3; // Get multiple alternatives
-
-        recognitionRef.current.onresult = (event: any) => {
-          let finalTranscript = '';
-          let interimTranscript = '';
-
-          for (let i = event.resultIndex; i < event.results.length; i++) {
-            const transcript = event.results[i][0].transcript;
-            if (event.results[i].isFinal) {
-              finalTranscript += transcript;
-            } else {
-              interimTranscript += transcript;
-            }
-          }
-
-          // Use final transcript if available, otherwise show interim
-          if (finalTranscript) {
-            setInput(finalTranscript.trim());
-            setIsListening(false);
-          } else if (interimTranscript) {
-            setInput(interimTranscript.trim());
-          }
-        };
-
-        recognitionRef.current.onerror = (event: any) => {
-          console.error('Speech recognition error:', event.error);
-          setIsListening(false);
-        };
-
-        recognitionRef.current.onend = () => {
-          setIsListening(false);
-        };
-      }
-    }
-
     return () => {
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current = null;
-      }
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
       }
     };
   }, []);
@@ -109,6 +64,15 @@ export const useAiChatbot = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Handle stop generation
+  const handleStopGeneration = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setIsLoading(false);
+  };
 
   // Handle message submission
   const handleSubmit = async (e: React.FormEvent) => {
@@ -133,8 +97,11 @@ export const useAiChatbot = () => {
     setInput('');
     setIsLoading(true);
 
+  // Create new abort controller
+    abortControllerRef.current = new AbortController();
+
     try {
-      const data = await sendAiChatMessage(userMessage.content);
+      const data = await sendAiChatMessage(userMessage.content, abortControllerRef.current.signal);
 
       if (data.success) {
         const aiMessage: Message = {
@@ -147,7 +114,13 @@ export const useAiChatbot = () => {
       } else {
         throw new Error(data.message);
       }
-    } catch (error) {
+    } catch (error: any) {
+      // Check if cancelled
+      if (error.name === 'CanceledError' || error.code === 'ERR_CANCELED' || error.message === 'canceled') {
+         console.log('Request canceled by user');
+         return; // Don't show error message
+      }
+
       console.error('Chat error:', error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -158,6 +131,7 @@ export const useAiChatbot = () => {
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
+      abortControllerRef.current = null;
     }
   };
 
@@ -311,22 +285,55 @@ export const useAiChatbot = () => {
     }
   };
 
-  // Voice input
-  const handleStartListening = () => {
-    if (!recognitionRef.current) return;
+  // Voice input using OpenAI Whisper
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<BlobPart[]>([]);
 
+  const handleStartListening = async () => {
     try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorderRef.current = new MediaRecorder(stream);
+      
+      chunksRef.current = []; // Reset chunks
+
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          chunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorderRef.current.onstop = async () => {
+        const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        
+        // Stop all tracks
+        stream.getTracks().forEach(track => track.stop());
+
+        try {
+          setIsLoading(true); // Show loading while transcribing
+          const data = await transcribeAudio(audioBlob);
+          if (data.success && data.text) {
+             setInput(data.text);
+             // Optionally auto-submit: 
+             // handleSubmit(null, data.text); 
+          }
+        } catch (error) {
+          console.error("Transcription failed", error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      mediaRecorderRef.current.start();
       setIsListening(true);
-      recognitionRef.current.start();
     } catch (error) {
-      console.error('Speech recognition error:', error);
+      console.error('Error accessing microphone:', error);
       setIsListening(false);
     }
   };
 
   const handleStopListening = () => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
+    if (mediaRecorderRef.current && isListening) {
+      mediaRecorderRef.current.stop();
       setIsListening(false);
     }
   };
@@ -353,6 +360,7 @@ export const useAiChatbot = () => {
     handleStopSpeaking,
     handleStartListening,
     handleStopListening,
+    handleStopGeneration,
     handleAddFavorite,
     handleRemoveFavorite,
     isFavorited,

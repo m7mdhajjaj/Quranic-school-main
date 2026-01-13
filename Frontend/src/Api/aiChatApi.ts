@@ -24,9 +24,10 @@ export interface GetFavoritesParams {
 }
 
 // Send message to AI
-export const sendAiChatMessage = async (message: string) => {
+export const sendAiChatMessage = async (message: string, signal?: AbortSignal) => {
   const response = await api.post('/ai-chat', { message }, {
     timeout: 90000, // 90 ثانية للتفسير الطويل
+    signal
   });
   return response.data;
 };
@@ -36,6 +37,20 @@ export const generateSpeech = async (text: string) => {
   const response = await api.post('/ai-chat/speak', { text }, {
     responseType: 'blob', // Important: receive audio as blob
     timeout: 60000 
+  });
+  return response.data;
+};
+
+// Transcribe audio (Speech-to-Text)
+export const transcribeAudio = async (audioBlob: Blob) => {
+  const formData = new FormData();
+  formData.append('audio', audioBlob, 'recording.webm');
+  
+  const response = await api.post('/ai-chat/transcribe', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+    timeout: 60000
   });
   return response.data;
 };

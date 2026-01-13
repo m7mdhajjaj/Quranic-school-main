@@ -1,6 +1,7 @@
 // const catchAsync = require('../../utils/catchAsync');
 const OpenAI = require('openai');
 const axios = require('axios');
+const fs = require('fs');
 
 // Initialize OpenAI Client lazy or safely
 let aiClient;
@@ -137,6 +138,12 @@ async function extractVerseReference(text, openai) {
     
     for (const [verse, ref] of Object.entries(famousVerses)) {
         if (normalizedText.includes(verse)) {
+            // If explicit numbers exist that strictly disagree with the famous verse, ignore this shortcut
+            const nums = normalizedText.match(/\d+/g);
+            if (nums) {
+                const hasConflict = nums.some(n => parseInt(n) !== ref.ayah);
+                if (hasConflict) continue;
+            }
             return ref;
         }
     }
@@ -155,6 +162,8 @@ async function extractVerseReference(text, openai) {
    - "سورة طه" = Surah 20
    - "الآية الأولى" or "الاية الاولى" = Ayah 1
    - If only Surah mentioned, default Ayah to 1
+4. Common Misnomers:
+   - "Surah Al-Kursi" -> Surah Al-Baqarah (2).
 Return ONLY a JSON object: {"surah": number, "ayah": number}.
 If no specific verse is detected, return {"surah": null, "ayah": null}.
 
@@ -318,14 +327,14 @@ Surah: ${ref.surah}
 تنسيق الإخراج النصي
 ━━━━━━━━━━━━━━━━━━
 
-==============================
-📖 السورة: {اسم السورة} ({رقم}) | الآية: ({رقم})
-==============================
-🕉 نص الآية:
+🌿 {اسم السورة} - الآية {رقم} 🌿
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔹 النص القرآني:
 ﴿ {النص القرآني بالرسم العثماني} ﴾
 
-📜 التفسير (ابن كثير – مختصر):
-- {خلاصة المعنى المباشر للآية}
+🔸 التفسير المختصر (ابن كثير):
+{خلاصة المعنى المباشر للآية}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 عند تفعيل الصوت:
 - يتم تحويل نص "التفسير فقط" إلى صوت.
@@ -403,5 +412,45 @@ exports.generateSpeech = async (req, res) => {
     } catch (error) {
         console.error('TTS Generation Error:', error);
         res.status(500).json({ success: false, message: 'Failed to generate speech' });
+    }
+};
+
+// Audio Transcription Endpoint
+exports.transcribeAudio = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ success: false, message: 'No audio file uploaded' });
+        }
+
+        const openai = getOpenAIClient();
+
+        console.log('🎤 Processing audio transcription...');
+        
+        const transcription = await openai.audio.transcriptions.create({
+            file: fs.createReadStream(req.file.path),
+            model: "whisper-1",
+            language: "ar", // Set to Arabic for better accuracy with dialects
+        });
+
+        console.log('📝 Transcription result:', transcription.text);
+
+        // Cleanup: remove the uploaded file
+        fs.unlinkSync(req.file.path);
+
+        res.status(200).json({
+            success: true,
+            text: transcription.text
+        });
+    } catch (error) {
+        console.error('Transcription error:', error);
+        // Cleanup if error occurred and file exists
+        if (req.file && fs.existsSync(req.file.path)) {
+            try {
+                fs.unlinkSync(req.file.path);
+            } catch (unlinkError) {
+                console.error('Error deleting temp file:', unlinkError);
+            }
+        }
+        res.status(500).json({ success: false, message: 'Transcription failed' });
     }
 };

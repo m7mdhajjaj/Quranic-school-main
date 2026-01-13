@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Send, X, Loader2, BookOpen, Sparkles, Trash2, Copy, Mic, MicOff, Volume2, VolumeX, Check, Star } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Send, X, BookOpen, Sparkles, Trash2, Copy, Mic, MicOff, Volume2, VolumeX, Check, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAiChatbot } from './useAiChatbot';
 import { showSuccessToast } from '../../utils/toastUtils';
@@ -12,6 +12,70 @@ const QUICK_SUGGESTIONS = [
   'تفسير سورة الإخلاص',
   'أحكام الوضوء',
 ];
+
+// Component to handle the formatted Quranic response
+const FormattedMessage = ({ content }: { content: string }) => {
+  // Check if content has the specific markers we added in backend
+  const hasMarkers = content.includes('🌿') && content.includes('🔹');
+
+  if (!hasMarkers) {
+    return <p className="text-sm leading-relaxed whitespace-pre-wrap relative z-10">{content}</p>;
+  }
+
+  // Regex to find all blocks: Header ... Quran ... Tafsir ... End/Separator
+  const blockRegex = /🌿(.*?)🌿[\s\S]*?﴿([\s\S]*?)﴾[\s\S]*?🔸.*?:([\s\S]*?)(?=━━━━━━━━|$)/g;
+  const blocks = [...content.matchAll(blockRegex)];
+
+  // Fallback: If strict regex fails but markers exist (maybe partial output), try single match or raw text
+  if (blocks.length === 0) {
+     return <p className="text-sm leading-relaxed whitespace-pre-wrap relative z-10">{content}</p>;
+  }
+
+  return (
+    <div className="space-y-8 relative z-10 w-full">
+      {blocks.map((match, index) => {
+        const [_, header, quran, tafsir] = match;
+        return (
+          <div key={index} className="space-y-3 relative">
+            {/* Header */}
+            <div className="flex justify-center mb-4">
+              <div className="bg-emerald-50/80 backdrop-blur-sm border border-emerald-100 px-4 py-1.5 rounded-full shadow-sm">
+                <span className="text-emerald-700 font-bold text-xs sm:text-sm text-center block">
+                  {header.trim()}
+                </span>
+              </div>
+            </div>
+
+            {/* Quranic Text */}
+            <div className="bg-gradient-to-br from-emerald-50 to-teal-50 p-4 rounded-xl border border-emerald-100/50 shadow-inner relative group text-center my-2">
+               <div className="absolute top-0 right-0 p-2 opacity-50">
+                 <BookOpen size={16} className="text-emerald-400" />
+               </div>
+               <p className="font-serif text-xl sm:text-2xl leading-[2] text-gray-800 font-medium py-2 px-2" dir="rtl">
+                 ﴿ {quran.trim()} ﴾
+               </p>
+            </div>
+
+            {/* Tafsir */}
+            <div className="bg-white/60 p-3 rounded-lg border-r-4 border-amber-400 shadow-sm">
+               <div className="flex items-center gap-2 mb-2">
+                  <span className="text-[10px] uppercase font-bold text-amber-600 tracking-wider">التفسير المختصر</span>
+               </div>
+               <p className="text-gray-700 text-sm leading-7 text-justify pl-2">
+                 {tafsir.trim()}
+               </p>
+            </div>
+            
+            {/* Separator Line for multiple items (except last) */}
+            {index < blocks.length - 1 && (
+              <div className="border-b border-gray-200/50 w-1/2 mx-auto pt-4" />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
 
 export const AiChatbot: React.FC = () => {
   const {
@@ -33,10 +97,49 @@ export const AiChatbot: React.FC = () => {
     handleStopSpeaking,
     handleStartListening,
     handleStopListening,
+    handleStopGeneration,
     handleAddFavorite,
     handleRemoveFavorite,
     isFavorited,
   } = useAiChatbot();
+
+  // Resize logic
+  const [sidebarWidth, setSidebarWidth] = useState(440);
+  const [isResizing, setIsResizing] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
+
+  const startResizing = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+  }, []);
+
+  const stopResizing = useCallback(() => {
+    setIsResizing(false);
+  }, []);
+
+  const resize = useCallback(
+    (e: MouseEvent) => {
+      if (isResizing) {
+        const newWidth = window.innerWidth - e.clientX;
+        if (newWidth > 320 && newWidth < 1200) {
+          setSidebarWidth(newWidth);
+        }
+      }
+    },
+    [isResizing]
+  );
+
+  useEffect(() => {
+    const handleWindowResize = () => setIsMobile(window.innerWidth < 640);
+    window.addEventListener('resize', handleWindowResize);
+    window.addEventListener("mousemove", resize);
+    window.addEventListener("mouseup", stopResizing);
+    return () => {
+      window.removeEventListener('resize', handleWindowResize);
+      window.removeEventListener("mousemove", resize);
+      window.removeEventListener("mouseup", stopResizing);
+    };
+  }, [resize, stopResizing]);
 
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -50,7 +153,7 @@ export const AiChatbot: React.FC = () => {
   };
 
   // Handle favorite toggle
-  const onToggleFavorite = async (messageId: string, question: string, answer: string) => {
+  const onToggleFavorite = async (_messageId: string, question: string, answer: string) => {
     const isFav = isFavorited(question);
     
     if (isFav) {
@@ -58,14 +161,14 @@ export const AiChatbot: React.FC = () => {
       if (result.success) {
         showSuccessToast(result.message);
       } else {
-        showErrorMessage(result.message);
+        showErrorMessage('خطأ', result.message);
       }
     } else {
       const result = await handleAddFavorite(question, answer);
       if (result.success) {
         showSuccessToast(result.message);
       } else {
-        showErrorMessage(result.message);
+        showErrorMessage('خطأ', result.message);
       }
     }
   };
@@ -190,12 +293,21 @@ export const AiChatbot: React.FC = () => {
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: '100%', opacity: 0 }}
               transition={{ type: 'spring', damping: 30, stiffness: 250 }}
-              className="fixed top-0 right-0 h-full w-full sm:w-[440px] bg-white shadow-2xl z-[100] flex flex-col"
+              className="fixed top-0 right-0 h-full w-full bg-white shadow-2xl z-[100] flex flex-col"
               style={{
+                width: isMobile ? '100%' : sidebarWidth,
                 boxShadow: '-10px 0 50px rgba(0, 0, 0, 0.1)',
               }}
               dir="rtl"
             >
+              {/* Resize Handle */}
+              {!isMobile && (
+                <div
+                  className="absolute left-0 top-0 w-1.5 h-full z-50 cursor-ew-resize hover:bg-emerald-500/20 transition-all active:bg-emerald-500/40"
+                  onMouseDown={startResizing}
+                  title="سحب لتكبير/تصغير النافذة"
+                />
+              )}
               {/* Header عصري مع Gradient وتأثيرات AI */}
               <div className="relative bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 p-6 shadow-xl overflow-hidden">
                 {/* خلفية متحركة عصرية */}
@@ -312,18 +424,20 @@ export const AiChatbot: React.FC = () => {
               </div>
 
               {/* Messages Area مع تصميم عصري */}
-              <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-gradient-to-b from-gray-50 via-white to-gray-50/50 relative">
-                {/* خلفية خفيفة */}
-                <div className="absolute inset-0 opacity-5" style={{
+              <div className="flex-1 relative overflow-hidden bg-gradient-to-b from-gray-50 via-white to-gray-50/50">
+                {/* خلفية خفيفة ثابتة */}
+                <div className="absolute inset-0 opacity-5 pointer-events-none" style={{
                   backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(16, 185, 129, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(20, 184, 166, 0.1) 0%, transparent 50%)',
                 }}></div>
+                
+                <div className="absolute inset-0 overflow-y-auto scrollbar-hide p-5 space-y-4">
                 <AnimatePresence mode="popLayout">
                   {messages.map((msg, index) => {
                     // Check if we need a separator (if current is user and previous was assistant)
                     const showSeparator = index > 0 && msg.role === 'user' && messages[index-1].role === 'assistant';
 
                     return (
-                      <React.Fragment key={msg.id}>
+                      <div key={msg.id}>
                         {showSeparator && (
                           <motion.div 
                             initial={{ opacity: 0 }} 
@@ -397,7 +511,7 @@ export const AiChatbot: React.FC = () => {
                           </motion.div>
                         )}
                         
-                        <p className="text-sm leading-relaxed whitespace-pre-wrap relative z-10">{msg.content}</p>
+                        <FormattedMessage content={msg.content} />
                         
                         {/* أزرار الإجراءات للرسائل من AI */}
                         {msg.role === 'assistant' && (
@@ -482,8 +596,9 @@ export const AiChatbot: React.FC = () => {
                           {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </motion.span>
                       </motion.div>
-                      </motion.div>
-                    );
+                    </motion.div>
+                    </div>
+                  );
                   })}
                 
                 {/* Enhanced Loading State - عصري */}
@@ -545,6 +660,8 @@ export const AiChatbot: React.FC = () => {
                   </motion.div>
                 )}
                 <div ref={messagesEndRef} />
+              </AnimatePresence>
+                </div>
               </div>
 
               {/* Enhanced Input Area - عصري */}
@@ -649,18 +766,32 @@ export const AiChatbot: React.FC = () => {
                       disabled={isLoading || isListening}
                     />
                   
+                    {isLoading ? (
+                      <motion.button
+                        type="button"
+                        onClick={handleStopGeneration}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="p-4 rounded-2xl flex items-center justify-center transition-all duration-300 min-w-[60px] bg-red-100 text-red-600 hover:bg-red-200 shadow-lg"
+                        title="إلغاء الطلب"
+                      >
+                         <div className="w-5 h-5 rounded-sm bg-current relative">
+                            <div className="absolute inset-0 bg-current opacity-20 animate-ping rounded-sm"></div>
+                         </div>
+                      </motion.button>
+                    ) : (
                     <motion.button
                       type="submit"
-                      disabled={isLoading || !input.trim() || isListening}
-                      whileHover={!isLoading && input.trim() && !isListening ? { scale: 1.05, rotate: -5 } : {}}
-                      whileTap={!isLoading && input.trim() && !isListening ? { scale: 0.95 } : {}}
+                      disabled={!input.trim() || isListening}
+                      whileHover={input.trim() && !isListening ? { scale: 1.05, rotate: -5 } : {}}
+                      whileTap={input.trim() && !isListening ? { scale: 0.95 } : {}}
                       className={`p-4 rounded-2xl flex items-center justify-center transition-all duration-300 relative overflow-hidden min-w-[60px] ${
-                        isLoading || !input.trim() || isListening
+                        !input.trim() || isListening
                           ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
                           : 'bg-gradient-to-br from-emerald-500 via-teal-500 to-emerald-600 text-white hover:shadow-2xl shadow-lg'
                       }`}
                       style={
-                        !isLoading && input.trim() && !isListening
+                        input.trim() && !isListening
                           ? { boxShadow: '0 8px 30px rgba(16, 185, 129, 0.4)' }
                           : {}
                       }
@@ -677,18 +808,11 @@ export const AiChatbot: React.FC = () => {
                         />
                       )}
                       
-                      <motion.div
-                        animate={isLoading ? { rotate: 360 } : { x: [0, -3, 0] }}
-                        transition={isLoading ? { duration: 1, repeat: Infinity, ease: "linear" } : { duration: 1.5, repeat: Infinity }}
-                        className="relative z-10"
-                      >
-                        {isLoading ? (
-                          <Loader2 size={24} />
-                        ) : (
-                          <Send size={24} />
-                        )}
-                      </motion.div>
+                      <div className="relative z-10">
+                         <Send size={24} className={input.trim() && !isListening ? "-mr-1" : ""} />
+                      </div>
                     </motion.button>
+                     )}
                   </div>
                 </form>
               </div>

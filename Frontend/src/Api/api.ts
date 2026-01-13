@@ -84,9 +84,12 @@ api.interceptors.response.use(
     // ✅ تقليل logging في production و للمحاولات التجريبية في تسجيل الدخول
     const isLoginAttempt = error.config?.url?.includes('/auth/login');
     const is401 = error.response?.status === 401;
+    // Check if error is 'canceled' by AbortController
+    const isCanceled = error.message === 'canceled' || error.name === 'CanceledError' || error.code === 'ERR_CANCELED';
     
     // لا تعرض أخطاء 401 لمحاولات تسجيل الدخول (هذا سلوك متوقع)
-    if (import.meta.env.DEV && !(isLoginAttempt && is401)) {
+    // وأيضاً لا تعرض أخطاء الإلغاء (Canceled) لأنها سلوك طبيعي عند الضغط على زر التوقف
+    if (import.meta.env.DEV && !(isLoginAttempt && is401) && !isCanceled) {
       console.error('❌ API Error:', {
         url: error.config?.url,
         method: error.config?.method,
