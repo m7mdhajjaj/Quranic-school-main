@@ -580,42 +580,44 @@ export const AiChatbot: React.FC = () => {
                         {/* أزرار الإجراءات للرسائل من AI */}
                         {msg.role === 'assistant' && (
                           <div className="flex items-center gap-2 mt-3 pt-2 border-t border-gray-100">
-                            {/* زر المفضلة */}
-                            <motion.button
-                              whileHover={{ scale: 1.1 }}
-                              whileTap={{ scale: 0.9 }}
-                              onClick={() => {
-                                // Find the previous user message (question)
-                                const msgIndex = messages.findIndex(m => m.id === msg.id);
-                                const userMsg = msgIndex > 0 ? messages[msgIndex - 1] : null;
-                                if (userMsg && userMsg.role === 'user') {
-                                  onToggleFavorite(msg.id, userMsg.content, msg.content);
-                                }
-                              }}
-                              className={`p-1.5 rounded-lg transition-colors ${
-                                (() => {
+                            {/* زر المفضلة - إخفاء للرسالة الترحيبية */}
+                            {msg.id !== '1' && (
+                              <motion.button
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                                onClick={() => {
+                                  // Find the previous user message (question)
                                   const msgIndex = messages.findIndex(m => m.id === msg.id);
                                   const userMsg = msgIndex > 0 ? messages[msgIndex - 1] : null;
-                                  return userMsg && isFavorited(userMsg.content)
-                                    ? 'bg-yellow-50 text-yellow-600 hover:bg-yellow-100'
-                                    : 'hover:bg-gray-100 text-gray-600 hover:text-yellow-600';
-                                })()
-                              }`}
-                              title={(() => {
-                                const msgIndex = messages.findIndex(m => m.id === msg.id);
-                                const userMsg = msgIndex > 0 ? messages[msgIndex - 1] : null;
-                                return userMsg && isFavorited(userMsg.content) ? 'إزالة من المفضلة' : 'إضافة للمفضلة';
-                              })()}
-                            >
-                              <Star 
-                                size={14} 
-                                fill={(() => {
+                                  if (userMsg && userMsg.role === 'user') {
+                                    onToggleFavorite(msg.id, userMsg.content, msg.content);
+                                  }
+                                }}
+                                className={`p-1.5 rounded-lg transition-colors ${
+                                  (() => {
+                                    const msgIndex = messages.findIndex(m => m.id === msg.id);
+                                    const userMsg = msgIndex > 0 ? messages[msgIndex - 1] : null;
+                                    return userMsg && isFavorited(userMsg.content)
+                                      ? 'bg-yellow-50 text-yellow-600 hover:bg-yellow-100'
+                                      : 'hover:bg-gray-100 text-gray-600 hover:text-yellow-600';
+                                  })()
+                                }`}
+                                title={(() => {
                                   const msgIndex = messages.findIndex(m => m.id === msg.id);
                                   const userMsg = msgIndex > 0 ? messages[msgIndex - 1] : null;
-                                  return userMsg && isFavorited(userMsg.content) ? 'currentColor' : 'none';
-                                })()} 
-                              />
-                            </motion.button>
+                                  return userMsg && isFavorited(userMsg.content) ? 'إزالة من المفضلة' : 'إضافة للمفضلة';
+                                })()}
+                              >
+                                <Star 
+                                  size={14} 
+                                  fill={(() => {
+                                    const msgIndex = messages.findIndex(m => m.id === msg.id);
+                                    const userMsg = msgIndex > 0 ? messages[msgIndex - 1] : null;
+                                    return userMsg && isFavorited(userMsg.content) ? 'currentColor' : 'none';
+                                  })()} 
+                                />
+                              </motion.button>
+                            )}
 
                             {/* زر النسخ */}
                             <motion.button
