@@ -74,8 +74,25 @@ export interface StudentAttendanceStatsResponse {
   monthlyStats: CurrentMonthStatsResponse;
 }
 
-export const getStudentAttendanceStats = async (studentId: string): Promise<StudentAttendanceStatsResponse> => {
-  const response = await api.get(`/attendance/student/${studentId}/stats`);
+export const getStudentAttendanceStats = async (
+  studentId: string,
+  month?: number,
+  year?: number
+): Promise<StudentAttendanceStatsResponse> => {
+  const params = new URLSearchParams();
+  if (month !== undefined && month !== null) {
+    params.append('month', month.toString());
+  }
+  if (year !== undefined && year !== null) {
+    params.append('year', year.toString());
+  }
+  
+  const queryString = params.toString();
+  const url = queryString 
+    ? `/attendance/student/${studentId}/stats?${queryString}`
+    : `/attendance/student/${studentId}/stats`;
+  
+  const response = await api.get(url);
   return response.data;
 };
 

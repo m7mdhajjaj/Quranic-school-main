@@ -135,6 +135,8 @@ export interface StudentViewProps {
   monthlyStats: MonthlyAbsence[];
   weeklyStats?: WeeklyAbsence | null;
   currentMonthStats?: CurrentMonthAbsence | null; // 🆕
+  currentUserId: string; // 🆕
+  fetchStudentAbsenceStats: (studentId: string, month?: number, year?: number) => Promise<void>; // 🆕
   onRefresh?: () => void;
   isRefreshing?: boolean;
 }

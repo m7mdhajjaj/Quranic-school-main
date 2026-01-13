@@ -6,7 +6,13 @@ import { Calendar, CheckCircle2, CalendarDays, AlertCircle } from "lucide-react"
 import type { StudentViewProps } from "../types/absence.types";
 import { TotalAbsenceCard, AbsenceRateCard, WeeklyStatsCard } from "../components/StudentStatsCards";
 
-export const StudentView = ({ monthlyStats, weeklyStats, currentMonthStats, onRefresh, isRefreshing }: StudentViewProps) => {
+export const StudentView = ({ 
+  monthlyStats, 
+  weeklyStats, 
+  currentMonthStats, 
+  currentUserId,
+  fetchStudentAbsenceStats,
+}: StudentViewProps) => {
   // وضع العرض: 'weekly' للأسبوع الحالي، 'monthly' للتاريخ المحدد
   const [viewMode, setViewMode] = useState<'weekly' | 'monthly'>('weekly');
 
@@ -25,10 +31,10 @@ export const StudentView = ({ monthlyStats, weeklyStats, currentMonthStats, onRe
   );
 
   // استخدام hook منفصل لحساب الإحصائيات مع تمرير وضع العرض
-  const { filteredMonthlyStats, yearTotals, currentViewStats } = useStudentStats({
+  const { filteredMonthlyStats, currentViewStats } = useStudentStats({
     monthlyStats,
     weeklyStats,
-    currentMonthStats, // 🆕 تمرير إحصائيات الشهر الحالي
+    currentMonthStats,
     selectedYear,
     selectedMonthIndex,
     viewMode
@@ -103,6 +109,8 @@ export const StudentView = ({ monthlyStats, weeklyStats, currentMonthStats, onRe
                 onChange={(e) => {
                   const newMonth = parseInt(e.target.value, 10);
                   setYearMonth(`${selectedYear}-${String(newMonth + 1).padStart(2, "0")}`);
+                  // جلب البيانات من Backend للشهر الجديد
+                  fetchStudentAbsenceStats(currentUserId, newMonth, selectedYear);
                 }}
                 className="flex-1 sm:flex-initial bg-white/95 backdrop-blur-sm border-0 rounded-xl px-4 py-3 text-gray-800 font-medium shadow-lg focus:outline-none focus:ring-4 focus:ring-white/30 transition-all">
                 {AR_MONTHS.map((label, idx) => (
@@ -116,6 +124,8 @@ export const StudentView = ({ monthlyStats, weeklyStats, currentMonthStats, onRe
                 onChange={(e) => {
                   const newYear = parseInt(e.target.value, 10);
                   setYearMonth(`${newYear}-${String(selectedMonthIndex + 1).padStart(2, "0")}`);
+                  // جلب البيانات من Backend للسنة الجديدة
+                  fetchStudentAbsenceStats(currentUserId, selectedMonthIndex, newYear);
                 }}
                 className="flex-1 sm:flex-initial sm:w-32 bg-white/95 backdrop-blur-sm border-0 rounded-xl px-4 py-3 text-gray-800 font-medium shadow-lg focus:outline-none focus:ring-4 focus:ring-white/30 transition-all">
                 {availableYears.map((year) => (
@@ -229,7 +239,7 @@ export const StudentView = ({ monthlyStats, weeklyStats, currentMonthStats, onRe
                     <p className="text-gray-500">اختر شهراً آخر من القائمة أعلاه</p>
                   </div>
                ) : (
-                 filteredMonthlyStats.map((m, index) => (
+                 filteredMonthlyStats.map((m) => (
                     <div key={m.month} className="animate-in fade-in slide-in-from-right duration-500">
                       {/* Reuse the existing card logic for monthly detail */}
                        <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200">

@@ -139,7 +139,11 @@ export const useAbsenceData = () => {
   }, [currentUser]);
 
   // Fetch student absence stats (Backend يحسب كل شي!)
-  const fetchStudentAbsenceStats = useCallback(async (studentId: string) => {
+  const fetchStudentAbsenceStats = useCallback(async (
+    studentId: string,
+    month?: number,
+    year?: number
+  ) => {
     try {
       setError(null);
       const { getStudentAttendanceStats } = await import(
@@ -147,7 +151,7 @@ export const useAbsenceData = () => {
       );
       
       // Backend يرجع البيانات جاهزة! 🚀
-      const result = await getStudentAttendanceStats(studentId);
+      const result = await getStudentAttendanceStats(studentId, month, year);
       
       if (result.success && result.data) {
         setMonthlyStats(result.data);

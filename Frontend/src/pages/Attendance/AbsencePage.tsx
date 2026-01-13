@@ -235,6 +235,8 @@ const AbsencePage = () => {
             monthlyStats={monthlyStats} 
             weeklyStats={weeklyStats}
             currentMonthStats={currentMonthStats}
+            currentUserId={currentUser._id}
+            fetchStudentAbsenceStats={fetchStudentAbsenceStats}
             onRefresh={() => fetchStudentAbsenceStats(currentUser._id)}
             isRefreshing={isLoadingDate}
           />

@@ -10,9 +10,14 @@ const AR_MONTHS = [
 
 // Get attendance statistics for a specific student (Optimized for Frontend)
 // ✅ Updated to rely on Section dates (System New Rule)
+// ✅ Supports optional month/year filtering via query params
 exports.getStudentAttendanceStats = async (req, res) => {
   try {
     const studentId = req.params.studentId;
+    
+    // 🆕 استخراج الشهر والسنة من query params (اختياري)
+    const requestedMonth = req.query.month ? parseInt(req.query.month, 10) : null; // 0-11
+    const requestedYear = req.query.year ? parseInt(req.query.year, 10) : null;
 
     // 1. Verify that the student exists and get their group
     const student = await Student.findById(studentId).select("group");
@@ -22,6 +27,9 @@ exports.getStudentAttendanceStats = async (req, res) => {
 
     const groupName = student.group;
     console.log("📊 [Stats] Student:", studentId, "Group:", groupName);
+    if (requestedMonth !== null && requestedYear !== null) {
+      console.log("📊 [Stats] Filtering by:", AR_MONTHS[requestedMonth], requestedYear);
+    }
 
     // 2. dates from Sections (Fetching ALL to avoid DB timezone filtering issues)
     // ✅ Using dateKey (YYYY-MM-DD string) for consistent date comparison
@@ -196,39 +204,37 @@ exports.getStudentAttendanceStats = async (req, res) => {
     const weeklyAbsenceRate = weeklyTotal > 0 ? Math.round((weeklyAbsences / weeklyTotal) * 1000) / 10 : 0;
     const weeklyAttendanceRate = weeklyTotal > 0 ? Math.round((weeklyPresenceCount / weeklyTotal) * 1000) / 10 : 0;
 
-    // 🆕 Calculate Monthly Stats (Current Month)
-    // حساب عدد المقاطع للشهر الحالي (كل المقاطع بما فيها المستقبلية)
-    const currentMonth = today.getMonth();
-    const currentYear = today.getFullYear();
-    const currentMonthKey = `${currentYear}-${currentMonth}`;
+    // 🆕 Calculate Monthly Stats
+    // إذا كان هناك طلب لشهر محدد، نحسب إحصائياته
+    // وإلا نحسب إحصائيات الشهر الحالي
+    const targetMonth = requestedMonth !== null ? requestedMonth : today.getMonth();
+    const targetYear = requestedYear !== null ? requestedYear : today.getFullYear();
+    const targetMonthKey = `${targetYear}-${targetMonth}`;
     
-    // حساب عدد المقاطع في الشهر الحالي من allSectionDatesMap
-    // ✅ استخدام parsing مباشر للـ string بدل Date object لتجنب timezone issues
+    // حساب عدد المقاطع في الشهر المحدد
     let monthlyTotalSections = 0;
     for (const dateStr of allSectionDatesMap) {
-      // dateStr format: "YYYY-MM-DD"
       const [yearStr, monthStr] = dateStr.split('-');
       const sectionYear = parseInt(yearStr, 10);
       const sectionMonth = parseInt(monthStr, 10) - 1; // 0-indexed
       
-      if (sectionMonth === currentMonth && sectionYear === currentYear) {
+      if (sectionMonth === targetMonth && sectionYear === targetYear) {
         monthlyTotalSections++;
       }
     }
     
-    console.log("📊 [Monthly] Current Month:", AR_MONTHS[currentMonth], currentYear, "| Sections in month:", monthlyTotalSections);
-    console.log("📊 [Monthly] All section dates:", [...allSectionDatesMap]);
+    console.log("📊 [Monthly] Target Month:", AR_MONTHS[targetMonth], targetYear, "| Sections in month:", monthlyTotalSections);
     
-    // الغيابات من grouped (فقط التواريخ الماضية)
-    const currentMonthData = grouped[currentMonthKey] || { total: 0, absences: 0, dates: [] };
-    const monthlyAbsences = currentMonthData.absences;
+    // الغيابات من grouped
+    const targetMonthData = grouped[targetMonthKey] || { total: 0, absences: 0, dates: [] };
+    const monthlyAbsences = targetMonthData.absences;
     
     // استخدام عدد المقاطع الفعلي كـ total
     const monthlyPresenceCount = monthlyTotalSections - monthlyAbsences;
     const monthlyAbsenceRate = monthlyTotalSections > 0 ? Math.round((monthlyAbsences / monthlyTotalSections) * 1000) / 10 : 0;
     const monthlyAttendanceRate = monthlyTotalSections > 0 ? Math.round((monthlyPresenceCount / monthlyTotalSections) * 1000) / 10 : 0;
 
-    console.log("📊 [Monthly] Current Month:", AR_MONTHS[currentMonth], currentYear);
+    console.log("📊 [Monthly] Target Month:", AR_MONTHS[targetMonth], targetYear);
     console.log("📊 [Monthly] Total Sections:", monthlyTotalSections, "Absences:", monthlyAbsences);
 
     res.json({
@@ -244,16 +250,16 @@ exports.getStudentAttendanceStats = async (req, res) => {
           weekEnd: weekEnd.toISOString().split('T')[0],
           absenceDates: weeklyAbsenceDates
       },
-      // 🆕 إحصائيات الشهر الحالي
+      // 🆕 إحصائيات الشهر المحدد (أو الحالي)
       monthlyStats: {
-          totalDays: monthlyTotalSections, // ✅ عدد المقاطع الفعلي في الشهر
+          totalDays: monthlyTotalSections,
           absenceCount: monthlyAbsences,
           presenceCount: monthlyPresenceCount,
           rate: monthlyAbsenceRate,
           attendanceRate: monthlyAttendanceRate,
-          month: AR_MONTHS[currentMonth],
-          year: currentYear,
-          absenceDates: currentMonthData.dates || []
+          month: AR_MONTHS[targetMonth],
+          year: targetYear,
+          absenceDates: targetMonthData.dates || []
       }
     });
   } catch (error) {
