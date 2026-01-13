@@ -318,3 +318,11 @@ export const getGroupStudentsForAdmin = async (
   });
   return response.data;
 };
+
+// Get available dates for a specific group (Admin)
+export const getAvailableDatesForGroup = async (
+  groupId: string
+): Promise<AvailableDatesResponse> => {
+  const response = await api.get(`/attendance/admin/groups/${groupId}/available-dates`);
+  return response.data;
+};

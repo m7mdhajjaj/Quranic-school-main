@@ -7,3 +7,4 @@ export { useStudentFilters } from "./useStudentFilters";
 export { useStudentSelection } from "./useStudentSelection";
 export { useAttendanceSave } from "./useAttendanceSave";
 export { useAttendancePageState } from "./useAttendancePageState";
+export { useAdminAttendance } from "./useAdminAttendance";

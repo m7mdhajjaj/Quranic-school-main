@@ -486,3 +486,68 @@ exports.getGroupStudentsForAdmin = async (req, res) => {
     });
   }
 };
+
+/**
+ * Get available dates (sections dates) for a specific group (Admin)
+ * GET /api/attendance/admin/groups/:groupId/available-dates
+ */
+exports.getAvailableDatesForGroup = async (req, res) => {
+  try {
+    const { groupId } = req.params;
+
+    // Validate Group ID
+    if (!mongoose.Types.ObjectId.isValid(groupId)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'معرف الحلقة غير صالح' 
+      });
+    }
+
+    // Get group
+    const group = await Group.findById(groupId).select('name activeStatus');
+    if (!group) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'الحلقة غير موجودة' 
+      });
+    }
+
+    if (!group.activeStatus) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'الحلقة غير نشطة' 
+      });
+    }
+
+    // Get all section dates for this group
+    const sections = await Section.find({ group: group.name })
+      .select('date')
+      .sort({ date: -1 })
+      .lean();
+
+    // Format dates
+    const availableDates = sections.map(s => 
+      s.date.toISOString().split('T')[0] // YYYY-MM-DD format
+    );
+
+    // Remove duplicates
+    const uniqueDates = [...new Set(availableDates)];
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        dates: uniqueDates,
+        total: uniqueDates.length,
+        groupName: group.name
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ [Admin Available Dates] Error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'حدث خطأ في الخادم',
+      error: error.message
+    });
+  }
+};

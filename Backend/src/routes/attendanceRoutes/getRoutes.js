@@ -8,6 +8,7 @@ const {
   getAvailableDates,
   getAllGroupsForAdmin,
   getGroupStudentsForAdmin,
+  getAvailableDatesForGroup,
 } = require("../../controllers/AttendanceController/index");
 const { protect } = require("../../middleware/auth");
 const { validateGetTeacherGroups } = require("../../Validation/Group/GroupValidation");
@@ -35,5 +36,8 @@ router.get("/admin/groups", protect, getAllGroupsForAdmin);
 
 // Get students of a specific group for admin
 router.get("/admin/groups/:groupId/students", protect, getGroupStudentsForAdmin);
+
+// Get available dates for a specific group (Admin)
+router.get("/admin/groups/:groupId/available-dates", protect, getAvailableDatesForGroup);
 
 module.exports = router;

@@ -13,6 +13,7 @@ const Attendance = require("../../schema/Attendance");
 const Student = require("../../schema/Student");
 const Section = require("../../schema/DailyMark/Section");
 const Warning = require("../../schema/Warning"); // Import Warning
+const { getAbsentStudentsToday } = require("../../controllers/AttendanceController");
 
 /**
  * خدمة تحديث قائمة الطلاب الغائبين عند بداية يوم جديد
@@ -169,25 +170,97 @@ class AttendanceService {
         
         if (this.io) {
           try {
-            // جلب البيانات من Backend مباشرة
-            const req = { params: {}, query: {} };
-            const res = {
-              json: (data) => {
-                // إرسال البيانات مباشرة في Socket event
-                this.io.to("admin-room").emit("absentStudentsUpdated", {
-                  date: new Date(),
-                  timestamp: Date.now(),
-                  message: "تحديث دوري كل ساعة",
-                  reason: "hourly_backup",
-                  data: data.data || [], // إرسال البيانات مباشرة
-                  count: data.count || 0,
-                });
-                console.log(`📡 [AttendanceService] تم إرسال ${data.count || 0} طالب غائب (hourly backup)`);
+            // جلب البيانات مباشرة باستخدام نفس منطق midnight job
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const nextDay = new Date(today);
+            nextDay.setDate(today.getDate() + 1);
+
+            const absentStudents = await Attendance.aggregate([
+              {
+                $match: {
+                  date: { $gte: today, $lt: nextDay },
+                  isPresent: false,
+                },
               },
-              status: () => res,
-            };
-            
-            await getAbsentStudentsToday(req, res);
+              {
+                $lookup: {
+                  from: "students",
+                  localField: "studentId",
+                  foreignField: "_id",
+                  as: "student",
+                },
+              },
+              { $unwind: { path: "$student", preserveNullAndEmptyArrays: false } },
+              {
+                $lookup: {
+                  from: "groups",
+                  localField: "student.group",
+                  foreignField: "name",
+                  as: "groupInfo",
+                },
+              },
+              { $unwind: { path: "$groupInfo", preserveNullAndEmptyArrays: true } },
+              {
+                $lookup: {
+                  from: "teachers",
+                  localField: "groupInfo.teacher",
+                  foreignField: "_id",
+                  as: "teacherInfo",
+                },
+              },
+              { $unwind: { path: "$teacherInfo", preserveNullAndEmptyArrays: true } },
+              {
+                $project: {
+                  _id: "$student._id",
+                  fullName: {
+                    $trim: {
+                      input: {
+                        $concat: [
+                          { $ifNull: ["$student.firstName", ""] },
+                          " ",
+                          { $ifNull: ["$student.fatherName", ""] },
+                          " ",
+                          { $ifNull: ["$student.lastName", ""] },
+                        ],
+                      },
+                    },
+                  },
+                  teacher: {
+                    $cond: {
+                      if: { $and: ["$teacherInfo.firstName", "$teacherInfo.lastName"] },
+                      then: {
+                        $trim: {
+                          input: {
+                            $concat: [
+                              { $ifNull: ["$teacherInfo.firstName", ""] },
+                              " ",
+                              { $ifNull: ["$teacherInfo.fatherName", ""] },
+                              " ",
+                              { $ifNull: ["$teacherInfo.lastName", ""] },
+                            ],
+                          },
+                        },
+                      },
+                      else: { $ifNull: ["$student.teacher", "غير محدد"] },
+                    },
+                  },
+                  group: { $ifNull: ["$student.group", "بدون حلقة"] },
+                },
+              },
+              { $sort: { fullName: 1 } },
+            ]);
+
+            // إرسال البيانات مباشرة في Socket event
+            this.io.to("admin-room").emit("absentStudentsUpdated", {
+              date: new Date(),
+              timestamp: Date.now(),
+              message: "تحديث دوري كل ساعة",
+              reason: "hourly_backup",
+              data: absentStudents,
+              count: absentStudents.length,
+            });
+            console.log(`📡 [AttendanceService] تم إرسال ${absentStudents.length} طالب غائب (hourly backup)`);
           } catch (error) {
             console.error("❌ [AttendanceService] خطأ في جلب البيانات:", error);
             // إرسال event بدون بيانات (Frontend سيجلبها)

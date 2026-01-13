@@ -1,12 +1,11 @@
 // AdminView.tsx - صفحة مراقبة الحضور للأدمن
-import { useState, useEffect, useCallback } from "react";
-import { useSearchParams } from "react-router-dom";
 import { Calendar, Users, CheckCircle, XCircle, TrendingUp, ArrowLeft } from "lucide-react";
 import { Card } from "@/components/UI/Card";
+import { DateRangePicker } from '@/components/UI/DateRangePicker';
 import type { AdminGroupStudent, AdminGroup } from "@/Api/attendanceApi";
-import { getAllGroupsForAdmin, getGroupStudentsForAdmin } from "@/Api/attendanceApi";
 import { StudentsTable } from "../components/StudentsTable";
 import { GroupsGridSkeleton, TeacherAttendanceViewSkeleton } from "@/components/skeletons";
+import { useAdminAttendance } from "../hooks";
 
 // ============================================================================
 // Admin Groups Grid Component
@@ -189,6 +188,9 @@ interface AdminGroupStudentsViewProps {
   group: AdminGroup;
   students: AdminGroupStudent[];
   teacherName: string;
+  date: string;
+  availableDates: string[];
+  onDateChange: (start: string | null, end: string | null) => void;
   onBack: () => void;
   isLoading: boolean;
 }
@@ -196,7 +198,10 @@ interface AdminGroupStudentsViewProps {
 const AdminGroupStudentsView = ({ 
   group, 
   students, 
-  teacherName, 
+  teacherName,
+  date,
+  availableDates,
+  onDateChange,
   onBack, 
   isLoading 
 }: AdminGroupStudentsViewProps) => {
@@ -211,18 +216,33 @@ const AdminGroupStudentsView = ({
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Header */}
       <div className="bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-700 rounded-3xl shadow-2xl p-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={onBack}
-              className="p-2 bg-white/20 hover:bg-white/30 rounded-xl transition-colors"
-              title="رجوع للحلقات"
-            >
-              <ArrowLeft className="w-6 h-6 text-white rotate-180" />
-            </button>
-            <div>
-              <h2 className="text-2xl font-bold text-white">{group.name}</h2>
-              <p className="text-emerald-100 text-sm">المعلم: {teacherName}</p>
+        <div className="flex flex-col gap-4">
+          {/* Top Row: Back Button, Title, DatePicker */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={onBack}
+                className="p-2 bg-white/20 hover:bg-white/30 rounded-xl transition-colors"
+                title="رجوع للحلقات"
+              >
+                <ArrowLeft className="w-6 h-6 text-white rotate-180" />
+              </button>
+              <div>
+                <h2 className="text-2xl font-bold text-white">{group.name}</h2>
+                <p className="text-emerald-100 text-sm">المعلم: {teacherName}</p>
+              </div>
+            </div>
+            
+            {/* Date Picker */}
+            <div className="w-full md:w-auto min-w-[280px]">
+              <DateRangePicker 
+                startDate={date} 
+                endDate={date} 
+                onChange={onDateChange} 
+                className="w-full"
+                singleDate={true}
+                enabledDates={availableDates}
+              />
             </div>
           </div>
           
@@ -288,80 +308,29 @@ const AdminGroupStudentsView = ({
 // Main AdminView Component
 // ============================================================================
 export const AdminView = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [isLoading, setIsLoading] = useState(true);
-  const [groups, setGroups] = useState<AdminGroup[]>([]);
-  const [summary, setSummary] = useState({
-    totalGroups: 0,
-    totalStudents: 0,
-    presentToday: 0,
-    absentToday: 0,
-    attendanceRate: 0
-  });
-  const [error, setError] = useState<string | null>(null);
-
-  // Selected group for detail view
-  const selectedGroupId = searchParams.get('groupId');
-  const [selectedGroupStudents, setSelectedGroupStudents] = useState<AdminGroupStudent[]>([]);
-  const [selectedGroupTeacher, setSelectedGroupTeacher] = useState<string>('');
-  const [isLoadingStudents, setIsLoadingStudents] = useState(false);
-
-  const selectedGroup = groups.find(g => g._id === selectedGroupId) || null;
-
-  // Fetch all groups
-  const fetchGroups = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      const result = await getAllGroupsForAdmin();
-      
-      if (result.success && result.data) {
-        setGroups(result.data.groups);
-        setSummary(result.data.summary);
-      } else {
-        setError(result.message || 'حدث خطأ أثناء جلب البيانات');
-      }
-    } catch (e) {
-      console.error('❌ Error fetching admin groups:', e);
-      setError('تعذر جلب بيانات الحلقات');
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  // Fetch group students
-  const fetchGroupStudents = useCallback(async (groupId: string) => {
-    try {
-      setIsLoadingStudents(true);
-      
-      const result = await getGroupStudentsForAdmin(groupId);
-      
-      if (result.success && result.data) {
-        setSelectedGroupStudents(result.data.students);
-        setSelectedGroupTeacher(result.data.group.teacherName);
-      }
-    } catch (e) {
-      console.error('❌ Error fetching group students:', e);
-    } finally {
-      setIsLoadingStudents(false);
-    }
-  }, []);
-
-  // Initial load
-  useEffect(() => {
-    fetchGroups();
-  }, [fetchGroups]);
-
-  // Load students when group selected
-  useEffect(() => {
-    if (selectedGroupId) {
-      fetchGroupStudents(selectedGroupId);
-    } else {
-      setSelectedGroupStudents([]);
-      setSelectedGroupTeacher('');
-    }
-  }, [selectedGroupId, fetchGroupStudents]);
+  const {
+    // Groups
+    groups,
+    summary,
+    isLoading,
+    error,
+    fetchGroups,
+    
+    // Selected group
+    selectedGroup,
+    selectedGroupStudents,
+    selectedGroupTeacher,
+    isLoadingStudents,
+    
+    // Date
+    date,
+    availableDates,
+    handleDateChange,
+    
+    // Actions
+    handleSelectGroup,
+    handleBackToGroups,
+  } = useAdminAttendance();
 
   // Error state
   if (error && !isLoading) {
@@ -410,7 +379,7 @@ export const AdminView = () => {
       {!selectedGroup ? (
         <AdminGroupsGrid
           groups={groups}
-          onSelectGroup={(group) => setSearchParams({ groupId: group._id })}
+          onSelectGroup={handleSelectGroup}
           isLoading={isLoading}
           summary={summary}
         />
@@ -419,7 +388,10 @@ export const AdminView = () => {
           group={selectedGroup}
           students={selectedGroupStudents}
           teacherName={selectedGroupTeacher || selectedGroup.teacherName}
-          onBack={() => setSearchParams({})}
+          date={date}
+          availableDates={availableDates}
+          onDateChange={handleDateChange}
+          onBack={handleBackToGroups}
           isLoading={isLoadingStudents}
         />
       )}

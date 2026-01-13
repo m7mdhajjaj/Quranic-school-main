@@ -180,13 +180,34 @@ export const useAbsenceData = () => {
   // Fetch available dates (sections dates) for a group
   const fetchAvailableDates = useCallback(async (groupId?: string) => {
     try {
-      if (!currentUser?._id) return;
+      if (!currentUser) return;
 
-      const { getAvailableDates } = await import('../../../Api/attendanceApi');
-      const result = await getAvailableDates(currentUser._id, groupId);
+      // للأدمن: نستخدم API خاص بجلب التواريخ للحلقة
+      if (currentUser.role === 'admin') {
+        if (!groupId) {
+          setAvailableDates([]);
+          return;
+        }
+        
+        const { getAvailableDatesForGroup } = await import('../../../Api/attendanceApi');
+        const result = await getAvailableDatesForGroup(groupId);
 
-      if (result.success && result.data) {
-        setAvailableDates(result.data.dates);
+        if (result.success && result.data) {
+          setAvailableDates(result.data.dates);
+        } else {
+          setAvailableDates([]);
+        }
+      } 
+      // للمعلم: نستخدم API المعلم العادي
+      else if (currentUser.role === 'teacher') {
+        const { getAvailableDates } = await import('../../../Api/attendanceApi');
+        const result = await getAvailableDates(currentUser._id, groupId);
+
+        if (result.success && result.data) {
+          setAvailableDates(result.data.dates);
+        } else {
+          setAvailableDates([]);
+        }
       } else {
         setAvailableDates([]);
       }
