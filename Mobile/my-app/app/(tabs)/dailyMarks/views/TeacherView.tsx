@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -9,14 +9,6 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
-import {
-  Users,
-  BookOpen,
-  ArrowLeft,
-  Plus,
-  Edit,
-  Trash2,
-} from "lucide-react-native";
 import type { Student } from "@/Api/studentApi";
 import {
   getFilteredSections,
@@ -25,10 +17,17 @@ import {
   deleteMark,
 } from "@/Api/dailyMarksApi";
 import type { Section, Mark } from "@/Api/dailyMarksApi";
-import { Card } from "@/components/ui/Card";
+import { GroupsGridView } from "../components/GroupsGridView";
+import { SectionDetailsView } from "../components/SectionDetailsView";
+import {
+  SectionStatusFilter,
+  MarkStatus,
+} from "../components/SectionStatusFilter";
+import { PeriodFilterToggle } from "../components/PeriodFilterToggle";
 import { AddEditSectionModal } from "../components/AddEditSectionModal";
 import { AddEditMarkModal } from "../components/AddEditMarkModal";
 import { StudentsMarksTable } from "../components/StudentsMarksTable";
+import { SectionsTable } from "../components/SectionsTable";
 
 interface TeacherViewProps {
   students: Student[];
@@ -40,7 +39,7 @@ interface GroupWithStats {
   name: string;
   studentsCount: number;
   sectionsCount: number;
-  loading: boolean;
+  loading?: boolean;
 }
 
 export const TeacherView: React.FC<TeacherViewProps> = ({
@@ -48,6 +47,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   teacherGroups,
   currentUser,
 }) => {
+  // State Management
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [selectedSection, setSelectedSection] = useState<Section | null>(null);
   const [groupsWithStats, setGroupsWithStats] = useState<GroupWithStats[]>([]);
@@ -56,26 +56,40 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Modals state
+  // Filter State
+  const [selectedStatus, setSelectedStatus] = useState<MarkStatus | null>(null);
+  const [filterMode, setFilterMode] = useState<"week" | "all">("all");
+  const [studentSearchQuery, setStudentSearchQuery] = useState("");
+
+  // Modals State
   const [showSectionModal, setShowSectionModal] = useState(false);
   const [showMarkModal, setShowMarkModal] = useState(false);
   const [editingSection, setEditingSection] = useState<Section | null>(null);
   const [editingMark, setEditingMark] = useState<Mark | null>(null);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
 
+  // Date Filter State
   const currentDate = new Date();
   const [selectedMonth] = useState<number>(currentDate.getMonth() + 1);
   const [selectedYear] = useState<number>(currentDate.getFullYear());
 
+  // Load Groups Stats on mount
   useEffect(() => {
     loadGroupsStats();
   }, [teacherGroups, students]);
 
+  // Load Sections when group changes
   useEffect(() => {
     if (selectedGroup) {
       loadSections();
     }
-  }, [selectedGroup, selectedMonth, selectedYear]);
+  }, [selectedGroup, selectedMonth, selectedYear, filterMode]);
+
+  // Reset filters when group changes
+  useEffect(() => {
+    setSelectedStatus(null);
+    setStudentSearchQuery("");
+  }, [selectedGroup]);
 
   const loadGroupsStats = async () => {
     const stats: GroupWithStats[] = teacherGroups.map((groupName) => ({
@@ -108,6 +122,9 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
         }
       } catch (error) {
         console.error(`Error loading sections for ${groupName}:`, error);
+        setGroupsWithStats((prev) =>
+          prev.map((g) => (g.name === groupName ? { ...g, loading: false } : g))
+        );
       }
     }
   };
@@ -136,7 +153,6 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   const loadMarks = async (sectionId: string) => {
     setLoading(true);
     try {
-      // Get marks for all students in the group for this month
       const response = await getFilteredMarks({
         group: selectedGroup!,
         month: selectedMonth,
@@ -144,7 +160,6 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
       });
 
       if (response.success && response.data) {
-        // Filter marks for the selected section only
         const sectionMarks = response.data.filter((mark) => {
           const markSectionId =
             typeof mark.sectionId === "string"
@@ -161,6 +176,26 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
     }
   };
 
+  // Filtered Sections by Status
+  const filteredSections = useMemo(() => {
+    if (!selectedStatus) return sections;
+    return sections.filter((section) => section.marksStatus === selectedStatus);
+  }, [sections, selectedStatus]);
+
+  // Status Counts
+  const statusCounts = useMemo(() => {
+    return {
+      all: sections.length,
+      completed: sections.filter((s) => s.marksStatus === "completed").length,
+      in_progress: sections.filter((s) => s.marksStatus === "in_progress")
+        .length,
+      not_started: sections.filter(
+        (s) => s.marksStatus === "not_started" || !s.marksStatus
+      ).length,
+    };
+  }, [sections]);
+
+  // Handlers
   const onRefresh = async () => {
     setRefreshing(true);
     if (selectedSection) {
@@ -219,6 +254,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
             const response = await deleteSection(sectionId);
             if (response.success) {
               loadSections();
+              loadGroupsStats();
             } else {
               Alert.alert("خطأ", response.message || "فشل حذف المقطع");
             }
@@ -230,9 +266,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
 
   const handleSectionModalSuccess = () => {
     loadSections();
-    if (selectedGroup) {
-      loadGroupsStats();
-    }
+    loadGroupsStats();
   };
 
   // Mark Management
@@ -271,9 +305,11 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   const handleMarkModalSuccess = () => {
     if (selectedSection) {
       loadMarks(selectedSection._id);
+      loadSections(); // Refresh to update section status
     }
   };
 
+  // Render: Groups Grid View (when no group selected)
   if (!selectedGroup) {
     return (
       <ScrollView
@@ -286,335 +322,108 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
             tintColor="#10b981"
           />
         }>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>اختر حلقة</Text>
-          <Text style={styles.headerSubtitle}>
-            اختر حلقة لعرض مقاطعها وعلاماتها
-          </Text>
-        </View>
-
-        <View style={styles.gridContainer}>
-          {groupsWithStats.map((group) => (
-            <TouchableOpacity
-              key={group.name}
-              style={styles.groupCard}
-              onPress={() => handleGroupSelect(group.name)}
-              activeOpacity={0.7}>
-              <Card style={styles.cardContent}>
-                <View style={styles.groupIconContainer}>
-                  <Users size={24} color="#ffffff" />
-                </View>
-
-                <Text style={styles.groupName}>{group.name}</Text>
-
-                <View style={styles.statsContainer}>
-                  <View style={styles.statBox}>
-                    <Users size={18} color="#10b981" />
-                    <View>
-                      <Text style={styles.statLabel}>عدد الطلاب</Text>
-                      <Text style={styles.statValue}>
-                        {group.studentsCount}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <View style={[styles.statBox, styles.statBoxAlt]}>
-                    <BookOpen size={18} color="#14b8a6" />
-                    <View>
-                      <Text style={styles.statLabel}>عدد المقاطع</Text>
-                      <Text style={styles.statValue}>
-                        {group.loading ? "..." : group.sectionsCount}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-
-                <View style={styles.groupFooter}>
-                  <BookOpen size={16} color="#10b981" />
-                  <Text style={styles.groupFooterText}>اضغط لعرض المقاطع</Text>
-                </View>
-              </Card>
-            </TouchableOpacity>
-          ))}
-        </View>
+        <GroupsGridView
+          groupsWithStats={groupsWithStats}
+          onGroupSelect={handleGroupSelect}
+          isLoading={loading}
+        />
       </ScrollView>
     );
   }
 
-  // Show Students Marks Table when section is selected
+  // Render: Section Details View (when section selected)
   if (selectedSection) {
-    const groupStudents = students.filter((s) => s.group === selectedGroup);
-
     return (
-      <ScrollView
-        style={styles.container}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={["#10b981"]}
-            tintColor="#10b981"
-          />
-        }>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={handleBackToSections}
-          activeOpacity={0.7}>
-          <ArrowLeft size={20} color="#10b981" />
-          <Text style={styles.backButtonText}>العودة إلى المقاطع</Text>
-        </TouchableOpacity>
-
-        <View style={styles.studentsSectionHeader}>
-          <View style={styles.studentsSectionInfo}>
-            <BookOpen size={24} color="#ffffff" />
-            <View style={styles.studentsSectionText}>
-              <Text style={styles.studentsSectionTitle}>
-                {new Date(selectedSection.date).toLocaleDateString("ar-EG", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </Text>
-              <Text style={styles.studentsSectionSubtitle}>
-                المراجعة: {selectedSection.reviewSection} | الحفظ:{" "}
-                {selectedSection.memorizationSection}
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.tableContainer}>
-          <StudentsMarksTable
-            students={groupStudents}
-            marks={marks}
+      <View style={styles.container}>
+        <ScrollView
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={["#10b981"]}
+              tintColor="#10b981"
+            />
+          }>
+          <SectionDetailsView
             section={selectedSection}
-            loading={loading}
-            onAddMark={handleAddMark}
-            onEditMark={handleEditMark}
-            onDeleteMark={handleDeleteMark}
-          />
-        </View>
+            selectedGroup={selectedGroup}
+            studentSearchQuery={studentSearchQuery}
+            onStudentSearchChange={setStudentSearchQuery}
+            onBack={handleBackToSections}>
+            <StudentsMarksTable
+              section={selectedSection}
+              marks={marks}
+              students={students.filter((s) => s.group === selectedGroup)}
+              onAddMark={handleAddMark}
+              onEditMark={handleEditMark}
+              onDeleteMark={handleDeleteMark}
+              searchQuery={studentSearchQuery}
+            />
+          </SectionDetailsView>
+        </ScrollView>
 
         {/* Modals */}
-        {selectedStudent && (
-          <AddEditMarkModal
-            visible={showMarkModal}
-            onClose={() => setShowMarkModal(false)}
-            onSuccess={handleMarkModalSuccess}
-            mark={editingMark}
-            section={selectedSection}
-            student={selectedStudent}
-          />
-        )}
-      </ScrollView>
-    );
-  }
-
-  // Show Sections List when group is selected (but no section selected yet)
-  if (selectedGroup && !selectedSection) {
-    return (
-      <ScrollView
-        style={styles.container}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={["#10b981"]}
-            tintColor="#10b981"
-          />
-        }>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={handleBackToGroups}
-          activeOpacity={0.7}>
-          <ArrowLeft size={20} color="#10b981" />
-          <Text style={styles.backButtonText}>العودة إلى الحلقات</Text>
-        </TouchableOpacity>
-
-        <View style={styles.sectionsHeader}>
-          <View style={styles.sectionsHeaderIcon}>
-            <Users size={24} color="#ffffff" />
-          </View>
-          <View style={styles.sectionsHeaderText}>
-            <Text style={styles.sectionsHeaderTitle}>{selectedGroup}</Text>
-            <Text style={styles.sectionsHeaderSubtitle}>
-              {sections.length} مقطع في هذا الشهر
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={styles.addSectionButton}
-            onPress={handleAddSection}>
-            <Plus size={20} color="#ffffff" />
-          </TouchableOpacity>
-        </View>
-
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#10b981" />
-            <Text style={styles.loadingText}>جاري تحميل المقاطع...</Text>
-          </View>
-        ) : sections.length === 0 ? (
-          <Card style={styles.emptyCard}>
-            <Text style={styles.emptyIcon}>📋</Text>
-            <Text style={styles.emptyTitle}>لا توجد مقاطع</Text>
-            <Text style={styles.emptyDescription}>
-              لم يتم إضافة أي مقاطع لهذه الحلقة في هذا الشهر
-            </Text>
-          </Card>
-        ) : (
-          <View style={styles.sectionsContainer}>
-            {sections.map((section) => {
-              const date = new Date(section.date);
-              const formattedDate = date.toLocaleDateString("ar-EG", {
-                year: "numeric",
-                month: "2-digit",
-                day: "2-digit",
-              });
-
-              return (
-                <Card key={section._id} style={styles.sectionCard}>
-                  <TouchableOpacity
-                    onPress={() => handleSectionSelect(section)}
-                    activeOpacity={0.7}>
-                    <View style={styles.sectionHeader}>
-                      <BookOpen size={20} color="#10b981" />
-                      <Text style={styles.sectionDate}>{formattedDate}</Text>
-                    </View>
-
-                    <View style={styles.sectionContent}>
-                      <View style={styles.sectionRow}>
-                        <Text style={styles.sectionLabel}>مقطع المراجعة:</Text>
-                        <Text style={styles.sectionValue}>
-                          {section.reviewSection}
-                        </Text>
-                      </View>
-
-                      <View style={styles.sectionRow}>
-                        <Text style={styles.sectionLabel}>مقطع الحفظ:</Text>
-                        <Text style={styles.sectionValue}>
-                          {section.memorizationSection}
-                        </Text>
-                      </View>
-                    </View>
-
-                    {section.marksStatus && (
-                      <View style={styles.sectionFooter}>
-                        <View
-                          style={[
-                            styles.statusBadge,
-                            section.marksStatus === "completed" &&
-                              styles.statusCompleted,
-                            section.marksStatus === "in_progress" &&
-                              styles.statusInProgress,
-                            section.marksStatus === "not_started" &&
-                              styles.statusNotStarted,
-                          ]}>
-                          <Text style={styles.statusText}>
-                            {section.marksStatus === "completed"
-                              ? "مكتمل"
-                              : section.marksStatus === "in_progress"
-                                ? "قيد التنفيذ"
-                                : "لم يبدأ"}
-                          </Text>
-                        </View>
-                      </View>
-                    )}
-                  </TouchableOpacity>
-
-                  {/* Section Actions */}
-                  <View style={styles.sectionActions}>
-                    <TouchableOpacity
-                      style={styles.editSectionButton}
-                      onPress={() => handleEditSection(section)}>
-                      <Edit size={16} color="#10b981" />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.deleteSectionButton}
-                      onPress={() => handleDeleteSection(section._id)}>
-                      <Trash2 size={16} color="#ef4444" />
-                    </TouchableOpacity>
-                  </View>
-                </Card>
-              );
-            })}
-          </View>
-        )}
-
-        {/* Modals */}
-        <AddEditSectionModal
-          visible={showSectionModal}
-          onClose={() => setShowSectionModal(false)}
-          onSuccess={handleSectionModalSuccess}
-          section={editingSection}
+        <AddEditMarkModal
+          visible={showMarkModal}
+          onClose={() => setShowMarkModal(false)}
+          onSuccess={handleMarkModalSuccess}
+          section={selectedSection}
+          student={selectedStudent}
+          editingMark={editingMark}
           group={selectedGroup}
-          teacherId={currentUser?._id || ""}
         />
-      </ScrollView>
+      </View>
     );
   }
 
-  // Show Groups Grid (no group selected) - default view
+  // Render: Sections Table View (when group selected but no section selected)
   return (
-    <ScrollView
-      style={styles.container}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          colors={["#10b981"]}
-          tintColor="#10b981"
+    <View style={styles.container}>
+      <ScrollView
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#10b981"]}
+            tintColor="#10b981"
+          />
+        }>
+        <View style={styles.filterSection}>
+          {/* Status Filter */}
+          <SectionStatusFilter
+            selectedStatus={selectedStatus}
+            onStatusChange={setSelectedStatus}
+            counts={statusCounts}
+          />
+
+          {/* Period Filter */}
+          <PeriodFilterToggle
+            selectedMode={filterMode}
+            onModeChange={setFilterMode}
+          />
+        </View>
+
+        <SectionsTable
+          sections={filteredSections}
+          marks={marks}
+          isTeacher={true}
+          onSectionSelect={handleSectionSelect}
+          onEditSection={handleEditSection}
+          onDeleteSection={handleDeleteSection}
+          onAddSection={handleAddSection}
+          showActions={true}
         />
-      }>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>اختر حلقة</Text>
-        <Text style={styles.headerSubtitle}>
-          اختر حلقة لعرض مقاطعها وعلاماتها
-        </Text>
-      </View>
+      </ScrollView>
 
-      <View style={styles.gridContainer}>
-        {groupsWithStats.map((group) => (
-          <TouchableOpacity
-            key={group.name}
-            style={styles.groupCard}
-            onPress={() => handleGroupSelect(group.name)}
-            activeOpacity={0.7}>
-            <Card style={styles.cardContent}>
-              <View style={styles.groupIconContainer}>
-                <Users size={24} color="#ffffff" />
-              </View>
-
-              <Text style={styles.groupName}>{group.name}</Text>
-
-              <View style={styles.statsContainer}>
-                <View style={styles.statBox}>
-                  <Users size={18} color="#10b981" />
-                  <View>
-                    <Text style={styles.statLabel}>عدد الطلاب</Text>
-                    <Text style={styles.statValue}>{group.studentsCount}</Text>
-                  </View>
-                </View>
-
-                <View style={[styles.statBox, styles.statBoxAlt]}>
-                  <BookOpen size={18} color="#14b8a6" />
-                  <View>
-                    <Text style={styles.statLabel}>عدد المقاطع</Text>
-                    <Text style={styles.statValue}>
-                      {group.loading ? "..." : group.sectionsCount}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-
-              <View style={styles.groupFooter}>
-                <BookOpen size={16} color="#10b981" />
-                <Text style={styles.groupFooterText}>اضغط لعرض المقاطع</Text>
-              </View>
-            </Card>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </ScrollView>
+      {/* Modals */}
+      <AddEditSectionModal
+        visible={showSectionModal}
+        onClose={() => setShowSectionModal(false)}
+        onSuccess={handleSectionModalSuccess}
+        group={selectedGroup}
+        editingSection={editingSection}
+      />
+    </View>
   );
 };
 
@@ -623,295 +432,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f8fafc",
   },
-  header: {
-    padding: 20,
-    gap: 8,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#1f2937",
-    textAlign: "right",
-  },
-  headerSubtitle: {
-    fontSize: 16,
-    color: "#6b7280",
-    textAlign: "right",
-  },
-  gridContainer: {
+  filterSection: {
     padding: 16,
-    gap: 16,
-  },
-  groupCard: {
-    marginBottom: 0,
-  },
-  cardContent: {
-    padding: 20,
-  },
-  groupIconContainer: {
-    backgroundColor: "#10b981",
-    width: 56,
-    height: 56,
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  groupName: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#1f2937",
-    marginBottom: 16,
-    textAlign: "right",
-  },
-  statsContainer: {
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 16,
-  },
-  statBox: {
-    flex: 1,
-    backgroundColor: "#ecfdf5",
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#a7f3d0",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  statBoxAlt: {
-    backgroundColor: "#f0fdfa",
-    borderColor: "#99f6e4",
-  },
-  statLabel: {
-    fontSize: 10,
-    color: "#059669",
-    marginBottom: 2,
-    textAlign: "right",
-  },
-  statValue: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#047857",
-    textAlign: "right",
-  },
-  groupFooter: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: "#d1fae5",
-  },
-  groupFooterText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#10b981",
-    textAlign: "right",
-  },
-  backButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    padding: 16,
-  },
-  backButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#10b981",
-    textAlign: "right",
-  },
-  sectionsHeader: {
-    backgroundColor: "#10b981",
-    padding: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    marginBottom: 16,
-  },
-  sectionsHeaderIcon: {
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    padding: 12,
-    borderRadius: 12,
-  },
-  sectionsHeaderText: {
-    flex: 1,
-  },
-  sectionsHeaderTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#ffffff",
-    textAlign: "right",
-  },
-  sectionsHeaderSubtitle: {
-    fontSize: 14,
-    color: "rgba(255, 255, 255, 0.9)",
-    marginTop: 4,
-    textAlign: "right",
-  },
-  loadingContainer: {
-    padding: 40,
-    alignItems: "center",
-    gap: 16,
-  },
-  loadingText: {
-    fontSize: 16,
-    color: "#6b7280",
-    fontWeight: "600",
-    textAlign: "right",
-  },
-  emptyCard: {
-    margin: 16,
-    padding: 40,
-    alignItems: "center",
-    gap: 12,
-  },
-  emptyIcon: {
-    fontSize: 64,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#1f2937",
-    textAlign: "right",
-  },
-  emptyDescription: {
-    fontSize: 14,
-    color: "#6b7280",
-    textAlign: "right",
-  },
-  sectionsContainer: {
-    padding: 16,
-    gap: 12,
-  },
-  sectionCard: {
-    padding: 16,
-    marginBottom: 12,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 12,
-    paddingBottom: 12,
+    backgroundColor: "#ffffff",
     borderBottomWidth: 1,
     borderBottomColor: "#e5e7eb",
-  },
-  sectionDate: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#6b7280",
-    textAlign: "right",
-  },
-  sectionContent: {
     gap: 12,
-    marginBottom: 12,
-  },
-  sectionRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  sectionLabel: {
-    fontSize: 14,
-    color: "#6b7280",
-    fontWeight: "600",
-    textAlign: "right",
-  },
-  sectionValue: {
-    fontSize: 14,
-    color: "#1f2937",
-    fontWeight: "600",
-    flex: 1,
-    textAlign: "right",
-    marginRight: 8,
-  },
-  sectionFooter: {
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#e5e7eb",
-  },
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-    alignSelf: "flex-start",
-  },
-  statusCompleted: {
-    backgroundColor: "#d1fae5",
-  },
-  statusInProgress: {
-    backgroundColor: "#dbeafe",
-  },
-  statusNotStarted: {
-    backgroundColor: "#fee2e2",
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#1f2937",
-    textAlign: "right",
-  },
-  addSectionButton: {
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    padding: 10,
-    borderRadius: 8,
-  },
-  sectionActions: {
-    flexDirection: "row",
-    gap: 8,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#e5e7eb",
-    marginTop: 12,
-    justifyContent: "flex-end",
-  },
-  editSectionButton: {
-    padding: 8,
-    backgroundColor: "#ecfdf5",
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: "#a7f3d0",
-  },
-  deleteSectionButton: {
-    padding: 8,
-    backgroundColor: "#fee2e2",
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: "#fecaca",
-  },
-  studentsSectionHeader: {
-    backgroundColor: "#10b981",
-    padding: 20,
-    marginBottom: 16,
-  },
-  studentsSectionInfo: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 12,
-  },
-  studentsSectionText: {
-    flex: 1,
-  },
-  studentsSectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#ffffff",
-    textAlign: "right",
-  },
-  studentsSectionSubtitle: {
-    fontSize: 13,
-    color: "rgba(255, 255, 255, 0.9)",
-    marginTop: 4,
-    textAlign: "right",
-  },
-  tableContainer: {
-    padding: 16,
   },
 });

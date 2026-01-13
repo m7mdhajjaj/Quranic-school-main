@@ -56,8 +56,14 @@ export const AveragesBar: React.FC<AveragesBarProps> = ({
       <View style={styles.statsContainer}>
         {/* Memorization Average */}
         <View style={[styles.statCard, styles.memorizationCard]}>
-          <Text style={styles.statTitle}>📖 معدل الحفظ</Text>
-          <Text style={styles.statValue}>{memorizationAverage}/10</Text>
+          <Text style={styles.statIcon}>📖</Text>
+          <Text style={styles.statTitle}>معدل الحفظ</Text>
+          <View style={styles.valueContainer}>
+            <Text style={styles.statValue}>
+              {memorizationAverage.toFixed(1)}
+            </Text>
+            <Text style={styles.statMax}>/10</Text>
+          </View>
           <Text style={styles.statDescription}>من {totalMarks} علامة</Text>
           <View style={styles.progressContainer}>
             <View style={styles.progressBackground}>
@@ -77,8 +83,12 @@ export const AveragesBar: React.FC<AveragesBarProps> = ({
 
         {/* Review Average */}
         <View style={[styles.statCard, styles.reviewCard]}>
-          <Text style={styles.statTitle}>🔄 معدل المراجعة</Text>
-          <Text style={styles.statValue}>{reviewAverage}/10</Text>
+          <Text style={styles.statIcon}>🔄</Text>
+          <Text style={styles.statTitle}>معدل المراجعة</Text>
+          <View style={styles.valueContainer}>
+            <Text style={styles.statValue}>{reviewAverage.toFixed(1)}</Text>
+            <Text style={styles.statMax}>/10</Text>
+          </View>
           <Text style={styles.statDescription}>من {totalMarks} علامة</Text>
           <View style={styles.progressContainer}>
             <View style={styles.progressBackground}>
@@ -98,8 +108,12 @@ export const AveragesBar: React.FC<AveragesBarProps> = ({
 
         {/* Overall Average */}
         <View style={[styles.statCard, styles.overallCard]}>
-          <Text style={styles.statTitle}>📈 المعدل الكلي</Text>
-          <Text style={styles.statValue}>{overallAverage}/10</Text>
+          <Text style={styles.statIcon}>📈</Text>
+          <Text style={styles.statTitle}>المعدل الكلي</Text>
+          <View style={styles.valueContainer}>
+            <Text style={styles.statValue}>{Math.round(overallAverage)}</Text>
+            <Text style={styles.statMax}>/100</Text>
+          </View>
           <Text style={styles.statDescription}>من {totalMarks} علامة</Text>
           <View style={styles.progressContainer}>
             <View style={styles.progressBackground}>
@@ -107,12 +121,12 @@ export const AveragesBar: React.FC<AveragesBarProps> = ({
                 style={[
                   styles.progressBar,
                   styles.overallProgress,
-                  { width: `${(overallAverage / 10) * 100}%` },
+                  { width: `${overallAverage * 10}%` },
                 ]}
               />
             </View>
             <Text style={styles.progressText}>
-              {Math.round((overallAverage / 10) * 100)}%
+              {Math.round(overallAverage * 10)}%
             </Text>
           </View>
         </View>
@@ -196,13 +210,16 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    padding: 16,
+    padding: 12,
     borderRadius: 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    alignItems: "center",
+    justifyContent: "flex-start",
+    minHeight: 160,
   },
   memorizationCard: {
     backgroundColor: "#fef3c7",
@@ -219,25 +236,39 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#10b981",
   },
+  statIcon: {
+    fontSize: 24,
+    marginBottom: 4,
+  },
   statTitle: {
-    fontSize: 14,
+    fontSize: 11,
     fontWeight: "600",
     color: "#374151",
-    marginBottom: 8,
+    marginBottom: 6,
     textAlign: "center",
   },
+  valueContainer: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    justifyContent: "center",
+    marginBottom: 4,
+  },
   statValue: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "bold",
     color: "#1f2937",
     textAlign: "center",
-    marginBottom: 4,
+  },
+  statMax: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#6b7280",
   },
   statDescription: {
-    fontSize: 12,
+    fontSize: 10,
     color: "#6b7280",
     textAlign: "center",
-    marginBottom: 12,
+    marginBottom: 8,
   },
   progressContainer: {
     alignItems: "center",

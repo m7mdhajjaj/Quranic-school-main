@@ -57,6 +57,23 @@ export const SectionsTable: React.FC<SectionsTableProps> = ({
   marks,
   isTeacher,
 }) => {
+  // Debug log
+  console.log(
+    "📋 SectionsTable received:",
+    sections.length,
+    "sections,",
+    marks.length,
+    "marks"
+  );
+  if (sections.length > 0) {
+    console.log("📋 First section data:", {
+      _id: sections[0]._id,
+      reviewSection: sections[0].reviewSection,
+      memorizationSection: sections[0].memorizationSection,
+      date: sections[0].date,
+    });
+  }
+
   // Find mark for a section
   const findMark = (sectionId: string): Mark | undefined => {
     return marks.find((mark) => {

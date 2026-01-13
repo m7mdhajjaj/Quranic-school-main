@@ -410,15 +410,21 @@ export const getFilteredSections = async (filters: {
       `/daily-marks/filtered-sections?${params.toString()}`
     );
 
+    console.log(
+      "📦 Raw API response:",
+      JSON.stringify(response.data, null, 2).slice(0, 500)
+    );
+
     const sections = response.data.data || response.data || [];
 
     // Debug: Log first section to verify structure
-    if (sections.length > 0 && process.env.NODE_ENV === "development") {
+    if (sections.length > 0) {
       console.log("📦 First section from API:", {
         id: sections[0]._id,
+        reviewSection: sections[0].reviewSection,
+        memorizationSection: sections[0].memorizationSection,
         marksStatus: sections[0].marksStatus,
         marksProgress: sections[0].marksProgress,
-        fullSection: sections[0],
       });
     }
 

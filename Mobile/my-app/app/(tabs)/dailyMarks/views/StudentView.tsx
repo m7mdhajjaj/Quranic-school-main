@@ -54,15 +54,37 @@ export const StudentView = () => {
     try {
       setLoading(true);
 
-      // Fetch sections for student
+      // Get student's group
+      const studentGroup = currentUser.group;
+      console.log(
+        "📚 Loading data for student:",
+        currentUser._id,
+        "group:",
+        studentGroup
+      );
+
+      // Fetch sections for student's group only
       const sectionsResponse = await getFilteredSections({
         month: selectedMonth,
         year: selectedYear,
         search: "",
-        group: "",
+        group: studentGroup || "",
       });
 
+      console.log("📦 Sections response:", sectionsResponse);
+
       if (sectionsResponse.success && sectionsResponse.data) {
+        console.log(
+          "✅ Sections loaded:",
+          sectionsResponse.data.length,
+          "sections"
+        );
+        if (sectionsResponse.data.length > 0) {
+          console.log(
+            "📋 First section:",
+            JSON.stringify(sectionsResponse.data[0], null, 2)
+          );
+        }
         setSections(sectionsResponse.data);
       }
 
@@ -72,10 +94,13 @@ export const StudentView = () => {
         month: selectedMonth,
         year: selectedYear,
         search: "",
-        group: "",
+        group: studentGroup || "",
       });
 
+      console.log("📊 Marks response:", marksResponse);
+
       if (marksResponse.success && marksResponse.data) {
+        console.log("✅ Marks loaded:", marksResponse.data.length, "marks");
         setMarks(marksResponse.data);
       }
 

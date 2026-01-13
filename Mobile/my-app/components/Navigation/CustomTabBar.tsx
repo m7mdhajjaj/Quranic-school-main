@@ -48,8 +48,12 @@ export default function CustomTabBar() {
   const pathname = usePathname();
   const scaleValue = React.useRef(new Animated.Value(1)).current;
 
-  // Completely disable CustomTabBar for chat-related pages and notifications
-  if (pathname.includes("chat") || pathname.includes("notifications")) {
+  // Completely disable CustomTabBar for chat-related pages, notifications, and dailyMarks
+  if (
+    pathname.includes("chat") ||
+    pathname.includes("notifications") ||
+    pathname.includes("dailyMarks")
+  ) {
     return null;
   }
 
@@ -165,7 +169,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "transparent",
-    
   },
   activeIconContainer: {
     backgroundColor: "#10b981",
