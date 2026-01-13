@@ -9,9 +9,11 @@ import { useEffect } from "react";
 import { I18nManager, Platform } from "react-native";
 import "react-native-reanimated";
 import "./global.css";
+import Toast from "react-native-toast-message";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { AuthProvider, useAuth } from "@/Context/AuthContext";
+import { NotificationProvider } from "@/Context/NotificationContext";
 
 // Force RTL layout for Arabic
 if (!I18nManager.isRTL) {
@@ -42,15 +44,18 @@ function RootLayoutNav() {
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="modal"
-          options={{ presentation: "modal", title: "Modal" }}
-        />
-      </Stack>
-      <StatusBar style="auto" />
+      <NotificationProvider>
+        <Stack>
+          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="modal"
+            options={{ presentation: "modal", title: "Modal" }}
+          />
+        </Stack>
+        <StatusBar style="auto" />
+        <Toast />
+      </NotificationProvider>
     </ThemeProvider>
   );
 }

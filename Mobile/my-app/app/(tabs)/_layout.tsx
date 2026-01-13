@@ -145,7 +145,12 @@ export default function TabLayout() {
       </Tabs>
 
       {/* Custom Bottom Tab Bar */}
-      <CustomTabBar />
+      {/* إخفاء الـ TabBar في صفحات ai-chat و chat system */}
+      {!(
+        typeof window !== "undefined" &&
+        window.location &&
+        window.location.pathname.match(/(ai-chat|chat)/) // Added 'chat' back to the condition
+      ) && <CustomTabBar />}
     </View>
   );
 }

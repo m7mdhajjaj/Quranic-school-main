@@ -48,6 +48,11 @@ export default function CustomTabBar() {
   const pathname = usePathname();
   const scaleValue = React.useRef(new Animated.Value(1)).current;
 
+  // Completely disable CustomTabBar for chat-related pages
+  if (pathname.includes("chat")) {
+    return null;
+  }
+
   const isActive = (path: string) => {
     if (path === "/(tabs)") {
       return pathname === "/(tabs)" || pathname === "/";

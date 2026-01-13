@@ -8,11 +8,10 @@ export { socketManager, default as SocketManager } from "./SocketManager";
 
 // تصدير Hooks المخصصة
 export { useUserStatusSocket, useTeachersSocket } from "./StatusSocket";
+export { useNotificationsSocket } from "./useNotificationsSocket";
 
-// ملاحظة: تم حذف الـ hooks غير المستخدمة في المرحلة الأولى من Mobile
-// يمكن إضافتها لاحقاً عند الحاجة:
+// ملاحظة: يمكن إضافة المزيد من الـ hooks لاحقاً عند الحاجة:
 // - useGroupsSocket
 // - useRankingSocket
-// - useNotificationsSocket (سيتم إضافته مع نظام الإشعارات Push)
 // - useDashboardSocket
 // - useExamScheduleSocket

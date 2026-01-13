@@ -12,3 +12,6 @@ export type {
   UserStatusState,
   UserStatusContextType,
 } from "./UserStatusContext";
+
+export { NotificationProvider, useNotifications } from "./NotificationContext";
+export { default as NotificationContext } from "./NotificationContext";

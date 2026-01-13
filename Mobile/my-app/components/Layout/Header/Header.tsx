@@ -15,6 +15,7 @@ import { Avatar } from "@/components/Avatar/Avatar";
 import { Menu, Bell } from "lucide-react-native";
 import { DrawerMenu } from "./DrawerMenu";
 import { useLogo } from "@/components/Hooks/useLogo";
+import { useNotifications } from "@/Context/NotificationContext";
 
 interface HeaderProps {
   showMenu?: boolean;
@@ -29,6 +30,7 @@ export const Header: React.FC<HeaderProps> = ({
   const router = useRouter();
   const { logoUrl, logoLoading } = useLogo();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const { unreadCount } = useNotifications();
 
   if (!currentUser) return null;
 
@@ -68,14 +70,18 @@ export const Header: React.FC<HeaderProps> = ({
           <TouchableOpacity
             style={styles.iconButton}
             onPress={() => {
-              // Navigate to notifications
+              router.push("/(tabs)/notifications" as any);
             }}
             activeOpacity={0.7}>
             <Bell size={22} color="#ffffff" />
             {/* Badge for unread notifications */}
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>3</Text>
-            </View>
+            {unreadCount > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </Text>
+              </View>
+            )}
           </TouchableOpacity>
 
           {/* Menu Button */}
