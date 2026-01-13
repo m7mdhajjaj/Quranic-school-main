@@ -5,9 +5,3 @@ export { TeacherGroupsGrid } from "./TeacherGroupsGrid";
 export { TeacherAttendanceView } from "../Views/TeacherAttendanceView";
 export { TeacherToolbar } from "./TeacherToolbar";
 export { AdminView } from "../Views/AdminView";
-export { 
-  StudentViewSkeleton, 
-  TeacherViewSkeleton, 
-  GroupsGridSkeleton,
-  AdminViewSkeleton 
-} from "../../../components/skeletons/AttendanceSkeleton";

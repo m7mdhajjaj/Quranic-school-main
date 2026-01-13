@@ -6,11 +6,7 @@ import {
   StudentView, 
   TeacherGroupsGrid, 
   TeacherAttendanceView,
-  AdminView,
-  StudentViewSkeleton,
-  GroupsGridSkeleton,
-  TeacherViewSkeleton,
-  AdminViewSkeleton
+  AdminView
 } from "./components";
 import { isDateTooOld, getDaysAgo, todayISO } from "./utils/dateHelpers";
 import { Card } from "@/components/UI/Card";
@@ -208,16 +204,13 @@ const AbsencePage = () => {
         />
 
         {isInitialLoad ? (
-          // Initial Loading State
-          currentUser?.role === "student" ? (
-            <StudentViewSkeleton />
-          ) : currentUser?.role === "admin" ? (
-            <AdminViewSkeleton />
-          ) : !selectedGroup ? (
-            <GroupsGridSkeleton />
-          ) : (
-            <TeacherViewSkeleton />
-          )
+          // Initial Loading State - Simple message
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-gray-600 font-medium">جاري التحميل...</p>
+            </div>
+          </div>
         ) : currentUser?.role === "student" ? (
           <StudentView monthlyStats={monthlyStats} />
         ) : currentUser?.role === "admin" ? (

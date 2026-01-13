@@ -20,3 +20,11 @@ export const getDaysAgo = (date: string): number => {
   const timeDiff = now.getTime() - selectedDate.getTime();
   return Math.round(timeDiff / (1000 * 60 * 60 * 24));
 };
+
+export const isFutureDate = (date: string): boolean => {
+  const selectedDate = new Date(date);
+  selectedDate.setHours(0, 0, 0, 0);
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  return selectedDate > now;
+};

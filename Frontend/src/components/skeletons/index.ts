@@ -4,7 +4,5 @@ export { default as StatCardSkeleton } from './StatCardSkeleton';
 export { FiltersSkeleton } from './FiltersSkeleton';
 export { default as ChartSkeleton } from './ChartSkeleton';
 export { default as ListSkeleton } from './ListSkeleton';
-export * from './AttendanceSkeleton';
-export { AbsentStudentCardSkeleton } from './AbsentStudentCardSkeleton';
 export { default as ProfileSkeleton } from './ProfileSkeleton';
 export { AveragesBarSkeleton } from './AveragesBarSkeleton';

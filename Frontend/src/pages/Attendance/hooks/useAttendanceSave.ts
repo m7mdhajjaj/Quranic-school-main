@@ -1,9 +1,7 @@
 import { useState } from "react";
 import { bulkSaveAttendance } from "@/Api/attendanceApi";
-import {
-  showSuccessToast,
-  showErrorToast,
-} from "@/utils/toastUtils";
+import { showSuccessToast } from "@/utils/toastUtils";
+import { showErrorMessage } from "@/utils/sweetalertUtils";
 import type { AttendanceStudent } from "../types/absence.types";
 
 interface UseAttendanceSaveProps {
@@ -36,10 +34,11 @@ export const useAttendanceSave = ({
     try {
       // التحقق من أن التاريخ ليس قديماً جداً (تحقق بسيط بدلاً من Yup)
       if (isDateTooOld) {
-         showErrorToast(
-           `⚠️ لا يمكن تعديل الحضور - التاريخ قديم (مضى ${daysAgo} يوم)\n\n` +
-           `📋 القاعدة: يمكن تعديل الحضور خلال أسبوع واحد فقط من تاريخ أخذ الحضور.\n\n` +
-           `💡 لتسجيل حضور جديد، اختر تاريخاً حديثاً (خلال الأسبوع الماضي).`
+         showErrorMessage(
+           "لا يمكن تعديل الحضور",
+           `⚠️ التاريخ قديم جداً (مضى عليه ${daysAgo} يوم)\n\n` +
+           `📋 القاعدة: يمكن تعديل الحضور خلال أسبوع واحد فقط\n\n` +
+           `💡 لتسجيل حضور جديد، اختر تاريخاً حديثاً`
          );
          return;
        }
@@ -56,7 +55,7 @@ export const useAttendanceSave = ({
         }));
 
       if (records.length === 0) {
-        showErrorToast("لا يوجد طلاب لتسجيل حضورهم");
+        showErrorMessage("خطأ في البيانات", "لا يوجد طلاب لتسجيل حضورهم");
         setIsSaving(false);
         return;
       }
@@ -74,21 +73,33 @@ export const useAttendanceSave = ({
       // تنفيذ callback النجاح
       onSaveSuccess();
 
-      // عرض رسالة النجاح
+      // عرض رسالة النجاح - Toast بسيط وواضح
       showSuccessToast(
-        `✓ تم رصد الحضور بنجاح - حاضر: ${presentCount} | غائب: ${absentCount} | نسبة الحضور: ${attendanceRate}%`
+        `✅ تم حفظ الحضور بنجاح - حاضر: ${presentCount} | غائب: ${absentCount}`
       );
     } catch (e) {
       console.error("❌ خطأ في حفظ الحضور:", e);
-      const error = e as { response?: { data?: { message?: string; details?: string; daysAgo?: number } } };
+      const error = e as { response?: { data?: { message?: string; details?: string; daysAgo?: number; isFutureDate?: boolean } } };
+      
+      // التعامل مع خطأ التاريخ المستقبلي من Backend
+      if (error.response?.data?.isFutureDate) {
+        showErrorMessage(
+          "تاريخ غير صالح",
+          `⚠️ ${error.response.data.message}\n\n` +
+          `📋 ${error.response.data.details}\n\n` +
+          `💡 اختر تاريخاً من اليوم أو الأيام الماضية`
+        );
+        return;
+      }
       
       // التعامل مع خطأ التاريخ القديم من Backend
       if (error.response?.data?.daysAgo) {
         const days = error.response.data.daysAgo;
-        showErrorToast(
-          `⚠️ لا يمكن تعديل الحضور - التاريخ قديم (مضى ${days} يوم)\n\n` +
-          `📋 القاعدة: يمكن تعديل الحضور خلال أسبوع واحد فقط من تاريخ أخذ الحضور.\n\n` +
-          `💡 لتسجيل حضور جديد، اختر تاريخاً حديثاً (خلال الأسبوع الماضي).`
+        showErrorMessage(
+          "لا يمكن تعديل الحضور",
+          `⚠️ التاريخ قديم جداً (مضى ${days} يوم)\n\n` +
+          `📋 القاعدة: يمكن تعديل الحضور خلال أسبوع واحد فقط\n\n` +
+          `💡 لتسجيل حضور جديد، اختر تاريخاً حديثاً`
         );
         return;
       }
@@ -97,7 +108,7 @@ export const useAttendanceSave = ({
         error.response?.data?.message ||
         error.response?.data?.details ||
         "تعذر حفظ السجل";
-      showErrorToast(`✗ خطأ في الحفظ - ${errorMsg}`);
+      showErrorMessage("خطأ في الحفظ", errorMsg);
     } finally {
       setIsSaving(false);
     }

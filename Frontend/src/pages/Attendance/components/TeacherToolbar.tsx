@@ -1,7 +1,6 @@
 // components/TeacherToolbar.tsx
 import { DateRangePicker } from '@/components/UI/DateRangePicker';
 import { Users, Check, X, ArrowRight, Search, Save } from 'lucide-react';
-import { StatCardSkeleton } from '@/components/skeletons';
 import type { TeacherToolbarProps } from '../types/absence.types';
 
 export const TeacherToolbar = ({
@@ -63,11 +62,11 @@ export const TeacherToolbar = ({
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           {isLoading ? (
+            // Simple loading placeholder
             <>
-              <StatCardSkeleton />
-              <StatCardSkeleton />
-              <StatCardSkeleton />
-              <StatCardSkeleton />
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="rounded-2xl p-5 bg-gray-100 animate-pulse h-24"></div>
+              ))}
             </>
           ) : (
             <>

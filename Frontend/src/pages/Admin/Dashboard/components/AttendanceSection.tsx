@@ -1,7 +1,6 @@
 import React, { memo } from "react";
 import { Card } from "@/components/UI/Card";
 import { FaTimesCircle, FaUser, FaChalkboardTeacher, FaUsers } from "react-icons/fa";
-import { AbsentStudentCardSkeleton } from "@/components/skeletons";
 import { useAbsentStudents } from "../hooks/useAbsentStudents";
 
 export const AttendanceSection: React.FC = memo(() => {
@@ -37,7 +36,11 @@ export const AttendanceSection: React.FC = memo(() => {
       </div>
 
       {isLoading ? (
-        <AbsentStudentCardSkeleton count={absentStudents.length > 0 ? absentStudents.length : 4} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="p-3 bg-gray-100 rounded-lg animate-pulse h-20"></div>
+          ))}
+        </div>
       ) : absentStudents.length === 0 ? (
         <div className="text-center py-12">
           <div className="bg-green-50 rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center">

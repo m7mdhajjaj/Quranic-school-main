@@ -12,8 +12,20 @@ exports.createAttendance = async (req, res) => {
     const formattedDate = new Date(date);
     formattedDate.setHours(0, 0, 0, 0);
 
-    // 2. Check if date is too old ( > 7 days)
+    // 2. Check if date is in the future or too old ( > 7 days)
     const now = new Date();
+    // Reset time part for accurate date comparison
+    now.setHours(0, 0, 0, 0);
+    
+    // Check for future dates
+    if (formattedDate > now) {
+      return res.status(403).json({
+        message: "لا يمكن تسجيل الحضور لتاريخ مستقبلي",
+        details: "يجب تسجيل الحضور لليوم الحالي أو الأيام السابقة فقط.",
+        isFutureDate: true
+      });
+    }
+
     const ONE_WEEK = 7 * 24 * 60 * 60 * 1000;
     const timeDiff = now - formattedDate;
     if (timeDiff > ONE_WEEK) {
