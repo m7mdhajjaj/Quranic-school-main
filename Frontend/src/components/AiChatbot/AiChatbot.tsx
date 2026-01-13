@@ -670,6 +670,7 @@ export const AiChatbot: React.FC = () => {
                 {/* Enhanced Loading State - عصري */}
                 {!showFavoritesList && isLoading && (
                   <motion.div 
+                    key="chat-loader"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="flex justify-start relative z-10"
@@ -723,6 +724,7 @@ export const AiChatbot: React.FC = () => {
                         </div>
                       </div>
                     </div>
+
                   </motion.div>
                 )}
                 <div ref={messagesEndRef} />
