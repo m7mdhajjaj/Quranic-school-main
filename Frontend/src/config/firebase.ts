@@ -45,10 +45,10 @@ declare global {
 const registerServiceWorker = async () => {
   if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
     try {
-      const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+      await navigator.serviceWorker.register('/firebase-messaging-sw.js');
       
       // Wait for service worker to be ready to avoid "no active Service Worker" errors
-      await navigator.serviceWorker.ready;
+      const registration = await navigator.serviceWorker.ready;
       
       console.log('✅ Service Worker registered with scope:', registration.scope);
       return registration;
