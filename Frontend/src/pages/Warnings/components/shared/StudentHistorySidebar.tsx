@@ -59,30 +59,34 @@ export const StudentHistorySidebar: React.FC<StudentHistorySidebarProps> = React
         dir="rtl"
       >
         {/* Header */}
-        <div className="sticky top-0 bg-gradient-to-r from-red-500 to-rose-600 text-white p-5 shadow-lg z-10">
+        <div className="sticky top-0 bg-gradient-to-br from-rose-600 via-red-600 to-pink-600 text-white p-6 shadow-xl z-10 border-b-4 border-white/20">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 flex-1">
+            <div className="flex items-center gap-4 flex-1">
               {selectedStudentId && expelledStudents.length > 0 ? (
                 <button
                   onClick={handleBackToList}
-                  className="flex items-center gap-2 bg-white text-red-600 hover:bg-red-50 px-4 py-2 rounded-lg transition-all duration-200 hover:scale-105 shadow-md font-semibold"
+                  className="flex items-center gap-2.5 bg-white/95 text-red-700 hover:bg-white px-5 py-2.5 rounded-xl transition-all duration-200 hover:scale-105 shadow-lg font-bold backdrop-blur-sm border border-red-200"
                   aria-label="رجوع للقائمة"
                 >
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-5 h-5" />
                   <span>رجوع</span>
                 </button>
               ) : (
-                <UserX className="w-6 h-6" />
+                <div className="bg-white/20 p-3 rounded-xl backdrop-blur-sm border border-white/30 shadow-lg">
+                  <UserX className="w-7 h-7" />
+                </div>
               )}
               <div className="flex-1">
-                <h2 className="text-lg font-bold">
+                <h2 className="text-xl font-bold drop-shadow-md">
                   {selectedStudentId ? 'تاريخ الطالب' : 'الطلاب المفصولين'}
                 </h2>
                 {selectedStudentName && (
-                  <p className="text-white/90 text-sm mt-0.5">
-                    {selectedStudentName}
+                  <p className="text-white/95 text-sm mt-1.5 font-medium flex items-center gap-2">
+                    <span>{selectedStudentName}</span>
                     {isExpelled && (
-                      <span className="mr-2 text-xs bg-white/20 px-2 py-0.5 rounded">مفصول</span>
+                      <span className="text-xs bg-red-500/40 backdrop-blur-sm px-3 py-1 rounded-full border border-white/30 font-bold shadow-sm">
+                        مفصول
+                      </span>
                     )}
                   </p>
                 )}
@@ -91,9 +95,9 @@ export const StudentHistorySidebar: React.FC<StudentHistorySidebarProps> = React
             <button
               onClick={onClose}
               aria-label="إغلاق"
-              className="p-2 hover:bg-white/20 rounded-lg transition-colors duration-200"
+              className="p-2.5 hover:bg-white/20 rounded-xl transition-all duration-200 hover:scale-110 backdrop-blur-sm border border-white/0 hover:border-white/30"
             >
-              <X className="w-5 h-5" />
+              <X className="w-6 h-6" />
             </button>
           </div>
         </div>
@@ -117,31 +121,40 @@ export const StudentHistorySidebar: React.FC<StudentHistorySidebarProps> = React
             </div>
           ) : !selectedStudentId && expelledStudents.length > 0 ? (
             // ✅ Students List
-            <div className="space-y-2">
-              <p className="text-gray-500 text-sm mb-3">اختر طالباً لعرض تاريخه</p>
+            <div className="space-y-3">
+              <div className="bg-gradient-to-r from-red-50 to-rose-50 rounded-xl p-4 border-2 border-red-200 shadow-sm mb-4">
+                <p className="text-red-800 font-bold text-sm flex items-center gap-2">
+                  <UserX className="w-4 h-4" />
+                  اختر طالباً لعرض تاريخه الكامل
+                </p>
+              </div>
               {expelledStudents.map((student) => (
                 <button
                   key={student._id}
                   onClick={() => handleStudentSelect(student._id, `${student.firstName} ${student.lastName}`)}
-                  className="w-full p-3 bg-white border border-red-200 rounded-lg hover:border-red-400 hover:shadow-md hover:bg-red-50/30 transition-all duration-200 text-right group"
+                  className="w-full p-4 bg-gradient-to-br from-white to-gray-50 border-2 border-red-200 rounded-xl hover:border-red-400 hover:shadow-xl hover:from-red-50 hover:to-rose-50 transition-all duration-300 text-right group transform hover:scale-[1.02]"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-4">
                     <Avatar
                       user={student}
-                      size="md"
+                      size="lg"
                       showStatus={false}
-                      className="ring-1 ring-red-200 group-hover:ring-red-400 transition-all rounded-full"
+                      className="ring-2 ring-red-300 group-hover:ring-red-500 transition-all rounded-full shadow-md group-hover:shadow-lg"
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-900 truncate group-hover:text-red-700 transition-colors">
+                      <p className="font-bold text-gray-900 truncate group-hover:text-red-700 transition-colors text-lg mb-1">
                         {student.firstName} {student.lastName}
                       </p>
-                      <span className="text-xs text-red-600 flex items-center gap-1 mt-0.5">
-                        <UserX className="w-3 h-3" />
-                        طالب مفصول
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1.5 text-xs text-red-700 bg-red-100 px-3 py-1 rounded-full font-bold border border-red-300 group-hover:bg-red-200 transition-colors">
+                          <UserX className="w-3.5 h-3.5" />
+                          طالب مفصول
+                        </span>
+                      </div>
                     </div>
-                    <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-red-600 transition-colors -scale-x-100" />
+                    <div className="bg-red-100 group-hover:bg-red-200 p-2.5 rounded-full transition-colors">
+                      <ArrowRight className="w-5 h-5 text-red-600 -scale-x-100" />
+                    </div>
                   </div>
                 </button>
               ))}
