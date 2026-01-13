@@ -113,6 +113,58 @@ class SectionSequenceService {
   }
 
   /**
+   * 🆕 البحث عن أعلى قيمة ayahEnd موجودة بغض النظر عن التاريخ
+   * هذا ضروري للتحقق بعد حذف مقطع - يجب أن نعرف أين وصلنا فعلياً
+   * 
+   * @param {string} groupId - معرف الحلقة
+   * @param {number} surahNumber - رقم السورة
+   * @param {string} type - 'memorization' | 'review'
+   * @param {string} [excludeSectionId] - استثناء مقطع معين (عند التعديل)
+   * @returns {Promise<{maxEnd: number, nextStart: number, sectionDate: Date}|null>}
+   */
+  async getMaxProgress(groupId, surahNumber, type, excludeSectionId = null) {
+    const metaField = type === 'memorization' ? 'memorizationMeta' : 'reviewMeta';
+
+    const query = {
+      group: groupId,
+      [`${metaField}.surahNumber`]: surahNumber
+    };
+
+    if (excludeSectionId) {
+      query._id = { $ne: excludeSectionId };
+    }
+
+    // جلب جميع المقاطع لهذه السورة
+    const sections = await Section.find(query)
+      .select(`${metaField} date`)
+      .lean();
+
+    if (!sections || sections.length === 0) return null;
+
+    // البحث عن أعلى قيمة ayahEnd بين جميع المقاطع
+    let maxEnd = 0;
+    let maxDate = null;
+
+    for (const section of sections) {
+      const segments = section[metaField].filter(s => s.surahNumber === surahNumber);
+      for (const seg of segments) {
+        if (seg.ayahEnd > maxEnd) {
+          maxEnd = seg.ayahEnd;
+          maxDate = section.date;
+        }
+      }
+    }
+
+    if (maxEnd === 0) return null;
+
+    return {
+      maxEnd,
+      nextStart: maxEnd + 1,
+      sectionDate: maxDate
+    };
+  }
+
+  /**
    * البحث عن مقطع يسبق البداية المطلوبة مباشرة (لضمان الاتصال)
    * (نادراً ما تستخدم مباشرة، لكنها مفيدة للتحقق من التفرعات)
    */
@@ -299,7 +351,9 @@ class SectionSequenceService {
       // 3. منطق الحفظ الصارم (DATE-AWARE with Backfilling Support)
       // ====================================================
       if (type === 'memorization') {
-        // ✅ V3: استخدام neighbor queries للتحقق date-aware
+        // ✅ V4: فحص مزدوج - الجيران الزمنيين + أعلى قيمة موجودة
+        
+        // أ) جلب الجيران الزمنيين (للتحقق من الـ Backfilling)
         const neighbors = await this.getNeighborSegments(
           groupId, 
           seg.surahNumber, 
@@ -308,16 +362,24 @@ class SectionSequenceService {
           excludeSectionId
         );
 
-        // [منطق إضافي] التحقق من السورة المكتملة
-        // إذا كان المقطع السابق قد وصل لنهاية السورة، نمنع إضافة جديد
-        if (neighbors.previous) {
-            const surahInfo = getSurahByNumber(seg.surahNumber);
-            if (neighbors.previous.ayahEnd >= surahInfo.ayahCount) {
+        // ب) 🆕 جلب أعلى قيمة ayahEnd موجودة (بغض النظر عن التاريخ)
+        // هذا يغطي حالة: "حذفت مقطع 11-20، الآن أريد إضافة مقطع جديد"
+        const maxProgress = await this.getMaxProgress(
+          groupId,
+          seg.surahNumber,
+          type,
+          excludeSectionId
+        );
+
+        // [منطق إضافي] التحقق من السورة المكتملة (باستخدام maxProgress)
+        const surahInfo = getSurahByNumber(seg.surahNumber);
+        if (maxProgress && surahInfo) {
+            if (maxProgress.maxEnd >= surahInfo.ayahCount) {
                  return {
                     isValid: false,
                     message: this.formatErrorMessage(
                         "السورة مكتملة الحفظ بالفعل",
-                        `سورة ${surahInfo.nameAr} عدد آياتها ${surahInfo.ayahCount}، وآخر مقطع مسجل ينتهي عند الآية ${neighbors.previous.ayahEnd}.`,
+                        `سورة ${surahInfo.name || surahInfo.nameAr} عدد آياتها ${surahInfo.ayahCount}، وآخر مقطع مسجل ينتهي عند الآية ${maxProgress.maxEnd}.`,
                         `لقد أتممت حفظ هذه السورة سابقاً. لا يمكنك إضافة مقاطع حفظ جديدة لها. يمكنك تسجيل "مراجعة" إذا أردت تثبيتها.`
                     )
                  };
@@ -325,6 +387,7 @@ class SectionSequenceService {
         }
 
         // التحقق من اتصال محلي (Local Sibling) في نفس الطلب
+        // 🆕 نقلته لأعلى لاستخدامه في فحص maxProgress
         const hasLocalPredecessor = newSegments.some(s => 
           s !== seg && 
           s.surahNumber === seg.surahNumber && 
@@ -336,6 +399,27 @@ class SectionSequenceService {
           s.surahNumber === seg.surahNumber && 
           s.ayahStart === seg.ayahEnd + 1
         );
+        
+        // 🆕 التحقق من أن المقطع الجديد يبدأ من بعد أعلى قيمة موجودة
+        // (مهم جداً لحالة: حذفت 11-20، الآن أحاول إضافة 15-25 → خطأ!)
+        if (maxProgress && seg.ayahStart <= maxProgress.maxEnd) {
+            // التحقق: هل المقطع الجديد يتداخل مع ما تم حفظه سابقاً؟
+            // نسمح فقط إذا كان المقطع جديد تماماً (ayahStart > maxEnd)
+            // أو إذا كان ترميماً صحيحاً (الجيران الزمنيين سيتحققون من هذا)
+            
+            // إذا لم يكن هناك جار سابق زمنياً (يعني لا يوجد backfilling)
+            // ولكن يوجد maxProgress، فهذا يعني محاولة إعادة حفظ
+            if (!neighbors.previous && !hasLocalPredecessor && seg.ayahStart !== 1) {
+                return {
+                    isValid: false,
+                    message: this.formatErrorMessage(
+                        "تداخل مع حفظ سابق",
+                        `تحاول إضافة حفظ يبدأ من الآية ${seg.ayahStart}، بينما أعلى آية محفوظة هي ${maxProgress.maxEnd}.`,
+                        `يجب أن تبدأ الحفظ الجديد من الآية ${maxProgress.nextStart} لتكمل التسلسل.`
+                    )
+                };
+            }
+        }
 
         // إذا كان متصل محلياً، نتجاهل فحص الجيران الخارجيين لهذا الاتجاه
         const effectivePrevious = hasLocalPredecessor ? null : neighbors.previous;
@@ -358,7 +442,8 @@ class SectionSequenceService {
         }
 
         // فحص إضافي: أول حفظ في السورة يجب أن يبدأ من 1
-        if (!neighbors.previous && !hasLocalPredecessor && seg.ayahStart !== 1) {
+        // 🆕 V4: نتحقق أيضاً من maxProgress - إذا لا يوجد أي حفظ سابق
+        if (!neighbors.previous && !hasLocalPredecessor && !maxProgress && seg.ayahStart !== 1) {
           return {
             isValid: false,
             message: this.formatErrorMessage(
@@ -368,6 +453,8 @@ class SectionSequenceService {
             )
           };
         }
+
+        // ملاحظة: فحص maxProgress والتداخل تم أعلاه (بعد جلب maxProgress مباشرة)
       }
     }
 
