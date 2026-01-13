@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Send, X, BookOpen, Sparkles, Trash2, Copy, Mic, MicOff, Volume2, VolumeX, Check, Star } from 'lucide-react';
+import { Send, X, BookOpen, Sparkles, Trash2, Copy, Mic, MicOff, Volume2, VolumeX, Check, Star, Bookmark, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAiChatbot } from './useAiChatbot';
 import { showSuccessToast } from '../../utils/toastUtils';
@@ -101,10 +101,12 @@ export const AiChatbot: React.FC = () => {
     handleAddFavorite,
     handleRemoveFavorite,
     isFavorited,
+    favoritesList,
   } = useAiChatbot();
 
   // Resize logic
   const [sidebarWidth, setSidebarWidth] = useState(440);
+  const [showFavoritesList, setShowFavoritesList] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
 
@@ -398,6 +400,19 @@ export const AiChatbot: React.FC = () => {
                   </motion.div>
                   
                   <div className="flex items-center gap-2">
+                    {/* زر المفضلة - عرض القائمة */}
+                    <motion.button 
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => setShowFavoritesList(!showFavoritesList)}
+                      className={`p-2.5 rounded-xl transition-all z-10 backdrop-blur-sm border border-white/20 shadow-lg ${
+                        showFavoritesList ? 'bg-white text-emerald-600' : 'text-white hover:bg-white/20'
+                      }`}
+                      title={showFavoritesList ? 'العودة للمحادثة' : 'عرض المفضلة'}
+                    >
+                      {showFavoritesList ? <ArrowLeft size={20} strokeWidth={2.5} /> : <Bookmark size={20} strokeWidth={2.5} />}
+                    </motion.button>
+
                     {/* زر حذف المحادثة */}
                     <motion.button 
                       whileHover={{ scale: 1.1 }}
@@ -431,6 +446,55 @@ export const AiChatbot: React.FC = () => {
                 }}></div>
                 
                 <div className="absolute inset-0 overflow-y-auto scrollbar-hide p-5 space-y-4">
+                  {showFavoritesList ? (
+                    <div className="space-y-4 pb-10" dir="rtl">
+                       <h3 className="text-emerald-800 font-bold mb-6 text-center text-xl flex items-center justify-center gap-2">
+                         <Star size={24} className="text-yellow-400 fill-current" />
+                         المفضلة ({favoritesList?.length || 0})
+                       </h3>
+                       {(!favoritesList || favoritesList.length === 0) ? (
+                           <div className="text-center text-gray-500 mt-20 flex flex-col items-center gap-4">
+                             <Bookmark size={48} className="text-gray-200" />
+                             <p>لا يوجد عناصر في المفضلة</p>
+                           </div>
+                       ) : (
+                           <div className="grid gap-4">
+                               {favoritesList.map((fav: any) => (
+                                   <div key={fav._id} className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow relative group">
+                                       <div className="flex justify-between items-start mb-3">
+                                            <h4 className="font-bold text-gray-800 text-lg flex-1 ml-4">{fav.question}</h4>
+                                            <button 
+                                              onClick={() => handleRemoveFavorite(fav.question)}
+                                              className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                              title="إزالة من المفضلة"
+                                            >
+                                              <Trash2 size={18} />
+                                            </button>
+                                       </div>
+                                       <div className="max-h-40 overflow-y-auto pr-2 custom-scrollbar">
+                                           <div className="text-sm text-gray-600 leading-relaxed scale-90 origin-top-right">
+                                              <FormattedMessage content={fav.answer} />
+                                           </div>
+                                       </div>
+                                       <div className="mt-3 pt-2 border-t border-gray-50 flex justify-between items-center text-xs text-gray-400">
+                                          <span>{new Date(fav.createdAt || Date.now()).toLocaleDateString('ar-EG')}</span>
+                                          <button 
+                                            onClick={() => {
+                                                setInput(fav.question);
+                                                setShowFavoritesList(false);
+                                            }}
+                                            className="text-emerald-600 font-medium hover:underline flex items-center gap-1"
+                                          >
+                                            اسأل مجدداً
+                                            <ArrowLeft size={12} />
+                                          </button>
+                                       </div>
+                                   </div>
+                               ))}
+                           </div>
+                       )}
+                    </div>
+                  ) : (
                 <AnimatePresence mode="popLayout">
                   {messages.map((msg, index) => {
                     // Check if we need a separator (if current is user and previous was assistant)
@@ -602,7 +666,7 @@ export const AiChatbot: React.FC = () => {
                   })}
                 
                 {/* Enhanced Loading State - عصري */}
-                {isLoading && (
+                {!showFavoritesList && isLoading && (
                   <motion.div 
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -661,6 +725,7 @@ export const AiChatbot: React.FC = () => {
                 )}
                 <div ref={messagesEndRef} />
               </AnimatePresence>
+              )}
                 </div>
               </div>
 

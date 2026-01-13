@@ -25,6 +25,7 @@ export const useAiChatbot = () => {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [favoritesList, setFavoritesList] = useState<any[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -147,6 +148,7 @@ export const useAiChatbot = () => {
         // Store message IDs that are favorited
         const favIds = data.data.map((fav: any) => fav.question);
         setFavorites(favIds);
+        setFavoritesList(data.data);
       }
     } catch (error) {
       console.error('Error loading favorites:', error);
@@ -166,6 +168,9 @@ export const useAiChatbot = () => {
 
       if (data.success) {
         setFavorites(prev => [...prev, question]);
+        if (data.data) {
+          setFavoritesList(prev => [data.data, ...prev]);
+        }
         return { success: true, message: 'تم إضافة الرسالة إلى المفضلة' };
       }
       return { success: false, message: data.message };
@@ -190,6 +195,7 @@ export const useAiChatbot = () => {
         
         if (deleteData.success) {
           setFavorites(prev => prev.filter(q => q !== question));
+          setFavoritesList(prev => prev.filter(f => f.question !== question));
           return { success: true, message: 'تم إزالة الرسالة من المفضلة' };
         }
       }
@@ -348,6 +354,7 @@ export const useAiChatbot = () => {
     isSpeaking,
     messagesEndRef,
     userRole,
+    favoritesList,
     
     // Actions
     setIsOpen,
