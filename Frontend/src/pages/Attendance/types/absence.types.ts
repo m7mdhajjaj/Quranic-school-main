@@ -128,6 +128,7 @@ export interface StudentsTableProps {
   selectedAll: boolean;
   onToggleAll: () => void;
   onTogglePresence: (studentId: string) => void;
+  readOnly?: boolean; // 🆕 للأدمن - وضع المشاهدة فقط
 }
 
 // StudentView Component

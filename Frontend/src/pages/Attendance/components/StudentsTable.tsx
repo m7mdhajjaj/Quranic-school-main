@@ -8,6 +8,7 @@ export const StudentsTable = ({
   selectedAll,
   onToggleAll,
   onTogglePresence,
+  readOnly = false, // 🆕 وضع المشاهدة للأدمن
 }: StudentsTableProps) => {
   const [expandedStudentId, setExpandedStudentId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -31,18 +32,20 @@ export const StudentsTable = ({
           قائمة الطلاب <span className="text-emerald-100 font-normal text-sm mr-2">({students.length})</span>
         </h2>
         
-        {/* Mobile Select All */}
-        <div className="md:hidden flex items-center gap-2">
-          <label className="text-sm text-white font-medium cursor-pointer" htmlFor="mobile-select-all">تحديد الكل</label>
-          <input
-            id="mobile-select-all"
-            type="checkbox"
-            checked={selectedAll}
-            onChange={onToggleAll}
-            className="w-5 h-5 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500"
-            title="تحديد الكل"
-          />
-        </div>
+        {/* Mobile Select All - Hidden in readOnly mode */}
+        {!readOnly && (
+          <div className="md:hidden flex items-center gap-2">
+            <label className="text-sm text-white font-medium cursor-pointer" htmlFor="mobile-select-all">تحديد الكل</label>
+            <input
+              id="mobile-select-all"
+              type="checkbox"
+              checked={selectedAll}
+              onChange={onToggleAll}
+              className="w-5 h-5 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500"
+              title="تحديد الكل"
+            />
+          </div>
+        )}
       </div>
 
       {students.length === 0 ? (
@@ -68,18 +71,20 @@ export const StudentsTable = ({
                   <th className="py-3 px-0 text-center text-sm font-semibold text-gray-600 w-[120px]">رقم الهاتف</th>
                   <th className="py-3 px-3 text-center text-sm font-semibold text-gray-600 w-[85px]">الغيابات</th>
                   <th className="py-3 px-3 text-center text-sm font-semibold text-gray-600 w-[100px]">التفاصيل</th>
-                  <th className="py-3 px-3 text-center text-sm font-semibold text-gray-600 w-[100px]">
-                    <div className="flex flex-col items-center gap-1 cursor-pointer" onClick={onToggleAll}>
-                      <span className="text-xs">حضور الكل</span>
-                      <input
-                        type="checkbox"
-                        checked={selectedAll}
-                        readOnly
-                        className="w-5 h-5 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500 pointer-events-none"
-                        title="حضور الكل"
-                      />
-                    </div>
-                  </th>
+                  {!readOnly && (
+                    <th className="py-3 px-3 text-center text-sm font-semibold text-gray-600 w-[100px]">
+                      <div className="flex flex-col items-center gap-1 cursor-pointer" onClick={onToggleAll}>
+                        <span className="text-xs">حضور الكل</span>
+                        <input
+                          type="checkbox"
+                          checked={selectedAll}
+                          readOnly
+                          className="w-5 h-5 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500 pointer-events-none"
+                          title="حضور الكل"
+                        />
+                      </div>
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -89,8 +94,9 @@ export const StudentsTable = ({
                     className={`
                       group transition-colors hover:bg-gray-50
                       ${!s.isPresent ? 'bg-red-50/30' : ''}
+                      ${!readOnly ? 'cursor-pointer' : ''}
                     `}
-                    onClick={() => onTogglePresence(s._id)}
+                    onClick={readOnly ? undefined : () => onTogglePresence(s._id)}
                   >
                     <td className="pr-3 pl-0 py-3 text-sm text-gray-500 font-mono">
                       {(index + 1).toString().padStart(2, '0')}
@@ -139,17 +145,19 @@ export const StudentsTable = ({
                         <span className="text-xs text-gray-300">-</span>
                       )}
                     </td>
-                    <td className="px-3 py-3 text-center">
-                      <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
-                        <input
-                          type="checkbox"
-                          checked={s.isPresent}
-                          onChange={() => onTogglePresence(s._id)}
-                          className="w-6 h-6 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500 cursor-pointer"
-                          title={`تغيير حضور الطالب ${s.name}`}
-                        />
-                      </div>
-                    </td>
+                    {!readOnly && (
+                      <td className="px-3 py-3 text-center">
+                        <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={s.isPresent}
+                            onChange={() => onTogglePresence(s._id)}
+                            className="w-6 h-6 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500 cursor-pointer"
+                            title={`تغيير حضور الطالب ${s.name}`}
+                          />
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -161,8 +169,8 @@ export const StudentsTable = ({
             {students.map((s, index) => (
               <div
                 key={s._id}
-                className={`p-4 transition-colors ${!s.isPresent ? 'bg-red-50/30' : 'bg-white'}`}
-                onClick={() => onTogglePresence(s._id)}
+                className={`p-4 transition-colors ${!s.isPresent ? 'bg-red-50/30' : 'bg-white'} ${!readOnly ? 'cursor-pointer' : ''}`}
+                onClick={readOnly ? undefined : () => onTogglePresence(s._id)}
               >
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex-1 min-w-0">
@@ -202,17 +210,20 @@ export const StudentsTable = ({
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-4">
-                    <div onClick={(e) => e.stopPropagation()}>
-                      <input
-                        type="checkbox"
-                        checked={s.isPresent}
-                        onChange={() => onTogglePresence(s._id)}
-                        className="w-7 h-7 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500"
-                        title={`تغيير حضور الطالب ${s.name}`}
-                      />
+                  {/* Checkbox - Hidden in readOnly mode */}
+                  {!readOnly && (
+                    <div className="flex items-center gap-4">
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={s.isPresent}
+                          onChange={() => onTogglePresence(s._id)}
+                          className="w-7 h-7 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500"
+                          title={`تغيير حضور الطالب ${s.name}`}
+                        />
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
                 
                 {/* Mobile Absence Details */}
@@ -254,6 +265,7 @@ export const StudentsTable = ({
               <button
                 onClick={closeModal}
                 className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                title="إغلاق"
               >
                 <X className="w-5 h-5 text-white" />
               </button>

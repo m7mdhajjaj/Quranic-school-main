@@ -70,6 +70,12 @@ export const getPrimaryNavItems = (rolePermissions: RolePermissions): Navigation
         color: "from-indigo-600 to-purple-600",
       },
       {
+        to: "/attendance",
+        label: "الحضور والغياب",
+        icon: UserCheck,
+        color: "from-red-600 to-pink-600",
+      },
+      {
         to: "/chat",
         label: "المحادثة",
         icon: MessageSquare,

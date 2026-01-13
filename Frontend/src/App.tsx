@@ -156,6 +156,11 @@ const AdminRoutes: React.FC = () => {
         <Route path="/chat" element={<AdminChatView />} />
 
         {/* ============================================
+            الحضور والغياب - Attendance Management
+            ============================================ */}
+        <Route path="/attendance" element={<Absence />} />
+
+        {/* ============================================
             الإعدادات الشخصية - User Settings
             ============================================ */}
         <Route path="/profile" element={<Profile />} />

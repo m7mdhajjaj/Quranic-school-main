@@ -6,6 +6,8 @@ const {
   getTeacherGroupsForAttendance,
   getTeacherGroupsForMarks,
   getAvailableDates,
+  getAllGroupsForAdmin,
+  getGroupStudentsForAdmin,
 } = require("../../controllers/AttendanceController/index");
 const { protect } = require("../../middleware/auth");
 const { validateGetTeacherGroups } = require("../../Validation/Group/GroupValidation");
@@ -26,5 +28,12 @@ router.get("/teacher/:teacherId/groups", protect, validateGetTeacherGroups, getT
 // Get all groups for a teacher (for daily marks page)
 // Query params: includeStudents (default: false), filter (default: 'all')
 router.get("/teacher/:teacherId/groups-for-marks", protect, validateGetTeacherGroups, getTeacherGroupsForMarks);
+
+// 🆕 Admin Routes
+// Get all active groups for admin
+router.get("/admin/groups", protect, getAllGroupsForAdmin);
+
+// Get students of a specific group for admin
+router.get("/admin/groups/:groupId/students", protect, getGroupStudentsForAdmin);
 
 module.exports = router;

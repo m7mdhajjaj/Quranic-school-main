@@ -1,7 +1,14 @@
 // AbsencePage.tsx
-import { useState, useEffect, useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { useAbsenceData, useAttendanceStats, useUnsavedChanges, useStudentFilters, useStudentSelection, useAttendanceSave } from "./hooks";
+import { 
+  useAbsenceData, 
+  useAttendanceStats, 
+  useStudentFilters, 
+  useStudentSelection, 
+  useAttendanceSave,
+  useAttendancePageState 
+} from "./hooks";
 import { 
   StudentView, 
   TeacherGroupsGrid, 
@@ -14,7 +21,7 @@ import {
   TeacherAttendanceViewSkeleton,
   AdminAttendanceSkeleton
 } from "@/components/skeletons";
-import { isDateTooOld, getDaysAgo, todayISO } from "./utils/dateHelpers";
+import { isDateTooOld, getDaysAgo } from "./utils/dateHelpers";
 import { Card } from "@/components/UI/Card";
 import PageHeader from "@/components/UI/PageHeader";
 
@@ -31,7 +38,7 @@ const AbsencePage = () => {
     setDateRange,
     monthlyStats,
     weeklyStats,
-    currentMonthStats, // 🆕 إحصائيات الشهر الحالي
+    currentMonthStats,
     teacherGroups,
     availableDates,
     isAttendanceTaken,
@@ -41,61 +48,28 @@ const AbsencePage = () => {
     fetchAvailableDates,
   } = useAbsenceData();
 
-  const [isLoadingDate, setIsLoadingDate] = useState(false);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-  
   // استخراج الحلقة المختارة من الرابط
   const selectedGroupId = searchParams.get('groupId');
   const selectedGroup = useMemo(() => 
     teacherGroups.find(g => g._id === selectedGroupId) || null
   , [teacherGroups, selectedGroupId]);
 
-  // جلب التواريخ المتاحة عند اختيار حلقة
-  useEffect(() => {
-    if (selectedGroupId && currentUser) {
-      fetchAvailableDates(selectedGroupId);
-    }
-  }, [selectedGroupId, currentUser, fetchAvailableDates]);
-
-  // استخدام hook للتحذير من التغييرات غير المحفوظة
-  useUnsavedChanges({ hasUnsavedChanges });
-
-  // Reset date when leaving group view (returning to groups list)
-  useEffect(() => {
-    if (!selectedGroupId) {
-      const today = todayISO();
-      setDateRange(today, today);
-      setHasUnsavedChanges(false);
-    }
-  }, [selectedGroupId, setDateRange]);
-
-  // Initial load
-  useEffect(() => {
-    if (!currentUser) return;
-    if (!isInitialLoad) return; // تجنب التحميل المتكرر
-    
-    const loadData = async () => {
-      if (currentUser.role === "teacher" || currentUser.role === "admin") {
-        setIsLoadingDate(true);
-        try {
-          await fetchStudentsForTeacher(date);
-          setHasUnsavedChanges(false);
-        } finally {
-          setIsLoadingDate(false);
-          setIsInitialLoad(false);
-        }
-      } else if (currentUser.role === "student") {
-        try {
-          await fetchStudentAbsenceStats(currentUser._id);
-        } finally {
-          setIsInitialLoad(false);
-        }
-      }
-    };
-    
-    loadData();
-  }, [currentUser]); // eslint-disable-line react-hooks/exhaustive-deps
+  // استخدام hook لإدارة حالة الصفحة
+  const {
+    isLoadingDate,
+    setIsLoadingDate,
+    hasUnsavedChanges,
+    setHasUnsavedChanges,
+    isInitialLoad,
+  } = useAttendancePageState({
+    currentUser,
+    selectedGroupId,
+    date,
+    fetchStudentsForTeacher,
+    fetchStudentAbsenceStats,
+    fetchAvailableDates,
+    setDateRange,
+  });
   
   // Date change effect (بدون initial load)
   useEffect(() => {

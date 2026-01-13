@@ -10,6 +10,7 @@ const {
 const { getTeacherGroupsForAttendance } = require("./getTeacherGroups");
 const { getTeacherGroupsForMarks } = require("./getTeacherGroupsForMarks");
 const { getAvailableDates } = require("./getAvailableDates");
+const { getAllGroupsForAdmin, getGroupStudentsForAdmin } = require("./adminController");
 
 module.exports = {
   createAttendance,
@@ -19,4 +20,6 @@ module.exports = {
   getTeacherGroupsForAttendance,
   getTeacherGroupsForMarks,
   getAvailableDates,
+  getAllGroupsForAdmin,
+  getGroupStudentsForAdmin,
 };
