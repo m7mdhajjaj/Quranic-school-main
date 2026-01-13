@@ -59,6 +59,8 @@ export const useTeacherAttendance = (teacherId: string | undefined) => {
           _id: s._id,
           studentId: s.studentId,
           name: s.name,
+          gender: s.gender,
+          phoneNumber: s.phoneNumber,
           group: s.group || 'بدون حلقة',
           teacher: s.teacher,
           isPresent: s.isPresent,

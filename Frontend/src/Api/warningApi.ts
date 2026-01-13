@@ -91,5 +91,18 @@ export const getExpelledStudentsFromGroup = async (groupId: string) => {
   return response.data;
 };
 
+/**
+ * استعادة طالب مفصول إلى حلقة
+ * @route POST /api/warnings/restore
+ */
+export const restoreStudentToGroup = async (restoreData: {
+  studentId: string;
+  targetGroupId: string;
+  reason?: string;
+}) => {
+  const response = await api.post("/warnings/restore", restoreData);
+  return response.data;
+};
+
 // Note: Student history APIs moved to studentApi.ts
 // Use import { getStudentHistory, getStudentHistoryStats } from './studentApi'

@@ -14,11 +14,14 @@ export interface AttendanceStudent {
   _id: string;
   studentId: number;
   name: string;
+  gender?: 'male' | 'female';
+  phoneNumber?: string;
   group?: string;
   teacher?: string;
   isPresent: boolean;
   totalAbsences?: number;
   absenceDates?: string[];
+  attendanceRate?: number;
 }
 
 export interface MonthlyAbsence {
@@ -69,6 +72,7 @@ export interface TeacherGroup {
   name: string;
   status?: string; // active, inactive, etc.
   totalStudents?: number;
+  overallAttendanceRate?: number; // 🆕 Added for Section-based rate
 }
 
 // TeacherToolbar Component

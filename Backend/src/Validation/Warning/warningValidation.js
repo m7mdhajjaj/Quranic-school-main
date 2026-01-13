@@ -148,6 +148,33 @@ const validateGetExpelledStudents = [
   handleValidationErrors,
 ];
 
+/**
+ * Validation rules لاستعادة طالب مفصول
+ */
+const validateRestoreStudent = [
+  body("studentId")
+    .trim()
+    .notEmpty()
+    .withMessage("معرف الطالب مطلوب")
+    .isMongoId()
+    .withMessage("معرف الطالب غير صحيح"),
+
+  body("targetGroupId")
+    .trim()
+    .notEmpty()
+    .withMessage("معرف الحلقة المستهدفة مطلوب")
+    .isMongoId()
+    .withMessage("معرف الحلقة المستهدفة غير صحيح"),
+
+  body("reason")
+    .optional()
+    .trim()
+    .isLength({ min: 3 })
+    .withMessage("سبب الاستعادة يجب أن يكون واضحاً"),
+
+  handleValidationErrors,
+];
+
 // ============================================================================
 // EXPORTS - Only used validators (Optimized for performance)
 // ============================================================================
@@ -158,4 +185,5 @@ module.exports = {
   validateGetStudentWarnings,
   validateGetGroupWarnings,
   validateGetExpelledStudents,
+  validateRestoreStudent,
 };

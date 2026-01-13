@@ -87,6 +87,8 @@ export interface AttendanceStudent {
   _id: string;
   studentId: number;
   name: string;
+  gender?: 'male' | 'female'; // 🆕 النوع
+  phoneNumber?: string;      // 🆕 الهاتف
   group: string;
   teacher: string;
   isPresent: boolean;
@@ -96,7 +98,7 @@ export interface AttendanceStudent {
 
 export interface TeacherGroupsFullDataResponse {
   success: boolean;
-  data: {
+  data?: {
     teacher: {
       _id: string;
       name: string;
@@ -106,7 +108,7 @@ export interface TeacherGroupsFullDataResponse {
       name: string;
       totalStudents: number;
     }>;
-    students: AttendanceStudent[]; // includes attendance + absence stats
+    students: AttendanceStudent[];
     summary: {
       totalGroups: number;
       groupsWithStudents: number;
@@ -118,6 +120,8 @@ export interface TeacherGroupsFullDataResponse {
     };
   };
   message?: string;
+  noSection?: boolean; // 🆕 للإشارة إلى عدم وجود مقطع
+  date?: string; // 🆕 التاريخ المطلوب
 }
 
 export const getTeacherGroupsForAttendance = async (

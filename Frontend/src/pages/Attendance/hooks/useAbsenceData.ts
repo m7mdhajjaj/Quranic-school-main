@@ -59,7 +59,16 @@ export const useAbsenceData = () => {
 
       if (!result.success || !result.data) {
         console.error('❌ فشل جلب البيانات:', result.message);
-        setError(result.message || 'تعذر جلب بيانات الحضور');
+        
+        // 🆕 رسالة خاصة إذا لم يكن هناك مقطع في التاريخ المحدد
+        if (result.noSection) {
+          setError(`⚠️ ${result.message}`);
+        } else {
+          setError(result.message || 'تعذر جلب بيانات الحضور');
+        }
+        
+        // مسح بيانات الطلاب عند الفشل
+        setStudents([]);
         return;
       }
 
@@ -70,7 +79,8 @@ export const useAbsenceData = () => {
         _id: g._id, 
         name: g.name,
         status: g.status || 'active', // Default to active if not provided
-        totalStudents: g.totalStudents || 0
+        totalStudents: g.totalStudents || 0,
+        overallAttendanceRate: g.overallAttendanceRate || 0 // 🆕 Added
       })));
 
       // البيانات جاهزة للاستخدام مباشرة! 🎉
@@ -83,11 +93,14 @@ export const useAbsenceData = () => {
         _id: s._id,
         studentId: s.studentId,
         name: s.name,
+        gender: s.gender,           // 🆕 إضافة الجنس
+        phoneNumber: s.phoneNumber, // 🆕 إضافة رقم الهاتف
         group: s.group || 'بدون حلقة',
         teacher: s.teacher,
         isPresent: s.isPresent,
         totalAbsences: s.totalAbsences,
-        absenceDates: s.absenceDates
+        absenceDates: s.absenceDates,
+        attendanceRate: s.attendanceRate // 🆕 Added
       }));
 
       setStudents(formatted);

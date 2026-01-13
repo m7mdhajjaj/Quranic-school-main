@@ -34,34 +34,40 @@ export const useAttendanceSave = ({
 
   const handleSave = async () => {
     try {
-      // التحقق من أن التاريخ ليس قديماً جداً
+      // التحقق من أن التاريخ ليس قديماً جداً (تحقق بسيط بدلاً من Yup)
       if (isDateTooOld) {
-        showErrorToast(
-          `⚠️ لا يمكن التعديل - التاريخ قديم (مضى عليه ${daysAgo} يوم). لا يمكن تعديل الحضور بعد مرور أسبوع.`
-        );
-        return;
-      }
+         showErrorToast(
+           `⚠️ لا يمكن التعديل - التاريخ قديم (مضى عليه ${daysAgo} يوم). لا يمكن تعديل الحضور بعد مرور أسبوع.`
+         );
+         return;
+       }
 
       setIsSaving(true);
-
-      // تجهيز البيانات للإرسال
-      const payload = visibleStudents
+      
+      // تجهيز البيانات
+      // تحويل الطلاب إلى تنسيق السجلات المطلوب
+      const records = visibleStudents
         .filter((s) => s._id)
         .map((s) => ({
           studentId: s._id,
-          date,
           isPresent: s.isPresent,
         }));
 
+      if (records.length === 0) {
+        showErrorToast("لا يوجد طلاب لتسجيل حضورهم");
+        setIsSaving(false);
+        return;
+      }
+
       console.log("📤 Sending attendance data:", {
         date,
-        recordsCount: payload.length,
-        sampleRecord: payload[0],
+        recordsCount: records.length,
+        sampleRecord: records[0],
         allStudentsCount: visibleStudents.length,
       });
 
       // إرسال البيانات للـ API
-      await bulkSaveAttendance({ date, records: payload });
+      await bulkSaveAttendance({ date, records });
 
       // تنفيذ callback النجاح
       onSaveSuccess();

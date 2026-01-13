@@ -1,6 +1,7 @@
 // components/StudentsTable.tsx
 import { useState } from 'react';
 import type { StudentsTableProps } from '../types/absence.types';
+import { X, Calendar } from 'lucide-react';
 
 export const StudentsTable = ({
   students,
@@ -8,9 +9,19 @@ export const StudentsTable = ({
   onToggleAll,
   onTogglePresence,
 }: StudentsTableProps) => {
-  const [expandedStudentId, setExpandedStudentId] = useState<string | null>(
-    null
-  );
+  const [expandedStudentId, setExpandedStudentId] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<{ name: string; absenceDates: string[] } | null>(null);
+
+  const openModal = (studentName: string, absenceDates: string[]) => {
+    setSelectedStudent({ name: studentName, absenceDates });
+    setModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
+    setSelectedStudent(null);
+  };
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
@@ -51,9 +62,11 @@ export const StudentsTable = ({
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="py-4 px-6 text-right text-sm font-semibold text-gray-600 w-[100px]">#</th>
+                  <th className="py-4 px-6 text-right text-sm font-semibold text-gray-600 w-[80px]">#</th>
                   <th className="py-4 px-6 text-right text-sm font-semibold text-gray-600">اسم الطالب</th>
-                  <th className="py-4 px-6 text-center text-sm font-semibold text-gray-600 w-[120px]">الغيابات</th>
+                  <th className="py-4 px-6 text-center text-sm font-semibold text-gray-600 w-[80px]">الجنس</th>
+                  <th className="py-4 px-6 text-center text-sm font-semibold text-gray-600 w-[120px]">رقم الهاتف</th>
+                  <th className="py-4 px-6 text-center text-sm font-semibold text-gray-600 w-[100px]">الغيابات</th>
                   <th className="py-4 px-6 text-center text-sm font-semibold text-gray-600 w-[180px]">التفاصيل</th>
                   <th className="py-4 px-6 text-center text-sm font-semibold text-gray-600 w-[120px]">
                     <div className="flex flex-col items-center gap-1 cursor-pointer" onClick={onToggleAll}>
@@ -91,6 +104,20 @@ export const StudentsTable = ({
                       </div>
                     </td>
                     <td className="px-6 py-4 text-center">
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${
+                        s.gender === 'female' 
+                          ? 'bg-pink-100 text-pink-700' 
+                          : 'bg-blue-100 text-blue-700'
+                      }`}>
+                        {s.gender === 'female' ? 'أنثى' : 'ذكر'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className="text-sm text-gray-600 font-mono" dir="ltr">
+                        {s.phoneNumber || '-'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-center">
                       <span
                         className={`
                           inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium
@@ -104,27 +131,13 @@ export const StudentsTable = ({
                     </td>
                     <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
                       {(s.absenceDates ?? []).length > 0 ? (
-                        <div className="relative inline-block">
-                          <button
-                            onClick={() => setExpandedStudentId(expandedStudentId === s._id ? null : s._id)}
-                            className="text-xs text-teal-600 hover:text-teal-700 font-medium hover:underline"
-                          >
-                            {expandedStudentId === s._id ? 'إخفاء' : 'عرض التواريخ'}
-                          </button>
-                          
-                          {expandedStudentId === s._id && (
-                            <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-100 z-50 p-2">
-                              <div className="text-xs font-semibold text-gray-400 mb-2 px-2">سجل الغياب</div>
-                              <div className="max-h-32 overflow-y-auto space-y-1">
-                                {s.absenceDates?.map((date, idx) => (
-                                  <div key={idx} className="text-xs bg-gray-50 p-1.5 rounded text-gray-600 text-center">
-                                    {date}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
+                        <button
+                          onClick={() => openModal(s.name, s.absenceDates || [])}
+                          className="text-xs text-teal-600 hover:text-teal-700 font-medium hover:underline flex items-center gap-1 mx-auto"
+                        >
+                          <Calendar className="w-3.5 h-3.5" />
+                          <span>عرض التواريخ</span>
+                        </button>
                       ) : (
                         <span className="text-xs text-gray-300">-</span>
                       )}
@@ -148,7 +161,7 @@ export const StudentsTable = ({
 
           {/* Mobile List */}
           <div className="md:hidden divide-y divide-gray-100">
-            {students.map((s) => (
+            {students.map((s, index) => (
               <div
                 key={s._id}
                 className={`p-4 transition-colors ${!s.isPresent ? 'bg-red-50/30' : 'bg-white'}`}
@@ -167,12 +180,27 @@ export const StudentsTable = ({
                       )}
                     </div>
                     <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <span className="font-mono text-gray-400">#{index + 1}</span>
                       <span>{s.studentId}</span>
                       {s.group && (
                         <>
                           <span>•</span>
                           <span>{s.group}</span>
                         </>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 mt-2 flex-wrap">
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                        s.gender === 'female' 
+                          ? 'bg-pink-100 text-pink-700' 
+                          : 'bg-blue-100 text-blue-700'
+                      }`}>
+                        {s.gender === 'female' ? '👧 أنثى' : '👦 ذكر'}
+                      </span>
+                      {s.phoneNumber && (
+                        <span className="text-[10px] bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-mono" dir="ltr">
+                          📞 {s.phoneNumber}
+                        </span>
                       )}
                     </div>
                   </div>
@@ -196,31 +224,89 @@ export const StudentsTable = ({
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setExpandedStudentId(expandedStudentId === s._id ? null : s._id);
+                        openModal(s.name, s.absenceDates || []);
                       }}
                       className="text-xs text-teal-600 font-medium flex items-center gap-1"
                     >
-                      <span>{expandedStudentId === s._id ? 'إخفاء التواريخ' : 'عرض تواريخ الغياب'}</span>
-                      <svg className={`w-3 h-3 transition-transform ${expandedStudentId === s._id ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
+                      <Calendar className="w-3.5 h-3.5" />
+                      <span>عرض تواريخ الغياب</span>
                     </button>
-                    
-                    {expandedStudentId === s._id && (
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {s.absenceDates?.map((date, idx) => (
-                          <span key={idx} className="text-[10px] bg-gray-100 text-gray-600 px-2 py-1 rounded">
-                            {date}
-                          </span>
-                        ))}
-                      </div>
-                    )}
                   </div>
                 )}
               </div>
             ))}
           </div>
         </>
+      )}
+
+      {/* Modal */}
+      {modalOpen && selectedStudent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[80vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-red-500 to-rose-500 px-6 py-4 flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/20 rounded-lg">
+                  <Calendar className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white">سجل الغياب</h3>
+                  <p className="text-sm text-red-50">{selectedStudent.name}</p>
+                </div>
+              </div>
+              <button
+                onClick={closeModal}
+                className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-white" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6">
+              <div className="mb-4 flex items-center justify-between">
+                <p className="text-sm text-gray-600">
+                  إجمالي أيام الغياب: <span className="font-bold text-red-600">{selectedStudent.absenceDates.length}</span>
+                </p>
+              </div>
+
+              <div className="max-h-[400px] overflow-y-auto space-y-2 pr-2">
+                {selectedStudent.absenceDates.map((date, idx) => {
+                  // تحويل التاريخ من DD/MM/YYYY إلى كائن Date
+                  const [day, month, year] = date.split('/').map(Number);
+                  const dateObj = new Date(year, month - 1, day);
+                  const dayName = dateObj.toLocaleDateString('ar-SA', { weekday: 'long' });
+                  
+                  return (
+                    <div
+                      key={idx}
+                      className="flex items-center gap-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors group"
+                    >
+                      <div className="flex-shrink-0 w-8 h-8 bg-red-100 text-red-600 rounded-full flex items-center justify-center text-sm font-bold group-hover:bg-red-200 transition-colors">
+                        {idx + 1}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-800">{date}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">{dayName}</p>
+                      </div>
+                      <Calendar className="w-4 h-4 text-gray-400" />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+              <button
+                onClick={closeModal}
+                className="w-full px-4 py-2.5 bg-gray-800 hover:bg-gray-900 text-white rounded-lg font-medium transition-colors"
+              >
+                إغلاق
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

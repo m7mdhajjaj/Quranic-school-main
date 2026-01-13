@@ -60,7 +60,7 @@ exports.restoreStudentToGroup = async (req, res) => {
         status: "active"
       },
       {
-        $set: { status: "student_removed" }
+        $set: { status: "inactive" } // استخدام inactive بدلاً من student_removed
       }
     );
     console.log(`✅ تم إلغاء ${warningUpdate.modifiedCount} إنذارات للطالب ${studentId}`);

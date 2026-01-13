@@ -12,6 +12,7 @@ const {
   validateDeleteWarningByType,
   validateGetStudentWarnings,
   validateGetGroupWarnings,
+  validateRestoreStudent,
 } = require('../../Validation/Warning/warningValidation');
 
 // ============================================================================
@@ -53,6 +54,15 @@ router.get(
   warningController.getGroupWithStudentsWarnings
 );
 
+// جلب الطلاب المفصولين من حلقة (USED by Frontend)
+// GET /api/warnings/group/:groupId/expelled-students
+router.get(
+  '/group/:groupId/expelled-students',
+  protect,
+  validateGetGroupWarnings,
+  warningController.getExpelledStudentsFromGroup
+);
+
 // ============================================================================
 // POST ROUTES - إنشاء الإنذارات
 // ============================================================================
@@ -60,6 +70,15 @@ router.get(
 // إنشاء إنذار جديد (للمعلم فقط)
 // POST /api/warnings
 router.post('/', protect, validateCreateWarning, warningController.createWarning);
+
+// استعادة طالب مفصول
+// POST /api/warnings/restore
+router.post(
+  '/restore',
+  protect,
+  validateRestoreStudent,
+  warningController.restoreStudentToGroup
+);
 
 // ============================================================================
 // DELETE ROUTES - حذف الإنذارات

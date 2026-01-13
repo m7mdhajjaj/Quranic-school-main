@@ -11,11 +11,13 @@ const getGroupStudentsWarnings = require("./getGroupStudentsWarnings");
 const deleteWarningByType = require("./deleteWarningByType");
 const getGroupStatistics = require("./getGroupStatistics");
 const getExpelledStudentsFromGroup = require("./getExpelledStudentsFromGroup");
+const restoreStudent = require("./restoreStudent");
 
 // Export all functions
 module.exports = {
   // Create operations
   ...createWarning,
+  ...restoreStudent,
 
   // Get operations
   ...getWarnings,

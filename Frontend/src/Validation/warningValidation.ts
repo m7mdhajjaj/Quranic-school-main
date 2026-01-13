@@ -24,6 +24,15 @@ export interface CreateWarningData {
 }
 
 /**
+ * بيانات استعادة طالب
+ */
+export interface RestoreStudentData {
+  studentId: string;
+  targetGroupId: string;
+  reason?: string;
+}
+
+/**
  * التحقق من صحة معرف MongoDB
  */
 const isValidMongoId = (id: string): boolean => {
@@ -86,6 +95,37 @@ export const validateCreateWarning = (data: CreateWarningData): ValidationResult
     } else if (reasonLength > 500) {
       errors.push('سبب الإنذار يجب أن لا يتجاوز 500 حرف');
     }
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+  };
+};
+
+/**
+ * التحقق من صحة بيانات استعادة طالب
+ */
+export const validateRestoreStudent = (data: RestoreStudentData): ValidationResult => {
+  const errors: string[] = [];
+
+  // التحقق من معرف الطالب
+  if (!data.studentId || data.studentId.trim() === '') {
+    errors.push('يجب تحديد الطالب المراد استعادته');
+  } else if (!isValidMongoId(data.studentId)) {
+    errors.push('معرف الطالب غير صحيح');
+  }
+
+  // التحقق من معرف الحلقة المستهدفة
+  if (!data.targetGroupId || data.targetGroupId.trim() === '') {
+    errors.push('يجب تحديد الحلقة المستهدفة');
+  } else if (!isValidMongoId(data.targetGroupId)) {
+    errors.push('معرف الحلقة المستهدفة غير صحيح');
+  }
+
+  // التحقق من سبب الاستعادة
+  if (data.reason && data.reason.trim().length < 3) {
+    errors.push('سبب الاستعادة يجب أن يكون 3 أحرف على الأقل');
   }
 
   return {

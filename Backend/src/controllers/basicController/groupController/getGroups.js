@@ -364,6 +364,8 @@ exports.getGroupStudents = async (req, res) => {
     // 3. جلب الطلاب
     let students;
     
+    // Note: Suspended students have group=null, so they are automatically excluded by the query { group: group.name }
+
     if (includeDetails === 'true') {
       // جلب الطلاب مع كامل معلوماتهم
       students = await Student.find(query)
@@ -371,9 +373,9 @@ exports.getGroupStudents = async (req, res) => {
         .lean()
         .sort({ firstName: 1, lastName: 1 });
     } else {
-      // جلب الطلاب بمعلومات مختصرة فقط
+      // جلب الطلاب بمعلومات مختصرة فقط (مع رقم الهاتف والجنس)
       students = await Student.find(query)
-        .select('studentId firstName lastName')
+        .select('studentId firstName lastName phoneNumber gender') // إضافة phoneNumber و gender
         .lean()
         .sort({ firstName: 1, lastName: 1 });
     }
@@ -532,8 +534,9 @@ exports.getGroupsByTeacherIdWithFilters = async (req, res) => {
       
       const groupsWithStudents = await Promise.all(
         groupsWithInfo.map(async (group) => {
+          // استبدال aggregate بـ find لأن المفصولين لديهم group=null
           const students = await Student.find({ group: group.name })
-            .select("studentId firstName lastName group")
+            .select("studentId firstName lastName group phoneNumber gender") // إضافة phoneNumber و gender
             .lean()
             .sort({ firstName: 1 });
 
@@ -543,6 +546,8 @@ exports.getGroupsByTeacherIdWithFilters = async (req, res) => {
               _id: s._id,
               studentId: s.studentId,
               name: `${s.firstName} ${s.lastName}`,
+              phoneNumber: s.phoneNumber,
+              gender: s.gender === 'ذكر' ? 'male' : (s.gender === 'أنثى' || s.gender === 'انثى' ? 'female' : 'male'), // تحويل للجنس
             })),
             totalStudents: students.length, // تحديث العدد الفعلي من الطلاب المجلوبين
           };

@@ -27,9 +27,9 @@ export const useAttendanceStats = ({
 
   // حساب الإحصائيات الحالية في Frontend (للاستجابة الفورية)
   const currentStats = useMemo(() => {
-    // إجمالي الطلاب = كل الطلاب (بدون فلترة)
-    const totalStudents = allStudents.length;
-    // الحاضرون والغائبون = من الطلاب المرئيين (بعد الفلترة)
+    // إجمالي الطلاب = الطلاب المرئيين (بعد الفلترة بالحلقة)
+    const totalStudents = visibleStudents.length;
+    // الحاضرون والغائبون = من الطلاب المرئيين
     const presentCount = visibleStudents.filter((s) => s.isPresent).length;
     const absentCount = visibleStudents.length - presentCount;
     const attendanceRate =
@@ -43,7 +43,7 @@ export const useAttendanceStats = ({
       absentCount,
       attendanceRate,
     };
-  }, [allStudents, visibleStudents]);
+  }, [visibleStudents]);
 
   // تحديث آخر قيم مستقرة عندما يكتمل التحميل
   // استخدام deep comparison لتجنب updates غير ضرورية

@@ -58,6 +58,32 @@ exports.getAbsentStudentsToday = async (req, res) => {
           preserveNullAndEmptyArrays: false,
         },
       },
+      // Exclude Expelled Students
+      {
+        $lookup: {
+          from: "warnings",
+          let: { studentId: "$student._id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$studentId", "$$studentId"] },
+                    { $eq: ["$status", "active"] },
+                    { $in: ["$type", ["third", "expulsion"]] }
+                  ]
+                }
+              }
+            }
+          ],
+          as: "expulsionCheck"
+        }
+      },
+      {
+         $match: {
+           expulsionCheck: { $size: 0 }
+         }
+      },
       // Join with Group collection للحصول على teacher ObjectId
       {
         $lookup: {

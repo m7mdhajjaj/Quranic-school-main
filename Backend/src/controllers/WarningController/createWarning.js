@@ -183,6 +183,10 @@ exports.createWarning = async (req, res) => {
       const cachePattern = `cache:/api/groups/teacher-id/${teacherId}*`;
       await invalidateCache(cachePattern);
       invalidateStudentCountsCache();
+
+      // 🆕 إبطال كاش الحضور أيضاً (لإزالة الطالب من القائمة فوراً)
+      const attendanceCachePattern = `cache:/api/attendance/teacher/${teacherId}*`;
+      await invalidateCache(attendanceCachePattern);
     }
 
     // إرجاع الإنذار مع البيانات المرتبطة

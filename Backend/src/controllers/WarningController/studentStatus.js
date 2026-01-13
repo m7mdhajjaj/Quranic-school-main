@@ -12,36 +12,37 @@ exports.checkStudentStatus = async (req, res) => {
   try {
     const { studentId } = req.params;
 
-    // البحث عن إنذار فصل نهائي
+    // البحث عن إنذار فصل نهائي (يجب أن يكون نشطاً)
     const expulsion = await Warning.findOne({
       studentId,
       type: "expulsion",
+      status: "active"
     });
 
-    // البحث عن إنذارات فصل مؤقت نشطة
+    // البحث عن إنذارات فصل نشطة (الإنذار الثالث يعتبر فصل)
     const activeSuspension = await Warning.findOne({
       studentId,
-      type: { $in: ["first", "second", "third"] },
-      isActive: true,
-      endDate: { $gt: new Date() },
+      type: { $in: ["third"] }, // الثالث يعتبر فصل
+      status: "active"
     });
 
     // البحث عن حظر دائم من الأنشطة
     const permanentBan = await Warning.findOne({
       studentId,
       $or: [{ type: "third" }, { type: "expulsion" }],
+      status: "active"
     });
 
-    // حساب حظر مؤقت من الأنشطة
+    // حساب حظر مؤقت من الأنشطة (مثلاً الإنذار الثاني)
     const temporaryBan = await Warning.findOne({
       studentId,
       type: "second",
-      isActive: true,
+      status: "active"
     });
 
     let activitiesBanEndDate = null;
     if (temporaryBan) {
-      const banEndDate = new Date(temporaryBan.startDate);
+      const banEndDate = new Date(temporaryBan.createdAt); // استخدام createdAt
       banEndDate.setMonth(banEndDate.getMonth() + 1); // شهر واحد
       if (banEndDate > new Date()) {
         activitiesBanEndDate = banEndDate;
@@ -51,7 +52,7 @@ exports.checkStudentStatus = async (req, res) => {
     res.json({
       isPermanentlyExpelled: !!expulsion,
       isTemporarilySuspended: !!activeSuspension,
-      suspensionEndDate: activeSuspension?.endDate || null,
+      suspensionEndDate: null, // لم يعد لدينا endDate محدد في السكيما، الفصل مفتوح حتى الإعادة
       isPermanentlyBannedFromActivities: !!permanentBan,
       isTemporarilyBannedFromActivities: !!activitiesBanEndDate,
       activitiesBanEndDate,

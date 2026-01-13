@@ -94,38 +94,13 @@ const calculateAge = (birthDate) => {
 };
 
 /**
- * Pipeline مشترك لحساب عدد الطلاب مع استبعاد المفصولين
+ * Pipeline مشترك لحساب عدد الطلاب
  * @param {Object} matchStage - مرحلة الفلترة الأولية (مثل تحديد الحلقات)
  */
 const getStudentCountPipeline = (matchStage = {}) => {
   return [
     { $match: matchStage },
-    {
-      $lookup: {
-        from: "warnings",
-        let: { studentId: "$_id" },
-        pipeline: [
-          {
-            $match: {
-              $expr: {
-                $and: [
-                  { $eq: ["$studentId", "$$studentId"] },
-                  { $eq: ["$status", "active"] },
-                  { $in: ["$type", ["third", "expulsion"]] }
-                ]
-              }
-            }
-          }
-        ],
-        as: "activeExpulsionWarnings"
-      }
-    },
-    {
-      $match: {
-        // استبعاد الطلاب الذين لديهم إنذار فصل نشط
-        activeExpulsionWarnings: { $size: 0 }
-      }
-    },
+    // Removed Warning lookup logic - suspended students have group=null so they are excluded naturally
     {
       $group: {
         _id: '$group',

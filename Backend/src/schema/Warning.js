@@ -41,7 +41,7 @@ const warningSchema = new mongoose.Schema(
 
     type: {
       type: String,
-      enum: ["warning", "first", "second", "third"],
+      enum: ["warning", "first", "second", "third", "expulsion"],
       required: true,
     },
 
@@ -52,7 +52,7 @@ const warningSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["active", "student_removed"],
+      enum: ["active", "student_removed", "inactive"], // أضفنا inactive
       default: "active",
     },
   },

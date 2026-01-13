@@ -5,21 +5,14 @@ const Attendance = require("../../schema/Attendance");
 exports.createAttendance = async (req, res) => {
   try {
     const { date, records } = req.body;
-
-    // 1. Basic Validation
-    if (!date) return res.status(400).json({ message: "التاريخ مطلوب" });
-    if (!records || !Array.isArray(records) || records.length === 0) {
-      return res.status(400).json({ message: "سجلات الحضور مطلوبة" });
-    }
-
-    // 2. Date Parsing & Validation
+    
+    // Note: Validation is now handled by validate() middleware using Zod schema
+    
+    // 1. Date Parsing
     const formattedDate = new Date(date);
-    if (isNaN(formattedDate.getTime())) {
-      return res.status(400).json({ message: "التاريخ غير صالح" });
-    }
     formattedDate.setHours(0, 0, 0, 0);
 
-    // 3. Check if date is too old ( > 7 days)
+    // 2. Check if date is too old ( > 7 days)
     const now = new Date();
     const ONE_WEEK = 7 * 24 * 60 * 60 * 1000;
     const timeDiff = now - formattedDate;
@@ -32,18 +25,11 @@ exports.createAttendance = async (req, res) => {
       });
     }
 
-    // 4. Prepare Records
+    // 3. Prepare Records
     const attendanceRecords = [];
     const studentIds = [];
     
     for (const record of records) {
-      if (!record.studentId || !mongoose.Types.ObjectId.isValid(record.studentId)) {
-        return res.status(400).json({ 
-          message: "بيانات غير صالحة", 
-          details: `معرف الطالب غير صالح: ${record.studentId}` 
-        });
-      }
-      
       attendanceRecords.push({
         studentId: record.studentId,
         date: formattedDate,
@@ -52,7 +38,7 @@ exports.createAttendance = async (req, res) => {
       studentIds.push(record.studentId);
     }
 
-    // 5. Fetch Old Records (for notifications)
+    // 4. Fetch Old Records (for notifications)
     // We do this before deletion to know who changed status
     let oldRecordsMap = new Map();
     try {

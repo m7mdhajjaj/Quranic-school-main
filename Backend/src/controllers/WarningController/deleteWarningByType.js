@@ -40,17 +40,22 @@ exports.deleteWarningByType = async (req, res) => {
     // إعادة الطالب للحلقة إذا كان فصل
     const restored = await restoreStudentToGroup(warning);
 
-    // �️ إبطال الكاش إذا تم استعادة الطالب
-    if (restored) {
-      const teacherId = warning.groupId?.teacher;
-      if (teacherId) {
-        const cachePattern = `cache:/api/groups/teacher-id/${teacherId}*`;
-        await invalidateCache(cachePattern);
-        invalidateStudentCountsCache();
-      }
+    // حذف الإنذار
+    await Warning.findByIdAndDelete(warning._id);
+
+    // 🔄 إبطال الكاش دائماً (سواء تمت الاستعادة أم لا)
+    const teacherId = warning.groupId?.teacher;
+    if (teacherId) {
+      const cachePattern = `cache:/api/groups/teacher-id/${teacherId}*`;
+      await invalidateCache(cachePattern);
+      invalidateStudentCountsCache();
+      
+      // 🆕 إبطال كاش الحضور أيضاً
+      const attendanceCachePattern = `cache:/api/attendance/teacher/${teacherId}*`;
+      await invalidateCache(attendanceCachePattern);
     }
 
-    // �📚 تسجيل الإعادة في التاريخ إذا تمت
+    // 📚 تسجيل الإعادة في التاريخ إذا تمت
     if (restored && restored.restoredTo) {
       logRestorationEvent(
         warning.studentId,
@@ -64,9 +69,6 @@ exports.deleteWarningByType = async (req, res) => {
         req.user
       ).catch(err => console.error("❌ History logging error:", err));
     }
-
-    // حذف الإنذار
-    await Warning.findByIdAndDelete(warning._id);
 
     // 🔔 إرسال إشعار Socket.IO لتحديث الواجهة فوراً
     if (global.io) {

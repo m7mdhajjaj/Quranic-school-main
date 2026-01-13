@@ -153,12 +153,20 @@ const AbsencePage = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4" dir="rtl">
         <Card variant="elevated" className="max-w-md p-6">
           <div className="text-center">
-            <div className="text-6xl mb-4">❌</div>
-            <h2 className="text-xl font-bold text-gray-800 mb-2">حدث خطأ</h2>
-            <p className="text-gray-600">{error}</p>
+            <div className="text-6xl mb-4">⚠️</div>
+            <h2 className="text-xl font-bold text-gray-800 mb-2">تنبيه</h2>
+            <p className="text-gray-600 leading-relaxed whitespace-pre-line">{error}</p>
+            {selectedGroupId && (
+              <button
+                onClick={() => setSearchParams({})}
+                className="mt-6 px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
+              >
+                العودة للحلقات
+              </button>
+            )}
           </div>
         </Card>
       </div>

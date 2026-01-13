@@ -58,7 +58,13 @@ async function restoreStudentToGroup(warning) {
     `✅ تمت إعادة الطالب ${student.firstName} إلى الحلقة ${warning.originalGroup}`
   );
   
-  return true;
+  // إرجاع معلومات الطالب المُستعاد
+  return {
+    studentId: student._id,
+    studentName: `${student.firstName} ${student.lastName}`,
+    restoredTo: warning.originalGroup,
+    group: group ? group.name : warning.originalGroup
+  };
 }
 
 /**
@@ -287,11 +293,11 @@ async function getStudentOriginalGroup(student, studentId) {
   let studentOriginalGroup = student.group;
   
   if (!student.group) {
-    // الطالب مفصول، ابحث عن آخر إنذار نشط
+    // الطالب مفصول، ابحث عن آخر إنذار نشط تسبب في الفصل
     const lastWarning = await Warning.findOne({
       studentId,
-      isActive: true,
-      suspensionType: { $in: ["temporary", "permanent"] },
+      status: "active",
+      type: { $in: ["third", "expulsion"] }, // أنواع الإنذارات التي تسبب الفصل
     }).sort({ createdAt: -1 });
     
     if (lastWarning && lastWarning.originalGroup) {
