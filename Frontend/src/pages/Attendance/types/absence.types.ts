@@ -43,6 +43,18 @@ export interface WeeklyAbsence {
   absenceDates: string[];
 }
 
+// 🆕 إحصائيات الشهر الحالي من Backend
+export interface CurrentMonthAbsence {
+  totalDays: number;
+  absenceCount: number;
+  presenceCount: number;
+  rate: number;
+  attendanceRate: number;
+  month: string;
+  year: number;
+  absenceDates: string[];
+}
+
 export interface YearTotals {
   absenceCount: number;
   totalDays: number;
@@ -122,6 +134,7 @@ export interface StudentsTableProps {
 export interface StudentViewProps {
   monthlyStats: MonthlyAbsence[];
   weeklyStats?: WeeklyAbsence | null;
+  currentMonthStats?: CurrentMonthAbsence | null; // 🆕
   onRefresh?: () => void;
   isRefreshing?: boolean;
 }

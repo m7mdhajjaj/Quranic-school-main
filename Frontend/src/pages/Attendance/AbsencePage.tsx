@@ -30,11 +30,12 @@ const AbsencePage = () => {
     endDate,
     setDateRange,
     monthlyStats,
-    weeklyStats, // Get weekly stats
+    weeklyStats,
+    currentMonthStats, // 🆕 إحصائيات الشهر الحالي
     teacherGroups,
     availableDates,
-    isAttendanceTaken, // 🆕 هل تم أخذ الحضور لهذا التاريخ؟
-    setIsAttendanceTaken, // 🆕 للتحديث بعد الحفظ
+    isAttendanceTaken,
+    setIsAttendanceTaken,
     fetchStudentsForTeacher,
     fetchStudentAbsenceStats,
     fetchAvailableDates,
@@ -233,8 +234,9 @@ const AbsencePage = () => {
           <StudentView 
             monthlyStats={monthlyStats} 
             weeklyStats={weeklyStats}
+            currentMonthStats={currentMonthStats}
             onRefresh={() => fetchStudentAbsenceStats(currentUser._id)}
-            isRefreshing={isLoadingDate} // Reusing isLoadingDate or add specific state
+            isRefreshing={isLoadingDate}
           />
         ) : currentUser?.role === "admin" ? (
           <AdminView />

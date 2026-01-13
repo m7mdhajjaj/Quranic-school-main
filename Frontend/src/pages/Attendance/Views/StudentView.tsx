@@ -6,7 +6,7 @@ import { Calendar, CheckCircle2, CalendarDays, AlertCircle } from "lucide-react"
 import type { StudentViewProps } from "../types/absence.types";
 import { TotalAbsenceCard, AbsenceRateCard, WeeklyStatsCard } from "../components/StudentStatsCards";
 
-export const StudentView = ({ monthlyStats, weeklyStats, onRefresh, isRefreshing }: StudentViewProps) => {
+export const StudentView = ({ monthlyStats, weeklyStats, currentMonthStats, onRefresh, isRefreshing }: StudentViewProps) => {
   // وضع العرض: 'weekly' للأسبوع الحالي، 'monthly' للتاريخ المحدد
   const [viewMode, setViewMode] = useState<'weekly' | 'monthly'>('weekly');
 
@@ -28,6 +28,7 @@ export const StudentView = ({ monthlyStats, weeklyStats, onRefresh, isRefreshing
   const { filteredMonthlyStats, yearTotals, currentViewStats } = useStudentStats({
     monthlyStats,
     weeklyStats,
+    currentMonthStats, // 🆕 تمرير إحصائيات الشهر الحالي
     selectedYear,
     selectedMonthIndex,
     viewMode

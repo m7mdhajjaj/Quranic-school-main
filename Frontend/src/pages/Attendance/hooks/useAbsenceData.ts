@@ -39,6 +39,17 @@ export const useAbsenceData = () => {
     weekEnd: string;
     absenceDates: (string | Date)[];
   } | null>(null);
+  // 🆕 إحصائيات الشهر الحالي (من Backend)
+  const [currentMonthStats, setCurrentMonthStats] = useState<{
+    totalDays: number;
+    absenceCount: number;
+    presenceCount: number;
+    rate: number;
+    attendanceRate: number;
+    month: string;
+    year: number;
+    absenceDates: (string | Date)[];
+  } | null>(null);
   const [teacherGroups, setTeacherGroups] = useState<Array<{ 
     _id: string; 
     name: string; 
@@ -143,15 +154,21 @@ export const useAbsenceData = () => {
         if (result.weeklyStats) {
             setWeeklyStats(result.weeklyStats);
         }
+        // 🆕 إحصائيات الشهر الحالي
+        if (result.monthlyStats) {
+            setCurrentMonthStats(result.monthlyStats);
+        }
       } else {
         setMonthlyStats([]);
         setWeeklyStats(null);
+        setCurrentMonthStats(null);
         setError('تعذر جلب إحصائيات الغياب');
       }
     } catch (e) {
       console.error(e);
       setMonthlyStats([]);
       setWeeklyStats(null);
+      setCurrentMonthStats(null);
       setError('تعذر جلب إحصائيات الغياب');
     }
   }, []);
@@ -204,11 +221,12 @@ export const useAbsenceData = () => {
     endDate,
     setDateRange,
     monthlyStats,
-    weeklyStats, // Export
+    weeklyStats,
+    currentMonthStats, // 🆕 إحصائيات الشهر الحالي
     teacherGroups,
     availableDates,
-    isAttendanceTaken, // 🆕 هل تم أخذ الحضور لهذا التاريخ؟
-    setIsAttendanceTaken, // 🆕 للتحديث بعد الحفظ
+    isAttendanceTaken,
+    setIsAttendanceTaken,
     fetchStudentsForTeacher,
     fetchStudentAbsenceStats,
     fetchAvailableDates,

@@ -17,8 +17,21 @@ interface WeeklyStatsData {
   absenceDates: (string | Date)[];
 }
 
+// 🆕 CurrentMonthStats من Backend
+interface CurrentMonthStatsData {
+  totalDays: number;
+  absenceCount: number;
+  presenceCount: number;
+  rate: number;
+  attendanceRate: number;
+  month: string;
+  year: number;
+  absenceDates: (string | Date)[];
+}
+
 interface ExtendedUseStudentStatsProps extends UseStudentStatsProps {
   weeklyStats?: WeeklyStatsData | null;
+  currentMonthStats?: CurrentMonthStatsData | null; // 🆕
   viewMode: 'weekly' | 'monthly';
 }
 
@@ -29,6 +42,7 @@ interface ExtendedUseStudentStatsProps extends UseStudentStatsProps {
 export const useStudentStats = ({
   monthlyStats,
   weeklyStats,
+  currentMonthStats, // 🆕
   selectedYear,
   selectedMonthIndex,
   viewMode
@@ -65,10 +79,26 @@ export const useStudentStats = ({
         absenceDates: formattedDates
       };
     } else {
-      // وضع العرض الشهري: تجميع بيانات الشهر المختار
+      // 🆕 وضع العرض الشهري: استخدام currentMonthStats إذا كان الشهر/السنة الحالية
+      const now = new Date();
+      const isCurrentMonth = selectedYear === now.getFullYear() && selectedMonthIndex === now.getMonth();
+      
+      if (isCurrentMonth && currentMonthStats) {
+        const formattedDates = (currentMonthStats.absenceDates || []).map(d => 
+          typeof d === 'string' ? d : new Date(d).toISOString()
+        );
+        return {
+          totalDays: currentMonthStats.totalDays,
+          absenceCount: currentMonthStats.absenceCount,
+          rate: currentMonthStats.rate,
+          absenceDates: formattedDates
+        };
+      }
+      
+      // للأشهر السابقة: استخدام البيانات من data array
       if (filteredMonthlyStats.length === 0) return { totalDays: 0, absenceCount: 0, rate: 0, absenceDates: [] as string[] };
       
-      const monthData = filteredMonthlyStats[0]; // يفترض أن هناك سجل واحد لكل شهر
+      const monthData = filteredMonthlyStats[0];
       return {
         totalDays: monthData.totalDays,
         absenceCount: monthData.absenceCount,
@@ -76,7 +106,7 @@ export const useStudentStats = ({
         absenceDates: monthData.absenceDates || []
       };
     }
-  }, [viewMode, weeklyStats, filteredMonthlyStats]);
+  }, [viewMode, weeklyStats, currentMonthStats, filteredMonthlyStats, selectedYear, selectedMonthIndex]);
 
   // 3. حساب إجمالي السنة (للاستخدام العام إذا لزم الأمر)
   const yearTotals: YearTotals = useMemo(() => {

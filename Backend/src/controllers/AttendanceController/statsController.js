@@ -24,30 +24,32 @@ exports.getStudentAttendanceStats = async (req, res) => {
     console.log("📊 [Stats] Student:", studentId, "Group:", groupName);
 
     // 2. dates from Sections (Fetching ALL to avoid DB timezone filtering issues)
-    // We strictly filter in memory based on "End of Today"
+    // ✅ Using dateKey (YYYY-MM-DD string) for consistent date comparison
     const sections = await Section.find({
       group: groupName
-    }).select("date");
+    }).select("dateKey date");
 
     console.log("📅 [Stats] Found", sections.length, "sections for group:", groupName);
 
-    const endOfToday = new Date();
-    endOfToday.setHours(23, 59, 59, 999);
+    const todayStr = new Date().toISOString().split('T')[0];
 
     // Extract unique dates from sections (Set to handle multiple sections per day if any)
     const sectionDatesMap = new Set(); 
     const allSectionDatesMap = new Set(); // Include Future dates for Weekly Schedule view
 
     sections.forEach(sec => {
-      const dateStr = sec.date.toISOString().split('T')[0];
+      // ✅ استخدام dateKey بدل date.toISOString() لتجنب مشاكل التايم زون
+      const dateStr = sec.dateKey || sec.date.toISOString().split('T')[0];
       allSectionDatesMap.add(dateStr);
 
-      if (sec.date <= endOfToday) {
+      // فقط التواريخ الماضية أو اليوم
+      if (dateStr <= todayStr) {
           sectionDatesMap.add(dateStr);
       }
     });
 
     console.log("📅 [Stats] Section dates (all):", [...allSectionDatesMap]);
+    console.log("📅 [Stats] Section dates (past/today):", [...sectionDatesMap]);
 
     // 3. Get all attendance records for this student
     const records = await Attendance.find({ studentId });
@@ -172,6 +174,8 @@ exports.getStudentAttendanceStats = async (req, res) => {
       
       return {
         month: `${label} ${v.year}`,
+        year: v.year,
+        monthIndex: v.month,
         absenceCount: v.absences,
         presenceCount,
         totalDays: v.total,
@@ -183,23 +187,49 @@ exports.getStudentAttendanceStats = async (req, res) => {
 
     // Sort by year and month
     stats.sort((a, b) => {
-      const aLastSpace = a.month.lastIndexOf(' ');
-      const bLastSpace = b.month.lastIndexOf(' ');
-      const aLabel = a.month.substring(0, aLastSpace);
-      const bLabel = b.month.substring(0, bLastSpace);
-      const aYear = parseInt(a.month.substring(aLastSpace + 1), 10);
-      const bYear = parseInt(b.month.substring(bLastSpace + 1), 10);
-
-      if (aYear !== bYear) return aYear - bYear;
-      const aIdx = AR_MONTHS.findIndex(x => x === aLabel);
-      const bIdx = AR_MONTHS.findIndex(x => x === bLabel);
-      return aIdx - bIdx;
+      if (a.year !== b.year) return a.year - b.year;
+      return a.monthIndex - b.monthIndex;
     });
 
     // Calculate Weekly Rates
     const weeklyPresenceCount = weeklyTotal - weeklyAbsences;
     const weeklyAbsenceRate = weeklyTotal > 0 ? Math.round((weeklyAbsences / weeklyTotal) * 1000) / 10 : 0;
     const weeklyAttendanceRate = weeklyTotal > 0 ? Math.round((weeklyPresenceCount / weeklyTotal) * 1000) / 10 : 0;
+
+    // 🆕 Calculate Monthly Stats (Current Month)
+    // حساب عدد المقاطع للشهر الحالي (كل المقاطع بما فيها المستقبلية)
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+    const currentMonthKey = `${currentYear}-${currentMonth}`;
+    
+    // حساب عدد المقاطع في الشهر الحالي من allSectionDatesMap
+    // ✅ استخدام parsing مباشر للـ string بدل Date object لتجنب timezone issues
+    let monthlyTotalSections = 0;
+    for (const dateStr of allSectionDatesMap) {
+      // dateStr format: "YYYY-MM-DD"
+      const [yearStr, monthStr] = dateStr.split('-');
+      const sectionYear = parseInt(yearStr, 10);
+      const sectionMonth = parseInt(monthStr, 10) - 1; // 0-indexed
+      
+      if (sectionMonth === currentMonth && sectionYear === currentYear) {
+        monthlyTotalSections++;
+      }
+    }
+    
+    console.log("📊 [Monthly] Current Month:", AR_MONTHS[currentMonth], currentYear, "| Sections in month:", monthlyTotalSections);
+    console.log("📊 [Monthly] All section dates:", [...allSectionDatesMap]);
+    
+    // الغيابات من grouped (فقط التواريخ الماضية)
+    const currentMonthData = grouped[currentMonthKey] || { total: 0, absences: 0, dates: [] };
+    const monthlyAbsences = currentMonthData.absences;
+    
+    // استخدام عدد المقاطع الفعلي كـ total
+    const monthlyPresenceCount = monthlyTotalSections - monthlyAbsences;
+    const monthlyAbsenceRate = monthlyTotalSections > 0 ? Math.round((monthlyAbsences / monthlyTotalSections) * 1000) / 10 : 0;
+    const monthlyAttendanceRate = monthlyTotalSections > 0 ? Math.round((monthlyPresenceCount / monthlyTotalSections) * 1000) / 10 : 0;
+
+    console.log("📊 [Monthly] Current Month:", AR_MONTHS[currentMonth], currentYear);
+    console.log("📊 [Monthly] Total Sections:", monthlyTotalSections, "Absences:", monthlyAbsences);
 
     res.json({
       success: true,
@@ -212,7 +242,18 @@ exports.getStudentAttendanceStats = async (req, res) => {
           attendanceRate: weeklyAttendanceRate,
           weekStart: weekStart.toISOString().split('T')[0],
           weekEnd: weekEnd.toISOString().split('T')[0],
-          absenceDates: weeklyAbsenceDates // Include dates
+          absenceDates: weeklyAbsenceDates
+      },
+      // 🆕 إحصائيات الشهر الحالي
+      monthlyStats: {
+          totalDays: monthlyTotalSections, // ✅ عدد المقاطع الفعلي في الشهر
+          absenceCount: monthlyAbsences,
+          presenceCount: monthlyPresenceCount,
+          rate: monthlyAbsenceRate,
+          attendanceRate: monthlyAttendanceRate,
+          month: AR_MONTHS[currentMonth],
+          year: currentYear,
+          absenceDates: currentMonthData.dates || []
       }
     });
   } catch (error) {
@@ -223,4 +264,3 @@ exports.getStudentAttendanceStats = async (req, res) => {
     });
   }
 };
-
