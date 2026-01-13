@@ -137,6 +137,7 @@ exports.getTeacherGroupsForAttendance = async (req, res) => {
                 _id: 1,
                 studentId: 1,
                 firstName: 1,
+                fatherName: 1,
                 lastName: 1,
                 phoneNumber: 1,
                 gender: 1,
@@ -247,8 +248,12 @@ exports.getTeacherGroupsForAttendance = async (req, res) => {
         const group = groupsMap.get(row.groupId.toString());
         group.totalStudents++;
 
-        // 🔧 الافتراضي دائماً حاضر عند التحميل الأول (الضغط على الصح = غائب)
-        const isPresent = true; // دائماً حاضر حتى يتم تحديده كغائب يدوياً
+        // 🔧 تحديد حالة الحضور:
+        // 1. إذا كان هناك سجل محفوظ لهذا التاريخ، استخدمه
+        // 2. إذا لم يكن هناك سجل، افتراضياً حاضر (لأول مرة)
+        const isPresent = row.todayAttendance 
+          ? row.todayAttendance.isPresent 
+          : true; // افتراضياً حاضر عند التحميل الأول
         
         if (isPresent) presentToday++;
         else absentToday++;
@@ -287,7 +292,7 @@ exports.getTeacherGroupsForAttendance = async (req, res) => {
 
         // Debug: طباعة البيانات للتحقق
         console.log('🔍 Student Data from DB:', {
-          name: `${row.student.firstName} ${row.student.lastName}`,
+          name: `${row.student.firstName} ${row.student.fatherName || ''} ${row.student.lastName}`.trim().replace(/\s+/g, ' '),
           phoneNumber: row.student.phoneNumber,
           gender: row.student.gender,
           converted: genderValue,
@@ -297,7 +302,7 @@ exports.getTeacherGroupsForAttendance = async (req, res) => {
         studentsList.push({
           _id: row.student._id,
           studentId: row.student.studentId,
-          name: `${row.student.firstName} ${row.student.lastName}`,
+          name: `${row.student.firstName} ${row.student.fatherName || ''} ${row.student.lastName}`.trim().replace(/\s+/g, ' '),
           gender: genderValue,
           phoneNumber: row.student.phoneNumber || '',
           group: row.groupName,

@@ -32,6 +32,7 @@ export const useAbsenceData = () => {
     status?: string;
     totalStudents?: number;
   }>>([]);
+  const [availableDates, setAvailableDates] = useState<string[]>([]);
 
   // Fetch students for teacher
   const fetchStudentsForTeacher = useCallback(async (forDate: string) => {
@@ -134,6 +135,25 @@ export const useAbsenceData = () => {
     }
   }, []);
 
+  // Fetch available dates (sections dates) for a group
+  const fetchAvailableDates = useCallback(async (groupId?: string) => {
+    try {
+      if (!currentUser?._id) return;
+
+      const { getAvailableDates } = await import('../../../Api/attendanceApi');
+      const result = await getAvailableDates(currentUser._id, groupId);
+
+      if (result.success && result.data) {
+        setAvailableDates(result.data.dates);
+      } else {
+        setAvailableDates([]);
+      }
+    } catch (e) {
+      console.error('❌ خطأ في جلب التواريخ المتاحة:', e);
+      setAvailableDates([]);
+    }
+  }, [currentUser]);
+
   // Initialize user (مرة واحدة فقط عند التحميل)
   useEffect(() => {
     const run = async () => {
@@ -164,7 +184,9 @@ export const useAbsenceData = () => {
     setDateRange,
     monthlyStats,
     teacherGroups,
+    availableDates,
     fetchStudentsForTeacher,
     fetchStudentAbsenceStats,
+    fetchAvailableDates,
   };
 };

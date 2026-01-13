@@ -14,6 +14,7 @@ interface DateRangePickerProps {
   className?: string;
   singleDate?: boolean;
   maxDate?: string;
+  enabledDates?: string[]; // 🆕 قائمة بالتواريخ المتاحة فقط (YYYY-MM-DD)
 }
 
 type PresetRange = {
@@ -28,6 +29,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
   className = '',
   singleDate = false,
   maxDate,
+  enabledDates,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [viewDate, setViewDate] = useState(dayjs()); // Current month view
@@ -354,7 +356,16 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
             const isSelectedEnd = isEnd(date);
             const isSelectedRange = isInRange(date);
             const isToday = date.isSame(dayjs(), 'day');
-            const isDisabled = maxDate ? date.isAfter(dayjs(maxDate), 'day') : false;
+            
+            // 🆕 منطق التعطيل المحدث
+            let isDisabled = false;
+            if (enabledDates && enabledDates.length > 0) {
+              // إذا كانت هناك قائمة بالتواريخ المتاحة، عطّل كل التواريخ الأخرى
+              isDisabled = !enabledDates.includes(date.format('YYYY-MM-DD'));
+            } else if (maxDate) {
+              // إذا لم تكن هناك قائمة، استخدم maxDate
+              isDisabled = date.isAfter(dayjs(maxDate), 'day');
+            }
             
             return (
               <button

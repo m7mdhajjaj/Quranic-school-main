@@ -5,6 +5,7 @@ const {
   getAbsentStudentsToday,
   getTeacherGroupsForAttendance,
   getTeacherGroupsForMarks,
+  getAvailableDates,
 } = require("../../controllers/AttendanceController/index");
 const { protect } = require("../../middleware/auth");
 const { validateGetTeacherGroups } = require("../../Validation/Group/GroupValidation");
@@ -14,6 +15,9 @@ router.get("/student/:studentId", protect, getStudentAttendance);
 
 // Get absent students for today
 router.get("/absent/today", protect, getAbsentStudentsToday);
+
+// Get available dates for attendance (sections dates)
+router.get("/teacher/:teacherId/available-dates", protect, getAvailableDates);
 
 // Get all groups for a teacher (for attendance page)
 // Query params: includeStudents (default: true), filter (default: 'all')

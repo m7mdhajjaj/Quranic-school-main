@@ -37,7 +37,9 @@ export const useAttendanceSave = ({
       // التحقق من أن التاريخ ليس قديماً جداً (تحقق بسيط بدلاً من Yup)
       if (isDateTooOld) {
          showErrorToast(
-           `⚠️ لا يمكن التعديل - التاريخ قديم (مضى عليه ${daysAgo} يوم). لا يمكن تعديل الحضور بعد مرور أسبوع.`
+           `⚠️ لا يمكن تعديل الحضور - التاريخ قديم (مضى ${daysAgo} يوم)\n\n` +
+           `📋 القاعدة: يمكن تعديل الحضور خلال أسبوع واحد فقط من تاريخ أخذ الحضور.\n\n` +
+           `💡 لتسجيل حضور جديد، اختر تاريخاً حديثاً (خلال الأسبوع الماضي).`
          );
          return;
        }
@@ -78,7 +80,19 @@ export const useAttendanceSave = ({
       );
     } catch (e) {
       console.error("❌ خطأ في حفظ الحضور:", e);
-      const error = e as { response?: { data?: { message?: string; details?: string } } };
+      const error = e as { response?: { data?: { message?: string; details?: string; daysAgo?: number } } };
+      
+      // التعامل مع خطأ التاريخ القديم من Backend
+      if (error.response?.data?.daysAgo) {
+        const days = error.response.data.daysAgo;
+        showErrorToast(
+          `⚠️ لا يمكن تعديل الحضور - التاريخ قديم (مضى ${days} يوم)\n\n` +
+          `📋 القاعدة: يمكن تعديل الحضور خلال أسبوع واحد فقط من تاريخ أخذ الحضور.\n\n` +
+          `💡 لتسجيل حضور جديد، اختر تاريخاً حديثاً (خلال الأسبوع الماضي).`
+        );
+        return;
+      }
+      
       const errorMsg =
         error.response?.data?.message ||
         error.response?.data?.details ||

@@ -9,6 +9,7 @@ interface TeacherAttendanceViewProps {
   startDate: string | null;
   endDate: string | null;
   setDateRange: (start: string | null, end: string | null) => void;
+  availableDates: string[];
   nameQuery: string;
   setNameQuery: (query: string) => void;
   displayStats: AttendanceStats;
@@ -30,6 +31,7 @@ export const TeacherAttendanceView = ({
   startDate,
   endDate,
   setDateRange,
+  availableDates,
   nameQuery,
   setNameQuery,
   displayStats,
@@ -50,6 +52,7 @@ export const TeacherAttendanceView = ({
         startDate={startDate}
         endDate={endDate}
         onDateRangeChange={setDateRange}
+        availableDates={availableDates}
         currentGroupName={group.name}
         onBackToGroups={onBack}
         nameQuery={nameQuery}

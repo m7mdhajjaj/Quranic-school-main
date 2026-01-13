@@ -29,8 +29,10 @@ const AbsencePage = () => {
     setDateRange,
     monthlyStats,
     teacherGroups,
+    availableDates,
     fetchStudentsForTeacher,
     fetchStudentAbsenceStats,
+    fetchAvailableDates,
   } = useAbsenceData();
 
   const [isLoadingDate, setIsLoadingDate] = useState(false);
@@ -42,6 +44,13 @@ const AbsencePage = () => {
   const selectedGroup = useMemo(() => 
     teacherGroups.find(g => g._id === selectedGroupId) || null
   , [teacherGroups, selectedGroupId]);
+
+  // جلب التواريخ المتاحة عند اختيار حلقة
+  useEffect(() => {
+    if (selectedGroupId && currentUser) {
+      fetchAvailableDates(selectedGroupId);
+    }
+  }, [selectedGroupId, currentUser, fetchAvailableDates]);
 
   // استخدام hook للتحذير من التغييرات غير المحفوظة
   useUnsavedChanges({ hasUnsavedChanges });
@@ -124,6 +133,7 @@ const AbsencePage = () => {
       visibleStudents,
       setStudents,
       onChangeDetected: () => setHasUnsavedChanges(true),
+      currentDate: date, // 🆕 تمرير التاريخ الحالي
     });
 
   // استخدام hook منفصل لحساب الإحصائيات
@@ -153,16 +163,16 @@ const AbsencePage = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4" dir="rtl">
-        <Card variant="elevated" className="max-w-md p-6">
+      <div className="min-h-screen flex items-center justify-center p-2 sm:p-4" dir="rtl">
+        <Card variant="elevated" className="max-w-md w-full p-4 sm:p-6">
           <div className="text-center">
-            <div className="text-6xl mb-4">⚠️</div>
-            <h2 className="text-xl font-bold text-gray-800 mb-2">تنبيه</h2>
-            <p className="text-gray-600 leading-relaxed whitespace-pre-line">{error}</p>
+            <div className="text-4xl sm:text-6xl mb-4">⚠️</div>
+            <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-2">تنبيه</h2>
+            <p className="text-sm sm:text-base text-gray-600 leading-relaxed whitespace-pre-line">{error}</p>
             {selectedGroupId && (
               <button
                 onClick={() => setSearchParams({})}
-                className="mt-6 px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
+                className="mt-4 sm:mt-6 px-4 sm:px-6 py-2 bg-teal-600 text-white text-sm sm:text-base rounded-lg hover:bg-teal-700 transition-colors"
               >
                 العودة للحلقات
               </button>
@@ -175,7 +185,7 @@ const AbsencePage = () => {
 
   return (
     <div
-      className="min-h-screen py-8 px-4 bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100"
+      className="min-h-screen py-4 sm:py-8 px-2 sm:px-4 bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100"
       dir="rtl">
       <div className="container mx-auto max-w-[1800px]">
         {/* العنوان */}
@@ -227,6 +237,7 @@ const AbsencePage = () => {
                 startDate={startDate}
                 endDate={endDate}
                 setDateRange={setDateRange}
+                availableDates={availableDates}
                 nameQuery={nameQuery}
                 setNameQuery={setNameQuery}
                 displayStats={displayStats}

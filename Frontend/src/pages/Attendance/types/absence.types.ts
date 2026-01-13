@@ -80,6 +80,7 @@ export interface TeacherToolbarProps {
   startDate: string | null;
   endDate: string | null;
   onDateRangeChange: (start: string | null, end: string | null) => void;
+  availableDates?: string[]; // 🆕 التواريخ المتاحة (تواريخ المقاطع)
   currentGroupName?: string; // New prop for display only
   onBackToGroups?: () => void; // New prop for navigation
   nameQuery: string;

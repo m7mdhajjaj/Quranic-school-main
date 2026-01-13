@@ -151,3 +151,27 @@ export const getTeacherGroupsForMarks = async (
   });
   return response.data;
 };
+
+// Get available dates for attendance (sections dates)
+export interface AvailableDatesResponse {
+  success: boolean;
+  data?: {
+    dates: string[]; // Array of dates in YYYY-MM-DD format
+    total: number;
+    details: Array<{
+      date: string;
+      group: string;
+    }>;
+  };
+  message?: string;
+}
+
+export const getAvailableDates = async (
+  teacherId: string,
+  groupId?: string
+): Promise<AvailableDatesResponse> => {
+  const response = await api.get(`/attendance/teacher/${teacherId}/available-dates`, {
+    params: { groupId }
+  });
+  return response.data;
+};

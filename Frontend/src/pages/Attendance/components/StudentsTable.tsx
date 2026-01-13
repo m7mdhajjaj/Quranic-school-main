@@ -58,17 +58,17 @@ export const StudentsTable = ({
       ) : (
         <>
           {/* Desktop Table */}
-          <div className="hidden md:block overflow-x-auto">
-            <table className="w-full">
+          <div className="hidden md:block overflow-x-auto -mx-2 px-2">
+            <table className="w-full min-w-[800px]">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="py-4 px-6 text-right text-sm font-semibold text-gray-600 w-[80px]">#</th>
-                  <th className="py-4 px-6 text-right text-sm font-semibold text-gray-600">اسم الطالب</th>
-                  <th className="py-4 px-6 text-center text-sm font-semibold text-gray-600 w-[80px]">الجنس</th>
-                  <th className="py-4 px-6 text-center text-sm font-semibold text-gray-600 w-[120px]">رقم الهاتف</th>
-                  <th className="py-4 px-6 text-center text-sm font-semibold text-gray-600 w-[100px]">الغيابات</th>
-                  <th className="py-4 px-6 text-center text-sm font-semibold text-gray-600 w-[180px]">التفاصيل</th>
-                  <th className="py-4 px-6 text-center text-sm font-semibold text-gray-600 w-[120px]">
+                  <th className="py-3 pr-3 pl-0 text-right text-sm font-semibold text-gray-600 w-[50px]">#</th>
+                  <th className="py-3 px-0 text-right text-sm font-semibold text-gray-600">اسم الطالب</th>
+                  <th className="py-3 px-0 text-center text-sm font-semibold text-gray-600 w-[80px]">الجنس</th>
+                  <th className="py-3 px-0 text-center text-sm font-semibold text-gray-600 w-[120px]">رقم الهاتف</th>
+                  <th className="py-3 px-3 text-center text-sm font-semibold text-gray-600 w-[85px]">الغيابات</th>
+                  <th className="py-3 px-3 text-center text-sm font-semibold text-gray-600 w-[100px]">التفاصيل</th>
+                  <th className="py-3 px-3 text-center text-sm font-semibold text-gray-600 w-[100px]">
                     <div className="flex flex-col items-center gap-1 cursor-pointer" onClick={onToggleAll}>
                       <span className="text-xs">حضور الكل</span>
                       <input
@@ -92,18 +92,15 @@ export const StudentsTable = ({
                     `}
                     onClick={() => onTogglePresence(s._id)}
                   >
-                    <td className="px-6 py-4 text-sm text-gray-500 font-mono">
+                    <td className="pr-3 pl-0 py-3 text-sm text-gray-500 font-mono">
                       {(index + 1).toString().padStart(2, '0')}
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col">
-                        <span className={`text-base font-medium ${!s.isPresent ? 'text-red-700' : 'text-gray-900'}`}>
-                          {s.name}
-                        </span>
-                        {s.group && <span className="text-xs text-gray-400">{s.group}</span>}
-                      </div>
+                    <td className="px-0 py-3">
+                      <span className={`text-base font-bold ${!s.isPresent ? 'text-red-700' : 'text-gray-900'}`}>
+                        {s.name}
+                      </span>
                     </td>
-                    <td className="px-6 py-4 text-center">
+                    <td className="px-0 py-3 text-center">
                       <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${
                         s.gender === 'female' 
                           ? 'bg-pink-100 text-pink-700' 
@@ -112,12 +109,12 @@ export const StudentsTable = ({
                         {s.gender === 'female' ? 'أنثى' : 'ذكر'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-center">
+                    <td className="px-0 py-3 text-center">
                       <span className="text-sm text-gray-600 font-mono" dir="ltr">
                         {s.phoneNumber || '-'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-center">
+                    <td className="px-3 py-3 text-center">
                       <span
                         className={`
                           inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium
@@ -129,7 +126,7 @@ export const StudentsTable = ({
                         {s.totalAbsences ?? 0}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
+                    <td className="px-3 py-3 text-center" onClick={(e) => e.stopPropagation()}>
                       {(s.absenceDates ?? []).length > 0 ? (
                         <button
                           onClick={() => openModal(s.name, s.absenceDates || [])}
@@ -142,7 +139,7 @@ export const StudentsTable = ({
                         <span className="text-xs text-gray-300">-</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-center">
+                    <td className="px-3 py-3 text-center">
                       <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
                         <input
                           type="checkbox"
@@ -169,8 +166,8 @@ export const StudentsTable = ({
               >
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className={`text-base font-bold truncate ${!s.isPresent ? 'text-red-700' : 'text-gray-900'}`}>
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <h3 className={`text-sm sm:text-base font-bold ${!s.isPresent ? 'text-red-700' : 'text-gray-900'}`}>
                         {s.name}
                       </h3>
                       {(s.totalAbsences ?? 0) > 0 && (
@@ -242,7 +239,7 @@ export const StudentsTable = ({
       {/* Modal */}
       {modalOpen && selectedStudent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal}>
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[80vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[85vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
             {/* Modal Header */}
             <div className="bg-gradient-to-r from-red-500 to-rose-500 px-6 py-4 flex justify-between items-center">
               <div className="flex items-center gap-3">
