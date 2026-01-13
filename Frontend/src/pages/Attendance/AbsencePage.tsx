@@ -8,6 +8,12 @@ import {
   TeacherAttendanceView,
   AdminView
 } from "./components";
+import { 
+  StudentAttendanceSkeleton,
+  GroupsGridSkeleton,
+  TeacherAttendanceViewSkeleton,
+  AdminAttendanceSkeleton
+} from "@/components/skeletons";
 import { isDateTooOld, getDaysAgo, todayISO } from "./utils/dateHelpers";
 import { Card } from "@/components/UI/Card";
 import PageHeader from "@/components/UI/PageHeader";
@@ -204,13 +210,15 @@ const AbsencePage = () => {
         />
 
         {isInitialLoad ? (
-          // Initial Loading State - Simple message
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="text-center">
-              <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-gray-600 font-medium">جاري التحميل...</p>
-            </div>
-          </div>
+          currentUser?.role === "student" ? (
+            <StudentAttendanceSkeleton />
+          ) : currentUser?.role === "admin" ? (
+            <AdminAttendanceSkeleton />
+          ) : !selectedGroup ? (
+            <GroupsGridSkeleton />
+          ) : (
+            <TeacherAttendanceViewSkeleton />
+          )
         ) : currentUser?.role === "student" ? (
           <StudentView monthlyStats={monthlyStats} />
         ) : currentUser?.role === "admin" ? (

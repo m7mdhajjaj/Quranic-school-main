@@ -1,6 +1,7 @@
 import { TeacherToolbar } from '../components/TeacherToolbar';
 import { StudentsTable } from '../components/StudentsTable';
 import { Card } from '@/components/UI/Card';
+import { TeacherAttendanceViewSkeleton } from '@/components/skeletons';
 import type { TeacherGroup, AttendanceStudent, AttendanceStats } from '../types/absence.types';
 
 interface TeacherAttendanceViewProps {
@@ -71,17 +72,7 @@ export const TeacherAttendanceView = ({
 
       {/* جدول الطلاب */}
       {isLoadingDate || isSaving ? (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="py-4 px-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-            <div className="h-6 w-32 bg-gray-200 animate-pulse rounded"></div>
-            <div className="h-5 w-20 bg-gray-200 animate-pulse rounded md:hidden"></div>
-          </div>
-          <div className="p-0">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-16 border-b border-gray-100 bg-white animate-pulse"></div>
-            ))}
-          </div>
-        </div>
+        <TeacherAttendanceViewSkeleton />
       ) : (
         <StudentsTable
           students={students}

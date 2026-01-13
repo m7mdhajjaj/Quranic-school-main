@@ -6,3 +6,9 @@ export { default as ChartSkeleton } from './ChartSkeleton';
 export { default as ListSkeleton } from './ListSkeleton';
 export { default as ProfileSkeleton } from './ProfileSkeleton';
 export { AveragesBarSkeleton } from './AveragesBarSkeleton';
+export { 
+  StudentAttendanceSkeleton,
+  GroupsGridSkeleton,
+  TeacherAttendanceViewSkeleton,
+  AdminAttendanceSkeleton
+} from './AttendancePageSkeleton';

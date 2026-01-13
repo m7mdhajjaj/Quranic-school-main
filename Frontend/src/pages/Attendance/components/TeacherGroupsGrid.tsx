@@ -1,5 +1,6 @@
 import { Card } from '@/components/UI/Card';
 import { Users, ArrowLeft } from 'lucide-react';
+import { GroupsGridSkeleton } from '@/components/skeletons';
 import type { TeacherGroup } from '../types/absence.types';
 
 interface TeacherGroupsGridProps {
@@ -13,22 +14,7 @@ export const TeacherGroupsGrid = ({ groups, onSelectGroup, isLoading }: TeacherG
   const activeGroups = groups.filter(g => g.status === 'active' || !g.status);
 
   if (isLoading) {
-    return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {[1, 2, 3, 4, 5, 6].map((i) => (
-          <div key={i} className="h-[180px] rounded-xl bg-white border border-gray-200 shadow-sm p-4 animate-pulse flex flex-col justify-between">
-            <div className="flex justify-between items-start mb-4">
-              <div className="w-14 h-14 bg-gray-200 rounded-xl"></div>
-              <div className="w-16 h-4 bg-gray-200 rounded"></div>
-            </div>
-            <div>
-              <div className="w-3/4 h-6 bg-gray-200 rounded mb-2"></div>
-              <div className="w-1/3 h-4 bg-gray-200 rounded"></div>
-            </div>
-          </div>
-        ))}
-      </div>
-    );
+    return <GroupsGridSkeleton />;
   }
 
   if (activeGroups.length === 0) {
