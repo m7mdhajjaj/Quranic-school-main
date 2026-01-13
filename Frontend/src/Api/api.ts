@@ -9,7 +9,7 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 const api = axios.create({
   baseURL: API_URL,
   withCredentials: false,
-  timeout: 30000, // ✅ تقليل timeout من 60 ثانية إلى 30 ثانية
+  timeout: 90000, // ✅ 90 ثانية للسماح بمعالجة التفسير
 });
 
 // Add request interceptor to automatically include auth token

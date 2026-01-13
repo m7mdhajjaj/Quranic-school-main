@@ -318,10 +318,26 @@ export const AiChatbot: React.FC = () => {
                   backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(16, 185, 129, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(20, 184, 166, 0.1) 0%, transparent 50%)',
                 }}></div>
                 <AnimatePresence mode="popLayout">
-                  {messages.map((msg, index) => (
-                    <motion.div
-                      key={msg.id}
-                      initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                  {messages.map((msg, index) => {
+                    // Check if we need a separator (if current is user and previous was assistant)
+                    const showSeparator = index > 0 && msg.role === 'user' && messages[index-1].role === 'assistant';
+
+                    return (
+                      <React.Fragment key={msg.id}>
+                        {showSeparator && (
+                          <motion.div 
+                            initial={{ opacity: 0 }} 
+                            animate={{ opacity: 1 }}
+                            className="flex items-center gap-4 py-4"
+                          >
+                            <div className="h-px bg-gray-200 flex-1"></div>
+                            <span className="text-xs text-gray-400 font-medium px-2 bg-gray-50 rounded-full">سؤال جديد</span>
+                            <div className="h-px bg-gray-200 flex-1"></div>
+                          </motion.div>
+                        )}
+                        <motion.div
+                          key={msg.id}
+                          initial={{ opacity: 0, y: 20, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.95 }}
                       transition={{ 
@@ -466,9 +482,9 @@ export const AiChatbot: React.FC = () => {
                           {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </motion.span>
                       </motion.div>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
+                      </motion.div>
+                    );
+                  })}
                 
                 {/* Enhanced Loading State - عصري */}
                 {isLoading && (

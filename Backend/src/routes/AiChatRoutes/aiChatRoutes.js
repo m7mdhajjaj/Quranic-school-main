@@ -13,6 +13,8 @@ const {
 
 // AI Chat endpoint
 router.post('/', protect, validateChatMessage, aiChatController.chat);
+// TTS Endpoint
+router.post('/speak', protect, aiChatController.generateSpeech);
 
 // Favorites endpoints
 router.post('/favorites', protect, validateAddFavorite, favoriteController.addFavorite);

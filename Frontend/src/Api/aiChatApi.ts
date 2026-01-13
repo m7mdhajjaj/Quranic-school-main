@@ -25,9 +25,21 @@ export interface GetFavoritesParams {
 
 // Send message to AI
 export const sendAiChatMessage = async (message: string) => {
-  const response = await api.post('/ai-chat', { message });
+  const response = await api.post('/ai-chat', { message }, {
+    timeout: 90000, // 90 ثانية للتفسير الطويل
+  });
   return response.data;
 };
+
+// Generate speech from text (TTS)
+export const generateSpeech = async (text: string) => {
+  const response = await api.post('/ai-chat/speak', { text }, {
+    responseType: 'blob', // Important: receive audio as blob
+    timeout: 60000 
+  });
+  return response.data;
+};
+
 
 // Add favorite
 export const addFavorite = async (data: FavoriteData) => {

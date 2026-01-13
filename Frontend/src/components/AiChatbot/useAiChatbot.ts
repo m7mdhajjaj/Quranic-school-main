@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { sendAiChatMessage, addFavorite, getFavorites, deleteFavorite } from '../../Api/aiChatApi';
+import { sendAiChatMessage, addFavorite, getFavorites, deleteFavorite, generateSpeech } from '../../Api/aiChatApi';
 import { validateData, chatMessageSchema, addFavoriteSchema } from '../../Validation/aiChatValidation';
 
 // Types for chat messages
@@ -27,7 +27,7 @@ export const useAiChatbot = () => {
   const [favorites, setFavorites] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
-  const synthRef = useRef<SpeechSynthesis | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Get user role
   const getUserRole = (): string | null => {
@@ -45,12 +45,8 @@ export const useAiChatbot = () => {
 
   const userRole = getUserRole();
 
-  // Initialize speech synthesis
+  // Initialize speech recognition (Browser Built-in)
   useEffect(() => {
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      synthRef.current = window.speechSynthesis;
-    }
-
     // Initialize speech recognition
     if (typeof window !== 'undefined') {
       const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -95,8 +91,9 @@ export const useAiChatbot = () => {
     }
 
     return () => {
-      if (synthRef.current) {
-        synthRef.current.cancel();
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
       }
       if (recognitionRef.current) {
         recognitionRef.current.stop();
@@ -258,30 +255,58 @@ export const useAiChatbot = () => {
     setInput(suggestion);
   };
 
-  // Text-to-Speech
-  const handleSpeak = (text: string) => {
-    if (!synthRef.current) return;
-
+  // Text-to-Speech (OpenAI TTS via Backend)
+  const handleSpeak = async (text: string) => {
     // Stop any ongoing speech
-    synthRef.current.cancel();
+    handleStopSpeaking();
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'ar-SA'; // Arabic Saudi
-    utterance.rate = 0.85; // Slightly slower for better clarity
-    utterance.pitch = 1.0; // Normal pitch
-    utterance.volume = 1.0; // Full volume
+    // ---------------------------------------------------------
+    // RULE: Only speak the Explanation (Tafsir), NOT the Verse.
+    // ---------------------------------------------------------
+    let textToSpeak = text;
+    // Marker matching the Backend output exactly
+    const tafsirMarker = "📜 التفسير (ابن كثير – مختصر):";
+    
+    if (text.includes(tafsirMarker)) {
+      const parts = text.split(tafsirMarker);
+      if (parts.length > 1) {
+        textToSpeak = parts[1].trim(); 
+      }
+    }
+    // ---------------------------------------------------------
+    
+    if (!textToSpeak) return;
 
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
+    try {
+      setIsSpeaking(true);
+      const audioBlob = await generateSpeech(textToSpeak);
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      
+      audioRef.current = audio;
+      
+      audio.onended = () => {
+        setIsSpeaking(false);
+        URL.revokeObjectURL(audioUrl);
+      };
+      
+      audio.onerror = (e) => {
+        console.error('Audio Playback Error:', e);
+        setIsSpeaking(false);
+      };
 
-    synthRef.current.speak(utterance);
+      await audio.play();
+    } catch (error) {
+      console.error('TTS Generation Error:', error);
+      setIsSpeaking(false);
+    }
   };
 
   // Stop speaking
   const handleStopSpeaking = () => {
-    if (synthRef.current) {
-      synthRef.current.cancel();
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
       setIsSpeaking(false);
     }
   };
