@@ -54,10 +54,12 @@ class AttendanceService {
           try {
             // جلب البيانات مباشرة باستخدام نفس منطق getAbsentStudentsToday
             const Attendance = require("../../schema/Attendance");
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const nextDay = new Date(today);
-            nextDay.setDate(today.getDate() + 1);
+            // ✅ Use UTC dates like controllers
+            const now = new Date();
+            const todayKey = now.toISOString().split('T')[0]; // YYYY-MM-DD in UTC
+            const today = new Date(todayKey + 'T00:00:00.000Z');
+            const nextDay = new Date(todayKey + 'T00:00:00.000Z');
+            nextDay.setUTCDate(nextDay.getUTCDate() + 1);
 
             const absentStudents = await Attendance.aggregate([
               {
@@ -171,10 +173,12 @@ class AttendanceService {
         if (this.io) {
           try {
             // جلب البيانات مباشرة باستخدام نفس منطق midnight job
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const nextDay = new Date(today);
-            nextDay.setDate(today.getDate() + 1);
+            // ✅ Use UTC dates like controllers
+            const now = new Date();
+            const todayKey = now.toISOString().split('T')[0]; // YYYY-MM-DD in UTC
+            const today = new Date(todayKey + 'T00:00:00.000Z');
+            const nextDay = new Date(todayKey + 'T00:00:00.000Z');
+            nextDay.setUTCDate(nextDay.getUTCDate() + 1);
 
             const absentStudents = await Attendance.aggregate([
               {
@@ -293,12 +297,13 @@ class AttendanceService {
       async () => {
         console.log("🤖 [AutoPresence] بدء عملية الحضور التلقائي لليوم الحالي...");
         try {
-          // 1. تحديد تاريخ اليوم (بداية ونهاية)
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
+          // 1. تحديد تاريخ اليوم (بداية ونهاية) - ✅ Use UTC dates
+          const now = new Date();
+          const todayKey = now.toISOString().split('T')[0]; // YYYY-MM-DD in UTC
+          const today = new Date(todayKey + 'T00:00:00.000Z');
           
-          const endOfToday = new Date(today);
-          endOfToday.setHours(23, 59, 59, 999);
+          const endOfToday = new Date(todayKey + 'T00:00:00.000Z');
+          endOfToday.setUTCDate(endOfToday.getUTCDate() + 1);
 
           console.log(`📅 [AutoPresence] معالجة تاريخ: ${today.toLocaleDateString('en-GB')}`);
 
