@@ -5,13 +5,8 @@ import { useAiChatbot } from './useAiChatbot';
 import { showSuccessToast } from '../../utils/toastUtils';
 import { showErrorMessage } from '../../utils/sweetalertUtils';
 
-// Quick suggestions for common questions
-const QUICK_SUGGESTIONS = [
-  'تفسير سورة الفاتحة',
-  'ما هي آية الكرسي؟',
-  'تفسير سورة الإخلاص',
-  'أحكام الوضوء',
-];
+// Remove static defined QUICK_SUGGESTIONS if it exists in the file, we will use smartSuggestions
+const QUICK_SUGGESTIONS = [];
 
 // Component to handle the formatted Quranic response
 const FormattedMessage = ({ content }: { content: string }) => {
@@ -102,6 +97,7 @@ export const AiChatbot: React.FC = () => {
     handleRemoveFavorite,
     isFavorited,
     favoritesList,
+    smartSuggestions,
   } = useAiChatbot();
 
   // Resize logic
@@ -751,7 +747,7 @@ export const AiChatbot: React.FC = () => {
                       اقتراحات سريعة:
                     </p>
                     <div className="flex flex-wrap gap-2">
-                      {QUICK_SUGGESTIONS.map((suggestion, index) => (
+                      {smartSuggestions.map((suggestion, index) => (
                         <motion.button
                           key={index}
                           whileHover={{ scale: 1.05 }}

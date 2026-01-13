@@ -10,6 +10,24 @@ export interface Message {
   timestamp: Date;
 }
 
+// Smart Learning Categories
+const INTEREST_CATEGORIES = {
+  TAFSIR: { keywords: ['تفسير', 'شرح', 'معنى', 'آية', 'سورة', 'سبب نزول'], score: 0 },
+  FIQH: { keywords: ['حكم', 'وضوء', 'صلاة', 'زكاة', 'صيام', 'حائض', 'طهارة', 'حلال', 'حرام'], score: 0 },
+  STORIES: { keywords: ['قصة', 'نبي', 'رسول', 'قوم', 'عاد', 'ثمود', 'فرعون', 'اصحاب'], score: 0 },
+  ADVICE: { keywords: ['نصيحة', 'حفظ', 'برنامج', 'خطة', 'نسيان', 'خشوع', 'كيف'], score: 0 },
+  ROQYA: { keywords: ['رقية', 'عين', 'سحر', 'حسد', 'تحصين', 'اذكار'], score: 0 }
+};
+
+const SUGGESTIONS_POOL = {
+  TAFSIR: ['تفسير سورة الملك', 'ما معنى "الصمد"؟', 'سبب نزول سورة الضحى', 'تفسير آية الكرسي'],
+  FIQH: ['ما هي مبطلات الوضوء؟', 'حكم صلاة الضحى', 'كيفية سجود السهو', 'شروط الزكاة'],
+  STORIES: ['قصة أصحاب الكهف', 'قصة النبي يوسف', 'من هم قوم عاد؟', 'قصة ذي القرنين'],
+  ADVICE: ['كيف أخشع في الصلاة؟', 'جدول لحفظ القرآن', 'علاج النسيان', 'أفضل وقت للحفظ'],
+  ROQYA: ['الرقية الشرعية من الكتاب والسنة', 'أذكار الصباح والمساء', 'آيات السكينة', 'دعاء الكرب'],
+  MIXED: ['تفسير سورة الفاتحة', 'أذكار الصباح', 'قصة موسى والخضر', 'أحكام التجويد']
+};
+
 export const useAiChatbot = () => {
   const initialMessage: Message = {
     id: '1',
@@ -26,6 +44,7 @@ export const useAiChatbot = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [favoritesList, setFavoritesList] = useState<any[]>([]);
+  const [smartSuggestions, setSmartSuggestions] = useState<string[]>(SUGGESTIONS_POOL.MIXED);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -47,15 +66,95 @@ export const useAiChatbot = () => {
 
   const userRole = getUserRole();
 
-  // Cleanup audio on unmount
-  useEffect(() => {
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
+  // Smart Learning: Analyze and update interests
+  const updateInterests = (text: string) => {
+    try {
+      const interests = JSON.parse(localStorage.getItem('ai_user_interests') || JSON.stringify(INTEREST_CATEGORIES));
+      let updated = false;
+
+      // Check keywords
+      Object.keys(interests).forEach(key => {
+        const category = interests[key];
+        const hasKeyword = category.keywords.some((w: string) => text.includes(w));
+        if (hasKeyword) {
+          category.score += 1;
+          updated = true;
+        }
+      });
+
+      if (updated) {
+        localStorage.setItem('ai_user_interests', JSON.stringify(interests));
+        loadSmartSuggestions(); // Refresh suggestions
       }
-    };
+    } catch (e) {
+      console.error('Error updating interests:', e);
+    }
+  };
+
+  // Smart Learning: Load suggestions based on scores
+  const loadSmartSuggestions = () => {
+    try {
+      const stored = localStorage.getItem('ai_user_interests');
+      if (!stored) {
+        setSmartSuggestions(SUGGESTIONS_POOL.MIXED);
+        return;
+      }
+
+      const interests = JSON.parse(stored);
+      // Find top 2 categories
+      const sortedCats = Object.entries(interests)
+        .sort(([, a]: any, [, b]: any) => b.score - a.score)
+        .slice(0, 2)
+        .map(([key]) => key); // e.g., ['TAFSIR', 'FIQH']
+
+      // If no significant history (all scores 0), show mixed
+      const maxScore = (interests[sortedCats[0]] as any).score;
+      if (maxScore === 0) {
+        setSmartSuggestions(SUGGESTIONS_POOL.MIXED);
+        return;
+      }
+
+      // Combine suggestions: 2 from top cat, 1 from second cat, 1 random/mixed
+      let newSuggestions: string[] = [];
+      
+      // Top category
+      if (SUGGESTIONS_POOL[sortedCats[0] as keyof typeof SUGGESTIONS_POOL]) {
+          const pool = SUGGESTIONS_POOL[sortedCats[0] as keyof typeof SUGGESTIONS_POOL];
+          // Get 2 random unique items
+          const shuffled = [...pool].sort(() => 0.5 - Math.random());
+          newSuggestions.push(...shuffled.slice(0, 2));
+      }
+
+      // Second category
+      if (sortedCats[1] && SUGGESTIONS_POOL[sortedCats[1] as keyof typeof SUGGESTIONS_POOL]) {
+         const pool = SUGGESTIONS_POOL[sortedCats[1] as keyof typeof SUGGESTIONS_POOL];
+         const shuffled = [...pool].sort(() => 0.5 - Math.random());
+         newSuggestions.push(shuffled[0]);
+      }
+
+      // Fill rest with mixed if needed (total 4)
+      while (newSuggestions.length < 4) {
+         const random = SUGGESTIONS_POOL.MIXED[Math.floor(Math.random() * SUGGESTIONS_POOL.MIXED.length)];
+         if (!newSuggestions.includes(random)) {
+            newSuggestions.push(random);
+         }
+      }
+
+      setSmartSuggestions(newSuggestions.slice(0, 4));
+
+    } catch (e) {
+      console.error('Error loading suggestions:', e);
+      setSmartSuggestions(SUGGESTIONS_POOL.MIXED);
+    }
+  };
+
+  // Load favorites and suggestions on mount
+  useEffect(() => {
+    loadFavorites();
+    loadSmartSuggestions();
   }, []);
+
+  // Cleanup audio on unmount
 
   // Auto scroll to bottom when messages change
   const scrollToBottom = () => {
@@ -93,6 +192,9 @@ export const useAiChatbot = () => {
       content: input.trim(),
       timestamp: new Date()
     };
+    
+    // Update interests based on user input
+    updateInterests(userMessage.content);
 
     setMessages(prev => [...prev, userMessage]);
     setInput('');
@@ -371,5 +473,6 @@ export const useAiChatbot = () => {
     handleAddFavorite,
     handleRemoveFavorite,
     isFavorited,
+    smartSuggestions,
   };
 };
