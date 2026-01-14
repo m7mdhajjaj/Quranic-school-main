@@ -9,7 +9,8 @@ import { useNavigate } from 'react-router-dom';
 // Constants - روابط الفيديو
 // ============================================================================
 export const LOCAL_VIDEO_URL = '/QuestPage/Quest.mp4';
-export const CLOUDINARY_VIDEO_URL = 'https://res.cloudinary.com/dfi5r4ssx/video/upload/v1/quranic-school/QuestPage/Quest_fgcfvr.mp4';
+// فيديو مسجد من Pexels كـ fallback
+export const CLOUDINARY_VIDEO_URL = 'https://videos.pexels.com/video-files/3773486/3773486-hd_1920_1080_30fps.mp4';
 
 // ============================================================================
 // useWelcomePage Hook

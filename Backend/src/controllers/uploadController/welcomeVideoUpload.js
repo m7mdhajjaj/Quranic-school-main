@@ -102,8 +102,8 @@ const uploadWelcomeVideo = async (req, res) => {
  */
 const getWelcomeVideo = async (req, res) => {
   try {
-    // الفيديو الافتراضي
-    const defaultVideoUrl = 'https://res.cloudinary.com/dfi5r4ssx/video/upload/v1/quranic-school/QuestPage/Quest_fgcfvr.mp4';
+    // الفيديو الافتراضي من Pexels (مسجد)
+    const defaultVideoUrl = 'https://videos.pexels.com/video-files/3773486/3773486-hd_1920_1080_30fps.mp4';
     
     return res.status(200).json({
       success: true,

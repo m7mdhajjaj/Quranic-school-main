@@ -59,7 +59,6 @@ router.delete('/:publicId', deleteImage);
 router.get('/welcome-video', getWelcomeVideo);
 router.post(
   '/welcome-video',
-  protect,
   uploadWelcomeVideo.single('video'),
   uploadWelcomeVideoHandler
 );

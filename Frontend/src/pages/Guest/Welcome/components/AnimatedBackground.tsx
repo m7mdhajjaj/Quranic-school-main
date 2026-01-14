@@ -21,8 +21,8 @@ export const AnimatedBackground = ({
   } = useAnimatedBackground(videoUrl, fallbackVideoUrl);
 
   return (
-    <div className="absolute inset-0 overflow-hidden bg-emerald-950">
-      {/* Video Background - Responsive */}
+    <div className="fixed inset-0 w-screen h-screen overflow-hidden bg-emerald-950">
+      {/* Video Background - Full Cover */}
       {!videoError && (
         <video
           key={currentVideoUrl}
@@ -31,7 +31,7 @@ export const AnimatedBackground = ({
           muted
           playsInline
           preload="auto"
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 min-w-full min-h-full w-auto h-auto z-0"
+          className="absolute inset-0 w-full h-full z-0"
           style={{
             objectFit: 'cover',
             objectPosition: 'center center',
