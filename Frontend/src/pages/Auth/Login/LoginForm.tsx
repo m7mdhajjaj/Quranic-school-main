@@ -3,6 +3,7 @@ import { Button, Input, ToggleSwitch, Alert, Tooltip } from "@/components/UI";
 import { LogIn, Info } from 'lucide-react';
 import type { LoginFormData } from '../types';
 import { useSound } from "@/hooks/useSound";
+import { SOUNDS } from "@/utils/soundUrls";
 
 interface LoginFormProps {
   formData: LoginFormData;
@@ -25,7 +26,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   onSubmit,
   onForgotPassword,
 }) => {
-  // const playClick = useSound("/sounds/click.mp3", 0.18);
+  const playClick = useSound(SOUNDS.CLICK, 0.18);
   return (
     <div>
       {/* Error Message */}

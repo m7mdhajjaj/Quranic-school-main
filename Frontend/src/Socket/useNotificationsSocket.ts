@@ -9,7 +9,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { socketManager } from './SocketManager';
 import { useAuth } from '../hooks/useAuth';
-import notificationSound from '../assets/sounds/notification.mp3';
+import { SOUNDS } from '../utils/soundUrls';
+
+const notificationSound = SOUNDS.NOTIFICATION;
 
 // ================== Types ==================
 interface NotificationData {

@@ -2,7 +2,7 @@
 // cloudinary/index.js - تصدير موحد لجميع إعدادات Cloudinary
 // ============================================================================
 
-const { cloudinary } = require('./config');
+const cloudinary = require('./config');
 const { 
   uploadToCloudinary, 
   uploadVideoToCloudinary,
@@ -17,6 +17,7 @@ const {
   uploadLogo,
   uploadWelcomeVideo,
 } = require('./multer');
+const { SOUNDS, getSoundUrl, getAllSounds } = require('./sounds');
 
 module.exports = {
   // Cloudinary Instance
@@ -38,4 +39,9 @@ module.exports = {
   uploadHero,
   uploadLogo,
   uploadWelcomeVideo,
+  
+  // Sounds
+  SOUNDS,
+  getSoundUrl,
+  getAllSounds,
 };

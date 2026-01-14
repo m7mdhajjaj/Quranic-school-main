@@ -101,13 +101,12 @@ export const GeometricPattern = () => (
     <svg className="absolute w-full h-full" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
-          <motion.circle
+          <circle
             cx="30"
             cy="30"
-            r="1"
+            r="1.5"
             fill="#10b981"
-            animate={{ r: [1, 2, 1], opacity: [0.3, 0.8, 0.3] }}
-            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+            opacity="0.5"
           />
         </pattern>
       </defs>

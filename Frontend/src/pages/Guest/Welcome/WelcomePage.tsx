@@ -20,9 +20,6 @@ import {
 // ============================================================================
 const WelcomePage = () => {
   const {
-    particles,
-    floatingShapes,
-    shootingStars,
     videoUrl,
     fallbackVideoUrl,
     handleLoginClick,
@@ -33,9 +30,6 @@ const WelcomePage = () => {
     <div className="relative h-screen w-screen overflow-hidden bg-emerald-950" dir="rtl">
       {/* Animated Background - Video */}
       <AnimatedBackground 
-        floatingShapes={floatingShapes}
-        particles={particles}
-        shootingStars={shootingStars}
         videoUrl={videoUrl}
         fallbackVideoUrl={fallbackVideoUrl}
       />

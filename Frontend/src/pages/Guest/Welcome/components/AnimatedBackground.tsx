@@ -2,13 +2,9 @@
 // AnimatedBackground.tsx - الخلفية المتحركة (نسخة مبسطة)
 // ============================================================================
 
-import type { Particle, FloatingShape } from '../Hooks/useWelcomePage';
 import { useAnimatedBackground } from '../Hooks/useAnimatedBackground';
 
 interface AnimatedBackgroundProps {
-  floatingShapes: FloatingShape[];
-  particles: Particle[];
-  shootingStars: { id: number; top: number; delay: number }[];
   videoUrl: string;
   fallbackVideoUrl: string;
 }

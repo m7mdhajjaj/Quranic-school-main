@@ -13,7 +13,9 @@ import {
   registerTokenWithBackend 
 } from '../config/firebase';
 import { useAuth } from './useAuth';
-import notificationSoundUrl from '../assets/sounds/notification.mp3';
+import { SOUNDS } from '../utils/soundUrls';
+
+const notificationSoundUrl = SOUNDS.NOTIFICATION;
 
 interface NotificationPayload {
   notification?: {

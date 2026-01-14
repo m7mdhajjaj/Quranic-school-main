@@ -13,6 +13,9 @@ const CLOUDINARY_FOLDERS = {
   // الفيديوهات
   VIDEOS: 'quranic-school/videos',
   WELCOME_VIDEO: 'quranic-school/QuestPage',
+  
+  // الأصوات
+  SOUNDS: 'quranic-school/sounds',
 };
 
 // خيارات الرفع الافتراضية

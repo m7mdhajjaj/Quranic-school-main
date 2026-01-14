@@ -2,6 +2,8 @@
 // Audio Manager - إدارة ملفات الصوت مع caching متقدم
 // ============================================================================
 
+import { SOUNDS } from './soundUrls';
+
 class AudioManager {
   private static instance: AudioManager;
   private audioCache: Map<string, HTMLAudioElement> = new Map();
@@ -20,60 +22,51 @@ class AudioManager {
   /**
    * تحميل ملف صوتي مسبقاً (preload)
    */
-  preload(soundFile: string): void {
-    if (!this.audioCache.has(soundFile)) {
-      const audio = new Audio(`/src/assets/sounds/${soundFile}`);
+  preload(soundKey: keyof typeof SOUNDS): void {
+    if (!this.audioCache.has(soundKey)) {
+      const audio = new Audio(SOUNDS[soundKey]);
       audio.preload = 'auto';
       audio.volume = 0.5;
-      this.audioCache.set(soundFile, audio);
+      this.audioCache.set(soundKey, audio);
     }
   }
 
   /**
    * تشغيل ملف صوتي مع debouncing
    */
-  play(soundFile: string, volume: number = 0.5): void {
+  play(soundKey: keyof typeof SOUNDS, volume: number = 0.5): void {
     try {
       const now = Date.now();
-      const lastPlay = this.lastPlayTime.get(soundFile) || 0;
+      const lastPlay = this.lastPlayTime.get(soundKey) || 0;
 
       // منع تشغيل نفس الصوت أكثر من مرة خلال DEBOUNCE_TIME
       if (now - lastPlay < this.DEBOUNCE_TIME) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`🔇 Sound blocked: ${soundFile} - played ${now - lastPlay}ms ago`);
-        }
         return;
       }
 
-      this.lastPlayTime.set(soundFile, now);
+      this.lastPlayTime.set(soundKey, now);
 
       // الحصول على الصوت من cache أو إنشاء جديد
-      let audio = this.audioCache.get(soundFile);
+      let audio = this.audioCache.get(soundKey);
       if (!audio) {
-        audio = new Audio(`/src/assets/sounds/${soundFile}`);
+        audio = new Audio(SOUNDS[soundKey]);
         audio.volume = volume;
         audio.preload = 'auto';
-        this.audioCache.set(soundFile, audio);
+        this.audioCache.set(soundKey, audio);
       } else {
         audio.volume = volume;
       }
 
       // إعادة التشغيل من البداية
       audio.currentTime = 0;
-      audio.play().catch((error) => {
-        if (process.env.NODE_ENV === 'development') {
-          console.warn(`Failed to play sound: ${soundFile}`, error);
-        }
-      });
-    } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error(`Error in AudioManager.play:`, error);
-      }
+      audio.play().catch(() => {});
+    } catch {
+      // تجاهل الأخطاء
     }
   }
 
   /**
-   * تنظيف الذاكرة - إزالة الصوتيات غير المستخدمة
+   * تنظيف الذاكرة
    */
   clearCache(): void {
     this.audioCache.forEach((audio) => {
@@ -83,58 +76,33 @@ class AudioManager {
     this.audioCache.clear();
     this.lastPlayTime.clear();
   }
-
-  /**
-   * إزالة صوت محدد من cache
-   */
-  remove(soundFile: string): void {
-    const audio = this.audioCache.get(soundFile);
-    if (audio) {
-      audio.pause();
-      audio.src = '';
-      this.audioCache.delete(soundFile);
-      this.lastPlayTime.delete(soundFile);
-    }
-  }
 }
 
 // تصدير instance واحد فقط
 export const audioManager = AudioManager.getInstance();
 
 // تحميل الأصوات الشائعة مسبقاً
-audioManager.preload('successful.mp3');
-audioManager.preload('Adhan.mp3');
-audioManager.preload('error.wav');
-audioManager.preload('notification.mp3');
+audioManager.preload('SUCCESSFUL');
+audioManager.preload('ADHAN');
+audioManager.preload('ERROR');
+audioManager.preload('NOTIFICATION');
 
 // ============================================================================
-// Helper Functions - دوال مساعدة للأصوات الشائعة
+// Helper Functions
 // ============================================================================
 
-/**
- * تشغيل صوت النجاح
- */
 export const playSuccessSound = (volume: number = 0.5) => {
-  audioManager.play('successful.mp3', volume);
+  audioManager.play('SUCCESSFUL', volume);
 };
 
-/**
- * تشغيل صوت الخطأ
- */
 export const playErrorSound = (volume: number = 0.5) => {
-  audioManager.play('error.wav', volume);
+  audioManager.play('ERROR', volume);
 };
 
-/**
- * تشغيل صوت الإشعار
- */
 export const playNotificationSound = (volume: number = 0.5) => {
-  audioManager.play('notification.mp3', volume);
+  audioManager.play('NOTIFICATION', volume);
 };
 
-/**
- * تشغيل الأذان
- */
 export const playAdhanSound = (volume: number = 0.5) => {
-  audioManager.play('Adhan.mp3', volume);
+  audioManager.play('ADHAN', volume);
 };
