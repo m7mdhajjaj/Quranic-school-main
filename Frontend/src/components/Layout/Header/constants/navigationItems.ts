@@ -50,34 +50,50 @@ export const getPrimaryNavItems = (
         color: 'from-purple-600 to-indigo-600',
       },
       {
-        to: '/admin/students',
-        label: 'إدارة الطلاب',
+        to: '#users-management',
+        label: 'إدارة المستخدمين',
         icon: Users,
         color: 'from-blue-600 to-cyan-600',
+        subItems: [
+          {
+            to: '/admin/students',
+            label: 'إدارة الطلاب',
+            icon: Users,
+            color: 'from-blue-600 to-cyan-600',
+          },
+          {
+            to: '/admin/teachers',
+            label: 'إدارة المعلمين',
+            icon: UserPlus,
+            color: 'from-green-600 to-emerald-600',
+          },
+          {
+            to: '/admin/groups',
+            label: 'إدارة الحلقات',
+            icon: BookOpen,
+            color: 'from-teal-600 to-cyan-600',
+          },
+        ],
       },
       {
-        to: '/admin/teachers',
-        label: 'إدارة المعلمين',
-        icon: UserPlus,
-        color: 'from-green-600 to-emerald-600',
-      },
-      {
-        to: '/admin/groups',
-        label: 'إدارة الحلقات',
-        icon: BookOpen,
-        color: 'from-teal-600 to-cyan-600',
-      },
-      {
-        to: '/timetable',
-        label: 'مواعيد الحلقات',
-        icon: Clock,
+        to: '#academic-management',
+        label: 'الإدارة الأكاديمية',
+        icon: CalendarDays,
         color: 'from-indigo-600 to-purple-600',
-      },
-      {
-        to: '/attendance',
-        label: 'الحضور والغياب',
-        icon: UserCheck,
-        color: 'from-red-600 to-pink-600',
+        subItems: [
+          {
+            to: '/timetable',
+            label: 'مواعيد الحلقات',
+            icon: Clock,
+            color: 'from-indigo-600 to-purple-600',
+          },
+          {
+            to: '/attendance',
+            label: 'الحضور والغياب',
+            icon: UserCheck,
+            color: 'from-red-600 to-pink-600',
+          },
+        ],
       },
       {
         to: '/chat',
