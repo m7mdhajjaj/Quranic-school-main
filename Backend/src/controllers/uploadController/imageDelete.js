@@ -3,7 +3,7 @@
  * Handles image deletion from Cloudinary
  */
 
-const cloudinary = require("../../config/cloudinary");
+const { cloudinary } = require("../../config/cloudinary");
 
 /**
  * @desc    Delete image from Cloudinary

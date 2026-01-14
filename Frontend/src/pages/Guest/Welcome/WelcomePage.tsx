@@ -6,8 +6,8 @@
 
 import { motion } from 'framer-motion';
 import { FaArrowLeft } from 'react-icons/fa';
-import { useWelcomePage } from './useWelcomePage';
-import VideoUploadButton from './VideoUploadButton';
+import { useWelcomePage } from './Hooks/useWelcomePage';
+import VideoUploadButton from './components/VideoUploadButton';
 import {
   AnimatedBackground,
   AnimatedLogo,

@@ -2,8 +2,8 @@
 // AnimatedBackground.tsx - الخلفية المتحركة (نسخة مبسطة)
 // ============================================================================
 
-import type { Particle, FloatingShape } from '../useWelcomePage';
-import { useAnimatedBackground } from '../useAnimatedBackground';
+import type { Particle, FloatingShape } from '../Hooks/useWelcomePage';
+import { useAnimatedBackground } from '../Hooks/useAnimatedBackground';
 
 interface AnimatedBackgroundProps {
   floatingShapes: FloatingShape[];

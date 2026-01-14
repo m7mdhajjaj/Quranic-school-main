@@ -3,7 +3,7 @@
  * Handles logo upload and retrieval
  */
 
-const cloudinary = require("../../config/cloudinary");
+const { cloudinary } = require("../../config/cloudinary");
 
 /**
  * @desc    Upload logo

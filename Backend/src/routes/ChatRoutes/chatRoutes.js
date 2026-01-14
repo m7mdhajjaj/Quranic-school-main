@@ -11,7 +11,7 @@ const { validate } = require("../../middleware");
 const { messageLimiter, apiLimiter } = require("../../middleware");
 const multer = require("multer");
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
-const cloudinary = require("../../config/cloudinary");
+const { cloudinary } = require("../../config/cloudinary");
 const {
   sendMessageSchema,
   getMessagesSchema,

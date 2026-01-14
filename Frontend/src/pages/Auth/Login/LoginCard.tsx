@@ -14,7 +14,7 @@ export const LoginCard: React.FC<LoginCardProps> = ({ children, error, success }
   const [shake, setShake] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const playSuccess = useSound("/sounds/success.mp3", 0.18);
-  const playError = useSound("/sounds/error.mp3", 0.18);
+  const playError = useSound("/sounds/error.wav", 0.18);
 
   useEffect(() => {
     if (typeof window === "undefined") return;

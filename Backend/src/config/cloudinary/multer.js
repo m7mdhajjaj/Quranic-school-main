@@ -1,40 +1,40 @@
+// ============================================================================
+// cloudinary/multer.js - إعدادات Multer مع Cloudinary
+// ============================================================================
+
 const multer = require('multer');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
-const cloudinary = require('../config/cloudinary');
+const { cloudinary } = require('./config');
+const { CLOUDINARY_FOLDERS } = require('./constants');
 
-// Cloudinary is already configured in config/cloudinary.js
 console.log('🔧 Multer-Cloudinary storage initialized');
 
-// Configure Cloudinary storage for news with organized folder structure
-// Structure: news/{teacherId}/{newsId}/image_1.jpg
+// ============================================================================
+// News Storage - تخزين صور الأخبار
+// ============================================================================
 const newsStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: async (req, file) => {
-    // الحصول على معلومات المستخدم (المعلم أو الأدمن)
     const userId = req.user?._id || req.body.author || 'unknown';
     const userName = req.user?.firstName
       ? `${req.user.firstName}_${req.user.lastName || ''}`.replace(/\s+/g, '_')
       : req.user?.name?.replace(/\s+/g, '_') || 'unknown_user';
 
-    // الحصول على معرف الخبر أو إنشاء واحد مؤقت
     let newsId;
     if (req.params.id) {
-      // عند التعديل: استخدم ID الخبر الموجود
       newsId = req.params.id;
     } else {
-      // عند الإضافة: إنشاء معرف مؤقت واحد لكل طلب
       if (!req.tempNewsId) {
         req.tempNewsId = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
       }
       newsId = req.tempNewsId;
     }
 
-    // إنشاء اسم فريد لكل صورة
     const imageTimestamp = Date.now();
     const randomString = Math.random().toString(36).substring(2, 8);
 
     return {
-      folder: `quranic-school/news/${userName}_${userId}/${newsId}`,
+      folder: `${CLOUDINARY_FOLDERS.NEWS}/${userName}_${userId}/${newsId}`,
       allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
       public_id: `image_${imageTimestamp}_${randomString}`,
       transformation: [
@@ -50,15 +50,13 @@ const newsStorage = new CloudinaryStorage({
   },
 });
 
-// Create multer upload instances
 const uploadNews = multer({
   storage: newsStorage,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB max per file
-    files: 10, // Maximum 10 files
+    fileSize: 5 * 1024 * 1024, // 5MB
+    files: 10,
   },
   fileFilter: (req, file, cb) => {
-    // Check file type
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
     } else {
@@ -67,11 +65,12 @@ const uploadNews = multer({
   },
 });
 
-// Configure Cloudinary storage for avatars with dynamic folders
+// ============================================================================
+// Avatar Storage - تخزين الصور الشخصية
+// ============================================================================
 const avatarStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: async (req, file) => {
-    // تحديد المجلد الفرعي حسب نوع المستخدم داخل مجلد Avatar
     let userSubFolder;
 
     if (req.user && req.user.role) {
@@ -84,13 +83,12 @@ const avatarStorage = new CloudinaryStorage({
       }
     }
 
-    // إذا لم يتم تحديد role صحيح، ارجع خطأ
     if (!userSubFolder) {
       throw new Error('نوع المستخدم غير محدد أو غير صالح');
     }
 
     return {
-      folder: `quranic-school/Avatar/${userSubFolder}`,
+      folder: `${CLOUDINARY_FOLDERS.AVATARS}/${userSubFolder}`,
       allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
       transformation: [
         {
@@ -106,28 +104,28 @@ const avatarStorage = new CloudinaryStorage({
   },
 });
 
-// Create multer upload instance for avatars
 const uploadAvatar = multer({
   storage: avatarStorage,
   limits: {
-    fileSize: 2 * 1024 * 1024, // 2MB max
+    fileSize: 2 * 1024 * 1024, // 2MB
   },
   fileFilter: (req, file, cb) => {
-    // Check file type
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
     } else {
-      cb(new Error('يُسمح فقط بملفات الصور (JPG, PNG, GIF, WEBP). حجم الملف لا يتجاوز 2 ميجابايت'), false);
+      cb(new Error('يُسمح فقط بملفات الصور (JPG, PNG, GIF, WEBP)'), false);
     }
   },
 });
 
-// Configure Cloudinary storage for hero images
+// ============================================================================
+// Hero Storage - تخزين الصور البطولية
+// ============================================================================
 const heroStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: async (req, file) => {
     return {
-      folder: 'quranic-school/Hero',
+      folder: CLOUDINARY_FOLDERS.HEROES,
       allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
       transformation: [
         {
@@ -142,14 +140,12 @@ const heroStorage = new CloudinaryStorage({
   },
 });
 
-// Create multer upload instance for hero images
 const uploadHero = multer({
   storage: heroStorage,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB max
+    fileSize: 5 * 1024 * 1024, // 5MB
   },
   fileFilter: (req, file, cb) => {
-    // Check file type
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
     } else {
@@ -158,12 +154,14 @@ const uploadHero = multer({
   },
 });
 
-// Configure Cloudinary storage for logo
+// ============================================================================
+// Logo Storage - تخزين الشعارات
+// ============================================================================
 const logoStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: async (req, file) => {
     return {
-      folder: 'quranic-school/Logo',
+      folder: CLOUDINARY_FOLDERS.LOGOS,
       allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'],
       transformation: [
         {
@@ -178,14 +176,12 @@ const logoStorage = new CloudinaryStorage({
   },
 });
 
-// Create multer upload instance for logo
 const uploadLogo = multer({
   storage: logoStorage,
   limits: {
-    fileSize: 2 * 1024 * 1024, // 2MB max
+    fileSize: 2 * 1024 * 1024, // 2MB
   },
   fileFilter: (req, file, cb) => {
-    // Check file type
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
     } else {
@@ -194,9 +190,42 @@ const uploadLogo = multer({
   },
 });
 
+// ============================================================================
+// Welcome Video Storage - تخزين فيديو الترحيب
+// ============================================================================
+const welcomeVideoStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: async (req, file) => {
+    return {
+      folder: CLOUDINARY_FOLDERS.WELCOME_VIDEO,
+      resource_type: 'video',
+      allowed_formats: ['mp4', 'webm', 'mov', 'avi'],
+      public_id: `Quest_${Date.now()}`,
+    };
+  },
+});
+
+const uploadWelcomeVideo = multer({
+  storage: welcomeVideoStorage,
+  limits: {
+    fileSize: 100 * 1024 * 1024, // 100MB
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('video/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('يُسمح فقط بملفات الفيديو (MP4, WebM, MOV, AVI)'), false);
+    }
+  },
+});
+
+// ============================================================================
+// Exports
+// ============================================================================
 module.exports = {
   uploadNews,
   uploadAvatar,
   uploadHero,
   uploadLogo,
+  uploadWelcomeVideo,
 };

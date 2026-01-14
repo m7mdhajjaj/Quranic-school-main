@@ -6,7 +6,7 @@
 const express = require("express");
 const router = express.Router();
 const { protect } = require("../../middleware/auth");
-const { uploadAvatar } = require("../../config/multer");
+const { uploadAvatar } = require("../../config/cloudinary");
 
 // Import avatar controllers from uploadController
 const {

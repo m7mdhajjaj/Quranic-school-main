@@ -25,7 +25,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   onSubmit,
   onForgotPassword,
 }) => {
-  const playClick = useSound("/sounds/click.mp3", 0.18);
+  // const playClick = useSound("/sounds/click.mp3", 0.18);
   return (
     <div>
       {/* Error Message */}

@@ -8,7 +8,7 @@
 export { default as Home } from '../Home';
 
 // صفحة الترحيب
-export { default as WelcomePage } from './Welcome';
+export { default as WelcomePage } from './Welcome/Hooks';
 
 // صفحة نبذة عنا
 export { default as About } from './About';

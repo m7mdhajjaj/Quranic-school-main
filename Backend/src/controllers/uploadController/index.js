@@ -44,6 +44,13 @@ const {
   deleteImage,
 } = require("./imageDelete");
 
+// Import Welcome Video Upload Controller
+const {
+  uploadWelcomeVideo,
+  getWelcomeVideo,
+  deleteWelcomeVideo,
+} = require("./welcomeVideoUpload");
+
 // Export all controllers
 module.exports = {
 
@@ -74,4 +81,9 @@ module.exports = {
   
   // Delete Controller
   deleteImage,
+  
+  // Welcome Video Controllers
+  uploadWelcomeVideo,
+  getWelcomeVideo,
+  deleteWelcomeVideo,
 };

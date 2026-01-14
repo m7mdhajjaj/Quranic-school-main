@@ -7,7 +7,7 @@
 const Student = require("../../schema/Student");
 const Teacher = require("../../schema/Teacher");
 const Admin = require("../../schema/Admin");
-const cloudinary = require("../../config/cloudinary");
+const { cloudinary } = require("../../config/cloudinary");
 
 /**
  * Helper function to get user model based on role

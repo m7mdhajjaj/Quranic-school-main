@@ -5,7 +5,7 @@
 
 const express = require("express");
 const router = express.Router();
-const { uploadAvatar } = require("../../config/multer");
+const { uploadAvatar } = require("../../config/cloudinary");
 const { protect } = require("../../middleware/auth");
 const {
   uploadAvatarById,

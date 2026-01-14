@@ -3,7 +3,7 @@
 // ============================================================================
 
 const News = require("../../schema/News");
-const cloudinary = require("../../config/cloudinary");
+const { cloudinary } = require("../../config/cloudinary");
 
 /**
  * Delete news item

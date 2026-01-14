@@ -1,9 +1,9 @@
 // routes/adminRoutes/avatar.routes.js
 const express = require("express");
 const router = express.Router();
-const cloudinary = require("../../config/cloudinary");
+const { cloudinary } = require("../../config/cloudinary");
 const Admin = require("../../schema/Admin");
-const { uploadAvatar } = require("../../config/multer");
+const { uploadAvatar } = require("../../config/cloudinary");
 const { protect } = require("../../middleware/auth");
 
 /**

@@ -1,13 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const {
-
   uploadNews,
   uploadHero,
   uploadLogo,
   uploadAvatar,
-} = require('../../config/multer');
-const { protect } = require('../../middleware/auth');
+  uploadWelcomeVideo,
+} = require('../../config/cloudinary');
+const { protect, isAdmin } = require('../../middleware/auth');
 const {
   uploadNewsImage,
   uploadMultipleNewsImages,
@@ -19,6 +19,9 @@ const {
   getLogo,
   uploadAvatarSimple,
   deleteImage,
+  uploadWelcomeVideo: uploadWelcomeVideoHandler,
+  getWelcomeVideo,
+  deleteWelcomeVideo,
 } = require('../../controllers/uploadController');
 
 
@@ -51,5 +54,15 @@ router.post(
 
 // ============= Delete Image Route =============
 router.delete('/:publicId', deleteImage);
+
+// ============= Welcome Video Routes =============
+router.get('/welcome-video', getWelcomeVideo);
+router.post(
+  '/welcome-video',
+  protect,
+  uploadWelcomeVideo.single('video'),
+  uploadWelcomeVideoHandler
+);
+router.delete('/welcome-video', protect, deleteWelcomeVideo);
 
 module.exports = router;
