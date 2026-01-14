@@ -112,36 +112,53 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   }, [selectedGroup]);
 
   const loadGroupsStats = async () => {
+    // Initialize stats with loading state
     const stats: GroupWithStats[] = teacherGroups.map((groupName) => ({
       name: groupName,
-      studentsCount: students.filter((s) => s.group === groupName).length,
+      studentsCount: 0,
       sectionsCount: 0,
       loading: true,
     }));
 
     setGroupsWithStats(stats);
 
-    // Load sections count for each group
+    // Load both students count and sections count for each group
     for (let i = 0; i < teacherGroups.length; i++) {
       const groupName = teacherGroups[i];
       try {
-        const response = await getFilteredSections({
+        // Load students count from API
+        const studentsResponse = await getStudentsByGroup(groupName);
+        const studentsCount =
+          studentsResponse.success && studentsResponse.data
+            ? studentsResponse.data.length
+            : 0;
+
+        // Load sections count
+        const sectionsResponse = await getFilteredSections({
           group: groupName,
           month: selectedMonth,
           year: selectedYear,
         });
+        const sectionsCount =
+          sectionsResponse.success && sectionsResponse.data
+            ? sectionsResponse.data.length
+            : 0;
 
-        if (response.success && response.data) {
-          setGroupsWithStats((prev) =>
-            prev.map((g) =>
-              g.name === groupName
-                ? { ...g, sectionsCount: response.data!.length, loading: false }
-                : g
-            )
-          );
-        }
+        // Update both counts
+        setGroupsWithStats((prev) =>
+          prev.map((g) =>
+            g.name === groupName
+              ? {
+                  ...g,
+                  studentsCount,
+                  sectionsCount,
+                  loading: false,
+                }
+              : g
+          )
+        );
       } catch (error) {
-        console.error(`Error loading sections for ${groupName}:`, error);
+        console.error(`Error loading stats for ${groupName}:`, error);
         setGroupsWithStats((prev) =>
           prev.map((g) => (g.name === groupName ? { ...g, loading: false } : g))
         );
