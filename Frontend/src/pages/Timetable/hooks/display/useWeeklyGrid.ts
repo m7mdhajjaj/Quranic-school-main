@@ -2,7 +2,7 @@
 // useWeeklyGrid - منطق عرض الشبكة الأسبوعية
 // ============================================================================
 
-import { useMemo } from "react";
+import { useMemo, useCallback } from "react";
 import type { Session } from "../../types/timetable.types";
 import { generateHours, isSummerTime, getWeekDates, formatDateForAPI } from "../../utils";
 import { useWeekFilter } from "./useWeekFilter";
@@ -69,8 +69,8 @@ export const useWeeklyGrid = ({ sessions }: UseWeeklyGridProps) => {
     return grid;
   }, [filteredSessions, hours, weekDates]);
 
-  // التحقق إذا كان السلوت مشغول بحصة ممتدة
-  const isSlotOccupied = (dateKey: string, currentHour: string): boolean => {
+  // التحقق إذا كان السلوت مشغول بحصة ممتدة - memoized
+  const isSlotOccupied = useCallback((dateKey: string, currentHour: string): boolean => {
     const currentIndex = hours.indexOf(currentHour);
     if (currentIndex === -1) return false;
 
@@ -91,12 +91,12 @@ export const useWeeklyGrid = ({ sessions }: UseWeeklyGridProps) => {
     }
     
     return false;
-  };
+  }, [hours, sessionGrid]);
 
-  // الحصول على حصص يوم/ساعة معينة
-  const getSessionsAt = (dateKey: string, hour: string) => {
+  // الحصول على حصص يوم/ساعة معينة - memoized
+  const getSessionsAt = useCallback((dateKey: string, hour: string) => {
     return sessionGrid[dateKey]?.[hour] || [];
-  };
+  }, [sessionGrid]);
 
   return {
     // البيانات

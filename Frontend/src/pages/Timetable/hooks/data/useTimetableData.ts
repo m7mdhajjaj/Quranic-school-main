@@ -4,7 +4,7 @@
 // ⚠️ النظام الجديد: يعتمد على sessionDate (التاريخ المحدد)
 // ✅ Data Validation: التحقق من صحة البيانات قبل العرض
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { getTimetables } from "@/Api/TimeTable.Api";
 import type { Session } from "../../types/timetable.types";
 import { getCurrentUser, getUserRole, getDayNameFromDate } from "../../utils";
@@ -61,20 +61,45 @@ export const useTimetableData = () => {
   const [error, setError] = useState<string | null>(null);
   const [teacherGroups, setTeacherGroups] = useState<string[]>([]);
   const [lastFetch, setLastFetch] = useState<Date | null>(null);
+  
+  // ✅ Ref لتتبع حالة الـ fetch الجاري ومنع race conditions
+  const fetchInProgressRef = useRef<boolean>(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  const user = getCurrentUser();
-  const role = getUserRole();
+  // ✅ Memoize user & role لمنع إعادة حسابهم
+  const user = useMemo(() => getCurrentUser(), []);
+  const role = useMemo(() => getUserRole(), []);
 
   // ============================================
   // 📡 جلب الحصص من الـ Backend API
   // ============================================
   const fetchSessions = useCallback(async () => {
+    // ✅ إلغاء أي fetch سابق
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // ✅ منع الـ fetch المتزامن
+    if (fetchInProgressRef.current) {
+      console.log('⏳ Fetch already in progress, skipping...');
+      return;
+    }
+    
+    fetchInProgressRef.current = true;
+    abortControllerRef.current = new AbortController();
+    
     try {
       setLoading(true);
       setError(null);
       
       // جلب المواعيد
       const response = await getTimetables();
+      
+      // ✅ تحقق من إلغاء الـ request
+      if (abortControllerRef.current?.signal.aborted) {
+        console.log('🚫 Fetch was aborted');
+        return;
+      }
       
       if (response.success && response.data) {
         // ✅ تحويل وتنظيف البيانات مع validation
@@ -98,18 +123,32 @@ export const useTimetableData = () => {
         setSessions([]);
       }
     } catch (error: any) {
+      // ✅ تجاهل أخطاء الإلغاء
+      if (error?.name === 'AbortError' || abortControllerRef.current?.signal.aborted) {
+        console.log('🚫 Fetch was aborted');
+        return;
+      }
+      
       const errorMsg = error?.response?.data?.message || error?.message || "حدث خطأ في تحميل الحصص";
       setError(errorMsg);
       await showErrorMessage("❌ خطأ في تحميل البيانات", errorMsg);
       setSessions([]);
     } finally {
       setLoading(false);
+      fetchInProgressRef.current = false;
     }
   }, []);
 
   // جلب البيانات عند التحميل الأول
   useEffect(() => {
     fetchSessions();
+    
+    // ✅ Cleanup: إلغاء الـ fetch عند الـ unmount
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, [fetchSessions]);
 
   return {

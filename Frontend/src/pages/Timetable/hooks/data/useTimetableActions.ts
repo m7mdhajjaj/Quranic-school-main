@@ -22,11 +22,13 @@ interface UseTimetableActionsProps {
 
 export const useTimetableActions = ({
   setSessions,
-  refetchSessions,
 }: UseTimetableActionsProps) => {
   
-  // ✅ Ref لحفظ الـ state السابق للـ rollback
+  // ✅ Ref لحفظ الـ state السابق للـ rollback - يُحفظ قبل أي تعديل
   const previousSessionsRef = useRef<Session[]>([]);
+  
+  // ✅ Ref لتتبع حالة العمليات الجارية - لمنع race conditions
+  const operationInProgressRef = useRef<boolean>(false);
   
   // ============================================
   // 🔄 Helper: تحويل Response إلى Session (DRY)
@@ -35,7 +37,7 @@ export const useTimetableActions = ({
     return (data: any): Session => {
       const currentUser = getCurrentUser();
       
-      let session: Session = {
+      const session: Session = {
         _id: data._id,
         sessionDate: data.sessionDate,
         day: data.day,
@@ -45,18 +47,15 @@ export const useTimetableActions = ({
         description: data.description,
         sessionType: data.sessionType,
         groupId: typeof data.groupId === 'object' ? data.groupId?._id : data.groupId,
-        teacherId: data.teacherId,
+        teacherId: typeof data.teacherId === 'string' && currentUser && currentUser._id === data.teacherId
+          ? {
+              _id: currentUser._id,
+              firstName: currentUser.firstName,
+              lastName: currentUser.lastName || ''
+            } as any
+          : data.teacherId,
         sectionId: typeof data.sectionId === 'object' ? data.sectionId?._id : data.sectionId,
       };
-      
-      // إذا كان المعلم هو المستخدم الحالي، استبدل الـ ID بالبيانات الكاملة
-      if (typeof session.teacherId === 'string' && currentUser && currentUser._id === session.teacherId) {
-        session.teacherId = {
-          _id: currentUser._id,
-          firstName: currentUser.firstName,
-          lastName: currentUser.lastName || ''
-        } as any;
-      }
       
       return session;
     };
@@ -67,9 +66,17 @@ export const useTimetableActions = ({
   // ============================================
   const addSession = useCallback(
     async (formData: SessionFormData) => {
+      // ✅ منع العمليات المتزامنة
+      if (operationInProgressRef.current) {
+        console.warn('⚠️ Operation already in progress');
+        return false;
+      }
+      operationInProgressRef.current = true;
+      
       // ✅ 1. Validation قبل الإرسال
       const validation = validateSessionData(formData);
       if (!validation.isValid) {
+        operationInProgressRef.current = false;
         await showErrorMessage("❌ بيانات غير صحيحة", validation.errors.join('\n'));
         return false;
       }
@@ -95,9 +102,11 @@ export const useTimetableActions = ({
         sectionId: formData.sectionId,
       };
 
-      // ✅ 3. حفظ الـ state الحالي للـ rollback
+      // ✅ 3. حفظ الـ state الحالي قبل التعديل
+      let savedPreviousSessions: Session[] = [];
       setSessions((prev) => {
-        previousSessionsRef.current = prev;
+        savedPreviousSessions = [...prev];
+        previousSessionsRef.current = savedPreviousSessions;
         return [...prev, optimisticSession];
       });
 
@@ -118,13 +127,15 @@ export const useTimetableActions = ({
           `تم إضافة موعد ${formData.note || ''} يوم ${dayName} (${dateDisplay}) بنجاح ✓`
         );
 
+        operationInProgressRef.current = false;
         return true;
       } catch (error: any) {
-        // ❌ Rollback في حالة الخطأ
-        setSessions(previousSessionsRef.current);
+        // ❌ Rollback في حالة الخطأ - استخدام النسخة المحفوظة
+        setSessions(savedPreviousSessions);
         
         if (error?.isConflict) {
           await showErrorMessage("⚠️ تعارض في المواعيد", error.message);
+          operationInProgressRef.current = false;
           return false;
         }
 
@@ -135,6 +146,7 @@ export const useTimetableActions = ({
 
         await showErrorMessage("❌ خطأ في حفظ الموعد", errorMsg);
 
+        operationInProgressRef.current = false;
         return false;
       }
     },
@@ -146,18 +158,26 @@ export const useTimetableActions = ({
   // ============================================
   const editSession = useCallback(
     async (sessionId: string, formData: SessionFormData) => {
+      // ✅ منع العمليات المتزامنة
+      if (operationInProgressRef.current) {
+        console.warn('⚠️ Operation already in progress');
+        return false;
+      }
+      operationInProgressRef.current = true;
+      
       // ✅ 1. Validation قبل الإرسال
       const validation = validateSessionData(formData);
       if (!validation.isValid) {
+        operationInProgressRef.current = false;
         await showErrorMessage("❌ بيانات غير صحيحة", validation.errors.join('\n'));
         return false;
       }
 
-      // ✅ 2. حفظ الـ state الحالي للـ rollback
-      let previousSession: Session | undefined;
+      // ✅ 2. حفظ الـ state الحالي قبل التعديل - خارج الـ setState callback
+      let savedPreviousSessions: Session[] = [];
       setSessions((prev) => {
-        previousSessionsRef.current = prev;
-        previousSession = prev.find((s) => s._id === sessionId);
+        savedPreviousSessions = [...prev];
+        previousSessionsRef.current = savedPreviousSessions;
         
         // ✅ 3. Optimistic Update
         return prev.map((s) =>
@@ -189,13 +209,15 @@ export const useTimetableActions = ({
 
         showSuccessToast("تم تحديث موعد الحلقة بنجاح ✓");
 
+        operationInProgressRef.current = false;
         return true;
       } catch (error: any) {
-        // ❌ Rollback في حالة الخطأ
-        setSessions(previousSessionsRef.current);
+        // ❌ Rollback في حالة الخطأ - استخدام النسخة المحفوظة
+        setSessions(savedPreviousSessions);
         
         if (error?.isConflict) {
           await showErrorMessage("⚠️ تعارض في المواعيد", error.message);
+          operationInProgressRef.current = false;
           return false;
         }
 
@@ -206,6 +228,7 @@ export const useTimetableActions = ({
 
         await showErrorMessage("❌ خطأ في تحديث الموعد", errorMsg);
 
+        operationInProgressRef.current = false;
         return false;
       }
     },
@@ -217,6 +240,12 @@ export const useTimetableActions = ({
   // ============================================
   const removeSession = useCallback(
     async (session: Session) => {
+      // ✅ منع العمليات المتزامنة
+      if (operationInProgressRef.current) {
+        console.warn('⚠️ Operation already in progress');
+        return false;
+      }
+      
       const dayName = session.day || getDayNameFromDate(session.sessionDate);
       const dateDisplay = formatDateShort(session.sessionDate);
       
@@ -234,9 +263,13 @@ export const useTimetableActions = ({
       if (!result.isConfirmed) return false;
 
       if (session._id) {
-        // ✅ 1. حفظ الـ state الحالي للـ rollback
+        operationInProgressRef.current = true;
+        
+        // ✅ 1. حفظ الـ state الحالي قبل التعديل
+        let savedPreviousSessions: Session[] = [];
         setSessions((prev) => {
-          previousSessionsRef.current = prev;
+          savedPreviousSessions = [...prev];
+          previousSessionsRef.current = savedPreviousSessions;
           // ✅ 2. Optimistic Delete
           return prev.filter((s) => s._id !== session._id);
         });
@@ -247,10 +280,11 @@ export const useTimetableActions = ({
 
           showSuccessToast("تم حذف الموعد بنجاح ✓");
 
+          operationInProgressRef.current = false;
           return true;
         } catch (error: any) {
-          // ❌ Rollback في حالة الخطأ
-          setSessions(previousSessionsRef.current);
+          // ❌ Rollback في حالة الخطأ - استخدام النسخة المحفوظة
+          setSessions(savedPreviousSessions);
           
           const errorMsg =
             error?.response?.data?.message ||
@@ -258,6 +292,7 @@ export const useTimetableActions = ({
             "حدث خطأ أثناء حذف الحلقة";
           
           await showErrorMessage("❌ خطأ في حذف الموعد", errorMsg);
+          operationInProgressRef.current = false;
           return false;
         }
       }
