@@ -18,16 +18,16 @@ interface AddEditMarkModalProps {
   visible: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  mark?: Mark | null;
-  section: Section;
-  student: Student;
+  editingMark?: Mark | null;
+  section: Section | null;
+  student: Student | null;
 }
 
 export const AddEditMarkModal: React.FC<AddEditMarkModalProps> = ({
   visible,
   onClose,
   onSuccess,
-  mark,
+  editingMark,
   section,
   student,
 }) => {
@@ -38,17 +38,17 @@ export const AddEditMarkModal: React.FC<AddEditMarkModalProps> = ({
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (mark) {
-      setReviewMark(mark.reviewMark?.toString() || "");
-      setMemorizationMark(mark.memorizationMark?.toString() || "");
-      setNote(mark.note || "");
+    if (editingMark) {
+      setReviewMark(editingMark.reviewMark?.toString() || "");
+      setMemorizationMark(editingMark.memorizationMark?.toString() || "");
+      setNote(editingMark.note || "");
     } else {
       setReviewMark("");
       setMemorizationMark("");
       setNote("");
     }
     setError("");
-  }, [mark, visible]);
+  }, [editingMark, visible]);
 
   const validateMark = (value: string): boolean => {
     if (value === "") return true; // Allow empty
@@ -57,6 +57,11 @@ export const AddEditMarkModal: React.FC<AddEditMarkModalProps> = ({
   };
 
   const handleSubmit = async () => {
+    if (!section || !student) {
+      setError("بيانات المقطع أو الطالب غير متوفرة");
+      return;
+    }
+
     const reviewNum = reviewMark === "" ? null : parseFloat(reviewMark);
     const memNum =
       memorizationMark === "" ? null : parseFloat(memorizationMark);
@@ -88,8 +93,8 @@ export const AddEditMarkModal: React.FC<AddEditMarkModalProps> = ({
       };
 
       let response;
-      if (mark?._id) {
-        response = await updateMark(mark._id, markData);
+      if (editingMark?._id) {
+        response = await updateMark(editingMark._id, markData);
       } else {
         response = await createMark(markData);
       }
@@ -130,7 +135,7 @@ export const AddEditMarkModal: React.FC<AddEditMarkModalProps> = ({
             {/* Header */}
             <View style={styles.header}>
               <Text style={styles.title}>
-                {mark ? "تعديل العلامة" : "إضافة علامة"}
+                {editingMark ? "تعديل العلامة" : "إضافة علامة"}
               </Text>
               <TouchableOpacity
                 onPress={onClose}
@@ -148,31 +153,37 @@ export const AddEditMarkModal: React.FC<AddEditMarkModalProps> = ({
             ) : null}
 
             {/* Student Info */}
-            <View style={styles.infoCard}>
-              <View style={styles.infoRow}>
-                <User size={18} color="#10b981" />
-                <Text style={styles.infoLabel}>الطالب:</Text>
-                <Text style={styles.infoValue}>
-                  {student.firstName} {student.fatherName} {student.lastName}
-                </Text>
+            {student && (
+              <View style={styles.infoCard}>
+                <View style={styles.infoRow}>
+                  <User size={18} color="#10b981" />
+                  <Text style={styles.infoLabel}>الطالب:</Text>
+                  <Text style={styles.infoValue}>
+                    {student.firstName} {student.fatherName} {student.lastName}
+                  </Text>
+                </View>
               </View>
-            </View>
+            )}
 
             {/* Section Info */}
-            <View style={styles.sectionInfo}>
-              <View style={styles.sectionRow}>
-                <RotateCcw size={16} color="#10b981" />
-                <Text style={styles.sectionLabel}>المراجعة:</Text>
-                <Text style={styles.sectionValue}>{section.reviewSection}</Text>
+            {section && (
+              <View style={styles.sectionInfo}>
+                <View style={styles.sectionRow}>
+                  <RotateCcw size={16} color="#10b981" />
+                  <Text style={styles.sectionLabel}>المراجعة:</Text>
+                  <Text style={styles.sectionValue}>
+                    {section.reviewSection}
+                  </Text>
+                </View>
+                <View style={styles.sectionRow}>
+                  <BookOpen size={16} color="#14b8a6" />
+                  <Text style={styles.sectionLabel}>الحفظ:</Text>
+                  <Text style={styles.sectionValue}>
+                    {section.memorizationSection}
+                  </Text>
+                </View>
               </View>
-              <View style={styles.sectionRow}>
-                <BookOpen size={16} color="#14b8a6" />
-                <Text style={styles.sectionLabel}>الحفظ:</Text>
-                <Text style={styles.sectionValue}>
-                  {section.memorizationSection}
-                </Text>
-              </View>
-            </View>
+            )}
 
             {/* Review Mark Field */}
             <View style={styles.fieldContainer}>
@@ -279,7 +290,7 @@ export const AddEditMarkModal: React.FC<AddEditMarkModalProps> = ({
                   <ActivityIndicator size="small" color="#ffffff" />
                 ) : (
                   <Text style={styles.submitButtonText}>
-                    {mark ? "حفظ التعديلات" : "إضافة العلامة"}
+                    {editingMark ? "حفظ التعديلات" : "إضافة العلامة"}
                   </Text>
                 )}
               </TouchableOpacity>

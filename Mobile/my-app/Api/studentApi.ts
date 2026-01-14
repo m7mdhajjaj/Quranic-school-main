@@ -51,7 +51,7 @@ export const getAllStudents = async (filters?: {
   group?: string;
   search?: string;
   sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+  sortOrder?: "asc" | "desc";
   page?: number;
   limit?: number;
 }): Promise<{
@@ -68,18 +68,18 @@ export const getAllStudents = async (filters?: {
   try {
     const params = new URLSearchParams();
     if (filters) {
-      if (filters.gender) params.append('gender', filters.gender);
-      if (filters.minAge) params.append('minAge', filters.minAge.toString());
-      if (filters.maxAge) params.append('maxAge', filters.maxAge.toString());
-      if (filters.group) params.append('group', filters.group);
-      if (filters.search) params.append('search', filters.search);
-      if (filters.sortBy) params.append('sortBy', filters.sortBy);
-      if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
-      if (filters.page) params.append('page', filters.page.toString());
-      if (filters.limit) params.append('limit', filters.limit.toString());
+      if (filters.gender) params.append("gender", filters.gender);
+      if (filters.minAge) params.append("minAge", filters.minAge.toString());
+      if (filters.maxAge) params.append("maxAge", filters.maxAge.toString());
+      if (filters.group) params.append("group", filters.group);
+      if (filters.search) params.append("search", filters.search);
+      if (filters.sortBy) params.append("sortBy", filters.sortBy);
+      if (filters.sortOrder) params.append("sortOrder", filters.sortOrder);
+      if (filters.page) params.append("page", filters.page.toString());
+      if (filters.limit) params.append("limit", filters.limit.toString());
     }
-    
-    const url = params.toString() ? `/students?${params}` : '/students';
+
+    const url = params.toString() ? `/students?${params}` : "/students";
     const response = await api.get(url);
     return response.data;
   } catch (error) {
@@ -111,14 +111,19 @@ export const getStudentById = async (
 
 // Check if field value is duplicate
 export const checkDuplicateField = async (
-  field: 'idNumber' | 'phoneNumber' | 'email',
+  field: "idNumber" | "phoneNumber" | "email",
   value: string,
   excludeId?: string
-): Promise<{ success: boolean; isDuplicate: boolean; message?: string; existingUserType?: string }> => {
+): Promise<{
+  success: boolean;
+  isDuplicate: boolean;
+  message?: string;
+  existingUserType?: string;
+}> => {
   try {
     const params = new URLSearchParams({ field, value });
-    if (excludeId) params.append('excludeId', excludeId);
-    
+    if (excludeId) params.append("excludeId", excludeId);
+
     const response = await api.get(`/students/check-duplicate?${params}`);
     return response.data;
   } catch (error) {
@@ -140,31 +145,37 @@ export const createStudent = async (
       "📤 إرسال بيانات الطالب إلى الخادم:",
       JSON.stringify(studentData, null, 2)
     );
-    
+
     const response = await api.post("/students", studentData);
     console.log("✅ استجابة الخادم:", response.data);
     return response.data;
   } catch (error) {
     console.error("❌ خطأ في إضافة الطالب:", error);
-    const axiosError = error as AxiosError<{ message?: string; error?: string; details?: any }>;
-    
+    const axiosError = error as AxiosError<{
+      message?: string;
+      error?: string;
+      details?: any;
+    }>;
+
     // Log detailed error information
     if (axiosError.response) {
       console.error("📋 تفاصيل الخطأ من السيرفر:", {
         status: axiosError.response.status,
-        errorMessage: axiosError.response.data?.message || axiosError.response.data?.error,
+        errorMessage:
+          axiosError.response.data?.message || axiosError.response.data?.error,
         errorDetails: axiosError.response.data?.details,
         fullResponse: axiosError.response.data,
       });
       console.error("📤 البيانات المرسلة:", studentData);
     }
-    
-    const errorMessage = axiosError.response?.data?.message || 
-                        axiosError.response?.data?.error || 
-                        "حدث خطأ أثناء إضافة الطالب";
-    
+
+    const errorMessage =
+      axiosError.response?.data?.message ||
+      axiosError.response?.data?.error ||
+      "حدث خطأ أثناء إضافة الطالب";
+
     console.error("💬 رسالة الخطأ النهائية:", errorMessage);
-    
+
     return {
       success: false,
       message: errorMessage,
@@ -184,20 +195,24 @@ export const updateStudent = async (
     return response.data;
   } catch (error) {
     console.error("❌ خطأ في تحديث الطالب:", error);
-    const axiosError = error as AxiosError<{ message?: string; error?: string }>;
-    
+    const axiosError = error as AxiosError<{
+      message?: string;
+      error?: string;
+    }>;
+
     if (axiosError.response) {
       console.error("📋 تفاصيل الخطأ:", {
         status: axiosError.response.status,
         data: axiosError.response.data,
       });
     }
-    
+
     return {
       success: false,
-      message: axiosError.response?.data?.message || 
-               axiosError.response?.data?.error || 
-               "حدث خطأ أثناء تحديث الطالب",
+      message:
+        axiosError.response?.data?.message ||
+        axiosError.response?.data?.error ||
+        "حدث خطأ أثناء تحديث الطالب",
     };
   }
 };
@@ -262,14 +277,16 @@ export const getStudentsStatistics = async (filters?: {
   try {
     const params = new URLSearchParams();
     if (filters) {
-      if (filters.gender) params.append('gender', filters.gender);
-      if (filters.minAge) params.append('minAge', filters.minAge.toString());
-      if (filters.maxAge) params.append('maxAge', filters.maxAge.toString());
-      if (filters.group) params.append('group', filters.group);
-      if (filters.search) params.append('search', filters.search);
+      if (filters.gender) params.append("gender", filters.gender);
+      if (filters.minAge) params.append("minAge", filters.minAge.toString());
+      if (filters.maxAge) params.append("maxAge", filters.maxAge.toString());
+      if (filters.group) params.append("group", filters.group);
+      if (filters.search) params.append("search", filters.search);
     }
-    
-    const url = params.toString() ? `/students/statistics?${params}` : '/students/statistics';
+
+    const url = params.toString()
+      ? `/students/statistics?${params}`
+      : "/students/statistics";
     const response = await api.get(url);
     return response.data;
   } catch (error) {
@@ -277,7 +294,8 @@ export const getStudentsStatistics = async (filters?: {
     const axiosError = error as AxiosError<{ message?: string }>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || "حدث خطأ أثناء جلب الإحصائيات",
+      message:
+        axiosError.response?.data?.message || "حدث خطأ أثناء جلب الإحصائيات",
     };
   }
 };
@@ -287,12 +305,20 @@ export const getStudentsByGroup = async (
   groupName: string
 ): Promise<{ success: boolean; data?: Student[]; message?: string }> => {
   try {
-    const response = await api.get(
-      `/students/group/${encodeURIComponent(groupName)}`
+    console.log("🔄 [StudentAPI] Fetching students for group:", groupName);
+    const url = `/students/group/${encodeURIComponent(groupName)}`;
+    console.log("🔄 [StudentAPI] Request URL:", url);
+
+    const response = await api.get(url);
+    console.log("📥 [StudentAPI] Response status:", response.status);
+    console.log(
+      "📥 [StudentAPI] Response data:",
+      JSON.stringify(response.data, null, 2)
     );
+
     return response.data;
   } catch (error) {
-    console.error("Error fetching students by group:", error);
+    console.error("❌ [StudentAPI] Error fetching students by group:", error);
     const axiosError = error as AxiosError<{ message?: string }>;
     return {
       success: false,
@@ -474,33 +500,33 @@ export const exportStudentsToCSV = async (filters?: {
   group?: string;
   search?: string;
   sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+  sortOrder?: "asc" | "desc";
 }) => {
   try {
     console.log("📥 تصدير الطلاب إلى CSV...");
-    
+
     const params = new URLSearchParams();
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== 'all') {
+        if (value !== undefined && value !== null && value !== "all") {
           params.append(key, String(value));
         }
       });
     }
 
-    const url = `/students/export${params.toString() ? `?${params}` : ''}`;
-    
+    const url = `/students/export${params.toString() ? `?${params}` : ""}`;
+
     // Download file directly
     const response = await api.get(url, {
-      responseType: 'blob',
+      responseType: "blob",
     });
 
     // Create download link
-    const blob = new Blob([response.data], { type: 'text/csv; charset=utf-8' });
+    const blob = new Blob([response.data], { type: "text/csv; charset=utf-8" });
     const downloadUrl = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = downloadUrl;
-    link.download = `students_${new Date().toISOString().split('T')[0]}.csv`;
+    link.download = `students_${new Date().toISOString().split("T")[0]}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

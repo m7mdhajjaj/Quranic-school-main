@@ -19,16 +19,16 @@ interface AddEditSectionModalProps {
   visible: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  section?: Section | null;
+  editingSection?: Section | null;
   group: string;
-  teacherId: string;
+  teacherId?: string;
 }
 
 export const AddEditSectionModal: React.FC<AddEditSectionModalProps> = ({
   visible,
   onClose,
   onSuccess,
-  section,
+  editingSection,
   group,
   teacherId,
 }) => {
@@ -40,10 +40,10 @@ export const AddEditSectionModal: React.FC<AddEditSectionModalProps> = ({
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (section) {
-      setDate(new Date(section.date));
-      setReviewSection(section.reviewSection);
-      setMemorizationSection(section.memorizationSection);
+    if (editingSection) {
+      setDate(new Date(editingSection.date));
+      setReviewSection(editingSection.reviewSection);
+      setMemorizationSection(editingSection.memorizationSection);
     } else {
       // Reset for new section
       setDate(new Date());
@@ -51,7 +51,7 @@ export const AddEditSectionModal: React.FC<AddEditSectionModalProps> = ({
       setMemorizationSection("");
     }
     setError("");
-  }, [section, visible]);
+  }, [editingSection, visible]);
 
   const handleSubmit = async () => {
     if (!reviewSection.trim() || !memorizationSection.trim()) {
@@ -63,17 +63,21 @@ export const AddEditSectionModal: React.FC<AddEditSectionModalProps> = ({
     setError("");
 
     try {
-      const sectionData = {
+      const sectionData: any = {
         date: date.toISOString(),
         reviewSection: reviewSection.trim(),
         memorizationSection: memorizationSection.trim(),
         group,
-        teacher: teacherId,
       };
 
+      // Only add teacher if provided
+      if (teacherId) {
+        sectionData.teacher = teacherId;
+      }
+
       let response;
-      if (section?._id) {
-        response = await updateSection(section._id, sectionData);
+      if (editingSection?._id) {
+        response = await updateSection(editingSection._id, sectionData);
       } else {
         response = await createSection(sectionData);
       }
@@ -112,7 +116,7 @@ export const AddEditSectionModal: React.FC<AddEditSectionModalProps> = ({
             {/* Header */}
             <View style={styles.header}>
               <Text style={styles.title}>
-                {section ? "تعديل المقطع" : "إضافة مقطع جديد"}
+                {editingSection ? "تعديل المقطع" : "إضافة مقطع جديد"}
               </Text>
               <TouchableOpacity
                 onPress={onClose}
@@ -219,7 +223,7 @@ export const AddEditSectionModal: React.FC<AddEditSectionModalProps> = ({
                   <ActivityIndicator size="small" color="#ffffff" />
                 ) : (
                   <Text style={styles.submitButtonText}>
-                    {section ? "حفظ التعديلات" : "إضافة المقطع"}
+                    {editingSection ? "حفظ التعديلات" : "إضافة المقطع"}
                   </Text>
                 )}
               </TouchableOpacity>

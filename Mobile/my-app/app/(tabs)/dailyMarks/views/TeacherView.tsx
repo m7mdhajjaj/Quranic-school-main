@@ -9,7 +9,8 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
-import type { Student } from "@/Api/studentApi";
+import { ArrowRight, Users } from "lucide-react-native";
+import { getStudentsByGroup, type Student } from "@/Api/studentApi";
 import {
   getFilteredSections,
   getFilteredMarks,
@@ -53,6 +54,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   const [groupsWithStats, setGroupsWithStats] = useState<GroupWithStats[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
   const [marks, setMarks] = useState<Mark[]>([]);
+  const [groupStudents, setGroupStudents] = useState<Student[]>([]); // Students for selected group
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -77,6 +79,24 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   useEffect(() => {
     loadGroupsStats();
   }, [teacherGroups, students]);
+
+  // Load students when group changes
+  useEffect(() => {
+    console.log(
+      "🔄 [TeacherView] useEffect triggered - selectedGroup:",
+      selectedGroup
+    );
+    if (selectedGroup) {
+      console.log(
+        "🔄 [TeacherView] Calling loadGroupStudents for:",
+        selectedGroup
+      );
+      loadGroupStudents(selectedGroup);
+    } else {
+      console.log("🔄 [TeacherView] No group selected, clearing students");
+      setGroupStudents([]);
+    }
+  }, [selectedGroup]);
 
   // Load Sections when group changes
   useEffect(() => {
@@ -126,6 +146,35 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
           prev.map((g) => (g.name === groupName ? { ...g, loading: false } : g))
         );
       }
+    }
+  };
+
+  // Load students for selected group
+  const loadGroupStudents = async (groupName: string) => {
+    console.log("📚 [TeacherView] Loading students for group:", groupName);
+    try {
+      const response = await getStudentsByGroup(groupName);
+
+      if (response.success && response.data) {
+        console.log("📚 [TeacherView] Raw data length:", response.data.length);
+        // Use all students - don't filter by isActive for daily marks
+        // Teachers need to see all students to add marks
+        setGroupStudents(response.data);
+        console.log("✅ [TeacherView] Loaded students:", response.data.length);
+      } else {
+        console.error(
+          "❌ [TeacherView] Failed to load students - success:",
+          response.success,
+          "data:",
+          response.data,
+          "message:",
+          response.message
+        );
+        setGroupStudents([]);
+      }
+    } catch (error) {
+      console.error("❌ [TeacherView] Error loading students:", error);
+      setGroupStudents([]);
     }
   };
 
@@ -198,10 +247,13 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   // Handlers
   const onRefresh = async () => {
     setRefreshing(true);
-    if (selectedSection) {
-      await loadMarks(selectedSection._id);
+    if (selectedSection && selectedGroup) {
+      await Promise.all([
+        loadMarks(selectedSection._id),
+        loadGroupStudents(selectedGroup),
+      ]);
     } else if (selectedGroup) {
-      await loadSections();
+      await Promise.all([loadSections(), loadGroupStudents(selectedGroup)]);
     } else {
       await loadGroupsStats();
     }
@@ -218,6 +270,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
     setSelectedSection(null);
     setSections([]);
     setMarks([]);
+    setGroupStudents([]);
   };
 
   const handleBackToSections = () => {
@@ -333,6 +386,10 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
 
   // Render: Section Details View (when section selected)
   if (selectedSection) {
+    // Debug log
+    console.log("📊 [TeacherView] Selected group:", selectedGroup);
+    console.log("📊 [TeacherView] Group students count:", groupStudents.length);
+
     return (
       <View style={styles.container}>
         <ScrollView
@@ -346,14 +403,14 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
           }>
           <SectionDetailsView
             section={selectedSection}
-            selectedGroup={selectedGroup}
+            selectedGroup={selectedGroup || ""}
             studentSearchQuery={studentSearchQuery}
             onStudentSearchChange={setStudentSearchQuery}
             onBack={handleBackToSections}>
             <StudentsMarksTable
               section={selectedSection}
               marks={marks}
-              students={students.filter((s) => s.group === selectedGroup)}
+              students={groupStudents}
               onAddMark={handleAddMark}
               onEditMark={handleEditMark}
               onDeleteMark={handleDeleteMark}
@@ -370,7 +427,6 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
           section={selectedSection}
           student={selectedStudent}
           editingMark={editingMark}
-          group={selectedGroup}
         />
       </View>
     );
@@ -388,6 +444,22 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
             tintColor="#10b981"
           />
         }>
+        {/* Group Header with Back Button */}
+        <View style={styles.groupHeader}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={handleBackToGroups}>
+            <ArrowRight size={20} color="#10b981" />
+            <Text style={styles.backButtonText}>العودة للحلقات</Text>
+          </TouchableOpacity>
+          <View style={styles.groupInfo}>
+            <View style={styles.groupIconContainer}>
+              <Users size={20} color="#ffffff" />
+            </View>
+            <Text style={styles.groupName}>{selectedGroup}</Text>
+          </View>
+        </View>
+
         <View style={styles.filterSection}>
           {/* Status Filter */}
           <SectionStatusFilter
@@ -431,6 +503,41 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f8fafc",
+  },
+  groupHeader: {
+    backgroundColor: "#ffffff",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e5e7eb",
+  },
+  backButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 12,
+  },
+  backButtonText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#10b981",
+  },
+  groupInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  groupIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: "#10b981",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  groupName: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#1f2937",
   },
   filterSection: {
     padding: 16,
