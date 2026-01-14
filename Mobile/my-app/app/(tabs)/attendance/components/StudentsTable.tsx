@@ -8,19 +8,11 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  FlatList,
   Modal,
   Pressable,
   ScrollView,
 } from "react-native";
-import {
-  Users,
-  Check,
-  X,
-  Calendar,
-  Phone,
-  ChevronDown,
-} from "lucide-react-native";
+import { Users, Check, Calendar, Phone } from "lucide-react-native";
 import type { AttendanceStudent } from "@/Api/attendanceApi";
 
 interface StudentsTableProps {
@@ -56,104 +48,6 @@ export const StudentsTable: React.FC<StudentsTableProps> = ({
   const openDatesModal = (studentName: string, absenceDates: string[]) => {
     setSelectedStudent({ name: studentName, absenceDates });
   };
-
-  const renderStudentItem = ({
-    item,
-    index,
-  }: {
-    item: AttendanceStudent;
-    index: number;
-  }) => (
-    <TouchableOpacity
-      style={[styles.studentRow, !item.isPresent && styles.absentRow]}
-      onPress={readOnly ? undefined : () => onTogglePresence(item._id)}
-      activeOpacity={readOnly ? 1 : 0.7}>
-      {/* Row Number */}
-      <View style={styles.rowNumberContainer}>
-        <Text style={styles.rowNumber}>
-          {(index + 1).toString().padStart(2, "0")}
-        </Text>
-      </View>
-
-      {/* Student Info */}
-      <View style={styles.studentInfo}>
-        <Text
-          style={[styles.studentName, !item.isPresent && styles.absentName]}
-          numberOfLines={1}>
-          {item.name}
-        </Text>
-        <View style={styles.studentMeta}>
-          {/* Gender Badge */}
-          <View
-            style={[
-              styles.genderBadge,
-              item.gender === "female" ? styles.femaleBadge : styles.maleBadge,
-            ]}>
-            <Text
-              style={[
-                styles.genderText,
-                item.gender === "female" ? styles.femaleText : styles.maleText,
-              ]}>
-              {item.gender === "female" ? "أنثى" : "ذكر"}
-            </Text>
-          </View>
-
-          {/* Phone */}
-          {item.phoneNumber && (
-            <View style={styles.phoneBadge}>
-              <Phone size={10} color="#6b7280" />
-              <Text style={styles.phoneText}>{item.phoneNumber}</Text>
-            </View>
-          )}
-        </View>
-      </View>
-
-      {/* Absence Count */}
-      <View style={styles.absenceContainer}>
-        <View
-          style={[
-            styles.absenceBadge,
-            (item.totalAbsences ?? 0) === 0
-              ? styles.goodBadge
-              : (item.totalAbsences ?? 0) <= 3
-                ? styles.warningBadge
-                : styles.dangerBadge,
-          ]}>
-          <Text
-            style={[
-              styles.absenceCount,
-              (item.totalAbsences ?? 0) === 0
-                ? styles.goodText
-                : (item.totalAbsences ?? 0) <= 3
-                  ? styles.warningText
-                  : styles.dangerText,
-            ]}>
-            {item.totalAbsences ?? 0}
-          </Text>
-        </View>
-        {(item.absenceDates?.length ?? 0) > 0 && (
-          <TouchableOpacity
-            style={styles.datesButton}
-            onPress={() => openDatesModal(item.name, item.absenceDates || [])}>
-            <Calendar size={12} color="#0d9488" />
-            <Text style={styles.datesButtonText}>التفاصيل</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Checkbox */}
-      {!readOnly && (
-        <TouchableOpacity
-          style={[
-            styles.checkbox,
-            item.isPresent ? styles.checkboxChecked : styles.checkboxUnchecked,
-          ]}
-          onPress={() => onTogglePresence(item._id)}>
-          {item.isPresent && <Check size={16} color="#ffffff" />}
-        </TouchableOpacity>
-      )}
-    </TouchableOpacity>
-  );
 
   if (filteredStudents.length === 0) {
     return (
@@ -197,14 +91,112 @@ export const StudentsTable: React.FC<StudentsTableProps> = ({
         )}
       </View>
 
-      {/* Students List */}
-      <FlatList
-        data={filteredStudents}
-        keyExtractor={(item) => item._id}
-        renderItem={renderStudentItem}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContent}
-      />
+      {/* Students List - Using View + map instead of FlatList to avoid nesting inside ScrollView */}
+      <View style={styles.listContent}>
+        {filteredStudents.map((item, index) => (
+          <TouchableOpacity
+            key={item._id}
+            style={[styles.studentRow, !item.isPresent && styles.absentRow]}
+            onPress={readOnly ? undefined : () => onTogglePresence(item._id)}
+            activeOpacity={readOnly ? 1 : 0.7}>
+            {/* Row Number */}
+            <View style={styles.rowNumberContainer}>
+              <Text style={styles.rowNumber}>
+                {(index + 1).toString().padStart(2, "0")}
+              </Text>
+            </View>
+
+            {/* Student Info */}
+            <View style={styles.studentInfo}>
+              <Text
+                style={[
+                  styles.studentName,
+                  !item.isPresent && styles.absentName,
+                ]}
+                numberOfLines={1}>
+                {item.name}
+              </Text>
+              <View style={styles.studentMeta}>
+                {/* Gender Badge */}
+                <View
+                  style={[
+                    styles.genderBadge,
+                    item.gender === "female"
+                      ? styles.femaleBadge
+                      : styles.maleBadge,
+                  ]}>
+                  <Text
+                    style={[
+                      styles.genderText,
+                      item.gender === "female"
+                        ? styles.femaleText
+                        : styles.maleText,
+                    ]}>
+                    {item.gender === "female" ? "أنثى" : "ذكر"}
+                  </Text>
+                </View>
+
+                {/* Phone */}
+                {item.phoneNumber && (
+                  <View style={styles.phoneBadge}>
+                    <Phone size={10} color="#6b7280" />
+                    <Text style={styles.phoneText}>{item.phoneNumber}</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+
+            {/* Absence Count */}
+            <View style={styles.absenceContainer}>
+              <View
+                style={[
+                  styles.absenceBadge,
+                  (item.totalAbsences ?? 0) === 0
+                    ? styles.goodBadge
+                    : (item.totalAbsences ?? 0) <= 3
+                      ? styles.warningBadge
+                      : styles.dangerBadge,
+                ]}>
+                <Text
+                  style={[
+                    styles.absenceCount,
+                    (item.totalAbsences ?? 0) === 0
+                      ? styles.goodText
+                      : (item.totalAbsences ?? 0) <= 3
+                        ? styles.warningText
+                        : styles.dangerText,
+                  ]}>
+                  {item.totalAbsences ?? 0}
+                </Text>
+              </View>
+              {(item.absenceDates?.length ?? 0) > 0 && (
+                <TouchableOpacity
+                  style={styles.datesButton}
+                  onPress={() =>
+                    openDatesModal(item.name, item.absenceDates || [])
+                  }>
+                  <Calendar size={12} color="#0d9488" />
+                  <Text style={styles.datesButtonText}>التفاصيل</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {/* Checkbox */}
+            {!readOnly && (
+              <TouchableOpacity
+                style={[
+                  styles.checkbox,
+                  item.isPresent
+                    ? styles.checkboxChecked
+                    : styles.checkboxUnchecked,
+                ]}
+                onPress={() => onTogglePresence(item._id)}>
+                {item.isPresent && <Check size={16} color="#ffffff" />}
+              </TouchableOpacity>
+            )}
+          </TouchableOpacity>
+        ))}
+      </View>
 
       {/* Absence Dates Modal */}
       <Modal
