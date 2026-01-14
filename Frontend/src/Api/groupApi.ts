@@ -346,27 +346,43 @@ export const getGroupsByTeacherIdWithFilters = async (
 };
 
 // Get group timetable
-export const getGroupTimetable = async (groupId: string): Promise<{
+export const getGroupTimetable = async (groupId: string, weekStart?: string): Promise<{
   success: boolean;
   data?: {
-    groupId: string;
-    groupName: string;
-    timetable: Array<{
+    group: {
+      _id: string;
+      name: string;
+    };
+    timetables: Array<{
       _id: string;
       day: string;
       startHour: string;
       endHour: string;
-      teacher: string;
-      teacherId?: string;
+      teacherId?: {
+        firstName: string;
+        lastName: string;
+      };
       note?: string;
+      sessionDateInWeek?: string;
+      sessionDateFormatted?: string;
     }>;
     totalSessions: number;
+    weekInfo?: {
+      startOfWeek: string;
+      endOfWeek: string;
+      startFormatted: string;
+      endFormatted: string;
+    };
   };
   message?: string;
 }> => {
   try {
     console.log(`📡 API: جلب جدول الحلقة ${groupId}`);
-    const response = await api.get(`/sessions/group/${groupId}`);
+    // إرسال تاريخ بداية الأسبوع الحالي بتوقيت UTC
+    const currentWeekStart = weekStart || new Date().toISOString();
+    const response = await api.get(`/sessions/group/${groupId}`, {
+      params: { weekStart: currentWeekStart }
+    });
     console.log('✅ API Response:', response.data);
     return response.data;
   } catch (error) {

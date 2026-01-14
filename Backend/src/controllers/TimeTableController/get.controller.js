@@ -6,7 +6,7 @@
 const TimeTable = require("../../schema/TimeTable");
 const Section = require("../../schema/DailyMark/Section");
 const Group = require("../../schema/Group");
-const { getWeekRange } = require("./helpers/dateTime.helper");
+const { getWeekRange, getDateForDayInWeek } = require("./helpers/dateTime.helper");
 
 /**
  * استخراج معلومات المقطع للعرض
@@ -232,28 +232,44 @@ exports.getGroupTimetable = async (req, res) => {
       });
     }
 
-    // ✅ 2. بناء Query
+    // ✅ 2. حساب بداية ونهاية الأسبوع بتوقيت UTC
+    const weekDate = weekStart ? new Date(weekStart) : new Date();
+    const { startOfWeek, endOfWeek } = getWeekRange(weekDate);
+
+    // ✅ 3. بناء Query
     let query = { groupId };
 
     if (weekStart) {
-      const { startOfWeek, endOfWeek } = getWeekRange(new Date(weekStart));
       query.$or = [
         { isRecurring: true },
         { sessionDate: { $gte: startOfWeek, $lte: endOfWeek } }
       ];
     }
 
-    // ✅ 3. جلب المواعيد
+    // ✅ 4. جلب المواعيد
     const timetables = await TimeTable.find(query)
       .populate('teacherId', 'firstName lastName')
       .populate('sectionId', 'date memorizationSection reviewSection')
       .sort({ day: 1, startHour: 1 });
 
-    // ✅ 4. ترتيب حسب الأيام
+    // ✅ 5. ترتيب حسب الأيام وإضافة التاريخ للأسبوع الحالي
     const daysOrder = ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"];
-    const sorted = timetables.sort((a, b) => 
-      daysOrder.indexOf(a.day) - daysOrder.indexOf(b.day)
-    );
+    
+    const sorted = timetables
+      .map(t => {
+        const tObj = t.toObject();
+        // إضافة تاريخ اليوم في الأسبوع الحالي
+        const sessionDate = getDateForDayInWeek(tObj.day, startOfWeek);
+        return {
+          ...tObj,
+          sessionDateInWeek: sessionDate ? sessionDate.toISOString() : null,
+          sessionDateFormatted: sessionDate ? sessionDate.toLocaleDateString('ar-SA', {
+            day: 'numeric',
+            month: 'short'
+          }) : null
+        };
+      })
+      .sort((a, b) => daysOrder.indexOf(a.day) - daysOrder.indexOf(b.day));
 
     res.json({
       success: true,
@@ -263,7 +279,13 @@ exports.getGroupTimetable = async (req, res) => {
           name: group.name
         },
         timetables: sorted,
-        totalSessions: sorted.length
+        totalSessions: sorted.length,
+        weekInfo: {
+          startOfWeek: startOfWeek.toISOString(),
+          endOfWeek: endOfWeek.toISOString(),
+          startFormatted: startOfWeek.toLocaleDateString('ar-SA', { day: 'numeric', month: 'short', year: 'numeric' }),
+          endFormatted: endOfWeek.toLocaleDateString('ar-SA', { day: 'numeric', month: 'short', year: 'numeric' })
+        }
       }
     });
 

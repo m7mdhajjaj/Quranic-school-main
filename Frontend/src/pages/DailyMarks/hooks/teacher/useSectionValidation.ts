@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
-import type { QuranSegmentUI } from '../types/types';
-import { validateSectionConsistency } from '../utils/validationLogic';
+import type { QuranSegmentUI } from '../../types/types';
+import { validateSectionConsistency } from '../../utils/validationLogic';
 
 /**
  * ✅ V3 Compatible - UI validation hook

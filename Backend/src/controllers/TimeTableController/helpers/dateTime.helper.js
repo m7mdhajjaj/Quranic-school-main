@@ -73,24 +73,53 @@ const getArabicDayFromDate = (date) => {
 };
 
 /**
- * حساب بداية ونهاية الأسبوع (السبت - الجمعة)
+ * حساب بداية ونهاية الأسبوع (السبت - الجمعة) بتوقيت UTC
  */
 const getWeekRange = (date = new Date()) => {
   const d = new Date(date);
-  const currentDay = d.getDay(); // 0 = الأحد، 6 = السبت
+  const currentDay = d.getUTCDay(); // 0 = الأحد، 6 = السبت
   
   // حساب المسافة للسبت
   const daysToSaturday = currentDay === 6 ? 0 : currentDay + 1;
   
   const startOfWeek = new Date(d);
-  startOfWeek.setDate(d.getDate() - daysToSaturday);
-  startOfWeek.setHours(0, 0, 0, 0);
+  startOfWeek.setUTCDate(d.getUTCDate() - daysToSaturday);
+  startOfWeek.setUTCHours(0, 0, 0, 0);
   
   const endOfWeek = new Date(startOfWeek);
-  endOfWeek.setDate(startOfWeek.getDate() + 6);
-  endOfWeek.setHours(23, 59, 59, 999);
+  endOfWeek.setUTCDate(startOfWeek.getUTCDate() + 6);
+  endOfWeek.setUTCHours(23, 59, 59, 999);
   
   return { startOfWeek, endOfWeek };
+};
+
+/**
+ * حساب تاريخ يوم معين في الأسبوع الحالي بتوقيت UTC
+ * @param {String} dayName - اسم اليوم بالعربية
+ * @param {Date} weekStart - بداية الأسبوع (السبت)
+ * @returns {Date} - التاريخ الكامل لذلك اليوم
+ */
+const getDateForDayInWeek = (dayName, weekStart = null) => {
+  const daysMap = {
+    'السبت': 0,
+    'الأحد': 1,
+    'الاثنين': 2,
+    'الثلاثاء': 3,
+    'الأربعاء': 4,
+    'الخميس': 5,
+    'الجمعة': 6
+  };
+  
+  const dayIndex = daysMap[dayName];
+  if (dayIndex === undefined) return null;
+  
+  // إذا لم يتم تمرير بداية الأسبوع، احسبها
+  const { startOfWeek } = weekStart ? { startOfWeek: new Date(weekStart) } : getWeekRange();
+  
+  const targetDate = new Date(startOfWeek);
+  targetDate.setUTCDate(startOfWeek.getUTCDate() + dayIndex);
+  
+  return targetDate;
 };
 
 /**
@@ -149,6 +178,7 @@ module.exports = {
   timeToMinutes,
   getArabicDayFromDate,
   getWeekRange,
+  getDateForDayInWeek,
   isTimeInRange,
   formatDateArabic,
   formatDateShort,

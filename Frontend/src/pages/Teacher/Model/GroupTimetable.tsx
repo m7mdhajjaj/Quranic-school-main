@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { X, Clock, Calendar, Loader2, GraduationCap, Sparkles } from "lucide-react";
+import { X, Clock, Calendar, Loader2, GraduationCap, Sparkles, CalendarDays } from "lucide-react";
 import { getGroupTimetable } from "@/Api/groupApi";
 
 interface TimetableEntry {
@@ -7,9 +7,20 @@ interface TimetableEntry {
   day: string;
   startHour: string;
   endHour: string;
-  teacher?: string;
-  teacherId?: string;
+  teacherId?: {
+    firstName: string;
+    lastName: string;
+  };
   note?: string;
+  sessionDateInWeek?: string;
+  sessionDateFormatted?: string;
+}
+
+interface WeekInfo {
+  startOfWeek: string;
+  endOfWeek: string;
+  startFormatted: string;
+  endFormatted: string;
 }
 
 interface GroupTimetableModalProps {
@@ -36,6 +47,7 @@ export const GroupTimetableModal: React.FC<GroupTimetableModalProps> = ({
   groupName,
 }) => {
   const [timetable, setTimetable] = useState<TimetableEntry[]>([]);
+  const [weekInfo, setWeekInfo] = useState<WeekInfo | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,6 +57,7 @@ export const GroupTimetableModal: React.FC<GroupTimetableModalProps> = ({
     } else {
       // Reset state when modal closes
       setTimetable([]);
+      setWeekInfo(null);
       setError(null);
     }
   }, [isOpen, groupId]);
@@ -55,7 +68,13 @@ export const GroupTimetableModal: React.FC<GroupTimetableModalProps> = ({
     try {
       const result = await getGroupTimetable(groupId);
       if (result.success && result.data) {
-        setTimetable(result.data.timetable);
+        // Ensure timetable is an array - use timetables from new API structure
+        const timetableData = result.data.timetables;
+        setTimetable(Array.isArray(timetableData) ? timetableData : []);
+        // Store week info
+        if (result.data.weekInfo) {
+          setWeekInfo(result.data.weekInfo);
+        }
       } else {
         setError(result.message || "فشل في جلب مواقيت الحلقة");
       }
@@ -67,8 +86,8 @@ export const GroupTimetableModal: React.FC<GroupTimetableModalProps> = ({
     }
   };
 
-  // Sort timetable by day order
-  const sortedTimetable = [...timetable].sort((a, b) => {
+  // Sort timetable by day order (ensure timetable is an array)
+  const sortedTimetable = (Array.isArray(timetable) ? timetable : []).sort((a, b) => {
     return daysOrder.indexOf(a.day) - daysOrder.indexOf(b.day);
   });
 
@@ -111,6 +130,15 @@ export const GroupTimetableModal: React.FC<GroupTimetableModalProps> = ({
                   <GraduationCap className="w-4 h-4 text-emerald-100" />
                   <p className="text-emerald-50 text-base font-medium">{groupName}</p>
                 </div>
+                {/* Week Info */}
+                {weekInfo && (
+                  <div className="flex items-center gap-2 mt-2 bg-white/15 backdrop-blur-sm px-3 py-1.5 rounded-lg">
+                    <CalendarDays className="w-4 h-4 text-yellow-300" />
+                    <span className="text-white text-sm font-medium">
+                      {weekInfo.startFormatted} - {weekInfo.endFormatted}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
             <button
@@ -161,6 +189,9 @@ export const GroupTimetableModal: React.FC<GroupTimetableModalProps> = ({
                 const daySessions = groupedByDay[day];
                 if (!daySessions || daySessions.length === 0) return null;
 
+                // Get date for this day from first session
+                const dayDate = daySessions[0]?.sessionDateFormatted;
+
                 return (
                   <div
                     key={day}
@@ -170,7 +201,14 @@ export const GroupTimetableModal: React.FC<GroupTimetableModalProps> = ({
                     <div className="relative bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-3 overflow-hidden">
                       <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-12 -mt-12"></div>
                       <div className="relative flex items-center justify-between">
-                        <h3 className="text-lg font-bold text-white drop-shadow-md">{day}</h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-lg font-bold text-white drop-shadow-md">{day}</h3>
+                          {dayDate && (
+                            <span className="bg-white/25 backdrop-blur-sm text-white text-xs font-medium px-2 py-0.5 rounded-md">
+                              {dayDate}
+                            </span>
+                          )}
+                        </div>
                         <div className="flex items-center gap-1.5 bg-white/20 backdrop-blur-sm px-2.5 py-1 rounded-lg">
                           <Clock className="w-3.5 h-3.5 text-white" />
                           <span className="text-white text-xs font-semibold">
