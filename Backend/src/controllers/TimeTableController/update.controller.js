@@ -6,7 +6,7 @@
 const TimeTable = require("../../schema/TimeTable");
 const Section = require("../../schema/DailyMark/Section");
 const Group = require("../../schema/Group");
-const { checkTimeConflict } = require("./helpers/scheduleConflict.helper");
+const { checkTimeConflict, normalizeDate } = require("./helpers/scheduleConflict.helper");
 const { getArabicDayFromDate } = require("./helpers/dateTime.helper");
 
 /**
@@ -296,10 +296,13 @@ exports.linkTimetableToSection = async (req, res) => {
     }
 
     // ✅ 3. إجراء الربط
+    // ✅ تطبيع التاريخ ليكون UTC midnight
+    const normalizedSessionDate = normalizeDate(section.date);
+    
     await Promise.all([
       TimeTable.findByIdAndUpdate(id, {
         sectionId: section._id,
-        sessionDate: section.date,
+        sessionDate: normalizedSessionDate,
         isRecurring: false,
         sectionInfo: {
           memorizationSection: section.memorizationSection,

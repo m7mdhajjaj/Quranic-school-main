@@ -5,7 +5,12 @@
 // ⚠️ مهم: التعارض يعتمد على التاريخ المحدد وليس اليوم فقط
 
 const TimeTable = require("../../schema/TimeTable");
-const { checkTimeConflict, normalizeDate } = require("./helpers/scheduleConflict.helper");
+const { 
+  checkTimeConflict, 
+  normalizeDate, 
+  normalizeNextDay,
+  isValidDate 
+} = require("./helpers/scheduleConflict.helper");
 const { 
   isSummerTime, 
   generateAvailableHours,
@@ -66,6 +71,14 @@ exports.getTeacherAvailableHours = async (req, res) => {
       });
     }
 
+    // ✅ التحقق من صحة التاريخ
+    if (!isValidDate(date)) {
+      return res.status(400).json({
+        success: false,
+        message: "التاريخ غير صالح"
+      });
+    }
+
     // معلومات التاريخ
     const dateInfo = extractDayInfo(date);
 
@@ -74,8 +87,14 @@ exports.getTeacherAvailableHours = async (req, res) => {
 
     // ✅ 2. بناء Query للبحث عن المواعيد في نفس التاريخ فقط
     const targetDate = normalizeDate(date);
-    const nextDay = new Date(targetDate);
-    nextDay.setDate(nextDay.getDate() + 1);
+    const nextDay = normalizeNextDay(date);
+    
+    console.log("🔍 getTeacherAvailableHours:", {
+      date,
+      targetDate: targetDate.toISOString(),
+      nextDay: nextDay.toISOString(),
+      teacherId
+    });
     
     let query = { 
       teacherId,
@@ -89,9 +108,14 @@ exports.getTeacherAvailableHours = async (req, res) => {
 
     // ✅ 3. جلب المواعيد المحجوزة في هذا التاريخ
     const bookedSessions = await TimeTable.find(query)
-      .select('startHour endHour note groupId')
+      .select('startHour endHour note groupId sessionDate')
       .populate('groupId', 'name')
       .lean();
+
+    console.log("📋 bookedSessions found:", bookedSessions.length);
+    bookedSessions.forEach((s, i) => {
+      console.log(`  ${i + 1}. ${s.startHour} - ${s.endHour} | ${s.groupId?.name || s.note} | sessionDate: ${s.sessionDate}`);
+    });
 
     // ✅ 4. تحديد الأوقات المحجوزة
     const bookedHours = new Set();
@@ -101,10 +125,15 @@ exports.getTeacherAvailableHours = async (req, res) => {
       const startIdx = allHours.indexOf(session.startHour);
       const endIdx = allHours.indexOf(session.endHour);
       
+      console.log(`  🔍 Session: ${session.startHour} (idx=${startIdx}) - ${session.endHour} (idx=${endIdx})`);
+      
       if (startIdx !== -1 && endIdx !== -1) {
         for (let i = startIdx; i < endIdx; i++) {
           bookedHours.add(allHours[i]);
         }
+      } else {
+        console.warn(`  ⚠️ Time not found in allHours! startHour="${session.startHour}", endHour="${session.endHour}"`);
+        console.warn(`  ⚠️ allHours sample:`, allHours.slice(0, 5));
       }
     }
 

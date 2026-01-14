@@ -67,22 +67,34 @@ export const useSessionForm = ({
         // 🔍 Step 2: جلب الأوقات المحجوزة للمعلم في التاريخ المحدد
         if (formData.teacherId && formData.sessionDate) {
           const excludeId = editingSession?._id;
+          console.log("🔍 Fetching teacher hours:", {
+            teacherId: formData.teacherId,
+            sessionDate: formData.sessionDate,
+            excludeId
+          });
+          
           const teacherResponse = await getTeacherAvailableHours(
             formData.teacherId,
             formData.sessionDate, // ⚠️ إرسال التاريخ بدلاً من اليوم
             excludeId
           );
           
+          console.log("📋 Teacher response:", teacherResponse);
+          
           if (teacherResponse.success) {
             const allHours = generalResponse.data.hours;
             const availableHours = teacherResponse.data.availableHours;
             const booked = allHours.filter(h => !availableHours.includes(h));
+            console.log("🚫 Booked hours:", booked);
+            console.log("✅ Available hours:", availableHours.length);
             setBookedHours(booked);
           }
         } else {
+          console.log("⏳ No teacherId or sessionDate, clearing booked hours");
           setBookedHours([]);
         }
       } catch (error: any) {
+        console.error("❌ Error fetching hours:", error);
         const errorMsg = error?.response?.data?.message || error?.message || "حدث خطأ في تحميل الأوقات المتاحة";
         await showErrorMessage("❌ خطأ في تحميل الأوقات", errorMsg);
         const fallbackHours = generateFallbackHours();

@@ -7,7 +7,7 @@
 const TimeTable = require("../../schema/TimeTable");
 const Section = require("../../schema/DailyMark/Section");
 const Group = require("../../schema/Group");
-const { checkTimeConflict } = require("./helpers/scheduleConflict.helper");
+const { checkTimeConflict, normalizeDate } = require("./helpers/scheduleConflict.helper");
 const { getArabicDayFromDate, extractDayInfo } = require("./helpers/dateTime.helper");
 
 /**
@@ -103,6 +103,10 @@ exports.createTimetable = async (req, res) => {
         message: "التاريخ مطلوب (sessionDate)"
       });
     }
+
+    // ✅ تطبيع التاريخ ليكون UTC midnight دائماً
+    sessionDate = normalizeDate(sessionDate);
+    console.log("📅 Normalized sessionDate:", sessionDate.toISOString());
 
     // اشتقاق اليوم من التاريخ
     const dayInfo = extractDayInfo(sessionDate);
@@ -206,9 +210,12 @@ exports.createTimetableForSection = async (req, res) => {
     }
 
     // ✅ 3. التاريخ واليوم من المقطع (الأساس هو التاريخ)
-    const sessionDate = section.date;
+    // ✅ تطبيع التاريخ ليكون UTC midnight دائماً
+    const sessionDate = normalizeDate(section.date);
     const dayInfo = extractDayInfo(sessionDate);
     const day = dayInfo.dayName;
+    
+    console.log("📅 Section sessionDate normalized:", sessionDate.toISOString());
 
     // ✅ 4. تحديد teacherId
     let finalTeacherId = teacherId;
