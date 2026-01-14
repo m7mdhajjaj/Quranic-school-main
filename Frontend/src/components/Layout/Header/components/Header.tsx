@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { ChevronDown, Home, Target, Mail, Shield, LogIn } from 'lucide-react';
+import { ChevronDown, Home, Target, Mail, Shield, LogIn, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 // Hooks
@@ -192,6 +192,17 @@ const Header: React.FC<HeaderProps> = ({ className = '', isGuest = false }) => {
                 </>
               ) : isGuest ? (
                 <>
+                  {/* Welcome Page Button */}
+                  <motion.button
+                    onClick={() => navigate('/')}
+                    className="flex items-center gap-2 px-3 py-2 bg-white/20 text-white font-medium rounded-xl hover:bg-white/30 transition-all duration-300"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    <span className="hidden sm:inline">الترحيب</span>
+                  </motion.button>
+
                   {/* Guest Login Button */}
                   <motion.button
                     onClick={() => navigate('/login')}
