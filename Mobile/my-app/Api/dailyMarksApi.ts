@@ -65,6 +65,16 @@ export interface Section {
     studentsWithMarks: number;
     percentage: number;
   };
+  timetableId?:
+    | string
+    | {
+        _id: string;
+        day: string;
+        startHour: string;
+        endHour: string;
+        sessionDate?: string;
+      };
+  hasSchedule?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }

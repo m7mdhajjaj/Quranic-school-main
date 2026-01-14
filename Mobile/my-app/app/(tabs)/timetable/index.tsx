@@ -13,6 +13,7 @@ import {
   RefreshControl,
   Modal,
   Dimensions,
+  Alert,
 } from "react-native";
 import {
   Calendar,
@@ -26,6 +27,7 @@ import {
 } from "lucide-react-native";
 import { useAuth } from "@/Context/AuthContext";
 import { getMonthlyPlan, Timetable } from "@/Api/TimeTable.Api";
+import { useLocalSearchParams } from "expo-router";
 import WeeklyView from "./WeeklyView"; // تأكد من مسار الاستيراد الصحيح لمكون العرض الأسبوعي
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -137,6 +139,8 @@ const formatDateForComparison = (date: Date): string => {
 
 const TimetablePage = () => {
   const { user } = useAuth();
+  const searchParams = useLocalSearchParams();
+
   const [currentDate, setCurrentDate] = useState(new Date());
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
@@ -146,6 +150,34 @@ const TimetablePage = () => {
   // Modal state
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
+
+  // Handle incoming parameters from DailyMarks
+  useEffect(() => {
+    if (searchParams.addSession === "true") {
+      const { sectionId, groupName, sessionType } = searchParams;
+
+      // Show alert with session info and option to create session
+      Alert.alert(
+        "إضافة موعد للمقطع",
+        `تم إنشاء المقطع بنجاح!\n\nالحلقة: ${decodeURIComponent(groupName as string)}\nنوع الجلسة: ${
+          sessionType === "hifz"
+            ? "حفظ"
+            : sessionType === "murajaah"
+              ? "مراجعة"
+              : "حفظ ومراجعة"
+        }\n\nيمكنك الآن إضافة موعد لهذا المقطع في الجدول.`,
+        [
+          {
+            text: "تم",
+            style: "default",
+          },
+        ]
+      );
+
+      // TODO: Here you can add logic to open add session modal
+      // For now, just showing the info
+    }
+  }, [searchParams]);
 
   // ============================================
   // Data Fetching
