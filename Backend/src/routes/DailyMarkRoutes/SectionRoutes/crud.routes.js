@@ -36,6 +36,12 @@ router.post(
     dailyMarkController.repairSequence
 );
 
+// 🚀 Bulk Create Sections (for auto-repair)
+router.post(
+    "/bulk-create",
+    dailyMarkController.bulkCreateSections
+);
+
 // Update a section (for daily marks)
 router.put(
   "/:id",

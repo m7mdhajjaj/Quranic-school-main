@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { showSuccessToast } from '@/utils/toastUtils';
 import { showErrorMessage, showCenteredSwal } from '@/utils/sweetalertUtils';
-import { repairSequence, createSection, type CreateSectionData } from '@/Api/DailyMark/sectionApi';
+import { repairSequence, type CreateSectionData } from '@/Api/DailyMark/sectionApi';
+import { bulkCreateSections } from '@/Api/DailyMark/dailyMarksApi';
 import Swal from 'sweetalert2';
 
 interface GapInfo {
@@ -125,54 +126,40 @@ export const useAiRepair = (selectedGroup: string, onSuccess?: () => void) => {
             showConfirmButton: false,
           });
 
-          let successCount = 0;
-          let failCount = 0;
-          const errorMessages: string[] = [];
+          try {
+            // تحضير البيانات للإنشاء الجماعي
+            const sectionsToCreate = analysisResult.suggestions.map(suggestion => ({
+              date: suggestion.date, // التاريخ المحسوب من Backend
+              group: selectedGroup,
+              memorizationMeta: [{
+                surahNumber: suggestion.surahNumber,
+                surahName: suggestion.surahName,
+                ayahStart: suggestion.ayahStart,
+                ayahEnd: suggestion.ayahEnd,
+              }],
+              memorizationSection: `${suggestion.surahName} (${suggestion.ayahStart}-${suggestion.ayahEnd})`,
+            }));
 
-          // إنشاء المقاطع واحداً تلو الآخر
-          for (let i = 0; i < analysisResult.suggestions.length; i++) {
-            const suggestion = analysisResult.suggestions[i];
-            try {
-              // توليد تاريخ جديد: غداً + i أيام (لضمان ترتيب صحيح وتجنب التعارض)
-              const dateToUse = new Date();
-              dateToUse.setDate(dateToUse.getDate() + 1 + i); // غداً + i
-              const year = dateToUse.getFullYear();
-              const month = String(dateToUse.getMonth() + 1).padStart(2, '0');
-              const day = String(dateToUse.getDate()).padStart(2, '0');
-              const dateString = `${year}-${month}-${day}`;
+            // إنشاء جميع المقاطع دفعة واحدة
+            const result = await bulkCreateSections(sectionsToCreate, selectedGroup);
 
-              const sectionData: CreateSectionData = {
-                date: dateString,
-                group: selectedGroup,
-                memorizationMeta: [{
-                  surahNumber: suggestion.surahNumber,
-                  surahName: suggestion.surahName,
-                  ayahStart: suggestion.ayahStart,
-                  ayahEnd: suggestion.ayahEnd,
-                }],
-                memorizationSection: `${suggestion.surahName} (${suggestion.ayahStart}-${suggestion.ayahEnd})`,
-              };
+            Swal.close();
 
-              await createSection(sectionData);
-              successCount++;
-            } catch (err: any) {
-              console.error('Failed to create section:', err);
-              const errorMsg = err?.response?.data?.message || err?.message || 'خطأ غير معروف';
-              errorMessages.push(`${suggestion.surahName} (${suggestion.ayahStart}-${suggestion.ayahEnd}): ${errorMsg}`);
-              failCount++;
+            if (result.created > 0) {
+              showSuccessToast(`تم إنشاء ${result.created} مقطع بنجاح!`);
+              if (onSuccess) onSuccess();
             }
-          }
+            
+            if (result.errors && result.errors.length > 0) {
+              const errorDetails = result.errors.slice(0, 3).map(e => e.section + ': ' + e.error).join('\n');
+              showErrorMessage('تحذير', `فشل إنشاء ${result.errors.length} مقطع:\n${errorDetails}`);
+            }
 
-          Swal.close();
-
-          if (successCount > 0) {
-            showSuccessToast(`تم إنشاء ${successCount} مقطع بنجاح!`);
-            if (onSuccess) onSuccess();
-          }
-          
-          if (failCount > 0) {
-            const errorDetails = errorMessages.slice(0, 3).join('\n');
-            showErrorMessage('تحذير', `فشل إنشاء ${failCount} مقطع:\n${errorDetails}`);
+          } catch (err: any) {
+            Swal.close();
+            console.error('Bulk create failed:', err);
+            const errorMsg = err?.response?.data?.message || err?.message || 'خطأ غير معروف';
+            showErrorMessage('خطأ', `فشل الإصلاح: ${errorMsg}`);
           }
         }
       }

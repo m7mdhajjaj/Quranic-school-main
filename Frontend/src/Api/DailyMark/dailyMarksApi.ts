@@ -227,6 +227,25 @@ export const createSection = async (
 };
 
 /**
+ * Bulk create sections (for auto-repair)
+ */
+export const bulkCreateSections = async (
+  sections: CreateSectionData[],
+  groupId: string
+): Promise<{ created: number; total: number; sections: any[]; errors?: any[] }> => {
+  try {
+    const response = await api.post("/daily-marks/sections/bulk-create", {
+      sections,
+      groupId
+    });
+    return response.data.data || response.data;
+  } catch (error) {
+    console.error("Failed to bulk create sections:", error);
+    throw error;
+  }
+};
+
+/**
  * Update section
  */
 export const updateSection = async (

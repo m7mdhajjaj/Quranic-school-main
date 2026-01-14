@@ -8,6 +8,7 @@ const createController = require("./create.controller");
 const updateController = require("./update.controller");
 const deleteController = require("./delete.controller");
 const repairController = require("./repair.controller");
+const bulkCreateController = require("./bulkCreate.controller");
 
 // Export all functions
 module.exports = {
@@ -25,4 +26,7 @@ module.exports = {
   
   // Delete operations
   ...deleteController,
+
+  // Bulk operations
+  ...bulkCreateController,
 };

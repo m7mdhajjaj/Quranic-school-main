@@ -59,6 +59,16 @@ exports.repairSequence = async (req, res) => {
           chunkSize: effectiveChunkSize
         });
 
+        console.log(`\n📊 Surah ${surah} Analysis:`);
+        console.log(`   Gaps found: ${result.gaps?.length || 0}`);
+        console.log(`   Suggestions: ${result.suggestions?.length || 0}`);
+        if (result.gaps?.length > 0) {
+          result.gaps.forEach(g => console.log(`      Gap: ${g.ayahStart}-${g.ayahEnd}`));
+        }
+        if (result.suggestions?.length > 0) {
+          result.suggestions.forEach(s => console.log(`      Suggestion: ${s.ayahStart}-${s.ayahEnd}`));
+        }
+
         if (result.success && result.gaps && result.gaps.length > 0) {
           totalGaps += result.gaps.length;
           surahsWithGaps.push({
