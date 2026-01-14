@@ -2,6 +2,7 @@ import React from 'react';
 import { Button, Input, ToggleSwitch, Alert, Tooltip } from "@/components/UI";
 import { LogIn, Info } from 'lucide-react';
 import type { LoginFormData } from '../types';
+import { useSound } from "@/hooks/useSound";
 
 interface LoginFormProps {
   formData: LoginFormData;
@@ -24,17 +25,18 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   onSubmit,
   onForgotPassword,
 }) => {
+  const playClick = useSound("/sounds/click.mp3", 0.18);
   return (
     <div>
       {/* Error Message */}
       {error && (
-        <Alert variant="danger" className="mb-4 sm:mb-6">
+        <Alert variant="danger" className="mb-3">
           {error}
         </Alert>
       )}
 
       {/* Login Form */}
-      <form className="space-y-4" onSubmit={onSubmit}>
+      <form className="space-y-3" onSubmit={e => { playClick(); onSubmit(e); }}>
         <Input
           label="رقم المستخدم"
           id="userId"
@@ -68,7 +70,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
               checked={rememberMe}
               onChange={onRememberMeChange}
               label="تذكرني"
-              size="md"
+              size="sm"
               color="emerald"
             />
 
@@ -136,12 +138,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         <Button
           type="submit"
           variant="primary"
-          size="md"
+          size="sm"
           fullWidth
           loading={isLoading}
           gradient={true}
           leftIcon={!isLoading && <LogIn className="w-4 h-4" />}
-          className="shadow-lg hover:shadow-xl hover:shadow-emerald-500/30 focus:ring-2 focus:ring-emerald-400/30"
+          className="shadow-lg hover:shadow-xl hover:shadow-emerald-500/30 focus:ring-2 focus:ring-emerald-400/30 mt-2"
         >
           {isLoading ? "جارٍ تسجيل الدخول..." : "تسجيل الدخول"}
         </Button>

@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useRef } from 'react';
+import '../../components/UI/ripple.css';
 import { Loader2 } from 'lucide-react';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -45,10 +46,27 @@ export const Button: React.FC<ButtonProps> = ({
     xl: 'px-8 py-4 text-xl',
   };
 
+  // Ripple effect
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const handleRipple = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+    const btn = btnRef.current;
+    if (!btn) return;
+    const circle = document.createElement("span");
+    const diameter = Math.max(btn.clientWidth, btn.clientHeight);
+    const radius = diameter / 2;
+    circle.style.width = circle.style.height = `${diameter}px`;
+    circle.style.left = `${e.clientX - btn.getBoundingClientRect().left - radius}px`;
+    circle.style.top = `${e.clientY - btn.getBoundingClientRect().top - radius}px`;
+    circle.className = "ripple-effect";
+    btn.appendChild(circle);
+    setTimeout(() => circle.remove(), 600);
+  };
   return (
     <button
+      ref={btnRef}
       className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${fullWidth ? 'w-full' : ''} ${className || ''}`}
       disabled={disabled || loading}
+      onClick={e => { handleRipple(e); if (props.onClick) props.onClick(e); }}
       {...props}
     >
       {loading && <Loader2 className="animate-spin" size={18} />}
