@@ -9,10 +9,13 @@ import { socketManager } from '@/Socket';
 import { useSound } from '@/components/Hooks/useSounds';
 import type { PrayerData } from '../types';
 
+// ✅ استخدام Cloudinary URL للأذان
+const ADHAN_URL = 'https://res.cloudinary.com/dfi5r4ssx/video/upload/v1768428195/quranic-school/sounds/Adhan.mp3';
+
 export const usePrayerAlerts = () => {
   // صوت الأذان بحجم منخفض نسبياً
   const { playSound: playAdhan, stopSound: stopAdhan } = useSound({
-    soundPath: '/src/assets/sounds/Adhan.mp3',
+    soundPath: ADHAN_URL,
     volume: 0.5,
   });
 

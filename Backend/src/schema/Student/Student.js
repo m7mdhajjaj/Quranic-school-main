@@ -188,7 +188,7 @@ studentSchema.post("findOneAndUpdate", async function (doc) {
 });
 
 /**
- * Hook: بعد حذف طالب → تحديث activeStatus للحلقة
+ * Hook: بعد حذف طالب → تحديث activeStatus للحلقة + إعادة تدوير الـ ID
  */
 studentSchema.post("findOneAndDelete", async function (doc) {
   try {
@@ -198,20 +198,67 @@ studentSchema.post("findOneAndDelete", async function (doc) {
       const Group = mongoose.model("Group");
       await Group.recalculateActiveStatusByName(doc.group);
     }
+
+    // ♻️ إعادة تدوير الـ studentId
+    if (doc.studentId) {
+      const Counter = mongoose.model("Counter");
+      await Counter.recycleId("student", doc.studentId);
+    }
   } catch (error) {
     console.error("❌ [Student post-delete hook] Error:", error);
   }
 });
 
 /**
- * Hook: بعد حذف متعدد → تحديث activeStatus للحلقات المتأثرة
+ * Hook: قبل حذف متعدد → حفظ الـ IDs للتدوير
+ */
+studentSchema.pre("deleteMany", async function (next) {
+  try {
+    // حفظ الـ IDs قبل الحذف
+    const docs = await this.model.find(this.getQuery()).select("studentId group").lean();
+    this._deletedDocs = docs;
+    next();
+  } catch (error) {
+    console.error("❌ [Student pre-deleteMany hook] Error:", error);
+    next();
+  }
+});
+
+/**
+ * Hook: بعد حذف متعدد → تحديث activeStatus للحلقات المتأثرة + إعادة تدوير الـ IDs
  */
 studentSchema.post("deleteMany", async function () {
   try {
-    // للأسف deleteMany لا تعطينا الوثائق المحذوفة
-    // لذلك نحتاج للحصول عليها قبل الحذف في middleware "pre"
-    // سنتعامل معها في Controllers مباشرة
-    console.log("⚠️ [Student deleteMany hook] Consider manual activeStatus update");
+    const deletedDocs = this._deletedDocs || [];
+    if (deletedDocs.length === 0) return;
+
+    // ♻️ إعادة تدوير الـ IDs
+    const idsToRecycle = deletedDocs
+      .map((doc) => doc.studentId)
+      .filter((id) => id);
+
+    if (idsToRecycle.length > 0) {
+      const Counter = mongoose.model("Counter");
+      await Counter.recycleMultipleIds("student", idsToRecycle);
+    }
+
+    // تحديث الحلقات المتأثرة
+    const affectedGroups = [...new Set(
+      deletedDocs
+        .map((doc) => doc.group)
+        .filter((g) => g && g !== "غير محدد")
+    )];
+
+    if (affectedGroups.length > 0) {
+      const Group = mongoose.model("Group");
+      await Promise.all(
+        affectedGroups.map((groupName) =>
+          Group.recalculateActiveStatusByName(groupName)
+        )
+      );
+    }
+
+    console.log(`♻️ [Student deleteMany hook] Recycled ${idsToRecycle.length} IDs`);
   } catch (error) {
     console.error("❌ [Student post-deleteMany hook] Error:", error);
   }

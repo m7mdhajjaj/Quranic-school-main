@@ -197,5 +197,63 @@ teacherSchema.index(
   }
 );
 
+// ============================================================================
+// HOOKS - إعادة تدوير الـ ID عند الحذف
+// ============================================================================
+
+/**
+ * Hook: بعد حذف معلم → إعادة تدوير الـ teacherId
+ */
+teacherSchema.post("findOneAndDelete", async function (doc) {
+  try {
+    if (!doc) return;
+
+    // ♻️ إعادة تدوير الـ teacherId
+    if (doc.teacherId) {
+      const Counter = mongoose.model("Counter");
+      await Counter.recycleId("teacher", doc.teacherId);
+    }
+  } catch (error) {
+    console.error("❌ [Teacher post-delete hook] Error:", error);
+  }
+});
+
+/**
+ * Hook: قبل حذف متعدد → حفظ الـ IDs للتدوير
+ */
+teacherSchema.pre("deleteMany", async function (next) {
+  try {
+    const docs = await this.model.find(this.getQuery()).select("teacherId").lean();
+    this._deletedDocs = docs;
+    next();
+  } catch (error) {
+    console.error("❌ [Teacher pre-deleteMany hook] Error:", error);
+    next();
+  }
+});
+
+/**
+ * Hook: بعد حذف متعدد → إعادة تدوير الـ IDs
+ */
+teacherSchema.post("deleteMany", async function () {
+  try {
+    const deletedDocs = this._deletedDocs || [];
+    if (deletedDocs.length === 0) return;
+
+    const idsToRecycle = deletedDocs
+      .map((doc) => doc.teacherId)
+      .filter((id) => id);
+
+    if (idsToRecycle.length > 0) {
+      const Counter = mongoose.model("Counter");
+      await Counter.recycleMultipleIds("teacher", idsToRecycle);
+    }
+
+    console.log(`♻️ [Teacher deleteMany hook] Recycled ${idsToRecycle.length} IDs`);
+  } catch (error) {
+    console.error("❌ [Teacher post-deleteMany hook] Error:", error);
+  }
+});
+
 const Teacher = mongoose.model("Teacher", teacherSchema);
 module.exports = Teacher;

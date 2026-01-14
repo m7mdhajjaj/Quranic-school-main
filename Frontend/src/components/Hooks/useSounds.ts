@@ -57,30 +57,35 @@ const playSoundWithDuration = (soundPath: string, volume: number = 0.6): Promise
 // Sound Player - دوال الأصوات الجاهزة
 // ============================================================================
 
-// استخدام public folder بدلاً من assets لتجنب مشاكل cache في Vite
-// إضافة Timestamp لضمان عدم استخدام الكاش القديم
-const timestamp = new Date().getTime();
-const successfulSound = `/sounds/successful.mp3?t=${timestamp}`;
-const errorSound = `/sounds/error.wav?t=${timestamp}`;
-const notificationSound = `/sounds/notification.mp3?t=${timestamp}`;
-const loginSound = `/sounds/Login.mp3?t=${timestamp}`;
+// ✅ استخدام Cloudinary URLs - مستقرة ولا تحتاج cache busting
+const SOUNDS = {
+  ADHAN: 'https://res.cloudinary.com/dfi5r4ssx/video/upload/v1768428195/quranic-school/sounds/Adhan.mp3',
+  CLICK: 'https://res.cloudinary.com/dfi5r4ssx/video/upload/v1768428196/quranic-school/sounds/click-409642.mp3',
+  ERROR: 'https://res.cloudinary.com/dfi5r4ssx/video/upload/v1768428197/quranic-school/sounds/error.wav',
+  LOGIN: 'https://res.cloudinary.com/dfi5r4ssx/video/upload/v1768428199/quranic-school/sounds/Login.mp3',
+  NOTIFICATION: 'https://res.cloudinary.com/dfi5r4ssx/video/upload/v1768428200/quranic-school/sounds/notification.mp3',
+  REMOVE: 'https://res.cloudinary.com/dfi5r4ssx/video/upload/v1768428201/quranic-school/sounds/remove.mp3',
+  SUCCESSFUL: 'https://res.cloudinary.com/dfi5r4ssx/video/upload/v1768428202/quranic-school/sounds/successful.mp3',
+};
 
 export const soundPlayer = {
   // عمليات CRUD
-  playAdd: () => playSound(successfulSound, 0.6),
-  playUpdate: () => playSound(successfulSound, 0.6),
-  playDelete: () => playSound(successfulSound, 0.5),
+  playAdd: () => playSound(SOUNDS.SUCCESSFUL, 0.6),
+  playUpdate: () => playSound(SOUNDS.SUCCESSFUL, 0.6),
+  playDelete: () => playSound(SOUNDS.REMOVE, 0.5),
   
   // حالات النجاح والخطأ
-  playError: () => playSound(errorSound, 0.6),
-  playSuccess: () => playSoundWithDuration(successfulSound, 0.7),
+  playError: () => playSound(SOUNDS.ERROR, 0.6),
+  playSuccess: () => playSoundWithDuration(SOUNDS.SUCCESSFUL, 0.7),
   
   // إشعارات
-  playNotification: () => playSound(notificationSound, 0.7),
+  playNotification: () => playSound(SOUNDS.NOTIFICATION, 0.7),
+  playAdhan: () => playSound(SOUNDS.ADHAN, 0.8),
+  playClick: () => playSound(SOUNDS.CLICK, 0.4),
   
   // تسجيل الدخول/الخروج
-  playLogin: () => playSound(loginSound, 0.6),
-  playLogout: () => playSoundWithDuration(loginSound, 0.5),
+  playLogin: () => playSound(SOUNDS.LOGIN, 0.6),
+  playLogout: () => playSoundWithDuration(SOUNDS.LOGIN, 0.5),
 };
 
 // ============================================================================
@@ -99,7 +104,7 @@ interface UseSoundOptions {
  * @returns { playSound, stopSound, setVolume }
  */
 export const useSound = ({
-  soundPath = notificationSound,
+  soundPath = SOUNDS.NOTIFICATION,
   volume = 0.6,
   preload = true,
 }: UseSoundOptions = {}) => {

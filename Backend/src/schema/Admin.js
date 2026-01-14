@@ -145,5 +145,63 @@ adminSchema.methods.touchLastSeen = function () {
   return this.save({ validateBeforeSave: false });
 };
 
+// ============================================================================
+// HOOKS - إعادة تدوير الـ ID عند الحذف
+// ============================================================================
+
+/**
+ * Hook: بعد حذف مشرف → إعادة تدوير الـ adminId
+ */
+adminSchema.post("findOneAndDelete", async function (doc) {
+  try {
+    if (!doc) return;
+
+    // ♻️ إعادة تدوير الـ adminId
+    if (doc.adminId) {
+      const Counter = mongoose.model("Counter");
+      await Counter.recycleId("admin", doc.adminId);
+    }
+  } catch (error) {
+    console.error("❌ [Admin post-delete hook] Error:", error);
+  }
+});
+
+/**
+ * Hook: قبل حذف متعدد → حفظ الـ IDs للتدوير
+ */
+adminSchema.pre("deleteMany", async function (next) {
+  try {
+    const docs = await this.model.find(this.getQuery()).select("adminId").lean();
+    this._deletedDocs = docs;
+    next();
+  } catch (error) {
+    console.error("❌ [Admin pre-deleteMany hook] Error:", error);
+    next();
+  }
+});
+
+/**
+ * Hook: بعد حذف متعدد → إعادة تدوير الـ IDs
+ */
+adminSchema.post("deleteMany", async function () {
+  try {
+    const deletedDocs = this._deletedDocs || [];
+    if (deletedDocs.length === 0) return;
+
+    const idsToRecycle = deletedDocs
+      .map((doc) => doc.adminId)
+      .filter((id) => id);
+
+    if (idsToRecycle.length > 0) {
+      const Counter = mongoose.model("Counter");
+      await Counter.recycleMultipleIds("admin", idsToRecycle);
+    }
+
+    console.log(`♻️ [Admin deleteMany hook] Recycled ${idsToRecycle.length} IDs`);
+  } catch (error) {
+    console.error("❌ [Admin post-deleteMany hook] Error:", error);
+  }
+});
+
 const Admin = mongoose.model('Admin', adminSchema);
 module.exports = Admin;
