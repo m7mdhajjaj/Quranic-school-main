@@ -2,6 +2,7 @@ const Section = require("../../schema/DailyMark/Section");
 const mongoose = require("mongoose");
 const { getSurahByNumber } = require("../../utils/Quran/dailyMarkQuranMetadata");
 const Group = require("../../schema/Group");
+const { toDateKey, TIMEZONE } = require("../../config/timezone");
 
 /**
  * ============================================================================
@@ -42,14 +43,10 @@ class SmartSchedulerService {
   // ============================================================================
 
   /**
-   * تحويل التاريخ إلى مفتاح فريد (YYYY-MM-DD)
+   * تحويل التاريخ إلى مفتاح فريد (YYYY-MM-DD) - توقيت فلسطين
    */
   toDateKeyUTC(d) {
-    const dt = new Date(d);
-    const y = dt.getUTCFullYear();
-    const m = String(dt.getUTCMonth() + 1).padStart(2, "0");
-    const day = String(dt.getUTCDate()).padStart(2, "0");
-    return `${y}-${m}-${day}`;
+    return toDateKey(d);
   }
 
   /**

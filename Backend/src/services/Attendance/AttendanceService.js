@@ -4,11 +4,12 @@
 // 
 // المسؤوليات:
 // ✅ إرسال event عند منتصف الليل (00:00:00) لتحديث قائمة الطلاب الغائبين
-// ✅ استخدام timezone محدد (Asia/Riyadh) لضمان التوقيت الصحيح
+// ✅ استخدام timezone محدد (Asia/Hebron) لضمان التوقيت الصحيح - توقيت فلسطين
 //
 // ============================================================================
 
 const cron = require("node-cron");
+const { TIMEZONE, toDateKey, getStartOfDay, getEndOfDay } = require("../../config/timezone");
 const Attendance = require("../../schema/Attendance");
 const Student = require("../../schema/Student");
 const Section = require("../../schema/DailyMark/Section");
@@ -159,7 +160,7 @@ class AttendanceService {
         }
       },
       {
-        timezone: "Asia/Riyadh", // توقيت السعودية
+        timezone: TIMEZONE, // توقيت فلسطين
       }
     );
 
@@ -278,12 +279,12 @@ class AttendanceService {
         }
       },
       {
-        timezone: "Asia/Riyadh", // توقيت السعودية
+        timezone: TIMEZONE, // توقيت فلسطين
       }
     );
 
     console.log("✅ [AttendanceService] Daily attendance reset service started");
-    console.log("⏰ [AttendanceService] سيتم إرسال event كل يوم في 00:00:00 (توقيت السعودية)");
+    console.log("⏰ [AttendanceService] سيتم إرسال event كل يوم في 00:00:00 (توقيت فلسطين)");
     console.log("⏰ [AttendanceService] سيتم إرسال event كل ساعة كـ backup");
 
     // ========================================================================
@@ -412,10 +413,10 @@ class AttendanceService {
         }
       },
       {
-        timezone: "Asia/Riyadh",
+        timezone: TIMEZONE, // توقيت فلسطين
       }
     );
-    console.log("⏰ [AutoPresence] سيتم تشغيل الحضور التلقائي يومياً الساعة 23:59 مساءً");
+    console.log("⏰ [AutoPresence] سيتم تشغيل الحضور التلقائي يومياً الساعة 23:59 مساءً (توقيت فلسطين)");
   }
 
   /**

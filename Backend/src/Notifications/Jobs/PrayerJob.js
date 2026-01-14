@@ -3,6 +3,7 @@ const moment = require("moment-timezone");
 const adhan = require("adhan");
 const FCMService = require("../Core/FCMService");
 const DeviceToken = require("../../schema/DeviceToken");
+const { TIMEZONE, COORDINATES } = require("../../config/timezone");
 
 /**
  * Prayer Notifications Module
@@ -12,8 +13,8 @@ const DeviceToken = require("../../schema/DeviceToken");
 class PrayerJob {
   constructor(io) {
     this.io = io;
-    this.timezone = "Asia/Jerusalem";
-    this.coordinates = new adhan.Coordinates(31.9522, 35.2332);
+    this.timezone = TIMEZONE; // توقيت فلسطين (نابلس)
+    this.coordinates = new adhan.Coordinates(COORDINATES.latitude, COORDINATES.longitude);
     this.calculationParams = adhan.CalculationMethod.MuslimWorldLeague();
     this.calculationParams.madhab = adhan.Madhab.Shafi;
     this.prayerTasks = {};

@@ -8,3 +8,7 @@ NUL
 .env.*.local
 **/.env
 **/.env.local
+
+# Firebase Service Account - SENSITIVE! NEVER COMMIT!
+**/firebase-service-account.json
+**/*firebase-adminsdk*.json

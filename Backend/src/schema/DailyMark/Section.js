@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { toDateKey } = require("../../config/timezone");
 
 // ============================================================================
 // Quran Segment Schema (New Structured Data)
@@ -183,18 +184,13 @@ sectionSchema.index({ group: 1, dateKey: 1, "reviewMeta.canonicalKey": 1 });
 // Middleware & Hooks
 // ============================================================================
 
-function toDateKeyUTC(d) {
-  const dt = new Date(d);
-  const y = dt.getUTCFullYear();
-  const m = String(dt.getUTCMonth() + 1).padStart(2, "0");
-  const day = String(dt.getUTCDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
+// ✅ استخدام توقيت فلسطين من ملف التكوين المركزي
+// toDateKey مستوردة من config/timezone.js
 
 // ✅ 4) بدل pre("save") خليه pre("validate") (ما غيرت أسماء—بس نقلت مكان التنفيذ)
 sectionSchema.pre("validate", function (next) {
-  // dateKey
-  if (this.date) this.dateKey = toDateKeyUTC(this.date);
+  // dateKey - استخدام توقيت فلسطين
+  if (this.date) this.dateKey = toDateKey(this.date);
 
   // A. Duplication Checks (Intra-document)
   if (this.memorizationMeta && this.memorizationMeta.length > 0) {

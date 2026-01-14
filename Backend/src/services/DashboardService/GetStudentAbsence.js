@@ -4,11 +4,12 @@
 // 
 // المسؤوليات:
 // ✅ إرسال event عند منتصف الليل (00:00:00) لتحديث قائمة الطلاب الغائبين
-// ✅ استخدام timezone محدد (Asia/Riyadh) لضمان التوقيت الصحيح
+// ✅ استخدام timezone محدد (Asia/Hebron) لضمان التوقيت الصحيح - توقيت فلسطين
 //
 // ============================================================================
 
 const cron = require("node-cron");
+const { TIMEZONE, getCurrentTimeString } = require("../../config/timezone");
 const { getAbsentStudentsToday } = require("../../controllers/AttendanceController/getController");
 
 /**
@@ -45,9 +46,9 @@ class AttendanceService {
     this.midnightJob = cron.schedule(
       "0 0 * * *",
       async () => {
-        const executionTime = new Date().toLocaleString("ar-SA", { timeZone: "Asia/Riyadh" });
+        const executionTime = getCurrentTimeString();
         console.log(`🔄 [AttendanceService] بداية يوم جديد - جلب وإرسال بيانات الطلاب الغائبين لهذا اليوم...`);
-        console.log(`⏰ [AttendanceService] وقت التنفيذ: ${executionTime} (توقيت السعودية)`);
+        console.log(`⏰ [AttendanceService] وقت التنفيذ: ${executionTime} (توقيت فلسطين)`);
         
         if (this.io) {
           try {
@@ -83,7 +84,7 @@ class AttendanceService {
         }
       },
       {
-        timezone: "Asia/Riyadh", // توقيت السعودية
+        timezone: TIMEZONE, // توقيت فلسطين
       }
     );
 
@@ -128,12 +129,12 @@ class AttendanceService {
         }
       },
       {
-        timezone: "Asia/Riyadh", // توقيت السعودية
+        timezone: TIMEZONE, // توقيت فلسطين
       }
     );
 
     console.log("✅ [AttendanceService] Daily attendance reset service started");
-    console.log("⏰ [AttendanceService] سيتم إرسال event كل يوم في 00:00:00 (توقيت السعودية) - كل 24 ساعة بالضبط");
+    console.log("⏰ [AttendanceService] سيتم إرسال event كل يوم في 00:00:00 (توقيت فلسطين) - كل 24 ساعة بالضبط");
     console.log("⏰ [AttendanceService] سيتم إرسال event كل ساعة كـ backup");
     console.log("📋 [AttendanceService] Cron job لجلب الطلاب الغائبين لهذا اليوم يعمل بشكل صحيح");
     console.log("✅ [AttendanceService] تم تفعيل cron job كل 24 ساعة بنجاح");

@@ -1,6 +1,7 @@
 // services/ChampionService/index.js
 const cron = require("node-cron");
 const axios = require("axios");
+const { TIMEZONE } = require("../../config/timezone");
 
 class MonthlyChampionService {
   constructor() {
@@ -23,7 +24,7 @@ class MonthlyChampionService {
         }
       },
       {
-        timezone: "Asia/Riyadh", // توقيت السعودية
+        timezone: TIMEZONE, // توقيت فلسطين
       }
     );
 

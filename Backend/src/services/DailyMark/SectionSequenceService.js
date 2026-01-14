@@ -1,5 +1,6 @@
 const Section = require("../../schema/DailyMark/Section");
 const { getSurahByNumber } = require("../../utils/Quran/dailyMarkQuranMetadata");
+const { toDateKey } = require("../../config/timezone");
 
 /**
  * ============================================================================
@@ -52,14 +53,16 @@ class SectionSequenceService {
   }
 
   /**
-   * Helper: Convert Date to dateKey (YYYY-MM-DD in UTC)
+   * Helper: Convert Date to dateKey (YYYY-MM-DD in Palestine timezone)
+   * استخدام توقيت فلسطين لضمان التوافق مع باقي النظام
    */
+  toDateKeyLocal(date) {
+    return toDateKey(date);
+  }
+
+  // للتوافق الخلفي - الاسم القديم يشير للجديد
   toDateKeyUTC(date) {
-    const dt = new Date(date);
-    const y = dt.getUTCFullYear();
-    const m = String(dt.getUTCMonth() + 1).padStart(2, "0");
-    const day = String(dt.getUTCDate()).padStart(2, "0");
-    return `${y}-${m}-${day}`;
+    return toDateKey(date);
   }
 
   /**
