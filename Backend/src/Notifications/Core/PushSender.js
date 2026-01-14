@@ -17,11 +17,17 @@ async function sendPushNotification(recipient, notificationData) {
     }
 
     const devices = await DeviceToken.find({ user: recipient }).lean();
-    const tokenList = devices.map((d) => d.token).filter(Boolean);
+    // Remove duplicates based on token
+    const uniqueTokens = [...new Set(devices.map((d) => d.token).filter(Boolean))];
     
-    if (tokenList.length === 0) {
+    if (uniqueTokens.length === 0) {
       console.log(`📱 No device tokens found for user ${recipient}`);
       return null;
+    }
+
+    // Log if there are too many tokens (potential issue)
+    if (uniqueTokens.length > 5) {
+      console.warn(`⚠️ User ${recipient} has ${uniqueTokens.length} device tokens - consider cleanup`);
     }
 
     const payload = {
@@ -37,8 +43,8 @@ async function sendPushNotification(recipient, notificationData) {
       },
     };
 
-    const response = await FCMService.sendToTokens(tokenList, payload);
-    console.log(`📣 Push notification sent via FCM to ${tokenList.length} devices`);
+    const response = await FCMService.sendToTokens(uniqueTokens, payload);
+    console.log(`📣 Push notification sent via FCM to ${uniqueTokens.length} devices for user ${recipient}`);
     return response;
   } catch (error) {
     console.error("❌ Error sending FCM push:", error.message || error);

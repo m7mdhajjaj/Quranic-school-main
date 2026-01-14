@@ -8,6 +8,7 @@ const Section = require("../../schema/DailyMark/Section");
 const Group = require("../../schema/Group");
 const { checkTimeConflict, normalizeDate } = require("./helpers/scheduleConflict.helper");
 const { getArabicDayFromDate } = require("./helpers/dateTime.helper");
+const { notifyTimetableUpdated } = require("../../Notifications");
 
 /**
  * تحديث موعد كامل
@@ -154,6 +155,14 @@ exports.updateTimetable = async (req, res) => {
 
       await Section.findByIdAndUpdate(updated.sectionId, sectionUpdate);
     }
+
+    // ✅ 9. إرسال إشعارات للطلاب (في الخلفية)
+    const io = req.app.get("io");
+    notifyTimetableUpdated(updated, updateData, io).catch(err => 
+      console.error("⚠️ Error sending timetable update notification:", err)
+    );
+
+    console.log(`✏️ Timetable updated: ${updated._id} - Changes:`, Object.keys(updateData));
 
     res.json({
       success: true,

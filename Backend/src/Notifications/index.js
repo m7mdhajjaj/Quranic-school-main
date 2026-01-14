@@ -18,6 +18,7 @@ const StudentHandler = require("./Handlers/StudentHandler");
 const AttendanceHandler = require("./Handlers/AttendanceHandler");
 const WarningHandler = require("./Handlers/WarningHandler");
 const ChatHandler = require("./Handlers/ChatHandler");
+const TimetableHandler = require("./Handlers/TimetableHandler");
 
 module.exports = {
   // Main Services
@@ -74,6 +75,11 @@ module.exports = {
 
   // Chat Notifications
   notifyNewMessage: ChatHandler.notifyNewMessage,
+
+  // Timetable Notifications
+  notifyTimetableCreated: TimetableHandler.notifyTimetableCreated,
+  notifyTimetableUpdated: TimetableHandler.notifyTimetableUpdated,
+  notifyTimetableDeleted: TimetableHandler.notifyTimetableDeleted,
 
   notifyNewsPublished: NewsHandler.notifyNewsPublished,
   notifyNewsArchived: NewsHandler.notifyNewsArchived,

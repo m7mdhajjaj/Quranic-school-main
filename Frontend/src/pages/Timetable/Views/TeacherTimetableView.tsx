@@ -13,7 +13,10 @@ import { WeeklyGridView } from "../DisplayType/WeeklyGridView";
 import PageHeader from "@/components/UI/PageHeader";
 import { Button } from "@/components/UI/Button";
 import { Alert } from "@/components/UI/Alert";
-import { Calendar, Grid3x3, List } from "lucide-react";
+import { Calendar, Grid3x3, List, AlertCircle } from "lucide-react";
+import { showErrorToast } from "@/utils/toastUtils";
+import { getTimetableById } from "@/Api/TimeTable.Api";
+import { getDayNameFromDate } from "../utils";
 
 interface TeacherTimetableViewProps {
   sessions: Session[];
@@ -56,6 +59,7 @@ export const TeacherTimetableView: React.FC<TeacherTimetableViewProps> = ({
     
     console.log("🔍 URL Params:", { addSession, editSessionId, sectionId, urlSessionType });
     console.log("📋 Sessions count:", sessions.length);
+    console.log("📋 All session IDs:", sessions.map(s => ({ id: s._id, type: s.sessionType, group: s.groupName })));
     
     // الحالة 1: تعديل جلسة مباشرة بالـ ID
     if (editSessionId) {
@@ -67,7 +71,40 @@ export const TeacherTimetableView: React.FC<TeacherTimetableViewProps> = ({
         setIsModalOpen(true);
         console.log("✅ Opening edit modal for session:", sessionToEdit._id);
       } else {
-        console.warn("⚠️ Session not found in current sessions list");
+        // 🔄 Fallback: جلب الـ session مباشرة من الـ API
+        console.log("🔄 Session not in list, fetching from API...");
+        getTimetableById(editSessionId)
+          .then(response => {
+            if (response.success && response.data) {
+              const t = response.data;
+              const fetchedSession: Session = {
+                _id: t._id,
+                sessionDate: t.sessionDate,
+                day: t.day || (t.sessionDate ? getDayNameFromDate(t.sessionDate) : ''),
+                startHour: t.startHour,
+                endHour: t.endHour,
+                note: t.note || '',
+                description: t.description || '',
+                sessionType: t.sessionType || 'both',
+                groupId: typeof t.groupId === 'object' ? t.groupId?._id : t.groupId,
+                groupName: typeof t.groupId === 'object' ? t.groupId?.name : t.note,
+                teacherId: t.teacherId,
+                sectionId: typeof t.sectionId === 'object' ? t.sectionId?._id : t.sectionId,
+              };
+              console.log("✅ Fetched session from API:", fetchedSession._id);
+              setEditingSession(fetchedSession);
+              setIsModalOpen(true);
+            } else {
+              console.warn("⚠️ Session not found in API");
+              setSearchParams({}, { replace: true });
+              showErrorToast("الجلسة غير موجودة أو تم حذفها");
+            }
+          })
+          .catch(error => {
+            console.error("❌ Error fetching session:", error);
+            setSearchParams({}, { replace: true });
+            showErrorToast("الجلسة غير موجودة أو تم حذفها");
+          });
       }
       return;
     }

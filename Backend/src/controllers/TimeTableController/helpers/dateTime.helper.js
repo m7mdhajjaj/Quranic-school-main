@@ -172,6 +172,98 @@ const extractDayInfo = (date) => {
   };
 };
 
+/**
+ * ✅ التحقق من صحة صيغة الوقت
+ * @param {String} timeStr - الوقت بصيغة "HH:MM AM/PM"
+ * @returns {Object} - {valid, error, minutes}
+ */
+const validateTimeFormat = (timeStr) => {
+  if (!timeStr || typeof timeStr !== 'string') {
+    return { valid: false, error: "الوقت مطلوب" };
+  }
+
+  const clean = timeStr.trim();
+  
+  // التحقق من الصيغة: "HH:MM AM" أو "HH:MM PM"
+  const regex = /^(1[0-2]|0?[1-9]):([0-5][0-9])\s*(AM|PM)$/i;
+  if (!regex.test(clean)) {
+    return { valid: false, error: `صيغة الوقت غير صحيحة: ${timeStr}. المتوقع: "HH:MM AM/PM"` };
+  }
+
+  const minutes = timeToMinutes(clean);
+  return { valid: true, minutes };
+};
+
+/**
+ * ✅ التحقق من أن وقت البداية قبل وقت النهاية
+ * @param {String} startHour 
+ * @param {String} endHour 
+ * @returns {Object} - {valid, error, duration}
+ */
+const validateTimeRange = (startHour, endHour) => {
+  const startValidation = validateTimeFormat(startHour);
+  if (!startValidation.valid) {
+    return { valid: false, error: `وقت البداية: ${startValidation.error}` };
+  }
+
+  const endValidation = validateTimeFormat(endHour);
+  if (!endValidation.valid) {
+    return { valid: false, error: `وقت النهاية: ${endValidation.error}` };
+  }
+
+  const startMinutes = startValidation.minutes;
+  const endMinutes = endValidation.minutes;
+
+  if (startMinutes >= endMinutes) {
+    return { 
+      valid: false, 
+      error: `وقت البداية (${startHour}) يجب أن يكون قبل وقت النهاية (${endHour})` 
+    };
+  }
+
+  const duration = endMinutes - startMinutes;
+  
+  // التحقق من مدة معقولة (30 دقيقة على الأقل، 4 ساعات كحد أقصى)
+  if (duration < 30) {
+    return { valid: false, error: "مدة الحلقة يجب أن تكون 30 دقيقة على الأقل" };
+  }
+  if (duration > 240) {
+    return { valid: false, error: "مدة الحلقة لا يمكن أن تتجاوز 4 ساعات" };
+  }
+
+  return { valid: true, duration };
+};
+
+/**
+ * ✅ التحقق من أن الوقت ضمن ساعات العمل المسموحة
+ * @param {String} startHour 
+ * @param {String} endHour 
+ * @returns {Object} - {valid, error}
+ */
+const validateWorkingHours = (startHour, endHour) => {
+  const availableHours = generateAvailableHours();
+  
+  if (!availableHours.includes(startHour)) {
+    return { 
+      valid: false, 
+      error: `وقت البداية (${startHour}) غير متاح. الأوقات المتاحة: ${availableHours[0]} - ${availableHours[availableHours.length - 1]}` 
+    };
+  }
+
+  // وقت النهاية يمكن أن يكون خارج القائمة (آخر وقت + 30 دقيقة مثلاً)
+  const endMinutes = timeToMinutes(endHour);
+  const lastAvailableMinutes = timeToMinutes(availableHours[availableHours.length - 1]) + 30;
+  
+  if (endMinutes > lastAvailableMinutes) {
+    return { 
+      valid: false, 
+      error: `وقت النهاية (${endHour}) يتجاوز ساعات العمل المسموحة` 
+    };
+  }
+
+  return { valid: true };
+};
+
 module.exports = {
   isSummerTime,
   generateAvailableHours,
@@ -182,5 +274,8 @@ module.exports = {
   isTimeInRange,
   formatDateArabic,
   formatDateShort,
-  extractDayInfo
+  extractDayInfo,
+  validateTimeFormat,
+  validateTimeRange,
+  validateWorkingHours
 };

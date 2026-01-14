@@ -8,7 +8,8 @@ const TimeTable = require("../../schema/TimeTable");
 const Section = require("../../schema/DailyMark/Section");
 const Group = require("../../schema/Group");
 const { checkTimeConflict, normalizeDate } = require("./helpers/scheduleConflict.helper");
-const { getArabicDayFromDate, extractDayInfo } = require("./helpers/dateTime.helper");
+const { getArabicDayFromDate, extractDayInfo, validateTimeRange } = require("./helpers/dateTime.helper");
+const { notifyTimetableCreated } = require("../../Notifications");
 
 /**
  * إنشاء موعد جديد
@@ -104,6 +105,16 @@ exports.createTimetable = async (req, res) => {
       });
     }
 
+    // ✅ 3.5. التحقق من صحة الأوقات
+    const timeValidation = validateTimeRange(startHour, endHour);
+    if (!timeValidation.valid) {
+      return res.status(400).json({
+        success: false,
+        message: timeValidation.error
+      });
+    }
+    console.log(`⏰ Time validation passed: ${startHour} - ${endHour} (${timeValidation.duration} min)`);
+
     // ✅ تطبيع التاريخ ليكون UTC midnight دائماً
     sessionDate = normalizeDate(sessionDate);
     console.log("📅 Normalized sessionDate:", sessionDate.toISOString());
@@ -165,6 +176,14 @@ exports.createTimetable = async (req, res) => {
       .populate('teacherId', 'firstName lastName')
       .populate('groupId', 'name')
       .populate('sectionId', 'date group memorizationSection reviewSection');
+
+    // ✅ 8. إرسال إشعارات للطلاب (في الخلفية)
+    const io = req.app.get("io");
+    notifyTimetableCreated(result, io).catch(err => 
+      console.error("⚠️ Error sending timetable notification:", err)
+    );
+
+    console.log(`📅 Timetable created: ${result._id} for group "${finalNote}" on ${sessionDate.toISOString().split('T')[0]}`);
 
     res.status(201).json({
       success: true,

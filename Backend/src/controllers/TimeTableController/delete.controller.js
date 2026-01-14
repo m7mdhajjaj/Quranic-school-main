@@ -5,6 +5,7 @@
 
 const TimeTable = require("../../schema/TimeTable");
 const Section = require("../../schema/DailyMark/Section");
+const { notifyTimetableDeleted } = require("../../Notifications");
 
 /**
  * حذف موعد
@@ -45,8 +46,16 @@ exports.deleteTimetable = async (req, res) => {
       console.log(`🔓 تم فك ربط Section ${timetable.sectionId}`);
     }
 
-    // ✅ 4. حذف الموعد
+    // ✅ 4. إرسال إشعارات للطلاب قبل الحذف (في الخلفية)
+    const io = req.app.get("io");
+    notifyTimetableDeleted(timetable, io).catch(err => 
+      console.error("⚠️ Error sending timetable delete notification:", err)
+    );
+
+    // ✅ 5. حذف الموعد
     await TimeTable.findByIdAndDelete(id);
+
+    console.log(`🗑️ Timetable deleted: ${id} for group "${timetable.note}"`);
 
     res.json({
       success: true,
