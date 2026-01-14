@@ -41,7 +41,7 @@ class PrayerJob {
   }
 
   /**
-   * Schedule daily prayer times
+   * Schedule daily prayer times - Adhan only
    */
   scheduleDailyPrayerTimes() {
     try {
@@ -65,40 +65,19 @@ class PrayerJob {
           const prayerMoment = moment(prayer.time).tz(this.timezone);
           const prayerHour = prayerMoment.hour();
           const prayerMinute = prayerMoment.minute();
-          
-          // Calculate notification time (10 minutes before prayer)
-          let notificationMinute = prayerMinute - 10;
-          let notificationHour = prayerHour;
-
-          if (notificationMinute < 0) {
-            notificationMinute = 60 + notificationMinute;
-            notificationHour -= 1;
-          }
-          if (notificationHour < 0) notificationHour = 23;
 
           const prayerTimeStr = prayerMoment.format("HH:mm");
           console.log(`   ${prayer.emoji} ${prayer.name}: ${prayerTimeStr}`);
-
-          // Schedule reminder 10 minutes before prayer
-          const cronTimeBefore = `${notificationMinute} ${notificationHour} * * *`;
           
-          // Schedule adhan at prayer time
+          // Schedule adhan at prayer time only
           const cronTimeAdhan = `${prayerMinute} ${prayerHour} * * *`;
           
-          // Cancel previous tasks if they exist
-          if (this.prayerTasks[`${prayer.name}_before`]) {
-            this.prayerTasks[`${prayer.name}_before`].stop();
-          }
+          // Cancel previous task if exists
           if (this.prayerTasks[`${prayer.name}_adhan`]) {
             this.prayerTasks[`${prayer.name}_adhan`].stop();
           }
 
-          // Create reminder task (10 minutes before)
-          this.prayerTasks[`${prayer.name}_before`] = cron.schedule(cronTimeBefore, () => {
-            this.sendPrayerReminderNotification(prayer.name, prayerTimeStr, prayer.emoji);
-          });
-
-          // Create adhan task (at prayer time)
+          // Create adhan task (at prayer time with sound)
           this.prayerTasks[`${prayer.name}_adhan`] = cron.schedule(cronTimeAdhan, () => {
             this.sendAdhanNotification(prayer.name, prayer.emoji);
           });
@@ -110,58 +89,32 @@ class PrayerJob {
   }
 
   /**
-   * Send prayer reminder (10 mins before)
-   */
-  async sendPrayerReminderNotification(prayerName, prayerTime, emoji) {
-    try {
-      const title = `${emoji} اقتربت صلاة ${prayerName}`;
-      const message = `باقي 10 دقائق على موعد صلاة ${prayerName} (${prayerTime})`;
-
-      // Send via Socket.IO
-      this.io.emit("prayerNotification", {
-        type: "prayer_reminder",
-        title,
-        message,
-        prayerName,
-        prayerTime,
-        timestamp: new Date(),
-      });
-
-      // Send via FCM
-      if (FCMService && FCMService.initialized) {
-        const payload = {
-          notification: { title, body: message },
-          data: { type: "prayer_reminder", prayerName, prayerTime },
-        };
-        // Send to 'all' topic or all tokens (simplified here to topic if supported, or we skip for now to avoid mass DB query)
-        // For now, we'll skip mass FCM for prayers to avoid quota issues unless implemented with topics
-        // await FCMService.sendToTopic('prayers', payload); 
-      }
-      
-      console.log(`🕌 Prayer reminder sent for ${prayerName}`);
-    } catch (error) {
-      console.error("❌ Error sending prayer reminder:", error);
-    }
-  }
-
-  /**
-   * Send adhan notification
+   * Send adhan notification with sound
+   * NO DATABASE STORAGE - Only live notification with Adhan sound
    */
   async sendAdhanNotification(prayerName, emoji) {
     try {
       const title = `${emoji} حان الآن موعد صلاة ${prayerName}`;
       const message = `حي على الصلاة، حي على الفلاح`;
+      
+      // Adhan sound URL from Cloudinary
+      const adhanSoundUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/video/upload/quranic-school/sounds/adhan.mp3`;
 
-      // Send via Socket.IO
-      this.io.emit("prayerNotification", {
-        type: "prayer_adhan",
+      // Send via Socket.IO ONLY - No database storage
+      this.io.emit("prayerAdhan", {
+        type: "adhan_alert",
         title,
         message,
         prayerName,
+        emoji,
+        soundUrl: adhanSoundUrl,
         timestamp: new Date(),
+        // Important: Flag to NOT save in notification center
+        ephemeral: true,
+        playSound: true,
       });
 
-      console.log(`🕌 Adhan notification sent for ${prayerName}`);
+      console.log(`🕌 Adhan notification sent for ${prayerName} with sound`);
     } catch (error) {
       console.error("❌ Error sending adhan notification:", error);
     }
