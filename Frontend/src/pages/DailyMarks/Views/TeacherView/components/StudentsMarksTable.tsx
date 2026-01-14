@@ -3,7 +3,7 @@ import { Table } from "@/components/UI";
 import { Trash2, Plus, RefreshCw } from "lucide-react";
 import type { Column } from "@/components/UI/Table";
 import type { Student, Mark, Section } from "../../../types/types";
-import { TableSkeleton } from '../../../../../components/skeletons/DailyMarksSkeletons';
+import { TableSkeleton } from '../../../components/DailyMarksSkeletons';
 
 interface StudentsMarksTableProps {
   tableData: Array<{

@@ -36,7 +36,6 @@ import { AveragesSection } from './components/AveragesSection';
 import { StudentView } from './Views/StudentView';
 import { ModalsContainer } from './modals/ModalsContainer';
 import { GroupsGridView } from './Views/TeacherView/components/GroupsGridView';
-import { DailyMarksPageSkeleton } from '../../components/skeletons/DailyMarksSkeletons';
 
 
 // Lazy load heavy component
@@ -261,8 +260,16 @@ const DailyMarksPage = () => {
   // RENDER
   // ==========================================================================
 
+  // Show simple loading instead of skeleton
   if (loading) {
-    return <DailyMarksPageSkeleton />;
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-emerald-50 via-teal-50 to-green-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">جاري التحميل...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
