@@ -22,6 +22,10 @@ router.get("/available-hours", protect, timetableController.getAvailableHours);
 // GET /api/timetable/available-hours/teacher?teacherId=xxx&date=2026-01-12
 router.get("/available-hours/teacher", protect, timetableController.getTeacherAvailableHours);
 
+// ✅ جدول المعلم ليوم معين (ملخص حسب الحلقات)
+// GET /api/timetable/day-schedule?teacherId=xxx&date=2026-01-14
+router.get("/day-schedule", protect, timetableController.getTeacherDaySchedule);
+
 // فحص التعارض قبل الإنشاء
 // POST /api/timetable/check-conflict
 router.post("/check-conflict", protect, validateCheckConflict, timetableController.checkConflict);

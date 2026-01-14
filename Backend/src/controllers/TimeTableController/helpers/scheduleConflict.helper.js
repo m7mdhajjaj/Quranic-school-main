@@ -7,20 +7,7 @@
 
 const TimeTable = require("../../../schema/TimeTable");
 const mongoose = require("mongoose");
-const { timeToMinutes } = require("./dateTime.helper");
-
-/**
- * فحص تداخل زمني بين موعدين
- */
-const hasTimeOverlap = (start1, end1, start2, end2) => {
-  const s1 = timeToMinutes(start1);
-  const e1 = timeToMinutes(end1);
-  const s2 = timeToMinutes(start2);
-  const e2 = timeToMinutes(end2);
-  
-  // تداخل إذا: بداية1 < نهاية2 AND نهاية1 > بداية2
-  return s1 < e2 && e1 > s2;
-};
+const { timeToMinutes, hasTimeOverlap } = require("./dateTime.helper");
 
 /**
  * تطبيع التاريخ (بدون الوقت) للمقارنة

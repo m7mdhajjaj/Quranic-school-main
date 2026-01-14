@@ -11,7 +11,7 @@ import type {
   SessionFormData,
   UserRole,
 } from "../types/timetable.types";
-import { isSummerTime, getTodayDate } from "../utils";
+import { isSummerTime, getTodayDate, isTimeInArray, findTimeIndex } from "../utils";
 import { Calendar, Clock, UserCircle } from "lucide-react";
 import { useSessionModalController } from "../hooks";
 
@@ -34,6 +34,7 @@ export const SessionModal: React.FC<SessionModalProps> = (props) => {
     setFormData,
     hours,
     bookedHours,
+    bookedHoursDetails, // ✅ تفاصيل الأوقات المحجوزة للـ tooltip
     handleStartHourChange,
     handleDateChange,
     selectedDayName,
@@ -51,6 +52,23 @@ export const SessionModal: React.FC<SessionModalProps> = (props) => {
     editingSession: props.editingSession,
     role: props.role
   });
+
+  // ✅ Helper لبناء tooltip text للأوقات المحجوزة
+  const getBookedHourTooltip = (hour: string): string => {
+    const detailsList = bookedHoursDetails?.[hour];
+    if (!detailsList || detailsList.length === 0) return '🚫 محجوز';
+    
+    // قد يكون هناك أكثر من جلسة في نفس الوقت (لحلقات مختلفة)
+    const lines: string[] = [];
+    detailsList.forEach((details, idx) => {
+      if (idx > 0) lines.push('───────');
+      lines.push(`📚 ${details.groupName || 'حلقة'}`);
+      if (details.sectionName) lines.push(`📖 ${details.sectionName}`);
+      if (details.studentName) lines.push(`👤 ${details.studentName}`);
+      if (details.sessionTypeAr) lines.push(`📝 ${details.sessionTypeAr}`);
+    });
+    return lines.join('\n');
+  };
 
   return (
     <Modal
@@ -200,7 +218,7 @@ export const SessionModal: React.FC<SessionModalProps> = (props) => {
                   </label>
                   <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-9 gap-2 p-3 bg-white rounded-lg border-2 border-blue-200">
                     {hours.map((hour) => {
-                      const isBooked = bookedHours.includes(hour);
+                      const isBooked = isTimeInArray(bookedHours, hour);
                       return (
                         <button
                           key={hour}
@@ -214,7 +232,7 @@ export const SessionModal: React.FC<SessionModalProps> = (props) => {
                               ? 'bg-red-100 text-red-400 cursor-not-allowed opacity-60 line-through text-xs border border-red-200'
                               : 'bg-gray-50 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 border border-gray-200 text-xs'
                           }`}
-                          title={isBooked ? '🚫 محجوز' : ''}>
+                          title={isBooked ? getBookedHourTooltip(hour) : ''}>
                           <div className="flex flex-col leading-tight">
                             <span className="block">{hour.split(' ')[0]}</span>
                             <span className="block text-[10px]">{hour.split(' ')[1]}</span>
@@ -233,9 +251,23 @@ export const SessionModal: React.FC<SessionModalProps> = (props) => {
                   </label>
                   <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-9 gap-2 p-3 bg-white rounded-lg border-2 border-blue-200">
                     {hours.map((hour) => {
-                      const isBooked = bookedHours.includes(hour);
-                      const isBeforeStart = hours.indexOf(hour) <= hours.indexOf(formData.startHour);
-                      const isDisabled = isBooked || isBeforeStart;
+                      const hourIdx = findTimeIndex(hours, hour);
+                      const startIdx = findTimeIndex(hours, formData.startHour);
+                      const isBooked = isTimeInArray(bookedHours, hour);
+                      const isBeforeStart = hourIdx <= startIdx;
+                      
+                      // ✅ منع اختيار وقت نهاية إذا كان هناك وقت محجوز بين البداية والنهاية
+                      let hasBookedBetween = false;
+                      if (!isBeforeStart && startIdx !== -1) {
+                        for (let i = startIdx + 1; i < hourIdx; i++) {
+                          if (isTimeInArray(bookedHours, hours[i])) {
+                            hasBookedBetween = true;
+                            break;
+                          }
+                        }
+                      }
+                      
+                      const isDisabled = isBooked || isBeforeStart || hasBookedBetween;
                       
                       return (
                         <button
@@ -248,11 +280,11 @@ export const SessionModal: React.FC<SessionModalProps> = (props) => {
                               ? 'bg-red-600 text-white shadow-md scale-105 text-sm'
                               : isBooked
                               ? 'bg-red-100 text-red-400 cursor-not-allowed opacity-60 line-through text-xs border border-red-200'
-                              : isBeforeStart
+                              : isBeforeStart || hasBookedBetween
                               ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50 text-xs'
                               : 'bg-gray-50 text-gray-700 hover:bg-red-50 hover:text-red-700 border border-gray-200 text-xs'
                           }`}
-                          title={isBooked ? '🚫 محجوز' : isBeforeStart ? 'قبل وقت البداية' : ''}>
+                          title={isBooked ? getBookedHourTooltip(hour) : hasBookedBetween ? '🚫 يوجد وقت محجوز قبله' : isBeforeStart ? 'قبل وقت البداية' : ''}>
                           <div className="flex flex-col leading-tight">
                             <span className="block">{hour.split(' ')[0]}</span>
                             <span className="block text-[10px]">{hour.split(' ')[1]}</span>

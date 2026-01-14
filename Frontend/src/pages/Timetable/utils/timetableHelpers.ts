@@ -65,6 +65,81 @@ export const generateHours = (isSummer?: boolean): string[] => {
 };
 
 // ============================================================================
+// ⏰ دوال تطبيع الأوقات - لحل مشاكل المطابقة
+// ============================================================================
+
+/**
+ * تحويل الوقت لدقائق منذ منتصف الليل
+ * مثال: "1:30 PM" -> 810
+ */
+export const timeToMinutes = (timeStr: string): number => {
+  if (!timeStr) return -1;
+  
+  const normalized = timeStr.trim().toUpperCase();
+  const match = normalized.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/);
+  
+  if (!match) return -1;
+  
+  let hour = parseInt(match[1], 10);
+  const minute = parseInt(match[2], 10);
+  const period = match[3];
+  
+  // تحويل لـ 24 ساعة
+  if (period === 'PM' && hour !== 12) {
+    hour += 12;
+  } else if (period === 'AM' && hour === 12) {
+    hour = 0;
+  }
+  
+  return hour * 60 + minute;
+};
+
+/**
+ * تطبيع صيغة الوقت
+ * "01:00 PM" -> "1:00 PM"
+ * "1:00  pm" -> "1:00 PM"
+ */
+export const normalizeTimeFormat = (timeStr: string): string => {
+  if (!timeStr) return "";
+  
+  const normalized = timeStr.trim().toUpperCase();
+  const match = normalized.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/);
+  
+  if (!match) return timeStr;
+  
+  const hour = parseInt(match[1], 10);
+  const minute = match[2];
+  const period = match[3];
+  
+  return `${hour}:${minute} ${period}`;
+};
+
+/**
+ * مقارنة وقتين بتحويلهما للدقائق
+ */
+export const areTimesEqual = (time1: string, time2: string): boolean => {
+  return timeToMinutes(time1) === timeToMinutes(time2);
+};
+
+/**
+ * البحث عن index الوقت في قائمة باستخدام الدقائق
+ * يتجنب مشاكل الـ format المختلفة
+ */
+export const findTimeIndex = (hoursArray: string[], targetTime: string): number => {
+  const targetMinutes = timeToMinutes(targetTime);
+  if (targetMinutes === -1) return -1;
+  
+  return hoursArray.findIndex(h => timeToMinutes(h) === targetMinutes);
+};
+
+/**
+ * التحقق إذا كان الوقت موجود في القائمة
+ */
+export const isTimeInArray = (hoursArray: string[], targetTime: string): boolean => {
+  return findTimeIndex(hoursArray, targetTime) !== -1;
+};
+
+// ============================================================================
 // 📅 دوال التاريخ الجديدة (بدلاً من day)
 // ============================================================================
 
@@ -228,35 +303,7 @@ export const getUserRole = (): "student" | "teacher" | "admin" => {
 // دوال الوقت
 // ============================================================================
 
-/**
- * تحويل الوقت من صيغة 12 ساعة إلى دقائق للمقارنة
- */
-export const timeToMinutes = (timeStr: string): number => {
-  if (!timeStr) return 0;
-  
-  const cleanTime = timeStr.trim().toLowerCase();
-  const timePart = cleanTime.replace(/\s*(am|pm)\s*/i, '');
-  const [hoursStr, minutesStr] = timePart.split(':');
-  const hours = parseInt(hoursStr) || 0;
-  const minutes = parseInt(minutesStr) || 0;
-  
-  const isPM = cleanTime.includes('pm');
-  const isAM = cleanTime.includes('am');
-  
-  let totalHours = hours;
-  
-  if (isPM && hours !== 12) {
-    totalHours = hours + 12;
-  } else if (isAM && hours === 12) {
-    totalHours = 0;
-  } else if (isPM && hours === 12) {
-    totalHours = 12;
-  } else if (isAM) {
-    totalHours = hours;
-  }
-  
-  return totalHours * 60 + minutes;
-};
+// ✅ timeToMinutes معرفة أعلاه في السطر 75 - لا نحتاج لتكرارها
 
 /**
  * فحص إذا كان الوقت يقع ضمن جلسة محجوزة

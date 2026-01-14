@@ -8,7 +8,7 @@ const TimeTable = require("../../schema/TimeTable");
 const Section = require("../../schema/DailyMark/Section");
 const Group = require("../../schema/Group");
 const { checkTimeConflict, normalizeDate } = require("./helpers/scheduleConflict.helper");
-const { getArabicDayFromDate, extractDayInfo, validateTimeRange } = require("./helpers/dateTime.helper");
+const { getArabicDayFromDate, extractDayInfo, validateTimeRange, normalizeTimeFormat } = require("./helpers/dateTime.helper");
 const { notifyTimetableCreated } = require("../../Notifications");
 
 /**
@@ -139,11 +139,14 @@ exports.createTimetable = async (req, res) => {
       });
     }
 
-    // ✅ 5. إنشاء الموعد
+    // ✅ 5. إنشاء الموعد (مع تطبيع الأوقات للتخزين الموحد)
+    const normalizedStartHour = normalizeTimeFormat(startHour);
+    const normalizedEndHour = normalizeTimeFormat(endHour);
+    
     const timetable = new TimeTable({
       day: finalDay,
-      startHour,
-      endHour,
+      startHour: normalizedStartHour,
+      endHour: normalizedEndHour,
       teacherId,
       groupId: finalGroupId,
       note: finalNote || "",

@@ -30,6 +30,7 @@ const {
 const {
   getAvailableHours,
   getTeacherAvailableHours,
+  getTeacherDaySchedule,
   checkConflict
 } = require("./availability.controller");
 
@@ -56,6 +57,7 @@ module.exports = {
   
   // ============ AVAILABILITY ============
   getAvailableHours,         // الأوقات المتاحة (عامة)
-  getTeacherAvailableHours,  // أوقات المعلم المتاحة
+  getTeacherAvailableHours,  // أوقات المعلم المتاحة مع تفاصيل المواعيد
+  getTeacherDaySchedule,     // ✅ ملخص يوم المعلم (مجمع حسب الحلقات)
   checkConflict              // فحص التعارض
 };

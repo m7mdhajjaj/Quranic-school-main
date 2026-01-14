@@ -7,7 +7,7 @@ const TimeTable = require("../../schema/TimeTable");
 const Section = require("../../schema/DailyMark/Section");
 const Group = require("../../schema/Group");
 const { checkTimeConflict, normalizeDate } = require("./helpers/scheduleConflict.helper");
-const { getArabicDayFromDate } = require("./helpers/dateTime.helper");
+const { getArabicDayFromDate, normalizeTimeFormat } = require("./helpers/dateTime.helper");
 const { notifyTimetableUpdated } = require("../../Notifications");
 
 /**
@@ -46,14 +46,22 @@ exports.updateTimetable = async (req, res) => {
       }
     }
 
-    // ✅ 3. تجهيز البيانات للتحديث
+    // ✅ 3. تجهيز البيانات للتحديث (مع تطبيع الأوقات)
     const updateData = {};
-    const fieldsToUpdate = ['day', 'startHour', 'endHour', 'note', 'description', 'sessionType'];
+    const fieldsToUpdate = ['day', 'note', 'description', 'sessionType'];
     
     for (const field of fieldsToUpdate) {
       if (data[field] !== undefined) {
         updateData[field] = data[field];
       }
+    }
+    
+    // ✅ تطبيع الأوقات قبل الحفظ
+    if (data.startHour !== undefined) {
+      updateData.startHour = normalizeTimeFormat(data.startHour);
+    }
+    if (data.endHour !== undefined) {
+      updateData.endHour = normalizeTimeFormat(data.endHour);
     }
     
     // ✅ 3.5. تحديث sessionType تلقائياً من Section إذا كان sectionId موجود ولم يُحدد sessionType

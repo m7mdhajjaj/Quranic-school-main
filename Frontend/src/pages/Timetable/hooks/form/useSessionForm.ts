@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import type { Session, SessionFormData, UserRole } from "../../types/timetable.types";
-import { getCurrentUser, formatDateForAPI, getTodayDate } from "../../utils";
+import { getCurrentUser, formatDateForAPI, getTodayDate, isTimeInArray } from "../../utils";
 import { getAvailableHours, getTeacherAvailableHours } from "@/Api/TimeTable.Api";
 import { getSectionById } from "@/Api/DailyMark/sectionApi";
 import { useSearchParams } from "react-router-dom";
@@ -25,10 +25,23 @@ export const useSessionForm = ({
 }: UseSessionFormProps) => {
   const [searchParams] = useSearchParams();
   
+  // ✅ جلب المستخدم الحالي فوراً لتعيين teacherId من البداية
+  const currentUser = getCurrentUser();
+  const defaultTeacherId = role === "teacher" && currentUser?._id ? currentUser._id : "";
+  
   // جلب الأوقات المتاحة + المحجوزة من الـ Backend
   const [hours, setHours] = useState<string[]>([]);
   const [bookedHours, setBookedHours] = useState<string[]>([]);
   const [loadingHours, setLoadingHours] = useState(true);
+  
+  // ✅ تفاصيل الأوقات المحجوزة (للـ tooltip)
+  const [bookedHoursDetails, setBookedHoursDetails] = useState<Record<string, Array<{
+    sessionId: string;
+    groupName: string;
+    sessionTypeAr?: string;
+    sectionName?: string;
+    studentName?: string;
+  }>>>({});
   
   // Logic to determine initial sessionType - memoized
   const getInitialSessionType = useMemo(() => {
@@ -37,17 +50,35 @@ export const useSessionForm = ({
     return urlSessionType as any || undefined;
   }, [editingSession?.sessionType, searchParams]);
 
-  // ⚠️ النموذج الجديد - sessionDate مطلوب!
+  // ✅ استخراج teacherId من editingSession إذا موجود
+  const getInitialTeacherId = useMemo(() => {
+    if (editingSession?.teacherId) {
+      return typeof editingSession.teacherId === 'string' 
+        ? editingSession.teacherId 
+        : editingSession.teacherId?._id || "";
+    }
+    return defaultTeacherId;
+  }, [editingSession?.teacherId, defaultTeacherId]);
+
+  // ✅ استخراج sessionDate من editingSession إذا موجود
+  const getInitialSessionDate = useMemo(() => {
+    if (editingSession?.sessionDate) {
+      return formatDateForAPI(editingSession.sessionDate);
+    }
+    return getTodayDate();
+  }, [editingSession?.sessionDate]);
+
+  // ⚠️ النموذج الجديد - sessionDate و teacherId من البداية!
   const [formData, setFormData] = useState<SessionFormData>(() => ({
-    sessionDate: getTodayDate(), // ⚠️ تاريخ اليوم كقيمة افتراضية
-    startHour: "",
-    endHour: "",
-    note: initialGroupName || "",
-    description: "",
+    sessionDate: getInitialSessionDate, // ✅ من editingSession أو اليوم
+    startHour: editingSession?.startHour || "",
+    endHour: editingSession?.endHour || "",
+    note: editingSession?.note || initialGroupName || "",
+    description: editingSession?.description || "",
     sessionType: getInitialSessionType,
-    teacherId: "",
+    teacherId: getInitialTeacherId, // ✅ من editingSession أو المستخدم الحالي
     groupId: "",
-    sectionId: initialSectionId || "",
+    sectionId: editingSession?.sectionId || initialSectionId || "",
   }));
   
   // ============================================
@@ -82,12 +113,16 @@ export const useSessionForm = ({
           console.log("📋 Teacher response:", teacherResponse);
           
           if (teacherResponse.success) {
-            const allHours = generalResponse.data.hours;
-            const availableHours = teacherResponse.data.availableHours;
-            const booked = allHours.filter(h => !availableHours.includes(h));
-            console.log("🚫 Booked hours:", booked);
-            console.log("✅ Available hours:", availableHours.length);
-            setBookedHours(booked);
+            // ✅ استخدام bookedHours مباشرة من الـ API (تحتوي على كل الأوقات من start إلى end)
+            const bookedFromAPI = teacherResponse.data.bookedHours || [];
+            console.log("🚫 Booked hours from API:", bookedFromAPI);
+            console.log("✅ Available hours:", teacherResponse.data.availableHours?.length);
+            setBookedHours(bookedFromAPI);
+            
+            // ✅ تخزين تفاصيل الأوقات المحجوزة (للـ tooltip)
+            if (teacherResponse.data.bookedHoursDetails) {
+              setBookedHoursDetails(teacherResponse.data.bookedHoursDetails);
+            }
           }
         } else {
           console.log("⏳ No teacherId or sessionDate, clearing booked hours");
@@ -241,9 +276,7 @@ export const useSessionForm = ({
         setSelectedGroup(editingSession.note);
       }
     } else {
-      // ➕ وضع الإضافة
-      const currentUser = getCurrentUser();
-      const defaultTeacherId = role === "teacher" && currentUser?._id ? currentUser._id : "";
+      // ➕ وضع الإضافة - استخدام defaultTeacherId المعرف في الأعلى
       const urlSessionType = searchParams.get('sessionType') as any || undefined;
       
       setFormData(prev => ({
@@ -253,7 +286,7 @@ export const useSessionForm = ({
         note: initialGroupName || "",
         description: "",
         sessionType: urlSessionType,
-        teacherId: defaultTeacherId,
+        teacherId: prev.teacherId || defaultTeacherId, // ✅ الحفاظ على teacherId إذا موجود
         groupId: "",
         sectionId: initialSectionId || "",
       }));
@@ -305,9 +338,7 @@ export const useSessionForm = ({
 
   // دالة لإعادة تعيين النموذج (reset) - with useCallback
   const resetForm = useCallback(() => {
-    const currentUser = getCurrentUser();
-    const defaultTeacherId = role === "teacher" && currentUser?._id ? currentUser._id : "";
-    
+    // ✅ استخدام defaultTeacherId المعرف في الأعلى
     setFormData({
       sessionDate: getTodayDate(),
       startHour: "",
@@ -330,6 +361,7 @@ export const useSessionForm = ({
     setSelectedGroup,
     hours,
     bookedHours,
+    bookedHoursDetails, // ✅ تفاصيل الأوقات المحجوزة
     loadingHours,
     handleStartHourChange,
     handleDateChange, // 📅 جديد

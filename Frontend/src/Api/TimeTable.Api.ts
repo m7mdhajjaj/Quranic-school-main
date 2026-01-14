@@ -95,15 +95,60 @@ export interface TeacherAvailableHoursResponse {
     bookedHours: string[];
     availableHours: string[];
     bookedSessions: Array<{
+      _id: string;
       startHour: string;
       endHour: string;
-      note: string;
-      groupName?: string;
+      groupName: string;
+      groupId?: string;
+      studentsCount?: number;
+      sessionType?: string;
+      sessionTypeAr?: string;
+      section?: {
+        _id?: string;
+        memorizationSection?: string;
+        reviewSection?: string;
+        studentName?: string;
+        marksStatus?: string;
+      } | null;
+      timeSlots?: string[];
+      duration?: number;
+    }>;
+    // ✅ تفاصيل كل وقت محجوز
+    bookedHoursDetails?: Record<string, Array<{
+      sessionId: string;
+      groupName: string;
+      groupId?: string;
+      sessionType?: string;
+      sessionTypeAr?: string;
+      sectionName?: string;
+      studentName?: string;
+    }>>;
+    // ✅ مجمّع حسب الحلقة
+    halaqat?: Array<{
+      groupId?: string;
+      groupName: string;
+      studentsCount: number;
+      sessions: Array<{
+        _id: string;
+        startHour: string;
+        endHour: string;
+        sessionType?: string;
+        sessionTypeAr?: string;
+        section?: {
+          _id?: string;
+          memorizationSection?: string;
+          reviewSection?: string;
+          studentName?: string;
+        } | null;
+        duration?: number;
+      }>;
     }>;
     stats: {
       total: number;
       booked: number;
       available: number;
+      sessionsCount?: number;
+      halaqatCount?: number;
     };
   };
 }

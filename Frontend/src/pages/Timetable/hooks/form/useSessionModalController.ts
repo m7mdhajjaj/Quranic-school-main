@@ -31,7 +31,8 @@ export const useSessionModalController = ({
     formData, 
     setFormData, 
     hours, 
-    bookedHours, 
+    bookedHours,
+    bookedHoursDetails, // ✅ تفاصيل الأوقات المحجوزة
     handleStartHourChange, 
     handleDateChange, 
     resetForm 
@@ -80,6 +81,7 @@ export const useSessionModalController = ({
     setFormData,
     hours,
     bookedHours,
+    bookedHoursDetails, // ✅ تفاصيل الأوقات المحجوزة للـ tooltip
     handleStartHourChange,
     handleDateChange,
     selectedDayName,

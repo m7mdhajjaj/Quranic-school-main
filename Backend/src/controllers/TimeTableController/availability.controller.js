@@ -1,10 +1,11 @@
 // ============================================
-// AVAILABILITY CONTROLLER (NEW)
+// AVAILABILITY CONTROLLER - OPTIMIZED VERSION
 // ============================================
-// الأوقات المتاحة وفحص التعارض
+// الأوقات المتاحة وفحص التعارض مع تفاصيل كاملة
 // ⚠️ مهم: التعارض يعتمد على التاريخ المحدد وليس اليوم فقط
 
 const TimeTable = require("../../schema/TimeTable");
+const Section = require("../../schema/DailyMark/Section");
 const { 
   checkTimeConflict, 
   normalizeDate, 
@@ -14,9 +15,12 @@ const {
 const { 
   isSummerTime, 
   generateAvailableHours,
-  getWeekRange,
   extractDayInfo,
-  formatDateArabic
+  formatDateArabic,
+  findTimeIndex,
+  normalizeTimeFormat,
+  timeToMinutes,
+  getAllBookedHours
 } = require("./helpers/dateTime.helper");
 
 /**
@@ -25,8 +29,11 @@ const {
  */
 exports.getAvailableHours = async (req, res) => {
   try {
-    const summer = isSummerTime();
-    const hours = generateAvailableHours();
+    const { date } = req.query;
+    const targetDate = date ? new Date(date) : new Date();
+    
+    const summer = isSummerTime(targetDate);
+    const hours = generateAvailableHours(targetDate);
 
     res.json({
       success: true,
@@ -36,7 +43,8 @@ exports.getAvailableHours = async (req, res) => {
         seasonAr: summer ? 'صيفي' : 'شتوي',
         range: summer ? '12:00 PM - 9:00 PM' : '11:00 AM - 8:00 PM',
         hours,
-        totalSlots: hours.length
+        totalSlots: hours.length,
+        date: targetDate.toISOString().split('T')[0]
       }
     });
 
@@ -50,14 +58,9 @@ exports.getAvailableHours = async (req, res) => {
 };
 
 /**
- * جلب الأوقات المتاحة لمعلم في تاريخ معين
+ * ✅ جلب الأوقات المتاحة لمعلم في تاريخ معين
+ * مع تفاصيل كاملة لكل موعد (الحلقة، المقطع، نوع الحصة)
  * @route GET /api/timetable/available-hours/teacher
- * @query teacherId - معرف المعلم
- * @query date - التاريخ المحدد (مطلوب!) - مثل 2026-01-12
- * @query excludeId - استثناء موعد معين (للتعديل)
- * 
- * ⚠️ ملاحظة: يعتمد على التاريخ المحدد وليس اليوم
- * 12/1 له مواعيد مختلفة عن 19/1 حتى لو نفس اليوم (اثنين)
  */
 exports.getTeacherAvailableHours = async (req, res) => {
   try {
@@ -83,7 +86,7 @@ exports.getTeacherAvailableHours = async (req, res) => {
     const dateInfo = extractDayInfo(date);
 
     // ✅ 1. جلب كل الأوقات
-    const allHours = generateAvailableHours();
+    const allHours = generateAvailableHours(new Date(date));
 
     // ✅ 2. بناء Query للبحث عن المواعيد في نفس التاريخ فقط
     const targetDate = normalizeDate(date);
@@ -106,61 +109,157 @@ exports.getTeacherAvailableHours = async (req, res) => {
       query._id = { $ne: excludeId };
     }
 
-    // ✅ 3. جلب المواعيد المحجوزة في هذا التاريخ
+    // ✅ 3. جلب المواعيد المحجوزة مع تفاصيل المقطع والحلقة
     const bookedSessions = await TimeTable.find(query)
-      .select('startHour endHour note groupId sessionDate')
-      .populate('groupId', 'name')
+      .select('startHour endHour note groupId sessionDate sessionType sectionId sectionInfo')
+      .populate('groupId', 'name students')
+      .populate({
+        path: 'sectionId',
+        select: 'memorizationSection reviewSection group date marksStatus'
+      })
       .lean();
 
     console.log("📋 bookedSessions found:", bookedSessions.length);
-    bookedSessions.forEach((s, i) => {
-      console.log(`  ${i + 1}. ${s.startHour} - ${s.endHour} | ${s.groupId?.name || s.note} | sessionDate: ${s.sessionDate}`);
-    });
 
-    // ✅ 4. تحديد الأوقات المحجوزة
-    const bookedHours = new Set();
+    // ✅ 4. تجميع الأوقات المحجوزة مع تفاصيلها
+    const bookedHoursMap = new Map(); // Map<timeSlot, sessionDetails[]>
+    const bookedHoursSet = new Set();
     
-    for (const session of bookedSessions) {
-      // إضافة كل الأوقات ضمن نطاق الجلسة
-      const startIdx = allHours.indexOf(session.startHour);
-      const endIdx = allHours.indexOf(session.endHour);
+    const sessionsDetails = bookedSessions.map(session => {
+      const normalizedStart = normalizeTimeFormat(session.startHour);
+      const normalizedEnd = normalizeTimeFormat(session.endHour);
       
-      console.log(`  🔍 Session: ${session.startHour} (idx=${startIdx}) - ${session.endHour} (idx=${endIdx})`);
+      const startIdx = findTimeIndex(allHours, normalizedStart);
+      const endIdx = findTimeIndex(allHours, normalizedEnd);
       
+      // إضافة كل الأوقات من البداية للنهاية
+      const sessionTimeSlots = [];
       if (startIdx !== -1 && endIdx !== -1) {
-        for (let i = startIdx; i < endIdx; i++) {
-          bookedHours.add(allHours[i]);
+        for (let i = startIdx; i < endIdx && i < allHours.length; i++) {
+          const timeSlot = allHours[i];
+          bookedHoursSet.add(timeSlot);
+          sessionTimeSlots.push(timeSlot);
+          
+          // حفظ تفاصيل الموعد لكل وقت
+          if (!bookedHoursMap.has(timeSlot)) {
+            bookedHoursMap.set(timeSlot, []);
+          }
+          
+          bookedHoursMap.get(timeSlot).push({
+            sessionId: session._id,
+            groupName: session.note || session.groupId?.name || 'غير محدد',
+            groupId: session.groupId?._id,
+            sessionType: session.sessionType,
+            sessionTypeAr: session.sessionType === 'hifz' ? 'حفظ' : 
+                           session.sessionType === 'murajaah' ? 'مراجعة' : 'حفظ ومراجعة',
+            sectionName: session.sectionInfo?.memorizationSection || 
+                         session.sectionInfo?.reviewSection || 
+                         session.sectionId?.memorizationSection || 
+                         session.sectionId?.reviewSection || ''
+          });
         }
       } else {
-        console.warn(`  ⚠️ Time not found in allHours! startHour="${session.startHour}", endHour="${session.endHour}"`);
-        console.warn(`  ⚠️ allHours sample:`, allHours.slice(0, 5));
+        console.warn(`  ⚠️ Time not found! ${session.startHour} - ${session.endHour}`);
       }
-    }
+      
+      // بناء تفاصيل المقطع
+      let sectionDetails = null;
+      if (session.sectionId) {
+        sectionDetails = {
+          _id: session.sectionId._id,
+          memorizationSection: session.sectionId.memorizationSection,
+          reviewSection: session.sectionId.reviewSection,
+          marksStatus: session.sectionId.marksStatus
+        };
+      } else if (session.sectionInfo) {
+        sectionDetails = {
+          memorizationSection: session.sectionInfo.memorizationSection,
+          reviewSection: session.sectionInfo.reviewSection,
+          marksStatus: session.sectionInfo.marksStatus
+        };
+      }
+      
+      return {
+        _id: session._id,
+        startHour: normalizedStart,
+        endHour: normalizedEnd,
+        groupName: session.note || session.groupId?.name || 'غير محدد',
+        groupId: session.groupId?._id,
+        studentsCount: session.groupId?.students?.length || 0,
+        sessionType: session.sessionType,
+        sessionTypeAr: session.sessionType === 'hifz' ? 'حفظ' : 
+                       session.sessionType === 'murajaah' ? 'مراجعة' : 'حفظ ومراجعة',
+        section: sectionDetails,
+        timeSlots: sessionTimeSlots,
+        duration: sessionTimeSlots.length * 30 // بالدقائق
+      };
+    });
 
-    // ✅ 5. حساب الأوقات المتاحة
-    const availableHours = allHours.filter(h => !bookedHours.has(h));
+    // ✅ 5. الأوقات المتاحة (غير المحجوزة)
+    const bookedHours = Array.from(bookedHoursSet);
+    const availableHours = allHours.filter(hour => !bookedHoursSet.has(hour));
+
+    // ✅ 6. تفاصيل كل وقت محجوز
+    const bookedHoursDetails = {};
+    bookedHoursMap.forEach((details, timeSlot) => {
+      bookedHoursDetails[timeSlot] = details;
+    });
+
+    // ✅ 7. تجميع حسب الحلقة
+    const groupedByHalaqah = {};
+    sessionsDetails.forEach(session => {
+      const groupKey = session.groupId?.toString() || session.groupName || 'other';
+      
+      if (!groupedByHalaqah[groupKey]) {
+        groupedByHalaqah[groupKey] = {
+          groupId: session.groupId,
+          groupName: session.groupName,
+          studentsCount: session.studentsCount,
+          sessions: []
+        };
+      }
+      
+      groupedByHalaqah[groupKey].sessions.push({
+        _id: session._id,
+        startHour: session.startHour,
+        endHour: session.endHour,
+        sessionType: session.sessionType,
+        sessionTypeAr: session.sessionTypeAr,
+        section: session.section,
+        duration: session.duration
+      });
+    });
+
+    console.log(`⏰ Teacher ${teacherId} on ${date}: ${bookedHours.length} booked, ${availableHours.length} available`);
 
     res.json({
       success: true,
       data: {
         teacherId,
-        date: dateInfo.dateFormatted, // "12 يناير 2026"
-        dateShort: dateInfo.dateShort, // "12/1/2026"
-        day: dateInfo.dayName, // "الاثنين"
-        isSummerTime: isSummerTime(),
+        date: dateInfo.dateFormatted,
+        dateShort: dateInfo.dateShort,
+        day: dateInfo.dayName,
+        isSummerTime: isSummerTime(new Date(date)),
+        
+        // الأوقات
         allHours,
-        bookedHours: Array.from(bookedHours),
+        bookedHours,
         availableHours,
-        bookedSessions: bookedSessions.map(s => ({
-          startHour: s.startHour,
-          endHour: s.endHour,
-          note: s.note,
-          groupName: s.groupId?.name || s.note
-        })),
+        
+        // تفاصيل المواعيد
+        bookedSessions: sessionsDetails,
+        bookedHoursDetails,
+        
+        // مجمّع حسب الحلقة
+        halaqat: Object.values(groupedByHalaqah),
+        
+        // إحصائيات
         stats: {
           total: allHours.length,
-          booked: bookedHours.size,
-          available: availableHours.length
+          booked: bookedHours.length,
+          available: availableHours.length,
+          sessionsCount: sessionsDetails.length,
+          halaqatCount: Object.keys(groupedByHalaqah).length
         }
       }
     });
@@ -169,7 +268,111 @@ exports.getTeacherAvailableHours = async (req, res) => {
     console.error("❌ Error:", error);
     res.status(500).json({
       success: false,
-      message: "حدث خطأ"
+      message: "حدث خطأ في جلب الأوقات المتاحة",
+      error: error.message
+    });
+  }
+};
+
+/**
+ * ✅ جلب ملخص مواعيد المعلم لكل حلقاته في تاريخ معين
+ * @route GET /api/timetable/day-schedule
+ */
+exports.getTeacherDaySchedule = async (req, res) => {
+  try {
+    const { teacherId, date } = req.query;
+
+    if (!teacherId || !date) {
+      return res.status(400).json({
+        success: false,
+        message: 'يرجى تحديد المعلم والتاريخ'
+      });
+    }
+
+    const targetDate = normalizeDate(date);
+    const nextDay = normalizeNextDay(date);
+    const dateInfo = extractDayInfo(date);
+
+    // جلب المواعيد مجمعة حسب الحلقة
+    const sessions = await TimeTable.find({
+      teacherId,
+      sessionDate: { $gte: targetDate, $lt: nextDay }
+    })
+    .populate('groupId', 'name students')
+    .populate({
+      path: 'sectionId',
+      select: 'memorizationSection reviewSection date marksStatus'
+    })
+    .sort({ startHour: 1 })
+    .lean();
+
+    // تجميع حسب الحلقة
+    const groupedByHalaqah = {};
+    
+    sessions.forEach(session => {
+      const groupKey = session.groupId?._id?.toString() || session.note || 'other';
+      const groupName = session.groupId?.name || session.note || 'بدون حلقة';
+      
+      if (!groupedByHalaqah[groupKey]) {
+        groupedByHalaqah[groupKey] = {
+          groupId: session.groupId?._id,
+          groupName,
+          studentsCount: session.groupId?.students?.length || 0,
+          sessions: [],
+          totalDuration: 0
+        };
+      }
+      
+      const startMin = timeToMinutes(session.startHour);
+      const endMin = timeToMinutes(session.endHour);
+      const duration = endMin - startMin;
+      
+      groupedByHalaqah[groupKey].sessions.push({
+        _id: session._id,
+        startHour: normalizeTimeFormat(session.startHour),
+        endHour: normalizeTimeFormat(session.endHour),
+        duration,
+        sessionType: session.sessionType,
+        sessionTypeAr: session.sessionType === 'hifz' ? 'حفظ' : 
+                       session.sessionType === 'murajaah' ? 'مراجعة' : 'حفظ ومراجعة',
+        section: session.sectionId ? {
+          _id: session.sectionId._id,
+          memorizationSection: session.sectionId.memorizationSection,
+          reviewSection: session.sectionId.reviewSection,
+          marksStatus: session.sectionId.marksStatus
+        } : null
+      });
+      
+      groupedByHalaqah[groupKey].totalDuration += duration;
+    });
+
+    // حساب الإحصائيات
+    const halaqat = Object.values(groupedByHalaqah);
+    const totalDuration = halaqat.reduce((sum, h) => sum + h.totalDuration, 0);
+
+    res.json({
+      success: true,
+      data: {
+        date: dateInfo.dateFormatted,
+        dateShort: dateInfo.dateShort,
+        day: dateInfo.dayName,
+        teacherId,
+        halaqat,
+        stats: {
+          totalSessions: sessions.length,
+          totalHalaqat: halaqat.length,
+          totalDuration,
+          totalHours: Math.round(totalDuration / 60 * 10) / 10
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error getting teacher day schedule:', error);
+    res.status(500).json({
+      success: false,
+      message: 'خطأ في جلب جدول اليوم',
+      error: error.message
     });
   }
 };
@@ -177,10 +380,6 @@ exports.getTeacherAvailableHours = async (req, res) => {
 /**
  * فحص التعارض قبل الإنشاء/التحديث
  * @route POST /api/timetable/check-conflict
- * @body sessionDate - التاريخ المحدد (مطلوب!)
- * 
- * ⚠️ ملاحظة: التعارض يحدث فقط في نفس التاريخ
- * 12/1 (اثنين) لا يتعارض مع 19/1 (اثنين)
  */
 exports.checkConflict = async (req, res) => {
   try {
@@ -206,7 +405,7 @@ exports.checkConflict = async (req, res) => {
 
     const result = await checkTimeConflict({
       teacherId,
-      sessionDate, // ⚠️ التعارض على نفس التاريخ فقط
+      sessionDate,
       startHour,
       endHour,
       excludeId

@@ -6,6 +6,7 @@ import { useState, useCallback } from "react";
 import type { SessionFormData, Session } from "../../types/timetable.types";
 import { validateTimetableData } from "@/Validation/timetableValidation";
 import { showErrorToast } from "@/utils/toastUtils";
+import { isTimeInArray } from "../../utils";
 
 interface UseSessionModalLogicProps {
   onSubmit: (formData: SessionFormData, sessionId?: string) => Promise<boolean>;
@@ -41,15 +42,15 @@ export const useSessionModalLogic = ({
       };
     }
 
-    // 2️⃣ فحص إضافي للأوقات المحجوزة
-    if (bookedHours.includes(formData.startHour)) {
+    // 2️⃣ فحص إضافي للأوقات المحجوزة (باستخدام isTimeInArray لتجنب مشاكل الـ format)
+    if (isTimeInArray(bookedHours, formData.startHour)) {
       return {
         isValid: false,
         errorMessage: '❌ وقت البداية محجوز مسبقاً',
       };
     }
 
-    if (bookedHours.includes(formData.endHour)) {
+    if (isTimeInArray(bookedHours, formData.endHour)) {
       return {
         isValid: false,
         errorMessage: '❌ وقت النهاية محجوز مسبقاً',

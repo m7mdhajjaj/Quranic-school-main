@@ -16,6 +16,11 @@ export {
   isValidTime,
   timeToMinutes,
   isTimeInBookedRange,
+  // ⏰ دوال تطبيع الأوقات
+  normalizeTimeFormat,
+  areTimesEqual,
+  findTimeIndex,
+  isTimeInArray,
   // 📅 دوال التاريخ الجديدة
   getDayNameFromDate,
   formatDateForAPI,
