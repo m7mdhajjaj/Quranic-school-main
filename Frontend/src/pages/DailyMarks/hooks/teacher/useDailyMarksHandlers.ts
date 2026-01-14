@@ -402,46 +402,29 @@ export const useDailyMarksHandlers = ({
 
     if (!selectedStudentId || !selectedSection) return;
 
-    // Generate a temporary ID for optimistic update
-    const tempId = `temp-${Date.now()}`;
     const totalMark = (newMark.reviewMark || 0) + (newMark.memorizationMark || 0);
 
-    // Optimistic UI Update
-    const optimisticMark = {
-      _id: tempId,
-      studentId: selectedStudentId, // Note: In real app this might need to be an object if populated
+    const markData = {
+      studentId: selectedStudentId,
       sectionId: selectedSection._id,
       reviewMark: newMark.reviewMark,
       memorizationMark: newMark.memorizationMark,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    } as unknown as Mark; // Casting because studentId might be expected as object
+    };
 
     try {
       setIsAddingMarkLoading?.(true);
-      
-      // 1. Update UI Immediately
-      setMarks((prev) => [...prev, optimisticMark]);
-      setIsAddMarkModalOpen(false);
-      showSuccessToast(`✅ تم رصد العلامة بنجاح! العلامة: ${totalMark}/20`);
 
-      const markData = {
-        studentId: selectedStudentId,
-        sectionId: selectedSection._id,
-        reviewMark: newMark.reviewMark,
-        memorizationMark: newMark.memorizationMark,
-      };
-
-      // 2. Call API in background
+      // 1. Call API FIRST (no optimistic update for marks with time window)
       const response = await createMark(markData as never);
 
       if (response.success && response.data) {
         const savedMark = response.data;
         
-        // 3. Replace temp mark with real mark
-        setMarks((prev) => 
-          prev.map(m => m._id === tempId ? savedMark : m)
-        );
+        // 2. Update UI only after success
+        setMarks((prev) => [...prev, savedMark]);
+        setIsAddMarkModalOpen(false);
+        showSuccessToast(`✅ تم رصد العلامة بنجاح! العلامة: ${totalMark}/20`);
+        
         // Refresh sections status/progress (non-blocking)
         refetchSections?.();
         refetchStats?.();
@@ -452,9 +435,6 @@ export const useDailyMarksHandlers = ({
     } catch (err) {
       console.error("Error adding mark:", err);
       
-      // 4. Revert on error
-      setMarks((prev) => prev.filter(m => m._id !== tempId));
-      
       // ✅ Handle specific error types
       const error = err as { response?: { status?: number; data?: { message?: string } }; message?: string };
       const serverMessage = error.response?.data?.message || error.message;
@@ -463,11 +443,8 @@ export const useDailyMarksHandlers = ({
       if (serverMessage?.includes('قبل موعد') || serverMessage?.includes('انتهت فترة')) {
         showErrorMessage("⏰ خارج فترة التعديل", serverMessage);
       } else {
-        showErrorMessage("حدث خطأ", "❌ حدث خطأ أثناء إضافة العلامة");
+        showErrorMessage("حدث خطأ", serverMessage || "❌ حدث خطأ أثناء إضافة العلامة");
       }
-      
-      // Re-open modal if needed, or just let user try again (data is lost from form though if modal closed)
-      // Ideally we might want to keep modal open, but for speed we closed it.
     } finally {
       setIsAddingMarkLoading?.(false);
     }

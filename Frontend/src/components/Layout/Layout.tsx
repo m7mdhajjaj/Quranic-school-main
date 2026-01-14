@@ -17,10 +17,9 @@
 // └─────────────────────────────────┘
 // ============================================================================
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useLocation } from 'react-router-dom';
 import Header from './Header';
-import Sidebar from './Sidebar/Sidebar';
 import { Footer } from './Footer';
 import { AiChatbot } from '../AiChatbot';
 
@@ -82,7 +81,6 @@ const shouldHideLayout = (pathname: string): boolean => {
  * ```
  */
 const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation();
 
   // Determine what to show based on current route
@@ -101,31 +99,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <HeaderComponent />
       )}
 
-      {/* Sidebar - Toggled visibility */}
-      {showHeader && (
-        <Sidebar 
-          isOpen={isSidebarOpen} 
-          onClose={() => setIsSidebarOpen(false)}
-        />
-      )}
-
       {/* Main Content Area */}
-      <main 
-        className={`main-content m-0 p-0 transition-all duration-300 ease-in-out flex-grow ${
-          showHeader && isSidebarOpen ? 'lg:mr-72' : ''
-        }`}
-      >
+      <main className="main-content m-0 p-0 transition-all duration-300 ease-in-out flex-grow">
         {children}
       </main>
 
       {/* Footer - Conditional rendering based on route */}
-      <div 
-        className={`transition-all duration-300 ease-in-out ${
-          showHeader && isSidebarOpen ? 'lg:mr-72' : ''
-        }`}
-      >
-        {showFooter && <Footer />}
-      </div>
+      {showFooter && <Footer />}
 
       {/* Global AI Chatbot - للمعلم والطالب فقط */}
       <AiChatbot />
