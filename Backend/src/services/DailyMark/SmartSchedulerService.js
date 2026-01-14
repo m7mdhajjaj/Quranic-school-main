@@ -980,10 +980,49 @@ class SmartSchedulerService {
       }
       
       // ============================================
-      // اقتراح تاريخ بديل ذكي
+      // اقتراح عدة تواريخ بديلة (V8 Enhanced)
       // ============================================
-      const dateResult = await this.generateAvailableDates(groupId, 15);
-      const alternative = await this.findValidDateForChunk(groupId, chunk, byDate, dateResult.dates);
+      
+      // ✅ البحث يبدأ من اليوم الحالي أو minDate (أيهما أكبر)
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // التأكد من بداية اليوم بدقة
+      
+      const searchStartDate = minDate 
+        ? new Date(Math.max(minDate.getTime(), today.getTime()))
+        : today;
+      
+      const dateResult = await this.generateAvailableDates(groupId, 14, searchStartDate); // نطاق أسبوعين من تاريخ البدء
+      
+      // إيجاد أقرب تاريخ صالح فقط ضمن الـ constraints
+      const validAlternatives = [];
+      const dayNames = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+      
+      for (const slot of dateResult.dates) {
+        if (validAlternatives.length >= 1) break; // تاريخ واحد فقط (الأقرب)
+        
+        const slotDate = new Date(slot.date);
+        
+        // ✅ فلترة حسب constraints
+        if (minDate && slotDate < minDate) continue;
+        if (maxDate && slotDate > maxDate) continue;
+        
+        const testChunk = { ...chunk, date: slot.date };
+        const testValidation = this.validateMonotonicOrder(byDate, testChunk);
+        
+        if (testValidation.isValid) {
+          validAlternatives.push({
+            date: slot.dateKey,
+            dateKey: slot.dateKey,
+            dayName: dayNames[slotDate.getDay()],
+            weekNumber: slot.weekNumber,
+            isPreferred: slot.isPreferred,
+            reason: slot.reason
+          });
+        }
+      }
+      
+      // أول تاريخ صالح كـ suggestedAlternative (للتوافق مع الكود القديم)
+      const primaryAlternative = validAlternatives.length > 0 ? validAlternatives[0] : null;
       
       return {
         isValid: false,
@@ -997,17 +1036,15 @@ class SmartSchedulerService {
           maxDateReason
         },
         proposedDate,
-        suggestedAlternative: alternative.found ? {
-          date: alternative.dateKey,
-          dateKey: alternative.dateKey,
-          reason: alternative.reason,
-          constraints: alternative.constraints
-        } : null,
+        // ✅ V8: قائمة من التواريخ البديلة
+        suggestedAlternatives: validAlternatives,
+        // للتوافق مع الكود القديم
+        suggestedAlternative: primaryAlternative,
         // معلومات إضافية للـ debug
         debugInfo: {
           existingSegmentsCount: allSegments.length,
           proposedAyahRange: `${ayahStart}-${ayahEnd}`,
-          validationDetails: validation
+          alternativesFound: validAlternatives.length
         }
       };
     }

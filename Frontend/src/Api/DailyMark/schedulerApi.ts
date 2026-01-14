@@ -49,7 +49,7 @@ export interface SuggestGapsResponse {
   };
 }
 
-// ✅ V7 Enhanced: Updated to match new backend response
+// ✅ V8 Enhanced: Updated to match new backend response with multiple alternatives
 export interface ValidateBeforeInsertResponse {
   success: boolean;
   validation: {
@@ -69,16 +69,28 @@ export interface ValidateBeforeInsertResponse {
       minDateReason?: string;
       maxDateReason?: string;
     };
+    // ✅ V8: قائمة من التواريخ البديلة
+    suggestedAlternatives?: Array<{
+      date: string;
+      dateKey: string;
+      dayName: string;
+      weekNumber: number;
+      isPreferred: boolean;
+      reason: string;
+    }>;
+    // للتوافق مع الكود القديم
     suggestedAlternative?: {
       date: string;
       dateKey: string;
+      dayName?: string;
+      weekNumber?: number;
       reason: string;
       constraints?: object;
     } | null;
     debugInfo?: {
       existingSegmentsCount: number;
       proposedAyahRange: string;
-      validationDetails?: object;
+      alternativesFound?: number;
     };
   };
 }

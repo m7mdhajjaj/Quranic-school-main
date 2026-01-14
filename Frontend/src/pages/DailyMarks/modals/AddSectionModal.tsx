@@ -85,11 +85,12 @@ const AddSectionModalComponent = ({
       localReviewMeta
   );
 
-  // 🆕 V5: Smart Scheduler Validation (Monotonic Order)
+  // 🆕 V8: Smart Scheduler Validation (Monotonic Order) with multiple alternatives
   const {
     isValidating: isSchedulerValidating,
     allValid: isScheduleValid,
     validationErrors: scheduleErrors,
+    suggestedAlternatives,
     suggestedAlternative,
   } = useAutoValidateSchedule(
     newSection.group || selectedGroup,
@@ -199,48 +200,37 @@ const AddSectionModalComponent = ({
               </div>
           )}
 
-          {/* 🆕 Schedule Validation Error + Alternative Suggestion */}
+          {/* تحذير التعارض + التاريخ المقترح */}
           {!isScheduleValid && scheduleErrors.length > 0 && (
-            <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg text-orange-800 text-sm">
-              <div className="flex items-start gap-2">
+            <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg text-sm">
+              <div className="flex items-start gap-2 mb-2">
                 <span className="text-lg">🔒</span>
                 <div className="flex-1">
-                  <p className="font-bold mb-1">تعارض في ترتيب التواريخ:</p>
+                  <p className="font-bold text-orange-800 mb-1">تعارض في ترتيب التواريخ:</p>
                   {scheduleErrors.map((err, i) => (
-                    <p key={i} className="text-xs whitespace-pre-line">{err}</p>
+                    <p key={i} className="text-orange-700 text-xs whitespace-pre-line">{err}</p>
                   ))}
-                  
-                  {/* Suggested Alternative Date */}
-                  {suggestedAlternative && (suggestedAlternative.dateKey || suggestedAlternative.date) && (
-                    <div className="mt-2 p-2 bg-emerald-50 border border-emerald-200 rounded-lg">
-                      <p className="text-emerald-700 text-xs font-medium">
-                        💡 تاريخ مقترح: <strong>{suggestedAlternative.dateKey || (typeof suggestedAlternative.date === 'string' ? suggestedAlternative.date : new Date(suggestedAlternative.date).toISOString().split('T')[0])}</strong>
-                      </p>
-                      <p className="text-emerald-600 text-xs">{suggestedAlternative.reason}</p>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          // Safely extract date string in YYYY-MM-DD format
-                          let dateValue = suggestedAlternative.dateKey;
-                          if (!dateValue && suggestedAlternative.date) {
-                            dateValue = typeof suggestedAlternative.date === 'string' 
-                              ? suggestedAlternative.date.split('T')[0] 
-                              : new Date(suggestedAlternative.date).toISOString().split('T')[0];
-                          }
-                          if (dateValue) {
-                            onChange({
-                              target: { name: 'date', value: dateValue },
-                            } as React.ChangeEvent<HTMLInputElement>);
-                          }
-                        }}
-                        className="mt-1 px-3 py-1 bg-emerald-500 text-white text-xs rounded-lg hover:bg-emerald-600 transition-colors"
-                      >
-                        استخدام هذا التاريخ
-                      </button>
-                    </div>
-                  )}
                 </div>
               </div>
+                  
+              {/* التاريخ المقترح */}
+              {suggestedAlternatives && suggestedAlternatives.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-orange-200">
+                  <p className="text-emerald-700 text-xs font-medium mb-2">💡 تواريخ مقترحة:</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onChange({
+                        target: { name: 'date', value: suggestedAlternatives[0].dateKey },
+                      } as React.ChangeEvent<HTMLInputElement>);
+                    }}
+                    className="w-full px-4 py-3 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-all shadow-sm"
+                  >
+                    <span className="font-bold text-sm">{suggestedAlternatives[0].dateKey}</span>
+                    <span className="block text-xs mt-1 opacity-90">{suggestedAlternatives[0].dayName} - أسبوع {suggestedAlternatives[0].weekNumber}</span>
+                  </button>
+                </div>
+              )}
             </div>
           )}
 

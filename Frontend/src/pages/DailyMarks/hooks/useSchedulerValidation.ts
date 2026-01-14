@@ -169,6 +169,16 @@ export interface SegmentData {
   ayahEnd: number;
 }
 
+// ✅ V8: Type for alternative date options
+export interface AlternativeDateOption {
+  date: string;
+  dateKey: string;
+  dayName: string;
+  weekNumber: number;
+  isPreferred: boolean;
+  reason: string;
+}
+
 export const useAutoValidateSchedule = (
   groupId: string | undefined,
   segments: SegmentData[],
@@ -178,9 +188,14 @@ export const useAutoValidateSchedule = (
   const [isValidating, setIsValidating] = useState(false);
   const [allValid, setAllValid] = useState(true);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  // ✅ V8: قائمة من التواريخ البديلة
+  const [suggestedAlternatives, setSuggestedAlternatives] = useState<AlternativeDateOption[]>([]);
+  // للتوافق مع الكود القديم
   const [suggestedAlternative, setSuggestedAlternative] = useState<{
     date: string;
     dateKey: string;
+    dayName?: string;
+    weekNumber?: number;
     reason: string;
   } | null>(null);
   
@@ -194,6 +209,7 @@ export const useAutoValidateSchedule = (
     if (!groupId || !date || segments.length === 0) {
       setAllValid(true);
       setValidationErrors([]);
+      setSuggestedAlternatives([]);
       setSuggestedAlternative(null);
       return;
     }
@@ -216,6 +232,7 @@ export const useAutoValidateSchedule = (
       const errors: string[] = [];
       let isAllValid = true;
       let lastSuggestion: typeof suggestedAlternative = null;
+      let allAlternatives: AlternativeDateOption[] = [];
 
       // ✅ Validate date format with Yup first
       try {
@@ -223,6 +240,7 @@ export const useAutoValidateSchedule = (
       } catch (yupError: any) {
         setAllValid(false);
         setValidationErrors([yupError.message]);
+        setSuggestedAlternatives([]);
         setSuggestedAlternative(null);
         setIsValidating(false);
         return;
@@ -230,7 +248,7 @@ export const useAutoValidateSchedule = (
 
       try {
         for (const seg of validSegments) {
-          // ✅ V7: استخدام validateBeforeInsert المحسّنة
+          // ✅ V8: استخدام validateBeforeInsert المحسّنة مع قائمة التواريخ
           const result = await validateBeforeInsert(
             groupId,
             seg.surahNumber,
@@ -244,6 +262,10 @@ export const useAutoValidateSchedule = (
             if (result.validation.reason) {
               errors.push(result.validation.reason);
             }
+            // ✅ V8: جمع قائمة التواريخ البديلة
+            if (result.validation.suggestedAlternatives && result.validation.suggestedAlternatives.length > 0) {
+              allAlternatives = result.validation.suggestedAlternatives;
+            }
             if (result.validation.suggestedAlternative) {
               lastSuggestion = result.validation.suggestedAlternative;
             }
@@ -256,6 +278,7 @@ export const useAutoValidateSchedule = (
 
       setAllValid(isAllValid);
       setValidationErrors(errors);
+      setSuggestedAlternatives(allAlternatives);
       setSuggestedAlternative(lastSuggestion);
       setIsValidating(false);
     }, debounceMs);
@@ -269,6 +292,7 @@ export const useAutoValidateSchedule = (
     if (debounceRef.current) clearTimeout(debounceRef.current);
     setAllValid(true);
     setValidationErrors([]);
+    setSuggestedAlternatives([]);
     setSuggestedAlternative(null);
     setIsValidating(false);
   }, []);
@@ -277,6 +301,9 @@ export const useAutoValidateSchedule = (
     isValidating,
     allValid,
     validationErrors,
+    // ✅ V8: قائمة التواريخ البديلة
+    suggestedAlternatives,
+    // للتوافق مع الكود القديم
     suggestedAlternative,
     clearValidation,
   };
