@@ -101,15 +101,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                   }
                 }, 500);
               } else {
-                // Token غير صالح - تسجيل خروج
-                console.warn("⚠️ التوكن غير صالح - تسجيل خروج");
+                // Token غير صالح - تسجيل خروج صامت
+                console.log("⚠️ التوكن غير صالح - تسجيل خروج");
                 setUser(null);
                 setToken(null);
                 AsyncStorage.clear();
               }
             })
             .catch((verifyError) => {
-              console.warn("⚠️ فشل في التحقق من التوكن:", verifyError);
+              // Token expired or invalid - silent logout
+              console.log("⚠️ فشل في التحقق من التوكن - تسجيل خروج");
+              setUser(null);
+              setToken(null);
+              AsyncStorage.clear();
             });
         } else {
           // لا توجد بيانات محفوظة

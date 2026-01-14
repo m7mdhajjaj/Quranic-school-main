@@ -37,19 +37,23 @@ api.interceptors.response.use(
     return response;
   },
   async (error) => {
-    console.error("❌ API Error:", {
-      url: error.config?.url,
-      method: error.config?.method,
-      status: error.response?.status,
-      message: error.message,
-      data: error.response?.data,
-    });
+    const isVerifyEndpoint = error.config?.url?.includes("/auth/verify");
+
+    // Don't log 401 errors for verify endpoint (it's expected when token expires)
+    if (!(isVerifyEndpoint && error.response?.status === 401)) {
+      console.error("❌ API Error:", {
+        url: error.config?.url,
+        method: error.config?.method,
+        status: error.response?.status,
+        message: error.message,
+        data: error.response?.data,
+      });
+    }
 
     if (error.response?.status === 401) {
-      // Don't auto-redirect on verify endpoints
-      const isVerifyEndpoint = error.config?.url?.includes("/auth/verify");
-
+      // Don't auto-clear on verify endpoints - let AuthContext handle it
       if (!isVerifyEndpoint) {
+        console.log("🔒 Unauthorized - Clearing auth data");
         // Clear AsyncStorage on 401 error
         await AsyncStorage.multiRemove([
           "token",
