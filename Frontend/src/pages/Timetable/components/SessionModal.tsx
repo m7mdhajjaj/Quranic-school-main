@@ -57,10 +57,31 @@ export const SessionModal: React.FC<SessionModalProps> = (props) => {
       isOpen={isOpen}
       onClose={handleClose}
       title={editingSession ? "✏️ تعديل موعد حلقة" : "➕ إضافة موعد حلقة"}
-      size="4xl">
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      size="4xl"
+      bodyClassName="!p-0"
+      footer={
+        <div className="flex gap-3 w-full">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={handleClose}
+            fullWidth
+            disabled={loading}>
+            إلغاء
+          </Button>
+          <Button 
+            type="submit" 
+            variant="primary" 
+            fullWidth 
+            loading={loading}
+            onClick={handleSubmit}>
+            {editingSession ? "💾 حفظ التعديل" : "➕ إضافة الموعد"}
+          </Button>
+        </div>
+      }>
+      <form onSubmit={handleSubmit} className="flex flex-col">
         {/* محتوى المودال */}
-        <div className="space-y-6 max-h-[calc(80vh-120px)] overflow-y-auto px-1 scrollbar-hide">
+        <div className="space-y-6 px-6 py-4">
           <div className="space-y-6">
             {/* 1️⃣ قسم معلومات المعلم (للمدير فقط) */}
             {role === "admin" && (
@@ -177,7 +198,7 @@ export const SessionModal: React.FC<SessionModalProps> = (props) => {
                     <Clock className="w-4 h-4" />
                     وقت البداية
                   </label>
-                  <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-9 gap-2 max-h-56 overflow-y-auto p-3 bg-white rounded-lg border-2 border-blue-200 scrollbar-hide">
+                  <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-9 gap-2 p-3 bg-white rounded-lg border-2 border-blue-200">
                     {hours.map((hour) => {
                       const isBooked = bookedHours.includes(hour);
                       return (
@@ -210,7 +231,7 @@ export const SessionModal: React.FC<SessionModalProps> = (props) => {
                     <Clock className="w-4 h-4" />
                     وقت النهاية
                   </label>
-                  <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-9 gap-2 max-h-56 overflow-y-auto p-3 bg-white rounded-lg border-2 border-blue-200 scrollbar-hide">
+                  <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-9 gap-2 p-3 bg-white rounded-lg border-2 border-blue-200">
                     {hours.map((hour) => {
                       const isBooked = bookedHours.includes(hour);
                       const isBeforeStart = hours.indexOf(hour) <= hours.indexOf(formData.startHour);
@@ -342,21 +363,6 @@ export const SessionModal: React.FC<SessionModalProps> = (props) => {
               </div>
             </div>
           </div>
-        </div>
-
-        {/* أزرار العمل */}
-        <div className="flex gap-3 pt-4 border-t-2 border-gray-100">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={handleClose}
-            fullWidth
-            disabled={loading}>
-            إلغاء
-          </Button>
-          <Button type="submit" variant="primary" fullWidth loading={loading}>
-            {editingSession ? "💾 حفظ التعديل" : "➕ إضافة الموعد"}
-          </Button>
         </div>
       </form>
     </Modal>
