@@ -9,11 +9,13 @@ import {
   ScrollView,
   ActivityIndicator,
   Platform,
+  Alert,
 } from "react-native";
 import { X, Calendar, BookOpen, RotateCcw } from "lucide-react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import type { Section } from "@/Api/dailyMarksApi";
 import { createSection, updateSection } from "@/Api/dailyMarksApi";
+import { AddTimetableSessionModal } from "./AddTimetableSessionModal";
 
 interface AddEditSectionModalProps {
   visible: boolean;
@@ -39,6 +41,14 @@ export const AddEditSectionModal: React.FC<AddEditSectionModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // State for timetable modal
+  const [showTimetableModal, setShowTimetableModal] = useState(false);
+  const [createdSectionData, setCreatedSectionData] = useState<{
+    sectionId: string;
+    sessionType: "hifz" | "murajaah" | "both";
+    sectionDate: string;
+  } | null>(null);
+
   useEffect(() => {
     if (editingSection) {
       setDate(new Date(editingSection.date));
@@ -54,8 +64,8 @@ export const AddEditSectionModal: React.FC<AddEditSectionModalProps> = ({
   }, [editingSection, visible]);
 
   const handleSubmit = async () => {
-    if (!reviewSection.trim() || !memorizationSection.trim()) {
-      setError("جميع الحقول مطلوبة");
+    if (!reviewSection.trim() && !memorizationSection.trim()) {
+      setError("يجب إدخال مقطع الحفظ أو المراجعة على الأقل");
       return;
     }
 
@@ -76,15 +86,70 @@ export const AddEditSectionModal: React.FC<AddEditSectionModalProps> = ({
       }
 
       let response;
+      let createdSection: any = null;
+
       if (editingSection?._id) {
         response = await updateSection(editingSection._id, sectionData);
       } else {
         response = await createSection(sectionData);
+        console.log(
+          "📤 [AddEditSectionModal] Create section response:",
+          JSON.stringify(response, null, 2)
+        );
+        createdSection = response.data;
+        console.log(
+          "📤 [AddEditSectionModal] Created section:",
+          JSON.stringify(createdSection, null, 2)
+        );
       }
 
       if (response.success) {
         onSuccess();
-        onClose();
+
+        // For new sections only, ask about adding to timetable
+        if (!editingSection && createdSection && createdSection._id) {
+          console.log(
+            "✅ [AddEditSectionModal] Opening timetable dialog for section:",
+            createdSection._id
+          );
+
+          // Determine session type based on filled fields
+          let sessionType: "hifz" | "murajaah" | "both" = "both";
+          if (memorizationSection.trim() && !reviewSection.trim()) {
+            sessionType = "hifz";
+          } else if (!memorizationSection.trim() && reviewSection.trim()) {
+            sessionType = "murajaah";
+          }
+
+          // Close this modal first
+          onClose();
+
+          // Show confirmation dialog
+          Alert.alert(
+            "تم إضافة المقطع بنجاح",
+            "هل تود إضافة موعد في الجدول لهذا المقطع؟",
+            [
+              {
+                text: "لا، شكراً",
+                style: "cancel",
+              },
+              {
+                text: "نعم، أضف موعد",
+                onPress: () => {
+                  // Store section data and open timetable modal
+                  setCreatedSectionData({
+                    sectionId: createdSection._id,
+                    sessionType: sessionType,
+                    sectionDate: date.toISOString(),
+                  });
+                  setShowTimetableModal(true);
+                },
+              },
+            ]
+          );
+        } else {
+          onClose();
+        }
       } else {
         setError(response.message || "حدث خطأ");
       }
@@ -231,6 +296,22 @@ export const AddEditSectionModal: React.FC<AddEditSectionModalProps> = ({
           </ScrollView>
         </View>
       </View>
+
+      {/* Timetable Session Modal */}
+      {createdSectionData && (
+        <AddTimetableSessionModal
+          visible={showTimetableModal}
+          onClose={() => {
+            setShowTimetableModal(false);
+            setCreatedSectionData(null);
+            onClose();
+          }}
+          sectionId={createdSectionData.sectionId}
+          groupName={group}
+          sessionType={createdSectionData.sessionType}
+          sectionDate={createdSectionData.sectionDate}
+        />
+      )}
     </Modal>
   );
 };

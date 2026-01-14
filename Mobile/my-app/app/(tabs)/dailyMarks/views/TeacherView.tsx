@@ -29,6 +29,7 @@ import { AddEditSectionModal } from "../components/AddEditSectionModal";
 import { AddEditMarkModal } from "../components/AddEditMarkModal";
 import { StudentsMarksTable } from "../components/StudentsMarksTable";
 import { SectionsTable } from "../components/SectionsTable";
+import { AddTimetableSessionModal } from "../components/AddTimetableSessionModal";
 
 interface TeacherViewProps {
   students: Student[];
@@ -66,9 +67,12 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   // Modals State
   const [showSectionModal, setShowSectionModal] = useState(false);
   const [showMarkModal, setShowMarkModal] = useState(false);
+  const [showTimetableModal, setShowTimetableModal] = useState(false);
   const [editingSection, setEditingSection] = useState<Section | null>(null);
   const [editingMark, setEditingMark] = useState<Mark | null>(null);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [scheduleTargetSection, setScheduleTargetSection] =
+    useState<Section | null>(null);
 
   // Date Filter State
   const currentDate = new Date();
@@ -334,6 +338,19 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
     );
   };
 
+  // Handle Add Schedule for a section
+  const handleAddSchedule = (section: Section) => {
+    setScheduleTargetSection(section);
+    setShowTimetableModal(true);
+  };
+
+  const handleTimetableModalClose = () => {
+    setShowTimetableModal(false);
+    setScheduleTargetSection(null);
+    // Refresh sections to get updated timetable info
+    loadSections();
+  };
+
   const handleSectionModalSuccess = () => {
     loadSections();
     loadGroupsStats();
@@ -500,6 +517,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
           onEditSection={handleEditSection}
           onDeleteSection={handleDeleteSection}
           onAddSection={handleAddSection}
+          onAddSchedule={handleAddSchedule}
           showActions={true}
         />
       </ScrollView>
@@ -512,6 +530,26 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
         group={selectedGroup}
         editingSection={editingSection}
       />
+
+      {/* Timetable Modal for adding schedule to existing section */}
+      {scheduleTargetSection && (
+        <AddTimetableSessionModal
+          visible={showTimetableModal}
+          onClose={handleTimetableModalClose}
+          sectionId={scheduleTargetSection._id}
+          groupName={selectedGroup || ""}
+          sessionType={
+            scheduleTargetSection.memorizationSection &&
+            !scheduleTargetSection.reviewSection
+              ? "hifz"
+              : !scheduleTargetSection.memorizationSection &&
+                  scheduleTargetSection.reviewSection
+                ? "murajaah"
+                : "both"
+          }
+          sectionDate={scheduleTargetSection.date}
+        />
+      )}
     </View>
   );
 };

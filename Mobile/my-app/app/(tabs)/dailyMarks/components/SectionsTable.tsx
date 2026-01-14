@@ -7,7 +7,15 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from "react-native";
-import { Plus, Edit, Trash2, ChevronLeft, Users } from "lucide-react-native";
+import {
+  Plus,
+  Edit,
+  Trash2,
+  ChevronLeft,
+  Users,
+  Clock,
+  AlertTriangle,
+} from "lucide-react-native";
 import type { Section, Mark } from "@/Api/dailyMarksApi";
 import { Card } from "@/components/ui/Card";
 
@@ -19,6 +27,7 @@ interface SectionsTableProps {
   onEditSection?: (section: Section) => void;
   onDeleteSection?: (sectionId: string) => void;
   onAddSection?: () => void;
+  onAddSchedule?: (section: Section) => void;
   showActions?: boolean;
   loading?: boolean;
 }
@@ -74,6 +83,7 @@ export const SectionsTable: React.FC<SectionsTableProps> = ({
   onEditSection,
   onDeleteSection,
   onAddSection,
+  onAddSchedule,
   showActions = false,
   loading = false,
 }) => {
@@ -238,6 +248,44 @@ export const SectionsTable: React.FC<SectionsTableProps> = ({
                     {section.marksProgress.totalStudents} طالب
                   </Text>
                 </View>
+              )}
+
+              {/* Schedule Info */}
+              {section.timetableId &&
+              typeof section.timetableId !== "string" ? (
+                <View style={styles.scheduleInfoContainer}>
+                  <View style={styles.scheduleInfoHeader}>
+                    <Clock size={14} color="#0891b2" />
+                    <Text style={styles.scheduleInfoLabel}>موعد الحلقة:</Text>
+                    <Text style={styles.scheduleInfoDay}>
+                      {section.timetableId.day}
+                    </Text>
+                    <Text style={styles.scheduleInfoSeparator}>|</Text>
+                    <Text style={styles.scheduleInfoTime}>
+                      {section.timetableId.startHour} -{" "}
+                      {section.timetableId.endHour}
+                    </Text>
+                  </View>
+                </View>
+              ) : (
+                onAddSchedule && (
+                  <View style={styles.noScheduleContainer}>
+                    <View style={styles.noScheduleHeader}>
+                      <AlertTriangle size={14} color="#f59e0b" />
+                      <Text style={styles.noScheduleText}>
+                        لم يتم تحديد موعد للحلقة
+                      </Text>
+                    </View>
+                    <TouchableOpacity
+                      style={styles.addScheduleButton}
+                      onPress={() => onAddSchedule(section)}>
+                      <Clock size={12} color="#f59e0b" />
+                      <Text style={styles.addScheduleButtonText}>
+                        إضافة موعد
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )
               )}
 
               {/* Card Footer with Actions */}
@@ -669,5 +717,73 @@ const styles = StyleSheet.create({
     padding: 8,
     backgroundColor: "#fee2e2",
     borderRadius: 8,
+  },
+  // Schedule styles
+  scheduleInfoContainer: {
+    backgroundColor: "#ecfeff",
+    borderWidth: 1,
+    borderColor: "#cffafe",
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 12,
+  },
+  scheduleInfoHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    flexWrap: "wrap",
+  },
+  scheduleInfoLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#0e7490",
+  },
+  scheduleInfoDay: {
+    fontSize: 12,
+    color: "#155e75",
+  },
+  scheduleInfoSeparator: {
+    color: "#67e8f9",
+  },
+  scheduleInfoTime: {
+    fontSize: 12,
+    fontFamily: "monospace",
+    color: "#155e75",
+  },
+  noScheduleContainer: {
+    backgroundColor: "#fffbeb",
+    borderWidth: 1,
+    borderColor: "#fef3c7",
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 12,
+  },
+  noScheduleHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 8,
+  },
+  noScheduleText: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: "#b45309",
+  },
+  addScheduleButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#fde68a",
+    borderRadius: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  addScheduleButtonText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#d97706",
   },
 });
