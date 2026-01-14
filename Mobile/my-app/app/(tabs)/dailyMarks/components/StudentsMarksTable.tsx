@@ -22,6 +22,7 @@ interface StudentsMarksTableProps {
   marks: Mark[];
   section: Section;
   loading?: boolean;
+  searchQuery?: string;
   onAddMark: (student: Student) => void;
   onEditMark: (mark: Mark, student: Student) => void;
   onDeleteMark: (markId: string) => void;
@@ -32,12 +33,21 @@ export const StudentsMarksTable: React.FC<StudentsMarksTableProps> = ({
   marks,
   section,
   loading = false,
+  searchQuery = "",
   onAddMark,
   onEditMark,
   onDeleteMark,
 }) => {
+  // Filter students by search query
+  const filteredStudents = students.filter((student) => {
+    if (!searchQuery.trim()) return true;
+    const fullName =
+      `${student.firstName} ${student.fatherName} ${student.lastName}`.toLowerCase();
+    return fullName.includes(searchQuery.toLowerCase());
+  });
+
   // Build table data
-  const tableData: StudentMarkRow[] = students.map((student) => {
+  const tableData: StudentMarkRow[] = filteredStudents.map((student) => {
     const mark = marks.find((m) => {
       const studentId =
         typeof m.studentId === "string" ? m.studentId : m.studentId._id;

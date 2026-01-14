@@ -1,5 +1,13 @@
 import React from "react";
-import { View, Text, StyleSheet, ScrollView } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
+import { Plus, Edit, Trash2, ChevronLeft, Users } from "lucide-react-native";
 import type { Section, Mark } from "@/Api/dailyMarksApi";
 import { Card } from "@/components/ui/Card";
 
@@ -7,6 +15,12 @@ interface SectionsTableProps {
   sections: Section[];
   marks: Mark[];
   isTeacher: boolean;
+  onSectionSelect?: (section: Section) => void;
+  onEditSection?: (section: Section) => void;
+  onDeleteSection?: (sectionId: string) => void;
+  onAddSection?: () => void;
+  showActions?: boolean;
+  loading?: boolean;
 }
 
 const getMarkColor = (mark: number | null, type: "review" | "memorization") => {
@@ -56,6 +70,12 @@ export const SectionsTable: React.FC<SectionsTableProps> = ({
   sections,
   marks,
   isTeacher,
+  onSectionSelect,
+  onEditSection,
+  onDeleteSection,
+  onAddSection,
+  showActions = false,
+  loading = false,
 }) => {
   // Debug log
   console.log(
@@ -85,6 +105,42 @@ export const SectionsTable: React.FC<SectionsTableProps> = ({
     });
   };
 
+  // Get status configuration
+  const getStatusConfig = (status: string | undefined) => {
+    switch (status) {
+      case "completed":
+        return {
+          bg: "#d1fae5",
+          text: "#065f46",
+          label: "مكتمل",
+          borderColor: "#10b981",
+        };
+      case "in_progress":
+        return {
+          bg: "#fef3c7",
+          text: "#92400e",
+          label: "جاري",
+          borderColor: "#f59e0b",
+        };
+      default:
+        return {
+          bg: "#f3f4f6",
+          text: "#6b7280",
+          label: "لم يبدأ",
+          borderColor: "#d1d5db",
+        };
+    }
+  };
+
+  if (loading) {
+    return (
+      <Card style={styles.loadingCard}>
+        <ActivityIndicator size="large" color="#10b981" />
+        <Text style={styles.loadingText}>جاري تحميل المقاطع...</Text>
+      </Card>
+    );
+  }
+
   if (sections.length === 0) {
     return (
       <Card style={styles.emptyCard}>
@@ -94,8 +150,122 @@ export const SectionsTable: React.FC<SectionsTableProps> = ({
           <Text style={styles.emptyDescription}>
             لم يتم إضافة أي مقاطع بعد في هذا الشهر
           </Text>
+          {isTeacher && onAddSection && (
+            <TouchableOpacity
+              style={styles.addSectionButton}
+              onPress={onAddSection}>
+              <Plus size={20} color="#ffffff" />
+              <Text style={styles.addSectionButtonText}>إضافة مقطع جديد</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </Card>
+    );
+  }
+
+  // For teacher view - show cards with actions
+  if (isTeacher && showActions) {
+    return (
+      <View style={styles.cardsContainer}>
+        {/* Add Section Button */}
+        {onAddSection && (
+          <TouchableOpacity
+            style={styles.addSectionCardButton}
+            onPress={onAddSection}>
+            <Plus size={24} color="#10b981" />
+            <Text style={styles.addCardButtonText}>إضافة مقطع جديد</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Section Cards */}
+        {sections.map((section) => {
+          const statusConfig = getStatusConfig(section.marksStatus);
+          const { formattedDate, dayName } = formatDateWithDay(section.date);
+
+          return (
+            <TouchableOpacity
+              key={section._id}
+              style={[
+                styles.sectionCard,
+                { borderRightColor: statusConfig.borderColor },
+              ]}
+              onPress={() => onSectionSelect?.(section)}
+              activeOpacity={0.7}>
+              {/* Card Header */}
+              <View style={styles.cardHeader}>
+                <View style={styles.cardDateContainer}>
+                  <Text style={styles.cardDate}>{formattedDate}</Text>
+                  <Text style={styles.cardDay}>{dayName}</Text>
+                </View>
+                <View
+                  style={[
+                    styles.statusBadge,
+                    { backgroundColor: statusConfig.bg },
+                  ]}>
+                  <Text
+                    style={[styles.statusText, { color: statusConfig.text }]}>
+                    {statusConfig.label}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Sections Info */}
+              <View style={styles.cardSections}>
+                <View style={styles.sectionInfoRow}>
+                  <View style={styles.reviewTag}>
+                    <Text style={styles.tagLabel}>المراجعة</Text>
+                  </View>
+                  <Text style={styles.sectionInfoText}>
+                    {section.reviewSection}
+                  </Text>
+                </View>
+                <View style={styles.sectionInfoRow}>
+                  <View style={styles.memorizationTag}>
+                    <Text style={styles.tagLabel}>الحفظ</Text>
+                  </View>
+                  <Text style={styles.sectionInfoText}>
+                    {section.memorizationSection}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Progress Info */}
+              {section.marksProgress && (
+                <View style={styles.progressContainer}>
+                  <Users size={14} color="#6b7280" />
+                  <Text style={styles.progressText}>
+                    {section.marksProgress.studentsWithMarks} /{" "}
+                    {section.marksProgress.totalStudents} طالب
+                  </Text>
+                </View>
+              )}
+
+              {/* Card Footer with Actions */}
+              <View style={styles.cardFooter}>
+                <TouchableOpacity
+                  style={styles.viewButton}
+                  onPress={() => onSectionSelect?.(section)}>
+                  <Text style={styles.viewButtonText}>عرض الطلاب</Text>
+                  <ChevronLeft size={16} color="#10b981" />
+                </TouchableOpacity>
+
+                <View style={styles.cardActions}>
+                  <TouchableOpacity
+                    style={styles.editCardButton}
+                    onPress={() => onEditSection?.(section)}>
+                    <Edit size={18} color="#f59e0b" />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.deleteCardButton}
+                    onPress={() => onDeleteSection?.(section._id)}>
+                    <Trash2 size={18} color="#ef4444" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
     );
   }
 
@@ -334,5 +504,170 @@ const styles = StyleSheet.create({
   },
   markEmpty: {
     backgroundColor: "#f3f4f6",
+  },
+  // New styles for loading and teacher cards view
+  loadingCard: {
+    padding: 40,
+    alignItems: "center",
+    gap: 16,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: "#6b7280",
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  addSectionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#10b981",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 10,
+    gap: 8,
+    marginTop: 16,
+  },
+  addSectionButtonText: {
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  cardsContainer: {
+    paddingHorizontal: 16,
+    gap: 12,
+  },
+  addSectionCardButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#ecfdf5",
+    borderWidth: 2,
+    borderColor: "#10b981",
+    borderStyle: "dashed",
+    paddingVertical: 16,
+    borderRadius: 12,
+    gap: 8,
+  },
+  addCardButtonText: {
+    color: "#10b981",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  sectionCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: 12,
+    padding: 16,
+    borderRightWidth: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  cardDateContainer: {
+    flexDirection: "column",
+  },
+  cardDate: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#1f2937",
+  },
+  cardDay: {
+    fontSize: 12,
+    color: "#6b7280",
+    marginTop: 2,
+  },
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 16,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  cardSections: {
+    gap: 8,
+    marginBottom: 12,
+  },
+  sectionInfoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  reviewTag: {
+    backgroundColor: "#ecfdf5",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  memorizationTag: {
+    backgroundColor: "#f0fdfa",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  tagLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#047857",
+  },
+  sectionInfoText: {
+    fontSize: 14,
+    color: "#374151",
+    flex: 1,
+    textAlign: "right",
+  },
+  progressContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 12,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: "#f3f4f6",
+  },
+  progressText: {
+    fontSize: 13,
+    color: "#6b7280",
+  },
+  cardFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#f3f4f6",
+  },
+  viewButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  viewButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#10b981",
+  },
+  cardActions: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  editCardButton: {
+    padding: 8,
+    backgroundColor: "#fef3c7",
+    borderRadius: 8,
+  },
+  deleteCardButton: {
+    padding: 8,
+    backgroundColor: "#fee2e2",
+    borderRadius: 8,
   },
 });
