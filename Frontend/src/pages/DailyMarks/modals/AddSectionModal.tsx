@@ -1,4 +1,4 @@
-import { memo, useEffect, useState } from 'react';
+import { memo, useEffect, useState, useCallback } from 'react';
 import {
   Button,
   Modal,
@@ -8,6 +8,7 @@ import type { AddSectionModalProps } from '../types/types';
 import { useAddSectionModal } from '../hooks/modals';
 import { useSectionValidation } from '../hooks/useSectionValidation'; 
 import { useCompletedSurahs } from '../hooks/useCompletedSurahs';
+import { useAutoValidateSchedule } from '../hooks/useSchedulerValidation';
 import QuranSegmentInput from '../components/QuranSegmentInput';
 import ErrorMessageList from '../components/ErrorMessageList';
 import { checkSectionQuota } from '@/Api/DailyMark/sectionApi';
@@ -84,7 +85,24 @@ const AddSectionModalComponent = ({
       localReviewMeta
   );
 
-  const hasErrors = hasConsistencyErrors || !!quotaError;
+  // 🆕 V5: Smart Scheduler Validation (Monotonic Order)
+  const {
+    isValidating: isSchedulerValidating,
+    allValid: isScheduleValid,
+    validationErrors: scheduleErrors,
+    suggestedAlternative,
+  } = useAutoValidateSchedule(
+    newSection.group || selectedGroup,
+    localMemorizationMeta.filter(m => m.surahNumber && m.ayahStart && m.ayahEnd),
+    newSection.date,
+    600 // 600ms debounce
+  );
+
+  const hasErrors = hasConsistencyErrors || !!quotaError || !isScheduleValid;
+  const allErrors = [
+    ...consistencyErrors,
+    ...scheduleErrors,
+  ];
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -129,13 +147,13 @@ const AddSectionModalComponent = ({
             ? 'bg-gray-400 cursor-not-allowed hover:bg-gray-400 hover:shadow-none hover:translate-y-0' 
             : 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700'
           }`}
-        disabled={isLoading || hasErrors || isCheckingQuota}
-        title={hasErrors ? 'يرجى تصحيح الأخطاء أولاً' : 'إضافة المقطع'}
+        disabled={isLoading || hasErrors || isCheckingQuota || isSchedulerValidating}
+        title={hasErrors ? 'يرجى تصحيح الأخطاء أولاً' : isSchedulerValidating ? 'جاري التحقق...' : 'إضافة المقطع'}
       >
-        {isLoading || isCheckingQuota ? (
+        {isLoading || isCheckingQuota || isSchedulerValidating ? (
           <span className="flex items-center justify-center gap-2">
             <span className="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-white"></span>
-            {isCheckingQuota ? 'جاري التحقق...' : 'جاري الإضافة...'}
+            {isCheckingQuota ? 'جاري التحقق من الحصة...' : isSchedulerValidating ? 'جاري التحقق من الترتيب...' : 'جاري الإضافة...'}
           </span>
         ) : (
           'حفظ وإضافة'
@@ -167,9 +185,11 @@ const AddSectionModalComponent = ({
             required
             minDate={new Date().toISOString().split('T')[0]}
           />
-          <p className="mt-2 text-xs text-slate-500 flex items-center gap-1">
-             📅 يمكنك اختيار التاريخ من اليوم وما بعده فقط
-          </p>
+          <div className="mt-2">
+            <p className="text-xs text-slate-500 flex items-center gap-1">
+               📅 يمكنك اختيار التاريخ من اليوم وما بعده فقط
+            </p>
+          </div>
           
           {/* Quota Error Display */}
           {quotaError && (
@@ -177,6 +197,59 @@ const AddSectionModalComponent = ({
                   <span className="font-bold">⚠️ تنبيه:</span>
                   <span className="whitespace-pre-line">{quotaError}</span>
               </div>
+          )}
+
+          {/* 🆕 Schedule Validation Error + Alternative Suggestion */}
+          {!isScheduleValid && scheduleErrors.length > 0 && (
+            <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg text-orange-800 text-sm">
+              <div className="flex items-start gap-2">
+                <span className="text-lg">🔒</span>
+                <div className="flex-1">
+                  <p className="font-bold mb-1">تعارض في ترتيب التواريخ:</p>
+                  {scheduleErrors.map((err, i) => (
+                    <p key={i} className="text-xs whitespace-pre-line">{err}</p>
+                  ))}
+                  
+                  {/* Suggested Alternative Date */}
+                  {suggestedAlternative && (suggestedAlternative.dateKey || suggestedAlternative.date) && (
+                    <div className="mt-2 p-2 bg-emerald-50 border border-emerald-200 rounded-lg">
+                      <p className="text-emerald-700 text-xs font-medium">
+                        💡 تاريخ مقترح: <strong>{suggestedAlternative.dateKey || (typeof suggestedAlternative.date === 'string' ? suggestedAlternative.date : new Date(suggestedAlternative.date).toISOString().split('T')[0])}</strong>
+                      </p>
+                      <p className="text-emerald-600 text-xs">{suggestedAlternative.reason}</p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          // Safely extract date string in YYYY-MM-DD format
+                          let dateValue = suggestedAlternative.dateKey;
+                          if (!dateValue && suggestedAlternative.date) {
+                            dateValue = typeof suggestedAlternative.date === 'string' 
+                              ? suggestedAlternative.date.split('T')[0] 
+                              : new Date(suggestedAlternative.date).toISOString().split('T')[0];
+                          }
+                          if (dateValue) {
+                            onChange({
+                              target: { name: 'date', value: dateValue },
+                            } as React.ChangeEvent<HTMLInputElement>);
+                          }
+                        }}
+                        className="mt-1 px-3 py-1 bg-emerald-500 text-white text-xs rounded-lg hover:bg-emerald-600 transition-colors"
+                      >
+                        استخدام هذا التاريخ
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Scheduler Validating Indicator */}
+          {isSchedulerValidating && (
+            <div className="mt-2 flex items-center gap-2 text-blue-600 text-xs">
+              <span className="inline-block animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></span>
+              جاري التحقق من صلاحية الترتيب...
+            </div>
           )}
         </div>
 
@@ -205,7 +278,7 @@ const AddSectionModalComponent = ({
 
         {/* Validation Errors Area */}
         <div className="mt-6">
-          <ErrorMessageList errors={consistencyErrors} />
+          <ErrorMessageList errors={allErrors} />
         </div>
       </form>
     </Modal>

@@ -43,12 +43,10 @@ export { useStudentSelection } from './useStudentSelection';
 
 /**
  * useComputedValues - Provides memoized computed values
- * useFilteredStudents - Filters students by selected group
  * useStudentIdForAverages - Determines correct student ID for averages
  * useGroupStats - Fetches group statistics (students count, sections count)
  */
 export { useComputedValues } from './useComputedValues';
-export { useFilteredStudents } from './useFilteredStudents';
 export { useStudentIdForAverages } from './useStudentIdForAverages';
 export { useGroupStats } from './useGroupStats';
 

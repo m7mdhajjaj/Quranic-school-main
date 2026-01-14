@@ -202,6 +202,27 @@ class SectionSequenceService {
       ? this.toDateKeyUTC(newSectionDate) 
       : null;
 
+    // ====================================================
+    // 🆕 V5: فحص الترتيب الزمني الصارم (Monotonic Order)
+    // القاعدة: date1 < date2 ⟹ ayahStart1 ≤ ayahStart2
+    // ====================================================
+    if (newSectionDate && type === 'memorization') {
+      for (const seg of newSegments) {
+        const monotonicCheck = await this.validateMonotonicOrder(
+          groupId, 
+          seg.surahNumber, 
+          seg.ayahStart, 
+          seg.ayahEnd, 
+          newSectionDate, 
+          excludeSectionId
+        );
+        
+        if (!monotonicCheck.isValid) {
+          return monotonicCheck;
+        }
+      }
+    }
+
     for (const seg of newSegments) {
       
       // ====================================================
@@ -820,6 +841,106 @@ class SectionSequenceService {
       }
     }
 
+    return { isValid: true };
+  }
+
+  // ============================================================================
+  // 🆕 V5: MONOTONIC ORDER VALIDATION
+  // ============================================================================
+
+  /**
+   * 🔒 التحقق من الترتيب الزمني الصارم (Monotonic Order)
+   * 
+   * القاعدة الذهبية: إذا كان date1 < date2 ⟹ لازم يكون ayahStart1 ≤ ayahStart2
+   * 
+   * يمنع حالات مثل:
+   * - تاريخ 10/1 → آيات 50-60
+   * - تاريخ 11/1 → آيات 11-20 ❌ (تاريخ أحدث لكن آيات أقدم)
+   * 
+   * @param {string} groupId - معرف الحلقة
+   * @param {number} surahNumber - رقم السورة
+   * @param {number} ayahStart - بداية المقطع الجديد
+   * @param {number} ayahEnd - نهاية المقطع الجديد
+   * @param {Date} proposedDate - التاريخ المقترح
+   * @param {string} excludeSectionId - استثناء مقطع (عند التعديل)
+   * @returns {Promise<{isValid: boolean, message?: string}>}
+   */
+  async validateMonotonicOrder(groupId, surahNumber, ayahStart, ayahEnd, proposedDate, excludeSectionId = null) {
+    const metaField = 'memorizationMeta';
+    
+    // جلب جميع المقاطع الموجودة لهذه السورة
+    const query = {
+      group: groupId,
+      [`${metaField}.surahNumber`]: surahNumber
+    };
+    
+    if (excludeSectionId) {
+      query._id = { $ne: excludeSectionId };
+    }
+    
+    const sections = await Section.find(query)
+      .select(`${metaField} date dateKey`)
+      .lean();
+    
+    if (!sections || sections.length === 0) {
+      return { isValid: true }; // لا توجد مقاطع سابقة
+    }
+    
+    // بناء قائمة المقاطع مع تواريخها
+    const existingSegments = [];
+    for (const section of sections) {
+      const metas = section[metaField].filter(m => m.surahNumber === surahNumber);
+      for (const m of metas) {
+        existingSegments.push({
+          ayahStart: m.ayahStart,
+          ayahEnd: m.ayahEnd,
+          date: section.date,
+          dateKey: section.dateKey
+        });
+      }
+    }
+    
+    // ترتيب حسب التاريخ
+    existingSegments.sort((a, b) => new Date(a.date) - new Date(b.date));
+    
+    const proposedTime = new Date(proposedDate);
+    proposedTime.setHours(0, 0, 0, 0);
+    
+    for (const existing of existingSegments) {
+      const existingTime = new Date(existing.date);
+      existingTime.setHours(0, 0, 0, 0);
+      
+      // حالة 1: التاريخ المقترح أقدم من الموجود
+      if (proposedTime < existingTime) {
+        // يجب أن تكون الآيات المقترحة أقدم أو مساوية
+        if (ayahStart > existing.ayahStart) {
+          return {
+            isValid: false,
+            message: this.formatErrorMessage(
+              "تعارض في ترتيب التواريخ والآيات",
+              `التاريخ المختار (${this.toDateKeyUTC(proposedDate)}) أقدم من تاريخ مقطع موجود (${existing.dateKey})، لكنك تحاول إضافة آيات (${ayahStart}-${ayahEnd}) أحدث من آيات ذلك المقطع (${existing.ayahStart}-${existing.ayahEnd}).`,
+              `اختر تاريخاً لاحقاً لـ ${existing.dateKey}، أو اختر آيات أقدم من الآية ${existing.ayahStart}.`
+            )
+          };
+        }
+      }
+      
+      // حالة 2: التاريخ المقترح أحدث من الموجود
+      if (proposedTime > existingTime) {
+        // يجب أن تكون الآيات المقترحة أحدث أو مساوية
+        if (ayahStart < existing.ayahStart) {
+          return {
+            isValid: false,
+            message: this.formatErrorMessage(
+              "تعارض في ترتيب التواريخ والآيات",
+              `التاريخ المختار (${this.toDateKeyUTC(proposedDate)}) أحدث من تاريخ مقطع موجود (${existing.dateKey})، لكنك تحاول إضافة آيات (${ayahStart}-${ayahEnd}) أقدم من آيات ذلك المقطع (${existing.ayahStart}-${existing.ayahEnd}).`,
+              `اختر تاريخاً أقدم من ${existing.dateKey}، أو اختر آيات أحدث من الآية ${existing.ayahEnd}.`
+            )
+          };
+        }
+      }
+    }
+    
     return { isValid: true };
   }
 }

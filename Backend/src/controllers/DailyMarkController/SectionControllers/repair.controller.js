@@ -1,41 +1,107 @@
-const AiScheduler = require("../../../services/DailyMark/AiSchedulerService");
+const smartScheduler = require("../../../services/DailyMark/SmartSchedulerService");
+const Section = require("../../../schema/DailyMark/Section");
 const { sendSuccess, sendError } = require("../utils/responseHelpers");
 
 /**
  * Repair Sequence Controller
- * تفعيل خدمة "المصلح الذكي" لإصلاح فجوات الحفظ والمراجعات اليتيمة
+ * تحليل وإصلاح الفجوات لجميع السور
  */
 exports.repairSequence = async (req, res) => {
   try {
-    const { groupId, surahNumber } = req.body;
+    const { groupId, surahNumber, chunkSize, options } = req.body;
 
     // Validate inputs
     if (!groupId) {
       return sendError(res, "بيانات ناقصة: يجب تحديد معرّف الحلقة.", 400);
     }
 
-    console.log(`🤖 AI Scheduler: Starting repair for Group ${groupId}, Surah: ${surahNumber || 'ALL'}...`);
+    const effectiveChunkSize = chunkSize || options?.maxVersesPerDay || 10;
 
-    // Call the AI Service
-    // Pass everything in req.body.options to the service
-    const options = req.body.options || {};
-    const result = await AiScheduler.repairSequence(groupId, surahNumber, false, options);
+    // إذا تم تحديد سورة معينة
+    if (surahNumber) {
+      console.log(`🤖 Smart Scheduler: Analyzing Surah ${surahNumber} for Group ${groupId}...`);
+      
+      const result = await smartScheduler.suggestGapFilling(groupId, surahNumber, {
+        chunkSize: effectiveChunkSize
+      });
 
-    // Handle "No repairs needed" case
-    if (result.repaired === false) {
-       console.log(`ℹ️ AI Scheduler: ${result.message}`);
-       return sendSuccess(res, { status: "no_action", ...result }, result.message);
+      if (!result.success) {
+        return sendError(res, result.message, 400);
+      }
+
+      return sendSuccess(res, result, result.message);
     }
 
-    // Handle "Repairs executed" case
-    if (result.stats) {
-        console.log(`✅ AI Scheduler: Fixed ${result.stats.gapsFixed} gaps and ${result.stats.orphansFixed} orphans.`);
+    // إذا لم يتم تحديد سورة، نحلل جميع السور
+    console.log(`🤖 Smart Scheduler: Full analysis for Group ${groupId}...`);
+
+    // جلب جميع السور الموجودة في الحلقة
+    const memSurahs = await Section.distinct("memorizationMeta.surahNumber", { group: groupId });
+    const revSurahs = await Section.distinct("reviewMeta.surahNumber", { group: groupId });
+    const allSurahs = [...new Set([...memSurahs, ...revSurahs])].filter(Boolean).sort((a, b) => a - b);
+
+    if (allSurahs.length === 0) {
+      return sendSuccess(res, {
+        success: true,
+        repaired: false,
+        message: "لا توجد سجلات قرآنية في هذه الحلقة."
+      }, "لا توجد سجلات");
     }
-    
-    return sendSuccess(res, result, result.message);
+
+    // تحليل كل سورة
+    let totalGaps = 0;
+    let surahsWithGaps = [];
+    let allSuggestions = [];
+
+    for (const surah of allSurahs) {
+      try {
+        const result = await smartScheduler.suggestGapFilling(groupId, surah, {
+          chunkSize: effectiveChunkSize
+        });
+
+        if (result.success && result.gaps && result.gaps.length > 0) {
+          totalGaps += result.gaps.length;
+          surahsWithGaps.push({
+            surahNumber: surah,
+            surahName: result.surahName,
+            gapsCount: result.gaps.length,
+            gaps: result.gaps
+          });
+          
+          if (result.suggestions) {
+            allSuggestions.push(...result.suggestions.map(s => ({
+              ...s,
+              surahNumber: surah,
+              surahName: result.surahName
+            })));
+          }
+        }
+      } catch (err) {
+        console.error(`Error analyzing Surah ${surah}:`, err.message);
+      }
+    }
+
+    if (totalGaps === 0) {
+      return sendSuccess(res, {
+        success: true,
+        repaired: false,
+        surahsAnalyzed: allSurahs.length,
+        message: `تم فحص ${allSurahs.length} سورة - لا توجد فجوات! ✅`
+      }, "السجلات سليمة");
+    }
+
+    return sendSuccess(res, {
+      success: true,
+      repaired: false,
+      surahsAnalyzed: allSurahs.length,
+      totalGaps,
+      surahsWithGaps,
+      suggestions: allSuggestions,
+      message: `تم اكتشاف ${totalGaps} فجوة في ${surahsWithGaps.length} سورة`
+    }, `تم اكتشاف ${totalGaps} فجوة`);
 
   } catch (error) {
-    console.error("❌ AI Scheduler Error:", error);
-    sendError(res, "حدث خطأ أثناء محاولة إصلاح التسلسل.", 500, error);
+    console.error("❌ Smart Scheduler Error:", error);
+    sendError(res, "حدث خطأ أثناء التحليل.", 500, error);
   }
 };
