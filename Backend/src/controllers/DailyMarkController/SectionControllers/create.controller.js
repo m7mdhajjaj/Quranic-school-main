@@ -83,6 +83,7 @@ exports.createSection = async (req, res) => {
             sectionData.date
         );
         if (!dailyCheck.isValid && dailyCheck.isBlocked) {
+             console.log("❌ dailyCheck failed:", dailyCheck.message);
              return sendError(res, dailyCheck.message, 400); 
         }
 
@@ -92,6 +93,7 @@ exports.createSection = async (req, res) => {
             sectionData.date
         );
         if (!weeklyCheck.isValid) {
+             console.log("❌ weeklyCheck failed:", weeklyCheck.message);
              return sendError(res, weeklyCheck.message, 400);
         }
 
@@ -104,6 +106,7 @@ exports.createSection = async (req, res) => {
         );
         
         if (!memValidation.isValid) {
+            console.log("❌ memValidation failed:", memValidation.message);
             return sendValidationError(res, memValidation.message);
         }
 

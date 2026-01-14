@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { showSuccessToast } from '@/utils/toastUtils';
 import { showErrorMessage, showCenteredSwal } from '@/utils/sweetalertUtils';
-import { repairSequence } from '@/Api/DailyMark/sectionApi';
+import { repairSequence, createSection, type CreateSectionData } from '@/Api/DailyMark/sectionApi';
 import Swal from 'sweetalert2';
 
 interface GapInfo {
@@ -26,7 +26,11 @@ interface AnalysisResult {
     surahName: string;
     ayahStart: number;
     ayahEnd: number;
-    suggestedDate: string;
+    date?: string;
+    dateKey?: string;
+    suggestedDate?: string;
+    size?: number;
+    reason?: string;
   }>;
   message: string;
 }
@@ -109,11 +113,67 @@ export const useAiRepair = (selectedGroup: string, onSuccess?: () => void) => {
           confirmButtonColor: '#10b981',
         });
 
-        if (confirmResult.isConfirmed) {
-          // TODO: Implement actual repair logic
-          // For now, show success message
-          showSuccessToast(`تم اكتشاف ${analysisResult.totalGaps} فجوة - ميزة الإصلاح التلقائي قيد التطوير`);
-          if (onSuccess) onSuccess();
+        if (confirmResult.isConfirmed && analysisResult.suggestions && analysisResult.suggestions.length > 0) {
+          // إظهار رسالة تحميل
+          Swal.fire({
+            title: 'جاري الإصلاح...',
+            html: `<div class="text-center py-4" dir="rtl">
+              <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto mb-4"></div>
+              <p class="text-gray-600 text-sm">جاري إنشاء ${analysisResult.suggestions.length} مقطع...</p>
+            </div>`,
+            allowOutsideClick: false,
+            showConfirmButton: false,
+          });
+
+          let successCount = 0;
+          let failCount = 0;
+          const errorMessages: string[] = [];
+
+          // إنشاء المقاطع واحداً تلو الآخر
+          for (let i = 0; i < analysisResult.suggestions.length; i++) {
+            const suggestion = analysisResult.suggestions[i];
+            try {
+              // توليد تاريخ جديد: غداً + i أيام (لضمان ترتيب صحيح وتجنب التعارض)
+              const dateToUse = new Date();
+              dateToUse.setDate(dateToUse.getDate() + 1 + i); // غداً + i
+              const year = dateToUse.getFullYear();
+              const month = String(dateToUse.getMonth() + 1).padStart(2, '0');
+              const day = String(dateToUse.getDate()).padStart(2, '0');
+              const dateString = `${year}-${month}-${day}`;
+
+              const sectionData: CreateSectionData = {
+                date: dateString,
+                group: selectedGroup,
+                memorizationMeta: [{
+                  surahNumber: suggestion.surahNumber,
+                  surahName: suggestion.surahName,
+                  ayahStart: suggestion.ayahStart,
+                  ayahEnd: suggestion.ayahEnd,
+                }],
+                memorizationSection: `${suggestion.surahName} (${suggestion.ayahStart}-${suggestion.ayahEnd})`,
+              };
+
+              await createSection(sectionData);
+              successCount++;
+            } catch (err: any) {
+              console.error('Failed to create section:', err);
+              const errorMsg = err?.response?.data?.message || err?.message || 'خطأ غير معروف';
+              errorMessages.push(`${suggestion.surahName} (${suggestion.ayahStart}-${suggestion.ayahEnd}): ${errorMsg}`);
+              failCount++;
+            }
+          }
+
+          Swal.close();
+
+          if (successCount > 0) {
+            showSuccessToast(`تم إنشاء ${successCount} مقطع بنجاح!`);
+            if (onSuccess) onSuccess();
+          }
+          
+          if (failCount > 0) {
+            const errorDetails = errorMessages.slice(0, 3).join('\n');
+            showErrorMessage('تحذير', `فشل إنشاء ${failCount} مقطع:\n${errorDetails}`);
+          }
         }
       }
 

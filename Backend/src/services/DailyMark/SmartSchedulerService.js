@@ -687,11 +687,17 @@ class SmartSchedulerService {
   async suggestGapFilling(groupId, surahNumber, options = {}) {
     const {
       chunkSize = null,
-      priorityDate = new Date(),
       preferredDays = null,
       maxChunks = null,
       type = 'memorization'
     } = options;
+
+    // ✅ التأكد من أن تاريخ البدء هو اليوم على الأقل
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const priorityDate = options.priorityDate 
+      ? new Date(Math.max(new Date(options.priorityDate).getTime(), today.getTime()))
+      : today;
 
     // 1. جمع البيانات
     const { byQuran, byDate } = await this.getExistingSegments(groupId, surahNumber, type);
@@ -705,9 +711,11 @@ class SmartSchedulerService {
       return {
         success: true,
         hasGaps: false,
+        surahName, // ✅ إضافة surahName مباشرة
         message: `لا توجد فجوات في حفظ ${surahName}. التسلسل مكتمل.`,
         suggestions: [],
         stats: {
+          surahName,
           totalAyahs: surahInfo?.ayahCount || 0,
           memorizedAyahs: byQuran.reduce((sum, s) => sum + (s.ayahEnd - s.ayahStart + 1), 0),
           existingSegments: byQuran.length
@@ -794,6 +802,7 @@ class SmartSchedulerService {
     return {
       success: true,
       hasGaps: true,
+      surahName, // ✅ إضافة surahName مباشرة
       message: `تم اكتشاف ${gaps.length} فجوة في ${surahName}. تم اقتراح ${suggestions.length} مقطع لسدها.`,
       suggestions,
       gaps: gaps.map(g => ({
@@ -1111,11 +1120,15 @@ class SmartSchedulerService {
     // محاولة الإصلاح التلقائي
     // ============================================
     
-    // توليد تواريخ متاحة (نطاق واسع)
+    // البحث يبدأ من اليوم الحالي بدقة
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // توليد تواريخ متاحة (نطاق أسبوعين من اليوم)
     const dateResult = await this.generateAvailableDates(
       groupId, 
-      20, // نطاق أوسع للبحث
-      new Date(), 
+      14, // نطاق أسبوعين
+      today, 
       null
     );
     
