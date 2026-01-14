@@ -105,9 +105,9 @@ const HeroSection = ({
   } = useHeroCarousel({ heroImages });
 
   return (
-    <div className="flex flex-col-reverse lg:flex-row items-stretch justify-between bg-white rounded-xl lg:rounded-2xl overflow-hidden shadow-lg">
+    <div className="flex flex-col-reverse lg:flex-row items-stretch justify-between bg-white rounded-xl lg:rounded-2xl overflow-hidden shadow-lg w-full max-w-[1600px] mx-auto">
       {/* Text Content */}
-      <div className="w-full lg:w-1/2 p-6 sm:p-8 md:p-10 lg:p-12 flex flex-col justify-center">
+      <div className="w-full lg:w-[45%] p-6 sm:p-8 md:p-10 lg:p-12 flex flex-col justify-center">
         {/* Guest Welcome */}
         {isGuest && !currentUser && (
           <div className="text-center mb-6 lg:mb-8">
@@ -195,7 +195,7 @@ const HeroSection = ({
 
       {/* Carousel */}
       <div 
-        className="w-full lg:w-1/2 p-4 sm:p-6 lg:p-0 relative"
+        className="w-full lg:w-[55%] p-4 sm:p-6 lg:p-0 relative"
         onMouseEnter={() => setShowControls(true)}
         onMouseLeave={() => setShowControls(false)}
       >
