@@ -3,6 +3,7 @@
 // ============================================================================
 
 const Mark = require("../../schema/DailyMark/DailyMark");
+const Section = require("../../schema/DailyMark/Section");
 const { notifyMarksAdded } = require("../../Notifications");
 
 // استيراد الدوال المساعدة
@@ -21,6 +22,8 @@ const {
   sendCreated,
 } = require("./utils/responseHelpers");
 
+const { checkMarkEditWindow } = require("./utils/validationHelpers");
+
 /**
  * Add or update marks for many students in one section
  * @route POST /api/daily-marks/bulk
@@ -38,6 +41,24 @@ exports.setMarks = async (req, res) => {
       validateMarksArray(marks);
     } catch (validationError) {
       return sendValidationError(res, validationError.message);
+    }
+
+    // ⏰ التحقق من نافذة التعديل الزمنية لكل الـ sections المتأثرة
+    const uniqueSectionIds = [...new Set(marks.map(m => m.sectionId?.toString()).filter(Boolean))];
+    if (uniqueSectionIds.length > 0) {
+      const sections = await Section.find({ _id: { $in: uniqueSectionIds } }).select('date');
+      const sectionsMap = new Map(sections.map(s => [s._id.toString(), s]));
+      
+      // التحقق من كل section
+      for (const sectionId of uniqueSectionIds) {
+        const section = sectionsMap.get(sectionId);
+        if (section) {
+          const windowCheck = checkMarkEditWindow(section.date, 'add');
+          if (!windowCheck.isAllowed) {
+            return sendValidationError(res, windowCheck.reason);
+          }
+        }
+      }
     }
 
     // Validate each mark

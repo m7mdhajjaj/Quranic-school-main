@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
@@ -7,7 +7,7 @@ interface ModalProps {
   onClose: () => void;
   title?: string;
   children: React.ReactNode;
-  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '4xl' | 'full';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | 'full';
   showCloseButton?: boolean;
   closeOnOverlayClick?: boolean;
   footer?: React.ReactNode;
@@ -30,6 +30,8 @@ export const Modal: React.FC<ModalProps> = ({
   overlayClassName,
 }) => {
   const [mounted, setMounted] = useState(false);
+  const scrollYRef = useRef(0);
+  const bodyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -47,32 +49,50 @@ export const Modal: React.FC<ModalProps> = ({
     return () => window.removeEventListener('keydown', handleEscape);
   }, [isOpen, onClose]);
 
-  // Prevent body scroll when modal is open
+  // Prevent body scroll when modal is open - improved version
   useEffect(() => {
     if (isOpen) {
       // Save current scroll position
-      const scrollY = window.scrollY;
+      scrollYRef.current = window.scrollY;
+      
+      // Lock body scroll
       document.body.style.position = 'fixed';
-      document.body.style.top = `-${scrollY}px`;
+      document.body.style.top = `-${scrollYRef.current}px`;
       document.body.style.left = '0';
       document.body.style.right = '0';
       document.body.style.overflow = 'hidden';
+      document.body.style.width = '100%';
       
       return () => {
-        // Restore scroll position
+        // Restore body styles
         document.body.style.position = '';
         document.body.style.top = '';
         document.body.style.left = '';
         document.body.style.right = '';
         document.body.style.overflow = '';
-        window.scrollTo(0, scrollY);
+        document.body.style.width = '';
+        // Restore scroll position
+        window.scrollTo(0, scrollYRef.current);
       };
     }
   }, [isOpen]);
 
+  // Handle wheel event to prevent scroll bleeding to parent
+  const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    const { scrollTop, scrollHeight, clientHeight } = target;
+    const isAtTop = scrollTop === 0;
+    const isAtBottom = scrollTop + clientHeight >= scrollHeight;
+    
+    // Prevent scroll bleeding when at boundaries
+    if ((isAtTop && e.deltaY < 0) || (isAtBottom && e.deltaY > 0)) {
+      e.preventDefault();
+    }
+  }, []);
+
   if (!isOpen || !mounted) return null;
 
-  const sizeClasses = {
+  const sizeClasses: Record<string, string> = {
     sm: 'max-w-sm',
     md: 'max-w-md',
     lg: 'max-w-lg',
@@ -85,14 +105,13 @@ export const Modal: React.FC<ModalProps> = ({
 
   return createPortal(
     <div
-      className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 overflow-hidden ${overlayClassName || ''}`}
+      className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 ${overlayClassName || ''}`}
       onClick={closeOnOverlayClick ? onClose : undefined}
-      style={{ touchAction: 'none' }}
+      onTouchMove={(e) => e.stopPropagation()}
     >
       <div
-        className={`bg-white rounded-2xl shadow-2xl ${sizeClasses[size]} w-full max-h-[90vh] flex flex-col animate-fadeIn relative z-[10000] transition-all duration-300`}
+        className={`bg-white rounded-2xl shadow-2xl ${sizeClasses[size]} w-full max-h-[90vh] flex flex-col animate-fadeIn relative z-[10000]`}
         onClick={(e) => e.stopPropagation()}
-        style={{ transform: 'translate3d(0, 0, 0)' }}
       >
         {(title || showCloseButton) && (
           <div className={`flex items-center justify-between p-6 border-b border-emerald-300 bg-gradient-to-r from-emerald-500 to-teal-600 shrink-0 rounded-t-2xl ${headerClassName || ''}`}>
@@ -109,16 +128,16 @@ export const Modal: React.FC<ModalProps> = ({
           </div>
         )}
         
-        {/* Modal Body with smooth scrolling */}
+        {/* Modal Body with controlled scrolling */}
         <div 
-          className={`p-6 overflow-y-auto flex-1 min-h-0 scroll-smooth overscroll-contain ${bodyClassName || ''} scrollbar-hide`}
-          onWheel={(e) => e.stopPropagation()}
-          onTouchMove={(e) => e.stopPropagation()}
+          ref={bodyRef}
+          className={`p-6 overflow-y-auto flex-1 min-h-0 overscroll-contain ${bodyClassName || ''} scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent`}
+          onWheel={handleWheel}
         >
            {children}
         </div>
         
-        {footer && <div className="p-6 border-t border-gray-200 bg-gray-50 rounded-b-2xl shrink-0 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">{footer}</div>}
+        {footer && <div className="p-6 border-t border-gray-200 bg-gray-50 rounded-b-2xl shrink-0">{footer}</div>}
       </div>
     </div>,
     document.body

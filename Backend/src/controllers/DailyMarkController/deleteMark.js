@@ -18,7 +18,10 @@ const {
   sendSuccess,
   sendError,
   sendNotFound,
+  sendValidationError,
 } = require("./utils/responseHelpers");
+
+const { validateMarkEditWindow } = require("./utils/validationHelpers");
 
 /**
  * Delete a mark by ID
@@ -30,11 +33,20 @@ exports.deleteMark = async (req, res) => {
 
     console.log("🗑️ Deleting mark:", id);
 
-    // Get the mark before deletion to get student info
-    const mark = await Mark.findById(id).populate("sectionId");
+    // Get the mark before deletion to get student info and section date
+    const mark = await Mark.findById(id).populate("sectionId", "date");
 
     if (!mark) {
       return sendNotFound(res, "العلامة");
+    }
+
+    // ⏰ التحقق من نافذة التعديل الزمنية
+    if (mark.sectionId && mark.sectionId.date) {
+      try {
+        validateMarkEditWindow(mark.sectionId.date, 'delete');
+      } catch (windowError) {
+        return sendValidationError(res, windowError.message);
+      }
     }
 
     const studentId = mark.studentId;

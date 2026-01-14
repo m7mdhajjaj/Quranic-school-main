@@ -107,6 +107,98 @@ function validateMonthYear(month, year) {
   return true;
 }
 
+// ============================================================================
+// ⏰ Mark Edit Window Validation - نافذة التعديل الزمنية
+// ============================================================================
+
+/**
+ * مدة نافذة التعديل بعد تاريخ المقطع (بالأيام)
+ */
+const EDIT_WINDOW_DAYS = 14; // أسبوعين
+
+/**
+ * التحقق من أن العلامة قابلة للتعديل
+ * - ممنوع قبل تاريخ المقطع
+ * - ممنوع بعد أسبوعين من تاريخ المقطع
+ * 
+ * @param {Date} sectionDate - تاريخ المقطع
+ * @param {string} operation - نوع العملية (add, update, delete)
+ * @returns {{ isAllowed: boolean, reason?: string, daysUntilOpen?: number, daysUntilClose?: number }}
+ */
+function checkMarkEditWindow(sectionDate, operation = 'update') {
+  if (!sectionDate) {
+    return { isAllowed: false, reason: "تاريخ المقطع غير موجود" };
+  }
+
+  const now = new Date();
+  const sectionDateObj = new Date(sectionDate);
+  
+  // تصفير الوقت للمقارنة بالأيام فقط
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const sectionDayStart = new Date(sectionDateObj.getFullYear(), sectionDateObj.getMonth(), sectionDateObj.getDate());
+  
+  // حساب الفرق بالأيام
+  const msPerDay = 24 * 60 * 60 * 1000;
+  const daysDiff = Math.floor((todayStart - sectionDayStart) / msPerDay);
+  
+  // حساب تاريخ انتهاء نافذة التعديل
+  const editWindowEnd = new Date(sectionDayStart);
+  editWindowEnd.setDate(editWindowEnd.getDate() + EDIT_WINDOW_DAYS);
+  
+  // ❌ قبل تاريخ المقطع
+  if (daysDiff < 0) {
+    const daysUntilOpen = Math.abs(daysDiff);
+    const operationText = operation === 'add' ? 'إضافة' : operation === 'delete' ? 'حذف' : 'تعديل';
+    return {
+      isAllowed: false,
+      reason: `لا يمكن ${operationText} العلامة قبل موعد المقطع. يمكنك ${operationText} العلامة بعد ${daysUntilOpen} يوم`,
+      daysUntilOpen,
+      sectionDate: sectionDayStart,
+      editWindowEnd,
+    };
+  }
+  
+  // ❌ بعد نافذة التعديل (أسبوعين)
+  if (daysDiff > EDIT_WINDOW_DAYS) {
+    const daysOverdue = daysDiff - EDIT_WINDOW_DAYS;
+    const operationText = operation === 'add' ? 'إضافة' : operation === 'delete' ? 'حذف' : 'تعديل';
+    return {
+      isAllowed: false,
+      reason: `انتهت فترة ${operationText} العلامة. كان متاحاً حتى ${editWindowEnd.toLocaleDateString('ar-EG')} (قبل ${daysOverdue} يوم)`,
+      daysOverdue,
+      sectionDate: sectionDayStart,
+      editWindowEnd,
+    };
+  }
+  
+  // ✅ ضمن النافذة الزمنية
+  const daysRemaining = EDIT_WINDOW_DAYS - daysDiff;
+  return {
+    isAllowed: true,
+    daysRemaining,
+    sectionDate: sectionDayStart,
+    editWindowEnd,
+    message: `متبقي ${daysRemaining} يوم للتعديل`,
+  };
+}
+
+/**
+ * التحقق من نافذة التعديل مع رمي خطأ
+ * @param {Date} sectionDate - تاريخ المقطع
+ * @param {string} operation - نوع العملية
+ * @throws {Error} إذا كانت العلامة غير قابلة للتعديل
+ */
+function validateMarkEditWindow(sectionDate, operation = 'update') {
+  const result = checkMarkEditWindow(sectionDate, operation);
+  if (!result.isAllowed) {
+    const error = new Error(result.reason);
+    error.code = 'EDIT_WINDOW_CLOSED';
+    error.details = result;
+    throw error;
+  }
+  return result;
+}
+
 module.exports = {
   validateMarksArray,
   validateMarkData,
@@ -114,4 +206,8 @@ module.exports = {
   isValidObjectId,
   isValidDate,
   validateMonthYear,
+  // ⏰ Edit Window
+  EDIT_WINDOW_DAYS,
+  checkMarkEditWindow,
+  validateMarkEditWindow,
 };

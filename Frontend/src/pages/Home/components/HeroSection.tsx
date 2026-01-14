@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router-dom';
-import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button, LoadingSpinner } from '@/components/UI';
 import { 
@@ -12,6 +11,7 @@ import {
   Images
 } from 'lucide-react';
 import ImageSkeleton from '@/components/skeletons/ImageSkeleton';
+import { useHeroCarousel } from './hooks';
 
 interface User {
   role?: string;
@@ -84,56 +84,23 @@ const HeroSection = ({
   fileInputRef,
 }: HeroSectionProps) => {
   const navigate = useNavigate();
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [direction, setDirection] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(true);
-  const [imageLoaded, setImageLoaded] = useState<Record<number, boolean>>({});
-  const [showControls, setShowControls] = useState(false);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  const images = heroImages.length > 0 ? heroImages : [];
-  const hasMultipleImages = images.length > 1;
-
-  // Auto-play functionality
-  const startAutoPlay = useCallback(() => {
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    if (hasMultipleImages && isPlaying) {
-      intervalRef.current = setInterval(() => {
-        setDirection(1);
-        setCurrentIndex((prev) => (prev + 1) % images.length);
-      }, 5000);
-    }
-  }, [hasMultipleImages, isPlaying, images.length]);
-
-  useEffect(() => {
-    startAutoPlay();
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [startAutoPlay]);
-
-  const goToSlide = (index: number) => {
-    setDirection(index > currentIndex ? 1 : -1);
-    setCurrentIndex(index);
-  };
-
-  const goToPrevious = () => {
-    setDirection(-1);
-    setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
-  };
-
-  const goToNext = () => {
-    setDirection(1);
-    setCurrentIndex((prev) => (prev + 1) % images.length);
-  };
-
-  const togglePlayPause = () => {
-    setIsPlaying(!isPlaying);
-  };
-
-  const handleImageLoad = (index: number) => {
-    setImageLoaded((prev) => ({ ...prev, [index]: true }));
-  };
+  
+  // Use the carousel hook
+  const {
+    currentIndex,
+    direction,
+    isPlaying,
+    imageLoaded,
+    showControls,
+    images,
+    hasMultipleImages,
+    goToSlide,
+    goToPrevious,
+    goToNext,
+    togglePlayPause,
+    handleImageLoad,
+    setShowControls,
+  } = useHeroCarousel({ heroImages });
 
   return (
     <div className="flex flex-col-reverse lg:flex-row items-stretch justify-between bg-white rounded-xl lg:rounded-2xl overflow-hidden shadow-lg">

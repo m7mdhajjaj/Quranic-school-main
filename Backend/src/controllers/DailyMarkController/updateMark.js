@@ -3,6 +3,7 @@
 // ============================================================================
 
 const Mark = require("../../schema/DailyMark/DailyMark");
+const Section = require("../../schema/DailyMark/Section");
 const { notifyMarkUpdated } = require("../../Notifications");
 
 // استيراد الدوال المساعدة
@@ -24,6 +25,8 @@ const {
   sendCreated,
 } = require("./utils/responseHelpers");
 
+const { validateMarkEditWindow } = require("./utils/validationHelpers");
+
 /**
  * Update or create a mark for a single student
  * @route POST /api/daily-marks
@@ -39,6 +42,18 @@ exports.createOrUpdateMark = async (req, res) => {
 
     if (!studentId || !sectionId) {
       return sendValidationError(res, "studentId و sectionId مطلوبة");
+    }
+
+    // ⏰ التحقق من نافذة التعديل الزمنية
+    const section = await Section.findById(sectionId).select('date');
+    if (!section) {
+      return sendNotFound(res, "المقطع");
+    }
+    
+    try {
+      validateMarkEditWindow(section.date, 'add');
+    } catch (windowError) {
+      return sendValidationError(res, windowError.message);
     }
 
     // Check if mark already exists
@@ -128,11 +143,20 @@ exports.updateMarkById = async (req, res) => {
 
     console.log("📝 Updating mark by ID:", id);
 
-    // Find the mark
-    let mark = await Mark.findById(id);
+    // Find the mark with section date
+    let mark = await Mark.findById(id).populate("sectionId", "date");
 
     if (!mark) {
       return sendNotFound(res, "العلامة");
+    }
+
+    // ⏰ التحقق من نافذة التعديل الزمنية
+    if (mark.sectionId && mark.sectionId.date) {
+      try {
+        validateMarkEditWindow(mark.sectionId.date, 'update');
+      } catch (windowError) {
+        return sendValidationError(res, windowError.message);
+      }
     }
 
     const oldTotalMark = (mark.reviewMark || 0) + (mark.memorizationMark || 0);

@@ -1,0 +1,1 @@
+export { useHeroCarousel } from './useHeroCarousel';

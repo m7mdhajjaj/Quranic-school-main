@@ -454,7 +454,17 @@ export const useDailyMarksHandlers = ({
       
       // 4. Revert on error
       setMarks((prev) => prev.filter(m => m._id !== tempId));
-      showErrorMessage("حدث خطأ", "❌ حدث خطأ أثناء إضافة العلامة");
+      
+      // ✅ Handle specific error types
+      const error = err as { response?: { status?: number; data?: { message?: string } }; message?: string };
+      const serverMessage = error.response?.data?.message || error.message;
+      
+      // Check for edit window errors (نافذة التعديل الزمنية)
+      if (serverMessage?.includes('قبل موعد') || serverMessage?.includes('انتهت فترة')) {
+        showErrorMessage("⏰ خارج فترة التعديل", serverMessage);
+      } else {
+        showErrorMessage("حدث خطأ", "❌ حدث خطأ أثناء إضافة العلامة");
+      }
       
       // Re-open modal if needed, or just let user try again (data is lost from form though if modal closed)
       // Ideally we might want to keep modal open, but for speed we closed it.
@@ -535,7 +545,17 @@ export const useDailyMarksHandlers = ({
           mark._id === editingMark._id ? originalMark : mark
         )
       );
-      showErrorMessage("حدث خطأ", "❌ حدث خطأ أثناء تحديث العلامة");
+      
+      // ✅ Handle specific error types
+      const error = err as { response?: { status?: number; data?: { message?: string } }; message?: string };
+      const serverMessage = error.response?.data?.message || error.message;
+      
+      // Check for edit window errors (نافذة التعديل الزمنية)
+      if (serverMessage?.includes('قبل موعد') || serverMessage?.includes('انتهت فترة')) {
+        showErrorMessage("⏰ خارج فترة التعديل", serverMessage);
+      } else {
+        showErrorMessage("حدث خطأ", "❌ حدث خطأ أثناء تحديث العلامة");
+      }
     } finally {
       setIsUpdatingMarkLoading?.(false);
     }
@@ -564,8 +584,14 @@ export const useDailyMarksHandlers = ({
       const apiResult = await deleteMark(markId);
       
       if (!apiResult.success) {
-        // If API fails, show error and revert (by refetching)
-        showErrorMessage("حدث خطأ", `❌ ${apiResult.message || "حدث خطأ أثناء حذف العلامة"}`);
+        // ✅ Handle specific error types including edit window errors
+        const serverMessage = apiResult.message;
+        
+        if (serverMessage?.includes('قبل موعد') || serverMessage?.includes('انتهت فترة')) {
+          showErrorMessage("⏰ خارج فترة التعديل", serverMessage);
+        } else {
+          showErrorMessage("حدث خطأ", `❌ ${serverMessage || "حدث خطأ أثناء حذف العلامة"}`);
+        }
         if (refetchMarks) await refetchMarks();
       }
       // Refresh sections status/progress (non-blocking)
@@ -574,7 +600,16 @@ export const useDailyMarksHandlers = ({
       refetchCompletedSurahs?.();
     } catch (err) {
       console.error("Error deleting mark:", err);
-      showErrorMessage("حدث خطأ", "❌ حدث خطأ أثناء حذف العلامة");
+      
+      // ✅ Handle specific error types
+      const error = err as { response?: { status?: number; data?: { message?: string } }; message?: string };
+      const serverMessage = error.response?.data?.message || error.message;
+      
+      if (serverMessage?.includes('قبل موعد') || serverMessage?.includes('انتهت فترة')) {
+        showErrorMessage("⏰ خارج فترة التعديل", serverMessage);
+      } else {
+        showErrorMessage("حدث خطأ", "❌ حدث خطأ أثناء حذف العلامة");
+      }
       if (refetchMarks) await refetchMarks();
     }
   }, [setMarks, refetchMarks, refetchSections]);
