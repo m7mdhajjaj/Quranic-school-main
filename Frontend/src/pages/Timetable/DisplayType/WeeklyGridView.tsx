@@ -250,10 +250,10 @@ export const WeeklyGridView: React.FC<WeeklyGridViewProps> = ({
           <table className="w-full border-collapse">
             <thead>
               <tr>
-                <th className="sticky right-0 bg-white border-b border-gray-200 p-2 sm:p-3 md:p-4 text-xs sm:text-sm font-bold text-gray-500 w-16 sm:w-24 md:w-32 z-20 shadow-[4px_0_10px_-4px_rgba(0,0,0,0.05)] uppercase tracking-wider backdrop-blur-sm">
-                  <div className="flex flex-col items-center gap-0.5 sm:gap-1">
-                    <span className="text-emerald-500 text-sm sm:text-base">⏰</span>
-                    <span className="text-[10px] sm:text-xs md:text-sm">الوقت</span>
+                <th className="sticky right-0 bg-white border-b border-gray-200 p-1.5 sm:p-2 text-xs font-bold text-gray-500 w-14 sm:w-16 md:w-20 z-20 shadow-[4px_0_10px_-4px_rgba(0,0,0,0.05)] backdrop-blur-sm">
+                  <div className="flex flex-col items-center gap-0.5">
+                    <span className="text-emerald-500 text-xs sm:text-sm">⏰</span>
+                    <span className="text-[9px] sm:text-[10px]">الوقت</span>
                   </div>
                 </th>
                 {weekDates.map((date, index) => {
@@ -262,13 +262,13 @@ export const WeeklyGridView: React.FC<WeeklyGridViewProps> = ({
                   const dateKey = formatDateForAPI(date);
                   
                   return (
-                    <th key={dateKey} className="bg-gray-50/80 border-b border-l border-gray-200 p-2 sm:p-3 md:p-4 text-xs sm:text-sm font-extrabold text-gray-700 shadow-sm min-w-[120px] sm:min-w-[140px] md:min-w-[160px] group transition-colors hover:bg-emerald-50/30">
-                      <div className="flex flex-col items-center gap-1 transition-transform group-hover:-translate-y-0.5 duration-300">
-                        <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-emerald-400 group-hover:scale-125 transition-transform" />
-                          {dayName}
+                    <th key={dateKey} className="bg-gray-50/80 border-b border-l border-gray-200 p-1.5 sm:p-2 text-[10px] sm:text-xs font-bold text-gray-700 shadow-sm min-w-[90px] sm:min-w-[100px] md:min-w-[110px] group transition-colors hover:bg-emerald-50/30">
+                      <div className="flex flex-col items-center gap-0.5 transition-transform group-hover:-translate-y-0.5 duration-300">
+                        <div className="flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 group-hover:scale-125 transition-transform" />
+                          <span className="text-[10px] sm:text-xs">{dayName}</span>
                         </div>
-                        <span className="text-xs text-gray-400 font-normal">{dateStr}</span>
+                        <span className="text-[9px] text-gray-400 font-normal">{dateStr}</span>
                       </div>
                     </th>
                   );
@@ -278,7 +278,7 @@ export const WeeklyGridView: React.FC<WeeklyGridViewProps> = ({
             <tbody>
               {hours.map((hour) => (
                 <tr key={hour} className="group/row transition-colors hover:bg-emerald-50/10">
-                  <td className="sticky right-0 bg-white group-hover/row:bg-emerald-50/30 transition-colors border-b border-gray-100 border-l border-gray-200 p-2 sm:p-3 md:p-4 text-[10px] sm:text-xs font-bold text-gray-400 text-center z-10 shadow-[4px_0_10px_-4px_rgba(0,0,0,0.05)] font-mono">
+                  <td className="sticky right-0 bg-white group-hover/row:bg-emerald-50/30 transition-colors border-b border-gray-100 border-l border-gray-200 p-1 sm:p-1.5 text-[9px] sm:text-[10px] font-bold text-gray-400 text-center z-10 shadow-[4px_0_10px_-4px_rgba(0,0,0,0.05)] font-mono">
                     {hour}
                   </td>
                   {weekDates.map((date) => {
@@ -291,8 +291,8 @@ export const WeeklyGridView: React.FC<WeeklyGridViewProps> = ({
                     // حصص متعددة في نفس الوقت
                     if (daySessions.length > 1) {
                       return (
-                        <td key={`${dateKey}-${hour}`} className="border-b border-l border-gray-100 p-1 sm:p-1.5 md:p-2 align-top relative bg-transparent hover:bg-gray-50/50 transition-colors">
-                          <div className="space-y-1 sm:space-y-1.5 md:space-y-2">
+                        <td key={`${dateKey}-${hour}`} className="border-b border-l border-gray-100 p-0.5 sm:p-1 align-top relative bg-transparent hover:bg-gray-50/50 transition-colors">
+                          <div className="space-y-0.5 sm:space-y-1">
                             {daySessions.map(({ session }) => (
                               <SessionCard key={session._id} session={session} role={role} onEdit={onEdit} onDelete={onDelete} compact />
                             ))}
@@ -305,7 +305,12 @@ export const WeeklyGridView: React.FC<WeeklyGridViewProps> = ({
                       <td
                         key={`${dateKey}-${hour}`}
                         rowSpan={daySessions.length > 0 ? daySessions[0].rowSpan : 1}
-                        className="border-b border-l border-gray-100 p-1 sm:p-1.5 md:p-2 lg:p-3 align-top h-[120px] sm:h-[150px] md:h-[180px] relative bg-transparent hover:bg-gray-50/50 transition-colors"
+                        className="border-b border-l border-gray-100 p-0.5 sm:p-1 align-top relative bg-transparent hover:bg-gray-50/50 transition-colors"
+                        style={{ 
+                          height: daySessions.length > 0 
+                            ? `${Math.max(80, daySessions[0].rowSpan * 45)}px` 
+                            : '45px' 
+                        }}
                       >
                         {daySessions.length > 0 ? (
                           <div className="h-full">
@@ -314,7 +319,7 @@ export const WeeklyGridView: React.FC<WeeklyGridViewProps> = ({
                             ))}
                           </div>
                         ) : (
-                          <div className="h-full min-h-[120px] sm:min-h-[150px] md:min-h-[180px] rounded-xl border border-dashed border-gray-200/50 flex items-center justify-center group-hover:bg-white/50 group-hover:border-emerald-200/50 transition-all" />
+                          <div className="h-full min-h-[40px] rounded-lg border border-dashed border-gray-200/50 flex items-center justify-center group-hover:bg-white/50 group-hover:border-emerald-200/50 transition-all" />
                         )}
                       </td>
                     );
