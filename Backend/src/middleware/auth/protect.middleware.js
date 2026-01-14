@@ -11,6 +11,7 @@ const jwt = require("jsonwebtoken");
 const Student = require("../../schema/Student");
 const Teacher = require("../../schema/Teacher");
 const Admin = require("../../schema/Admin");
+const Secretary = require("../../schema/Secretary");
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -112,6 +113,34 @@ exports.protect = async (req, res, next) => {
           lastSeen: new Date().toISOString(),
         });
       }
+    } else if (decoded.role === "secretary") {
+      // البحث عن السكرتير في قاعدة البيانات
+      const currentSecretary = await Secretary.findById(decoded.id);
+
+      if (!currentSecretary) {
+        return res.status(401).json({
+          success: false,
+          message: "السكرتير المرتبط بهذا الرمز غير موجود",
+        });
+      }
+
+      // إضافة بيانات السكرتير إلى الطلب
+      req.user = currentSecretary;
+      req.user.role = "secretary";
+      
+      // تحديث حالة النشاط فقط (بدون تغيير lastSeen)
+      await Secretary.findByIdAndUpdate(decoded.id, { 
+        isActive: true 
+      });
+      
+      // إرسال إشعار Socket بتغيير حالة السكرتير
+      if (req.app && req.app.get("io")) {
+        req.app.get("io").emit("userStatusChange", {
+          userId: decoded.id,
+          isActive: true,
+          lastSeen: new Date().toISOString(),
+        });
+      }
     } else {
       // البحث عن المعلم في قاعدة البيانات
       const currentTeacher = await Teacher.findById(decoded.id);
@@ -165,6 +194,8 @@ exports.protect = async (req, res, next) => {
             await Student.findByIdAndUpdate(decoded.id, { isActive: false, lastSeen });
           } else if (decoded.role === "admin") {
             await Admin.findByIdAndUpdate(decoded.id, { isActive: false, lastSeen });
+          } else if (decoded.role === "secretary") {
+            await Secretary.findByIdAndUpdate(decoded.id, { isActive: false, lastSeen });
           } else {
             await Teacher.findByIdAndUpdate(decoded.id, { isActive: false, lastSeen });
           }

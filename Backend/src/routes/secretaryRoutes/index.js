@@ -1,0 +1,60 @@
+/**
+ * ============================================================================
+ * Secretary Routes - مسارات API للسكرتير
+ * ============================================================================
+ */
+
+const express = require("express");
+const router = express.Router();
+
+const {
+  getAllSecretaries,
+  getSecretaryById,
+  createSecretary,
+  updateSecretary,
+  updateSecretaryPermissions,
+  deleteSecretary,
+  changeSecretaryPassword,
+  getCurrentSecretary,
+} = require("../../controllers/secretaryController");
+
+const {
+  protect,
+  adminProtect,
+  secretaryProtect,
+  secretaryOrAdminProtect,
+} = require("../../middleware/auth");
+
+// ============================================================================
+// Secretary Self Routes - مسارات السكرتير لنفسه
+// ============================================================================
+
+// الحصول على بيانات السكرتير الحالي
+router.get("/me", secretaryProtect, getCurrentSecretary);
+
+// ============================================================================
+// Admin Routes - مسارات الإدارة
+// ============================================================================
+
+// الحصول على جميع السكرتيرين
+router.get("/", adminProtect, getAllSecretaries);
+
+// الحصول على سكرتير بواسطة ID
+router.get("/:id", secretaryOrAdminProtect, getSecretaryById);
+
+// إنشاء سكرتير جديد
+router.post("/", adminProtect, createSecretary);
+
+// تحديث بيانات سكرتير
+router.put("/:id", secretaryOrAdminProtect, updateSecretary);
+
+// تحديث صلاحيات السكرتير (Admin only)
+router.patch("/:id/permissions", adminProtect, updateSecretaryPermissions);
+
+// تغيير كلمة مرور السكرتير
+router.patch("/:id/password", secretaryOrAdminProtect, changeSecretaryPassword);
+
+// حذف سكرتير
+router.delete("/:id", adminProtect, deleteSecretary);
+
+module.exports = router;

@@ -102,3 +102,97 @@ exports.restrictAdmin = async (req, res, next) => {
     });
   }
 };
+
+/**
+ * Secretary only access
+ * الوصول للسكرتير فقط
+ * 
+ * @middleware
+ * @description يسمح فقط للمستخدمين من نوع secretary
+ * @access Protected (Secretary only)
+ */
+exports.secretaryProtect = async (req, res, next) => {
+  try {
+    // استخدام وسيط الحماية أولاً
+    await protect(req, res, () => {
+      // التحقق من أن المستخدم سكرتير
+      if (req.user.role !== "secretary") {
+        return res.status(403).json({
+          success: false,
+          message: "غير مصرح لغير السكرتير بالوصول إلى هذه الصفحة",
+        });
+      }
+
+      next();
+    });
+  } catch (error) {
+    console.error("Secretary protect middleware error:", error);
+    return res.status(401).json({
+      success: false,
+      message: "خطأ في التحقق من صلاحيات السكرتير",
+    });
+  }
+};
+
+/**
+ * Secretary and Admin access
+ * الوصول للسكرتير والمديرين
+ * 
+ * @middleware
+ * @description يسمح للمستخدمين من نوع secretary أو admin
+ * @access Protected (Secretary, Admin only)
+ */
+exports.secretaryOrAdminProtect = async (req, res, next) => {
+  try {
+    // استخدام وسيط الحماية أولاً
+    await protect(req, res, () => {
+      // التحقق من أن المستخدم سكرتير أو إداري
+      if (req.user.role !== "secretary" && req.user.role !== "admin") {
+        return res.status(403).json({
+          success: false,
+          message: "غير مصرح لغير السكرتير أو المدير بالوصول إلى هذه الصفحة",
+        });
+      }
+
+      next();
+    });
+  } catch (error) {
+    console.error("Secretary or Admin protect middleware error:", error);
+    return res.status(401).json({
+      success: false,
+      message: "خطأ في التحقق من الصلاحيات",
+    });
+  }
+};
+
+/**
+ * Staff access (Teacher, Secretary, Admin)
+ * الوصول للموظفين (المعلمين والسكرتير والمديرين)
+ * 
+ * @middleware
+ * @description يسمح للمعلمين والسكرتير والمديرين
+ * @access Protected (Teacher, Secretary, Admin)
+ */
+exports.staffProtect = async (req, res, next) => {
+  try {
+    // استخدام وسيط الحماية أولاً
+    await protect(req, res, () => {
+      // التحقق من أن المستخدم موظف
+      const allowedRoles = ["teacher", "secretary", "admin"];
+      if (!allowedRoles.includes(req.user.role)) {
+        return res.status(403).json({
+          success: false,
+          message: "غير مصرح للطلاب بالوصول إلى هذه الصفحة",
+        });
+      }
+
+      next();
+    });
+  } catch (error) {
+    console.error("Staff protect middleware error:", error);
+    return res.status(401).json({
+      success: false,
+      message: "خطأ في التحقق من الصلاحيات",
+    });
+  }
+};

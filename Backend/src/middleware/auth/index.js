@@ -6,11 +6,18 @@
  * 
  * البنية:
  * - protect.middleware.js: المصادقة الأساسية بواسطة JWT
- * - role.middleware.js: التحقق من الصلاحيات حسب الدور (teacher, admin, restrictAdmin)
+ * - role.middleware.js: التحقق من الصلاحيات حسب الدور (teacher, admin, secretary, restrictAdmin)
  */
 
 const { protect } = require("./protect.middleware");
-const { teacherProtect, adminProtect, restrictAdmin } = require("./role.middleware");
+const { 
+  teacherProtect, 
+  adminProtect, 
+  restrictAdmin,
+  secretaryProtect,
+  secretaryOrAdminProtect,
+  staffProtect
+} = require("./role.middleware");
 
 module.exports = {
   // Core authentication - المصادقة الأساسية
@@ -20,4 +27,7 @@ module.exports = {
   teacherProtect,
   adminProtect,
   restrictAdmin,
+  secretaryProtect,
+  secretaryOrAdminProtect,
+  staffProtect,
 };

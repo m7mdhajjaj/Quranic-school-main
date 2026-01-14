@@ -26,14 +26,14 @@ const mongoose = require("mongoose");
 
 const counterSchema = new mongoose.Schema(
   {
-    // اسم العداد (student, teacher, admin)
+    // اسم العداد (student, teacher, admin, secretary)
     name: {
       type: String,
       required: true,
       unique: true,
       enum: {
-        values: ["student", "teacher", "admin"],
-        message: "نوع العداد يجب أن يكون student, teacher, أو admin",
+        values: ["student", "teacher", "admin", "secretary"],
+        message: "نوع العداد يجب أن يكون student, teacher, admin, أو secretary",
       },
     },
 
@@ -106,6 +106,7 @@ counterSchema.statics.getNextId = async function (counterName) {
       student: { minValue: 100001, currentValue: 100000 },
       teacher: { minValue: 1001, currentValue: 1000 },
       admin: { minValue: 1, currentValue: 0 },
+      secretary: { minValue: 501, currentValue: 500 },
     };
     
     const defaultValues = defaults[counterName] || { minValue: 1, currentValue: 0 };

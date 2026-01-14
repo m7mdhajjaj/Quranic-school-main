@@ -24,6 +24,7 @@ const Counter = require("../src/schema/Counter");
 const Student = require("../src/schema/Student/Student");
 const Teacher = require("../src/schema/Teacher");
 const Admin = require("../src/schema/Admin");
+const Secretary = require("../src/schema/Secretary");
 
 async function initializeCounters() {
   try {
@@ -47,6 +48,7 @@ async function initializeCounters() {
       student: { minValue: 100001 }, // الطلاب: 100001, 100002, 100003...
       teacher: { minValue: 1001 },   // المعلمين: 1001, 1002, 1003...
       admin: { minValue: 1 },        // المشرفين: 1, 2, 3...
+      secretary: { minValue: 501 },  // السكرتيرين: 501, 502, 503...
     };
 
     // ========================================
@@ -155,6 +157,42 @@ async function initializeCounters() {
     console.log(`   ♻️  Available for recycling: ${adminGaps.length} IDs`);
     if (adminGaps.length > 0 && adminGaps.length <= 10) {
       console.log(`   📋 Gaps: [${adminGaps.join(", ")}]`);
+    }
+    console.log();
+
+    // ========================================
+    // 4. تهيئة عداد السكرتيرين
+    // ========================================
+    console.log("📊 Processing Secretaries...");
+    const secretaries = await Secretary.find({}, { secretaryId: 1 }).lean();
+    const secretaryIds = secretaries.map((s) => s.secretaryId).filter((id) => id);
+    const maxSecretaryId = secretaryIds.length > 0 ? Math.max(...secretaryIds) : RANGES.secretary.minValue - 1;
+    
+    const secretaryGaps = [];
+    for (let i = RANGES.secretary.minValue; i <= maxSecretaryId; i++) {
+      if (!secretaryIds.includes(i)) {
+        secretaryGaps.push(i);
+      }
+    }
+
+    await Counter.findOneAndUpdate(
+      { name: "secretary" },
+      {
+        $set: {
+          currentValue: maxSecretaryId,
+          minValue: RANGES.secretary.minValue,
+          recycledIds: secretaryGaps.sort((a, b) => a - b),
+          "stats.totalCreated": secretaryIds.length,
+        },
+      },
+      { upsert: true, new: true }
+    );
+
+    console.log(`   ✅ Secretaries: ${secretaryIds.length} records`);
+    console.log(`   📈 Range: ${RANGES.secretary.minValue} - ${maxSecretaryId}`);
+    console.log(`   ♻️  Available for recycling: ${secretaryGaps.length} IDs`);
+    if (secretaryGaps.length > 0 && secretaryGaps.length <= 10) {
+      console.log(`   📋 Gaps: [${secretaryGaps.join(", ")}]`);
     }
     console.log();
 

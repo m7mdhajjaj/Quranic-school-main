@@ -1,6 +1,7 @@
 const Student = require("../../schema/Student");
 const Teacher = require("../../schema/Teacher");
 const Admin = require("../../schema/Admin");
+const Secretary = require("../../schema/Secretary");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 
@@ -56,6 +57,13 @@ exports.login = async (req, res) => {
     
     if (admin) {
       return await authenticateAdmin(admin, password, rememberMe, res);
+    }
+
+    // 4. محاولة البحث كسكرتير (secretaryId)
+    const secretary = await Secretary.findOne({ secretaryId: identifier });
+    
+    if (secretary) {
+      return await authenticateSecretary(secretary, password, rememberMe, res);
     }
 
     // لم يتم العثور على المستخدم في أي نوع
@@ -281,6 +289,63 @@ const authenticateAdmin = async (admin, password, rememberMe, res) => {
     });
   } catch (error) {
     console.error("خطأ في مصادقة الإداري:", error);
+    throw error;
+  }
+};
+
+/**
+ * مصادقة السكرتير بعد التحقق من وجوده
+ */
+const authenticateSecretary = async (secretary, password, rememberMe, res) => {
+  try {
+    const isMatch = await bcrypt.compare(password, secretary.password);
+
+    if (!isMatch) {
+      console.log("❌ فشل التحقق من كلمة المرور للسكرتير");
+      return res.status(401).json({
+        success: false,
+        message: "كلمة المرور غير صحيحة",
+      });
+    }
+
+    // ✅ تحديث lastSeen فقط (isActive يتم عبر Socket.io)
+    await Secretary.findByIdAndUpdate(secretary._id, {
+      lastSeen: new Date(),
+    });
+
+    // ℹ️ Note: Status update (online/offline) يتم تلقائياً عبر Socket.io
+
+    const tokenExpiry = rememberMe ? "7d" : "30m";
+
+    const token = jwt.sign(
+      {
+        id: secretary._id,
+        secretaryId: secretary.secretaryId,
+        name: `${secretary.firstName} ${secretary.lastName}`,
+        role: "secretary",
+      },
+      JWT_SECRET,
+      { expiresIn: tokenExpiry }
+    );
+
+    return res.status(200).json({
+      success: true,
+      token,
+      user: {
+        _id: secretary._id,
+        secretaryId: secretary.secretaryId,
+        firstName: secretary.firstName,
+        lastName: secretary.lastName,
+        email: secretary.email,
+        gender: secretary.gender,
+        avatar: secretary.avatar,
+        permissions: secretary.permissions,
+        role: "secretary",
+        // ℹ️ isActive managed by Socket.io
+      },
+    });
+  } catch (error) {
+    console.error("خطأ في مصادقة السكرتير:", error);
     throw error;
   }
 };
