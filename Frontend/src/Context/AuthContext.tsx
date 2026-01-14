@@ -243,6 +243,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // وظيفة تسجيل الخروج
   const logout = async () => {
     try {
+      // 🔒 منع إعادة عرض الشاشة أثناء الخروج - إضافة overlay
+      const overlay = document.createElement('div');
+      overlay.id = 'logout-overlay';
+      overlay.style.cssText = `
+        position: fixed;
+        inset: 0;
+        background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: opacity 0.3s ease;
+      `;
+      overlay.innerHTML = `
+        <div style="text-align: center; direction: rtl;">
+          <div style="
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 16px;
+            border: 4px solid #e5e7eb;
+            border-top-color: #22c55e;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+          "></div>
+          <p style="color: #166534; font-size: 18px; font-weight: 600;">جاري تسجيل الخروج...</p>
+          <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+
       // إرسال طلب logout للـ Backend لتحديث lastSeen
       if (token && user) {
         try {
@@ -263,16 +293,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // قطع اتصال Socket
       if (socketManager.isConnected()) {
         socketManager.disconnect();
-        // console.log('🔌 تم قطع اتصال Socket');
       }
 
-      // مسح البيانات من الحالة المحلية
-      setUser(null);
-      setToken(null);
-
       // تنظيف شامل لكل البيانات
-      localStorage.clear(); // مسح كل localStorage
-      sessionStorage.clear(); // مسح كل sessionStorage
+      localStorage.clear();
+      sessionStorage.clear();
       
       // تنظيف الكوكيز
       document.cookie.split(';').forEach(cookie => {
@@ -280,12 +305,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
       });
 
-      // console.log('✨ تم تنظيف جميع بيانات الجلسة');
+      // انتظار قصير ثم إعادة التوجيه
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       // إعادة توجه إلى صفحة تسجيل الدخول
       window.location.href = '/login';
     } catch (error) {
       console.error('❌ خطأ في تسجيل الخروج:', error);
+      // حتى في حالة الخطأ، نعيد التوجيه
+      window.location.href = '/login';
     }
   };
 
