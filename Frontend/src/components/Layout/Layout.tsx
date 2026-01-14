@@ -29,6 +29,7 @@ import { AiChatbot } from '../AiChatbot';
 
 interface LayoutProps {
   children: React.ReactNode;
+  isGuest?: boolean;
 }
 
 // ============================================================================
@@ -80,7 +81,7 @@ const shouldHideLayout = (pathname: string): boolean => {
  * </Layout>
  * ```
  */
-const Layout: React.FC<LayoutProps> = ({ children }) => {
+const Layout: React.FC<LayoutProps> = ({ children, isGuest = false }) => {
   const location = useLocation();
 
   // Determine what to show based on current route
@@ -96,7 +97,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     <div className="app-content m-0 p-0 min-h-screen flex flex-col">
       {/* Top Header - Always Visible if showHeader is true */}
       {showHeader && (
-        <HeaderComponent />
+        <HeaderComponent isGuest={isGuest} />
       )}
 
       {/* Main Content Area */}
@@ -105,10 +106,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       </main>
 
       {/* Footer - Conditional rendering based on route */}
-      {showFooter && <Footer />}
+      {showFooter && <Footer isGuest={isGuest} />}
 
-      {/* Global AI Chatbot - للمعلم والطالب فقط */}
-      <AiChatbot />
+      {/* Global AI Chatbot - للمعلم والطالب فقط (not for guests) */}
+      {!isGuest && <AiChatbot />}
     </div>
   );
 };

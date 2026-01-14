@@ -40,9 +40,17 @@ const Goals = lazy(() => import("./pages/Goals/Goals"));
 import Login from "./pages/Auth/Login/index";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
-import Privacy from "./pages/Privacy/Privacy";
-import Terms from "./pages/Terms";
-import Contact from "./pages/Contact/components/Contact";
+
+// ============================================================================
+// Guest Pages - صفحات الضيوف
+// ============================================================================
+import { 
+  WelcomePage, 
+  About, 
+  Contact, 
+  Privacy, 
+  Terms 
+} from "./pages/Guest";
 
 // ============================================================================
 // Page Components - Academic
@@ -111,6 +119,91 @@ import Soon from "./pages/Soon";
 import NotificationPermissionPrompt from "./components/Notifications/NotificationPermissionPrompt";
 
 // ============================================================================
+// Guest Routes Component
+// ============================================================================
+/**
+ * Handles all routing for guest users (unauthenticated)
+ * - Shows Layout with isGuest=true for allowed pages
+ * - Provides access to public pages only
+ * 
+ * Guest Routes Structure:
+ * 1. Welcome Page (no header)
+ * 2. Login Page (no header)
+ * 3. Information Pages (Privacy, Terms, Contact) - with header
+ */
+const GuestRoutes: React.FC = () => {
+  return (
+    <Routes>
+      {/* ============================================
+          صفحات بدون هيدر - No Header Pages
+          ============================================ */}
+      <Route path="/" element={<WelcomePage />} />
+      <Route path="/welcome" element={<WelcomePage />} />
+      <Route path="/login" element={<Login />} />
+
+      {/* ============================================
+          الصفحة الرئيسية للضيوف - مع هيدر
+          ============================================ */}
+      <Route path="/home" element={
+        <Layout isGuest={true}>
+          <React.Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center">
+              <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
+            </div>
+          }>
+            <Home />
+          </React.Suspense>
+        </Layout>
+      } />
+
+      {/* ============================================
+          صفحة الأهداف للضيوف
+          ============================================ */}
+      <Route path="/goals" element={
+        <Layout isGuest={true}>
+          <React.Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center">
+              <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
+            </div>
+          }>
+            <Goals />
+          </React.Suspense>
+        </Layout>
+      } />
+
+      {/* ============================================
+          صفحات المعلومات - Information Pages
+          ============================================ */}
+      <Route path="/privacy" element={
+        <Layout isGuest={true}>
+          <Privacy />
+        </Layout>
+      } />
+      <Route path="/terms" element={
+        <Layout isGuest={true}>
+          <Terms />
+        </Layout>
+      } />
+      <Route path="/contact" element={
+        <Layout isGuest={true}>
+          <Contact />
+        </Layout>
+      } />
+      <Route path="/about" element={
+        <Layout isGuest={true}>
+          <About />
+        </Layout>
+      } />
+
+      {/* ============================================
+          Fallback - إعادة توجيه لصفحة الترحيب
+          ============================================ */}
+      <Route path="*" element={<WelcomePage />} />
+    </Routes>
+  );
+};
+
+// ============================================================================
 // Admin Routes Component
 // ============================================================================
 /**
@@ -134,6 +227,7 @@ const AdminRoutes: React.FC = () => {
             الصفحة الرئيسية - Dashboard
             ============================================ */}
         <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
+        <Route path="/welcome" element={<WelcomePage />} />
         <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
 
@@ -223,6 +317,7 @@ const TeacherRoutes: React.FC = () => {
             الصفحة الرئيسية وتسجيل الدخول
             ============================================ */}
         <Route path="/" element={<Home />} />
+        <Route path="/welcome" element={<WelcomePage />} />
         <Route path="/login" element={<Login />} />
 
         {/* ============================================
@@ -376,6 +471,7 @@ const StudentRoutes: React.FC = () => {
             الصفحة الرئيسية وتسجيل الدخول
             ============================================ */}
         <Route path="/" element={<Home />} />
+        <Route path="/welcome" element={<WelcomePage />} />
         <Route path="/login" element={<Login />} />
 
         {/* ============================================
@@ -549,13 +645,9 @@ function AppContent() {
   }
 
   // ====== Unauthenticated State ======
-  // Redirect to login page if user is not authenticated
+  // Show guest routes for unprotected pages
   if (!isAuthenticated) {
-    return (
-      <Routes>
-        <Route path="*" element={<Login />} />
-      </Routes>
-    );
+    return <GuestRoutes />;
   }
 
   // ====== Authenticated State - Role-Based Routing ======

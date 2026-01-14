@@ -6,9 +6,9 @@ import type { Messaging } from 'firebase/messaging';
 // Firebase configuration from environment
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyA92yiBW1-ys2swFZxGNWBDS2nrjjhCqDQ",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "quranic-school-77b5e.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "quranic-school-77b5e",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "quranic-school-77b5e.firebasestorage.app",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "quranic-school-main.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "quranic-school-main",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "quranic-school-main.firebasestorage.app",
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "113132422081",
   appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:113132422081:web:dae9d7d860047f3193e540"
 };

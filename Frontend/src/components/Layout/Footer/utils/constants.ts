@@ -10,7 +10,7 @@ import {
   FaCog,
   FaUser,
 } from 'react-icons/fa';
-import type { Partner, QuickLink, SocialLink } from './types';
+import type { Partner, QuickLink, SocialLink } from '../types';
 
 /**
  * معلومات فريق العمل
@@ -75,6 +75,18 @@ export const DEFAULT_QUICK_LINKS: QuickLink[] = [
   { name: 'الأهداف', path: '/goals' },
   { name: 'التقارير', path: '/reports' },
   { name: 'تواصل معنا', path: '/contact' },
+];
+
+/**
+ * الروابط السريعة للضيوف (غير مسجلين)
+ */
+export const GUEST_QUICK_LINKS: QuickLink[] = [
+  { name: 'الرئيسية', path: '/home' },
+  { name: 'نبذة عنا', path: '/about' },
+  { name: 'الأهداف', path: '/goals' },
+  { name: 'تواصل معنا', path: '/contact' },
+  { name: 'سياسة الخصوصية', path: '/privacy' },
+  { name: 'تسجيل الدخول', path: '/login' },
 ];
 
 /**

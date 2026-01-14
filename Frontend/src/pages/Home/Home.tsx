@@ -186,6 +186,7 @@ const Home = () => {
           onEditButtonClick={handleEditButtonClick}
           onDeleteImage={handleDeleteImage}
           fileInputRef={fileInputRef}
+          isGuest={!currentUser}
         />
 
         {/* Vision Section */}

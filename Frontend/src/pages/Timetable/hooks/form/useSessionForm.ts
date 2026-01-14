@@ -96,7 +96,7 @@ export const useSessionForm = ({
       } catch (error: any) {
         console.error("❌ Error fetching hours:", error);
         const errorMsg = error?.response?.data?.message || error?.message || "حدث خطأ في تحميل الأوقات المتاحة";
-        await showErrorMessage("❌ خطأ في تحميل الأوقات", errorMsg);
+        console.error("❌ خطأ في تحميل الأوقات:", errorMsg);
         const fallbackHours = generateFallbackHours();
         setHours(fallbackHours);
         setBookedHours([]);

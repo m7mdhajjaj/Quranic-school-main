@@ -43,19 +43,31 @@ export const TeacherTimetableView: React.FC<TeacherTimetableViewProps> = ({
 
   // ✅ التحقق من وجود طلب إضافة/تعديل جلسة من الرابط
   useEffect(() => {
-    if (loading) return;
+    // انتظر حتى تحميل الجلسات
+    if (loading) {
+      console.log("⏳ Still loading sessions...");
+      return;
+    }
 
     const addSession = searchParams.get('addSession');
     const editSessionId = searchParams.get('editSession');
     const sectionId = searchParams.get('sectionId');
     const urlSessionType = searchParams.get('sessionType');
     
+    console.log("🔍 URL Params:", { addSession, editSessionId, sectionId, urlSessionType });
+    console.log("📋 Sessions count:", sessions.length);
+    
     // الحالة 1: تعديل جلسة مباشرة بالـ ID
     if (editSessionId) {
+      console.log("🔧 Looking for session to edit:", editSessionId);
       const sessionToEdit = sessions.find(s => s._id === editSessionId);
+      console.log("📝 Found session:", sessionToEdit);
       if (sessionToEdit) {
         setEditingSession(sessionToEdit);
         setIsModalOpen(true);
+        console.log("✅ Opening edit modal for session:", sessionToEdit._id);
+      } else {
+        console.warn("⚠️ Session not found in current sessions list");
       }
       return;
     }

@@ -20,6 +20,7 @@ export interface User {
 
 export interface HeaderProps {
   className?: string;
+  isGuest?: boolean;
 }
 
 export interface LogoProps {

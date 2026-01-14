@@ -110,4 +110,6 @@ export interface FooterProps {
   customLinks?: QuickLink[];
   foundingDate?: string;
   showFoundingDate?: boolean;
+  /** إذا كان المستخدم ضيف (غير مسجل) */
+  isGuest?: boolean;
 }

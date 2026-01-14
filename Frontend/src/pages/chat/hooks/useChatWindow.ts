@@ -7,7 +7,7 @@ import { useAuth } from '../../../hooks/useAuth';
 import { useChat } from './useChat';
 import { useMessageOperations } from './useMessageOperations';
 import { useMessageInput } from './useMessageInput';
-import { useMentions } from '../../../hooks/useMentions';
+import { useMentions } from './useMentions';
 import type { Message, MentionItem, User } from '../types';
 
 interface UseChatWindowProps {

@@ -108,7 +108,8 @@ export const useFirebaseMessaging = (): UseFirebaseMessagingReturn => {
       // Optimize: Defer processing to next tick to avoid blocking the message channel (Violation prevention)
       setTimeout(() => {
         const typedPayload = payload as NotificationPayload;
-        
+        console.log('📩 إشعار جديد:', typedPayload);
+
         // Update state
         setLastNotification(typedPayload);
 

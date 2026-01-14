@@ -10,12 +10,12 @@ importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-comp
 // Initialize the Firebase app in the service worker by passing in
 // your app's Firebase config object.
 firebase.initializeApp({
-  apiKey: "AIzaSyA92yiBW1-ys2swFZxGNWBDS2nrjjhCqDQ",
-  authDomain: "quranic-school-77b5e.firebaseapp.com",
-  projectId: "quranic-school-77b5e",
-  storageBucket: "quranic-school-77b5e.firebasestorage.app",
-  messagingSenderId: "113132422081",
-  appId: "1:113132422081:web:dae9d7d860047f3193e540"
+  apiKey: "AIzaSyAPCYf7HCTQ3DiW_PFwxTKBeHFp3EN5Qn4",
+  authDomain: "quranic-school-main.firebaseapp.com",
+  projectId: "quranic-school-main",
+  storageBucket: "quranic-school-main.firebasestorage.app",
+  messagingSenderId: "570702964068",
+  appId: "1:570702964068:web:64bb6b980db932cc3f8671"
 });
 
 // Retrieve an instance of Firebase Messaging so that it can handle background messages.

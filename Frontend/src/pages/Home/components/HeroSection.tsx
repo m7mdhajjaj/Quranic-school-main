@@ -37,6 +37,7 @@ interface HeroSectionProps {
   onEditButtonClick: () => void;
   onDeleteImage?: (publicId: string) => void;
   fileInputRef: React.RefObject<HTMLInputElement | null>;
+  isGuest?: boolean;
 }
 
 // Slide transition variants
@@ -82,6 +83,7 @@ const HeroSection = ({
   onEditButtonClick,
   onDeleteImage,
   fileInputRef,
+  isGuest = false,
 }: HeroSectionProps) => {
   const navigate = useNavigate();
   
@@ -106,6 +108,34 @@ const HeroSection = ({
     <div className="flex flex-col-reverse lg:flex-row items-stretch justify-between bg-white rounded-xl lg:rounded-2xl overflow-hidden shadow-lg">
       {/* Text Content */}
       <div className="w-full lg:w-1/2 p-6 sm:p-8 md:p-10 lg:p-12 flex flex-col justify-center">
+        {/* Guest Welcome */}
+        {isGuest && !currentUser && (
+          <div className="text-center mb-6 lg:mb-8">
+            <motion.h2 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-emerald-700 mb-3 md:mb-4 leading-tight lg:leading-snug"
+            >
+              مرحباً بك في أكاديمية المهاجرين
+            </motion.h2>
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="mx-auto max-w-2xl"
+            >
+              <p className="text-lg sm:text-xl md:text-2xl text-gray-700 mb-2 md:mb-3 font-medium">
+                رحلتك في حفظ وتعلم القرآن الكريم تبدأ من هنا
+              </p>
+              <p className="text-base sm:text-lg text-gray-600 mb-2">
+                انضم إلينا واكتشف تجربة تعليمية فريدة في رحاب كتاب الله عز وجل
+              </p>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Authenticated User Welcome */}
         {currentUser && (
           <div className="text-center mb-6 lg:mb-8">
             <motion.h2 
@@ -153,12 +183,12 @@ const HeroSection = ({
           className="flex justify-center"
         >
           <Button
-            onClick={() => navigate('/soon')}
+            onClick={() => navigate(isGuest ? '/login' : '/soon')}
             variant="primary"
             size="lg"
             className="rounded-full shadow-md text-base sm:text-lg px-6 sm:px-8"
           >
-            ابدأ رحلتك التعليمية
+            {isGuest ? 'سجل دخولك الآن' : 'ابدأ رحلتك التعليمية'}
           </Button>
         </motion.div>
       </div>

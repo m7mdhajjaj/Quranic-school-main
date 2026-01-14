@@ -1,11 +1,9 @@
-import { useNavigate, Link } from 'react-router-dom';
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { ChevronDown, Menu as MenuIcon } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ChevronDown, Home, Target, Mail, Shield, LogIn } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 // Hooks
-import { useAuth } from '@/hooks/useAuth';
-import { useNavigation } from '../hooks/useNavigation';
-import { useLogo } from '@/components/Hooks/useLogo';
+import { useHeader } from '../hooks/useHeader';
 
 // Components
 import { Logo } from '@/components/UI';
@@ -19,87 +17,49 @@ import MobileMenu from './MobileMenu/MobileMenu';
 // Modals
 import { ChangePasswordModal } from '@/pages/Auth/ChangePass';
 
-// Utils
-import { showLogoutConfirmation } from '@/pages/Auth/LogOut/logoutUtils';
-
 // Types
 import type { HeaderProps } from '../types/navigation.types';
-import type { NavigationItem } from '../types/navigation.types';
+import { Info } from 'lucide-react';
 
-const Header: React.FC<HeaderProps> = ({ className = '' }) => {
-  // ==================== Hooks ====================
-  const { user: currentUser, logout: authLogout, isAuthenticated, isLoading } = useAuth();
+// ============================================================================
+// Guest Navigation Items
+// ============================================================================
+const GUEST_NAV_ITEMS = [
+  { path: '/home', label: 'الرئيسية', icon: Home },
+  { path: '/about', label: 'نبذة عنا', icon: Info },
+  { path: '/goals', label: 'الأهداف', icon: Target },
+  { path: '/contact', label: 'تواصل معنا', icon: Mail },
+];
+
+// ============================================================================
+// Header Component
+// ============================================================================
+const Header: React.FC<HeaderProps> = ({ className = '', isGuest = false }) => {
   const navigate = useNavigate();
-  const { logoUrl, logoLoading } = useLogo();
-
-  // ==================== State ====================
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
-
-  // ==================== Refs ====================
-  const profileMenuRef = useRef<HTMLButtonElement>(null);
-
-  // ==================== Computed Values ====================
-  const isTeacher = currentUser?.role === 'teacher';
-  const isAdmin = currentUser?.role === 'admin';
-  const isStudent = currentUser?.role === 'student';
-  const isTeacherOrAdmin = isTeacher || isAdmin;
-  const { primaryNavItems, secondaryNavItems } = useNavigation({
-    isTeacher,
-    isAdmin,
-    isStudent,
-    isTeacherOrAdmin,
-  });
-
-  const combinedItems: NavigationItem[] = primaryNavItems;
-
-  // ==================== Handlers ====================
-  const handleLogout = useCallback(async () => {
-    const confirmed = await showLogoutConfirmation({
-      userType: 'user',
-      onConfirm: () => {
-        setIsMenuOpen(false);
-        setProfileMenuOpen(false);
-        authLogout();
-      },
-    });
-    if (!confirmed) console.log('تم إلغاء تسجيل الخروج');
-  }, [authLogout]);
-
-  const handleProfileClick = () => {
-    navigate('/profile');
-  };
-
-  const handleChangePasswordClick = () => {
-    setIsChangePasswordModalOpen(true);
-  };
-
-  // ==================== Effects ====================
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated && !currentUser) {
-      navigate('/login', { replace: true });
-    }
-  }, [isAuthenticated, currentUser, navigate, isLoading]);
-
-  // Close menus on ESC key
-  useEffect(() => {
-    const handleEscKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setProfileMenuOpen(false);
-        setIsMenuOpen(false);
-      }
-    };
-    document.addEventListener('keydown', handleEscKey);
-    return () => document.removeEventListener('keydown', handleEscKey);
-  }, []);
-
-  // ==================== Render ====================
-
-  // ==================== Render ====================
-  // Show header shell even if user is loading to prevent layout shift
-  // but content will be conditionally rendered
+  
+  // Use custom hook for all logic
+  const {
+    currentUser,
+    isLoading,
+    logoUrl,
+    logoLoading,
+    primaryNavItems,
+    secondaryNavItems,
+    combinedItems,
+    isMenuOpen,
+    profileMenuOpen,
+    isChangePasswordModalOpen,
+    profileMenuRef,
+    handleLogout,
+    handleProfileClick,
+    handleChangePasswordClick,
+    toggleMobileMenu,
+    toggleProfileMenu,
+    closeMobileMenu,
+    closeProfileMenu,
+    closeChangePasswordModal,
+    isGuestPathActive,
+  } = useHeader({ isGuest });
   
   return (
     <>
@@ -139,8 +99,25 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
 
             {/* ==================== Navigation - Desktop ==================== */}
             <div className="hidden lg:flex flex-1 justify-center px-2 lg:px-4">
-              {/* Combine primary and grouped secondary items into one nav */}
-              {isLoading ? (
+              {isGuest ? (
+                // Guest Navigation
+                <nav className="flex items-center gap-1">
+                  {GUEST_NAV_ITEMS.map((item) => (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 ${
+                        isGuestPathActive(item.path)
+                          ? 'bg-white/25 text-white shadow-lg'
+                          : 'text-white/90 hover:bg-white/15 hover:text-white'
+                      }`}
+                    >
+                      <item.icon className="w-4 h-4" />
+                      {item.label}
+                    </Link>
+                  ))}
+                </nav>
+              ) : isLoading ? (
                  <div className="flex items-center gap-2 animate-pulse">
                     {[1, 2, 3, 4].map((i) => (
                       <div key={i} className="h-9 w-24 bg-white/20 rounded-xl" />
@@ -168,7 +145,7 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
                   <div className="relative z-[200]">
                     <button
                       ref={profileMenuRef}
-                      onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+                      onClick={toggleProfileMenu}
                       className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl hover:bg-white/20 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-white/50"
                       aria-label="قائمة الملف الشخصي"
                       aria-expanded={profileMenuOpen}
@@ -205,13 +182,26 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
                     <ProfileMenu
                       user={currentUser}
                       isOpen={profileMenuOpen}
-                      onClose={() => setProfileMenuOpen(false)}
+                      onClose={closeProfileMenu}
                       onProfileClick={handleProfileClick}
                       onChangePasswordClick={handleChangePasswordClick}
                       onLogout={handleLogout}
                       buttonRef={profileMenuRef}
                     />
                   </div>
+                </>
+              ) : isGuest ? (
+                <>
+                  {/* Guest Login Button */}
+                  <motion.button
+                    onClick={() => navigate('/login')}
+                    className="flex items-center gap-2 px-4 py-2 bg-white text-emerald-600 font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <LogIn className="w-4 h-4" />
+                    <span className="hidden sm:inline">تسجيل الدخول</span>
+                  </motion.button>
                 </>
               ) : (
                 <>
@@ -230,47 +220,75 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
                 </>
               )}
 
-              {/* Mobile Menu Button - Always Visible if safe, or hide if loading? Better safe. */}
+              {/* Mobile Menu Button */}
               <div className="lg:hidden">
                 <MobileMenuButton
                   isOpen={isMenuOpen}
-                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  onClick={toggleMobileMenu}
                 />
               </div>
             </div>
           </div>
-
-          {/* ==================== Bottom Row - Removed as per request ==================== */}
-          {/* 
-          <div className="hidden lg:block pb-2">
-            <div className="flex items-center justify-center">
-              <div className="max-w-[80%]">
-                <TabNavigation items={[]} secondaryItems={secondaryNavItems} />
-              </div>
-            </div>
-          </div> 
-          */}
         </div>
       </header>
 
-      {/* ==================== Header Spacer - Adjusted for single row ==================== */}
+      {/* ==================== Header Spacer ==================== */}
       <div className="h-16 sm:h-20"></div>
 
       {/* ==================== Mobile Menu ==================== */}
-      <MobileMenu
-        isOpen={isMenuOpen}
-        onClose={() => setIsMenuOpen(false)}
-        user={currentUser}
-        primaryItems={primaryNavItems}
-        secondaryItems={secondaryNavItems}
-        onLogout={handleLogout}
-        onProfileClick={handleProfileClick}
-      />
+      {isGuest ? (
+        // Guest Mobile Menu
+        <motion.div
+          initial={false}
+          animate={{
+            height: isMenuOpen ? 'auto' : 0,
+            opacity: isMenuOpen ? 1 : 0,
+          }}
+          className="lg:hidden fixed top-16 sm:top-20 left-0 right-0 z-[99] overflow-hidden bg-emerald-700/95 backdrop-blur-lg"
+        >
+          <nav className="px-4 py-3 space-y-1">
+            {GUEST_NAV_ITEMS.map((item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                onClick={closeMobileMenu}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 ${
+                  isGuestPathActive(item.path)
+                    ? 'bg-white/25 text-white'
+                    : 'text-white/90 hover:bg-white/15'
+                }`}
+              >
+                <item.icon className="w-5 h-5" />
+                {item.label}
+              </Link>
+            ))}
+            {/* Login Button in Mobile Menu */}
+            <Link
+              to="/login"
+              onClick={closeMobileMenu}
+              className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium bg-white text-emerald-600 mt-2"
+            >
+              <LogIn className="w-5 h-5" />
+              تسجيل الدخول
+            </Link>
+          </nav>
+        </motion.div>
+      ) : (
+        <MobileMenu
+          isOpen={isMenuOpen}
+          onClose={closeMobileMenu}
+          user={currentUser}
+          primaryItems={primaryNavItems}
+          secondaryItems={secondaryNavItems}
+          onLogout={handleLogout}
+          onProfileClick={handleProfileClick}
+        />
+      )}
 
       {/* ==================== Change Password Modal ==================== */}
       <ChangePasswordModal
         isOpen={isChangePasswordModalOpen}
-        onClose={() => setIsChangePasswordModalOpen(false)}
+        onClose={closeChangePasswordModal}
       />
     </>
   );

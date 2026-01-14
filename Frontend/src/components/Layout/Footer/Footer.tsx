@@ -33,6 +33,7 @@ import {
   SOCIAL_LINKS,
   ADMIN_QUICK_LINKS,
   DEFAULT_QUICK_LINKS,
+  GUEST_QUICK_LINKS,
   FOUNDING_DATE,
 } from './utils';
 
@@ -43,14 +44,29 @@ export const Footer: React.FC<FooterProps> = ({
   customLinks,
   foundingDate = FOUNDING_DATE,
   showFoundingDate = true,
+  isGuest = false,
 }) => {
-  const { isAdmin } = useAuth();
   const currentYear = new Date().getFullYear();
-  const isAdminUser = isAdmin();
+  
+  // Get auth info only if not explicitly guest
+  const auth = useAuth();
+  const isAdminUser = !isGuest && auth?.isAdmin ? auth.isAdmin() : false;
+  const isLoggedIn = !isGuest && auth?.isAuthenticated ? auth.isAuthenticated : false;
 
-  // Determine which links to use
-  const quickLinks =
-    customLinks || (isAdminUser ? ADMIN_QUICK_LINKS : DEFAULT_QUICK_LINKS);
+  // Determine which links to use based on user role
+  let quickLinks;
+  if (customLinks) {
+    quickLinks = customLinks;
+  } else if (isGuest || !isLoggedIn) {
+    // Guest user (not logged in)
+    quickLinks = GUEST_QUICK_LINKS;
+  } else if (isAdminUser) {
+    // Admin user
+    quickLinks = ADMIN_QUICK_LINKS;
+  } else {
+    // Regular user (teacher/student)
+    quickLinks = DEFAULT_QUICK_LINKS;
+  }
 
   // Determine which partners to use
   const partners = customPartners || DEFAULT_PARTNERS;

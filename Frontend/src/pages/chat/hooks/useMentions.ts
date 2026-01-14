@@ -1,16 +1,12 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { getCaretCoordinates } from '../utils/caretCoordinates';
-import api from '../Api/api';
+import { getCaretCoordinates } from '../../../utils/caretCoordinates';
+import api from '../../../Api/api';
 
 interface MentionUser {
   _id: string;
   firstName: string;
   lastName: string;
   avatar?: { url: string };
-}
-
-interface UseMentionsProps {
-  onSelect: (user: MentionUser | 'all') => void;
 }
 
 export const useMentions = () => {

@@ -5,7 +5,7 @@
 import React from 'react';
 import type { FooterPartnersProps } from '../Types/types';
 import { FooterSection } from './FooterSection';
-import { PartnerCard } from '../UI/PartnerCard';
+import { PartnerCard } from './PartnerCard';
 
 export const FooterPartners: React.FC<FooterPartnersProps> = ({
   partners,

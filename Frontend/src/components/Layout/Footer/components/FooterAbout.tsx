@@ -4,7 +4,7 @@
 
 import React from 'react';
 import type { FooterAboutProps } from '../Types/types';
-import { SocialIcon } from '../UI/SocialIcon';
+import { SocialIcon } from './SocialIcon';
 
 export const FooterAbout: React.FC<FooterAboutProps> = ({
   isAdmin,
