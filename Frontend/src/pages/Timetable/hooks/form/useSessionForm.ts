@@ -291,7 +291,7 @@ export const useSessionForm = ({
         sectionId: initialSectionId || "",
       }));
     }
-  }, [editingSession, role, initialSectionId, initialGroupName, searchParams]);
+  }, [editingSession, role, initialSectionId, initialGroupName, searchParams, defaultTeacherId]);
 
   // ============================================
   // 🔄 تحديث sessionType عند تغيير sectionId يدوياً
@@ -352,7 +352,7 @@ export const useSessionForm = ({
     });
     setSelectedGroup("");
     setBookedHours([]);
-  }, [role, initialGroupName, initialSectionId]);
+  }, [defaultTeacherId, initialGroupName, initialSectionId]);
 
   return {
     formData,
