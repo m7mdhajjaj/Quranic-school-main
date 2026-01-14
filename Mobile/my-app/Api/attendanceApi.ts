@@ -1,4 +1,4 @@
-import api from './api';
+import api from "./api";
 
 // ============================================================================
 // Attendance API
@@ -8,7 +8,7 @@ export interface AttendanceRecord {
   _id?: string;
   student: string;
   date: string;
-  status: 'present' | 'absent' | 'excused' | 'late';
+  status: "present" | "absent" | "excused" | "late";
   note?: string;
 }
 
@@ -26,18 +26,23 @@ export const getAttendance = async (params?: {
   startDate?: string;
   endDate?: string;
 }): Promise<AttendanceRecord[]> => {
-  const response = await api.get('/attendance', { params });
+  const response = await api.get("/attendance", { params });
   return response.data;
 };
 
 // Create attendance record
-export const createAttendance = async (data: Omit<AttendanceRecord, '_id'>): Promise<AttendanceRecord> => {
-  const response = await api.post('/attendance', data);
+export const createAttendance = async (
+  data: Omit<AttendanceRecord, "_id">
+): Promise<AttendanceRecord> => {
+  const response = await api.post("/attendance", data);
   return response.data;
 };
 
 // Update attendance record
-export const updateAttendance = async (id: string, data: Partial<AttendanceRecord>): Promise<AttendanceRecord> => {
+export const updateAttendance = async (
+  id: string,
+  data: Partial<AttendanceRecord>
+): Promise<AttendanceRecord> => {
   const response = await api.put(`/attendance/${id}`, data);
   return response.data;
 };
@@ -48,7 +53,9 @@ export const deleteAttendance = async (id: string): Promise<void> => {
 };
 
 // Get attendance statistics
-export const getAttendanceStats = async (studentId: string): Promise<AttendanceStats> => {
+export const getAttendanceStats = async (
+  studentId: string
+): Promise<AttendanceStats> => {
   const response = await api.get(`/attendance/stats/${studentId}`);
   return response.data;
 };
@@ -60,7 +67,9 @@ export const getAttendanceByDate = async (date: string): Promise<any[]> => {
 };
 
 // Get student attendance records
-export const getStudentAttendance = async (studentId: string): Promise<any[]> => {
+export const getStudentAttendance = async (
+  studentId: string
+): Promise<any[]> => {
   const response = await api.get(`/attendance/student/${studentId}`);
   return response.data;
 };
@@ -80,21 +89,88 @@ export interface AbsentStudentsTodayResponse {
   message?: string;
 }
 
-export const getAbsentStudentsToday = async (): Promise<AbsentStudentsTodayResponse> => {
-  const response = await api.get('/attendance/absent/today');
-  return response.data;
-};
+export const getAbsentStudentsToday =
+  async (): Promise<AbsentStudentsTodayResponse> => {
+    const response = await api.get("/attendance/absent/today");
+    return response.data;
+  };
 
 // Bulk create/update attendance records
 export const bulkSaveAttendance = async (data: {
   date: string;
   records: Array<{
     studentId: string;
-    date: string;
     isPresent: boolean;
   }>;
 }): Promise<any> => {
-  const response = await api.post('/attendance', data);
+  const response = await api.post("/attendance", data);
+  return response.data;
+};
+
+// ============================================================================
+// Student Attendance Statistics API
+// ============================================================================
+
+export interface MonthlyAttendanceStats {
+  month: string;
+  year?: number;
+  monthIndex?: number;
+  absenceCount: number;
+  totalDays: number;
+  rate: number;
+  absenceDates: string[];
+}
+
+export interface WeeklyStatsResponse {
+  totalDays: number;
+  absenceCount: number;
+  presenceCount: number;
+  rate: number;
+  attendanceRate: number;
+  weekStart: string;
+  weekEnd: string;
+  absenceDates: string[];
+}
+
+export interface CurrentMonthStatsResponse {
+  totalDays: number;
+  absenceCount: number;
+  presenceCount: number;
+  rate: number;
+  attendanceRate: number;
+  month: string;
+  year: number;
+  absenceDates: string[];
+}
+
+export interface StudentAttendanceStatsResponse {
+  success: boolean;
+  data: MonthlyAttendanceStats[];
+  weeklyStats?: WeeklyStatsResponse;
+  monthlyStats?: CurrentMonthStatsResponse;
+  message?: string;
+}
+
+// Get student attendance statistics (monthly breakdown with absence dates)
+export const getStudentAttendanceStats = async (
+  studentId: string,
+  month?: number,
+  year?: number
+): Promise<StudentAttendanceStatsResponse> => {
+  const params = new URLSearchParams();
+  if (month !== undefined && month !== null) {
+    params.append("month", month.toString());
+  }
+  if (year !== undefined && year !== null) {
+    params.append("year", year.toString());
+  }
+
+  const queryString = params.toString();
+  const url = queryString
+    ? `/attendance/student/${studentId}/stats?${queryString}`
+    : `/attendance/student/${studentId}/stats`;
+
+  const response = await api.get(url);
   return response.data;
 };
 
@@ -103,6 +179,8 @@ export interface AttendanceStudent {
   _id: string;
   studentId: number;
   name: string;
+  gender?: "male" | "female";
+  phoneNumber?: string;
   group: string;
   teacher: string;
   isPresent: boolean;
@@ -112,7 +190,7 @@ export interface AttendanceStudent {
 
 export interface TeacherGroupsFullDataResponse {
   success: boolean;
-  data: {
+  data?: {
     teacher: {
       _id: string;
       name: string;
@@ -120,9 +198,15 @@ export interface TeacherGroupsFullDataResponse {
     groups: Array<{
       _id: string;
       name: string;
+      status?: string;
       totalStudents: number;
     }>;
     students: AttendanceStudent[]; // includes attendance + absence stats
+    attendanceInfo?: {
+      date: string;
+      isAttendanceTaken: boolean;
+      totalRecords: number;
+    };
     summary: {
       totalGroups: number;
       groupsWithStudents: number;
@@ -134,21 +218,22 @@ export interface TeacherGroupsFullDataResponse {
     };
   };
   message?: string;
+  noSection?: boolean;
 }
 
 export const getTeacherGroupsForAttendance = async (
   teacherId: string,
   date?: string,
-  filter: 'all' | 'withStudents' | 'withoutStudents' = 'all',
+  filter: "all" | "withStudents" | "withoutStudents" = "all",
   includeAbsenceStats: boolean = true
 ): Promise<TeacherGroupsFullDataResponse> => {
   const response = await api.get(`/attendance/teacher/${teacherId}/groups`, {
-    params: { 
-      filter, 
+    params: {
+      filter,
       includeStudents: true,
       date,
-      includeAbsenceStats
-    }
+      includeAbsenceStats,
+    },
   });
   return response.data;
 };
@@ -156,11 +241,14 @@ export const getTeacherGroupsForAttendance = async (
 // Get teacher groups for daily marks page (without student details)
 export const getTeacherGroupsForMarks = async (
   teacherId: string,
-  filter: 'all' | 'withStudents' | 'withoutStudents' = 'all'
+  filter: "all" | "withStudents" | "withoutStudents" = "all"
 ): Promise<TeacherGroupsFullDataResponse> => {
-  const response = await api.get(`/attendance/teacher/${teacherId}/groups-for-marks`, {
-    params: { filter, includeStudents: false } // no student details needed for marks page
-  });
+  const response = await api.get(
+    `/attendance/teacher/${teacherId}/groups-for-marks`,
+    {
+      params: { filter, includeStudents: false }, // no student details needed for marks page
+    }
+  );
   return response.data;
 };
 
@@ -208,7 +296,7 @@ export interface AdvancedStatsResponse {
 export const getAdvancedAttendanceStats = async (
   data: AdvancedStatsRequest
 ): Promise<AdvancedStatsResponse> => {
-  const response = await api.post('/attendance/stats/advanced', data);
+  const response = await api.post("/attendance/stats/advanced", data);
   return response.data;
 };
 
@@ -244,7 +332,7 @@ export interface FilteredStatsResponse {
 export const getFilteredAttendanceStats = async (
   data: FilteredStatsRequest
 ): Promise<FilteredStatsResponse> => {
-  const response = await api.post('/attendance/stats/filtered', data);
+  const response = await api.post("/attendance/stats/filtered", data);
   return response.data;
 };
 
@@ -292,6 +380,6 @@ export interface AttendanceReportResponse {
 export const getAttendanceReport = async (
   data: AttendanceReportRequest
 ): Promise<AttendanceReportResponse> => {
-  const response = await api.post('/attendance/stats/report', data);
+  const response = await api.post("/attendance/stats/report", data);
   return response.data;
 };

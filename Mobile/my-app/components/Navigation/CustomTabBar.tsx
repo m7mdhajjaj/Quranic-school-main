@@ -52,7 +52,13 @@ export default function CustomTabBar() {
   if (
     pathname.includes("chat") ||
     pathname.includes("notifications") ||
-    pathname.includes("dailyMarks")
+    pathname.includes("dailyMarks") ||
+    pathname.includes("attendance") ||
+    pathname.includes("warnings") ||
+    pathname.includes("reports") ||
+    pathname.includes("profile") ||
+    pathname.includes("settings") ||
+    pathname.includes("points-game")
   ) {
     return null;
   }
