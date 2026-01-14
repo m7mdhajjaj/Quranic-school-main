@@ -50,13 +50,24 @@ export const Modal: React.FC<ModalProps> = ({
   // Prevent body scroll when modal is open
   useEffect(() => {
     if (isOpen) {
+      // Save current scroll position
+      const scrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.left = '0';
+      document.body.style.right = '0';
       document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
+      
+      return () => {
+        // Restore scroll position
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.left = '';
+        document.body.style.right = '';
+        document.body.style.overflow = '';
+        window.scrollTo(0, scrollY);
+      };
     }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
   }, [isOpen]);
 
   if (!isOpen || !mounted) return null;
@@ -74,12 +85,14 @@ export const Modal: React.FC<ModalProps> = ({
 
   return createPortal(
     <div
-      className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 ${overlayClassName || ''}`}
+      className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 overflow-hidden ${overlayClassName || ''}`}
       onClick={closeOnOverlayClick ? onClose : undefined}
+      style={{ touchAction: 'none' }}
     >
       <div
         className={`bg-white rounded-2xl shadow-2xl ${sizeClasses[size]} w-full max-h-[90vh] flex flex-col animate-fadeIn relative z-[10000] transition-all duration-300`}
         onClick={(e) => e.stopPropagation()}
+        style={{ transform: 'translate3d(0, 0, 0)' }}
       >
         {(title || showCloseButton) && (
           <div className={`flex items-center justify-between p-6 border-b border-emerald-300 bg-gradient-to-r from-emerald-500 to-teal-600 shrink-0 rounded-t-2xl ${headerClassName || ''}`}>
@@ -97,7 +110,11 @@ export const Modal: React.FC<ModalProps> = ({
         )}
         
         {/* Modal Body with smooth scrolling */}
-        <div className={`p-6 overflow-y-auto flex-1 min-h-0 scroll-smooth overscroll-contain ${bodyClassName || ''} scrollbar-hide`}>
+        <div 
+          className={`p-6 overflow-y-auto flex-1 min-h-0 scroll-smooth overscroll-contain ${bodyClassName || ''} scrollbar-hide`}
+          onWheel={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+        >
            {children}
         </div>
         
