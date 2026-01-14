@@ -3,7 +3,7 @@ import type { MonthYearFilterProps } from "../types/types";
 import { FilterSelect, SearchInput } from "@/components/Filters";
 import { Calendar, Search, RotateCcw } from "lucide-react";
 import { DateRangePicker } from "@/components/UI/DateRangePicker";
-import { useMonthYearFilterLogic } from "../hooks/useMonthYearFilterLogic";
+import { useMonthYearFilterLogic } from "../hooks/ui";
 
 /**
  * Month and Year filter component - Simplified Version

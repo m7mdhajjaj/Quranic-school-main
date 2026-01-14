@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Modal, Button } from '@/components/UI';
 import { CheckCircle, ArrowRight, Trophy, BookOpen, Repeat } from 'lucide-react';
-import { useCompletedSurahs } from '../hooks/useCompletedSurahs';
+import { useCompletedSurahs } from '../hooks/data';
 
 interface CompletedSurahsModalProps {
   isOpen: boolean;

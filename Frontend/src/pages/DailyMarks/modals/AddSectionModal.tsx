@@ -6,9 +6,8 @@ import {
 } from '@/components/UI';
 import type { AddSectionModalProps } from '../types/types';
 import { useAddSectionModal } from '../hooks/modals';
-import { useSectionValidation } from '../hooks/useSectionValidation'; 
-import { useCompletedSurahs } from '../hooks/useCompletedSurahs';
-import { useAutoValidateSchedule } from '../hooks/useSchedulerValidation';
+import { useSectionValidation, useAutoValidateSchedule } from '../hooks/teacher';
+import { useCompletedSurahs } from '../hooks/data';
 import QuranSegmentInput from '../components/QuranSegmentInput';
 import ErrorMessageList from '../components/ErrorMessageList';
 import { checkSectionQuota } from '@/Api/DailyMark/sectionApi';

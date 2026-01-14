@@ -1,24 +1,22 @@
 // ============================================================================
 // Hooks Index - Barrel Export (Organized by Category)
 // ============================================================================
+// 
+// Structure:
+// ├── data/       → جلب بيانات الجدول
+// ├── form/       → إدارة نماذج الحصص
+// ├── display/    → عرض الجدول
+// └── selection/  → اختيار المعلم والحلقات
 
 // 📊 Data Management Hooks
-export { useTimetableData } from "./data/useTimetableData";
-export { useTimetableActions } from "./data/useTimetableActions";
+export * from "./data";
 
 // 📝 Form Management Hooks
-export { useSessionForm } from "./form/useSessionForm";
-export { useSessionModalLogic } from "./form/useSessionModalLogic";
-export { useSessionDuration } from "./form/useSessionDuration";
-export { useSessionModalController } from "./form/useSessionModalController";
+export * from "./form";
 
 // 🎨 Display & View Hooks
-export { useViewMode } from "./display/useViewMode";
-export { useWeeklyGrid } from "./display/useWeeklyGrid";
-export { useWeekFilter, getWeekRange, formatWeekRange } from "./display/useWeekFilter";
-export type { WeekRange } from "./display/useWeekFilter";
+export * from "./display";
 
 // 👥 Selection & Filtering Hooks
-export { useTeachers } from "./selection/useTeachers";
-export { useTeacherGroups } from "./selection/useTeacherGroups";
-export { useTeacherSelection } from "./selection/useTeacherSelection";
+export * from "./selection";
+

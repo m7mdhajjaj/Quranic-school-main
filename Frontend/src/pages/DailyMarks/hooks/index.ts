@@ -3,60 +3,67 @@
  * Daily Marks Hooks - Central Export File
  * ============================================================================
  * 
- * Organized by category for better maintainability and discoverability.
- * All custom hooks for Daily Marks functionality are exported from here.
+ * Organized by ROLE and CATEGORY for better maintainability.
+ * 
+ * Structure:
+ * ├── data/      → جلب البيانات من الـ API
+ * ├── shared/    → مشتركة بين جميع الأدوار
+ * ├── teacher/   → خاصة بالمعلم فقط
+ * ├── student/   → خاصة بالطالب فقط
+ * ├── ui/        → التحكم بالواجهة والنوافذ
+ * └── modals/    → hooks خاصة بالـ modals
  */
 
 // ============================================================================
-// 📊 DATA MANAGEMENT HOOKS
+// 📊 DATA HOOKS - جلب البيانات
 // ============================================================================
-
-/**
- * useDailyMarksData - Loads basic data (user, students, groups)
- * useFilteredMarksData - Fetches filtered sections and marks from API
- * useDailyMarksState - Centralizes all component state management
- * useStudentAverages - Fetches student averages from backend
- * useSectionsFilter - Manages month/year/day filter state
- */
-export { useDailyMarksData } from './useDailyMarksData';
-export { useFilteredMarksData } from './useFilteredMarksData';
-export { useDailyMarksState } from './useDailyMarksState';
-export { useStudentAverages } from './useStudentAverages';
-export { useSectionsFilter } from './useSectionsFilter';
+export { 
+  useDailyMarksData,
+  useFilteredMarksData,
+  useStudentAverages,
+  useGroupStats,
+  useCompletedSurahs 
+} from './data';
 
 // ============================================================================
-// 🎯 BUSINESS LOGIC HOOKS
+// 🔄 SHARED HOOKS - مشتركة بين جميع الأدوار
 // ============================================================================
-
-/**
- * useDailyMarksHandlers - Handles all CRUD operations and bulk actions
- * useModalAndFormActions - Manages modal actions and form inputs (merged hook)
- * useStudentSelection - Manages student and group selection with transitions
- */
-export { useDailyMarksHandlers } from './useDailyMarksHandlers';
-export { useModalAndFormActions } from './useModalAndFormActions';
-export { useStudentSelection } from './useStudentSelection';
+export { 
+  useDailyMarksState,
+  useComputedValues,
+  useMarkFinder,
+  useSectionsFilter 
+} from './shared';
 
 // ============================================================================
-// 🧮 COMPUTED VALUES & FILTERING HOOKS
+// 👨‍🏫 TEACHER HOOKS - خاصة بالمعلم
 // ============================================================================
-
-/**
- * useComputedValues - Provides memoized computed values
- * useStudentIdForAverages - Determines correct student ID for averages
- * useGroupStats - Fetches group statistics (students count, sections count)
- */
-export { useComputedValues } from './useComputedValues';
-export { useStudentIdForAverages } from './useStudentIdForAverages';
-export { useGroupStats } from './useGroupStats';
+export { 
+  useDailyMarksHandlers,
+  useStudentSelection,
+  useAiRepair,
+  useAutoValidateSchedule,
+  useSectionValidation 
+} from './teacher';
 
 // ============================================================================
-// 🧭 NAVIGATION & UI HOOKS
+// 👨‍🎓 STUDENT HOOKS - خاصة بالطالب
 // ============================================================================
+export { 
+  useStudentIdForAverages 
+} from './student';
 
-/**
- * useMonthNavigation - Handles month/year navigation
- * useMarkFinder - Finds and attaches marks to sections
- */
-export { useMonthNavigation } from './useMonthNavigation';
-export { useMarkFinder } from './useMarkFinder';
+// ============================================================================
+// 🎨 UI HOOKS - التحكم بالواجهة
+// ============================================================================
+export { 
+  useModalAndFormActions,
+  useMonthNavigation,
+  useMonthYearFilterLogic,
+  useQuranSegmentInputLogic 
+} from './ui';
+
+// ============================================================================
+// 🪟 MODAL HOOKS - خاصة بالـ modals
+// ============================================================================
+export * from './modals';

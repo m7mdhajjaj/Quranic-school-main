@@ -9,21 +9,26 @@ import { useSearchParams } from 'react-router-dom';
 // UI Components
 import PageHeader from '@/components/UI/PageHeader';
 
-// Custom Hooks - Data Management
-import { useDailyMarksData } from './hooks/useDailyMarksData';
-import { useFilteredMarksData } from './hooks/useFilteredMarksData';
-import { useStudentAverages } from './hooks/useStudentAverages';
-import { useGroupStats } from './hooks/useGroupStats';
-import { useCompletedSurahs } from './hooks/useCompletedSurahs';
-import { useStudentIdForAverages } from './hooks/useStudentIdForAverages';
-import { useDailyMarksState } from './hooks/useDailyMarksState';
-import { useSectionsFilter } from './hooks/useSectionsFilter';
-
-// Custom Hooks - Business Logic
-import { useDailyMarksHandlers } from './hooks/useDailyMarksHandlers';
-import { useModalAndFormActions } from './hooks/useModalAndFormActions';
-import { useStudentSelection } from './hooks/useStudentSelection';
-import { useComputedValues } from './hooks/useComputedValues';
+// Custom Hooks - Organized by Role/Category
+import { 
+  // Data hooks
+  useDailyMarksData,
+  useFilteredMarksData,
+  useStudentAverages,
+  useGroupStats,
+  useCompletedSurahs,
+  // Shared hooks
+  useDailyMarksState,
+  useSectionsFilter,
+  useComputedValues,
+  // Teacher hooks
+  useDailyMarksHandlers,
+  useStudentSelection,
+  // Student hooks
+  useStudentIdForAverages,
+  // UI hooks
+  useModalAndFormActions,
+} from './hooks';
 import { useAllGroupsStats } from './Views/TeacherView/hooks';
 
 // Page Components
@@ -32,6 +37,7 @@ import { StudentView } from './Views/StudentView';
 import { ModalsContainer } from './modals/ModalsContainer';
 import { GroupsGridView } from './Views/TeacherView/components/GroupsGridView';
 import { DailyMarksPageSkeleton } from '../../components/skeletons/DailyMarksSkeletons';
+
 
 // Lazy load heavy component
 const TeacherView = lazy(() =>

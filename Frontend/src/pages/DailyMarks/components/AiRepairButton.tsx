@@ -1,6 +1,6 @@
 import { Button } from '@/components/UI';
 import { Bot, Settings2 } from 'lucide-react';
-import { useAiRepair } from '../hooks/useAiRepair';
+import { useAiRepair } from '../hooks/teacher';
 
 interface AiRepairButtonProps {
   selectedGroup: string;

@@ -3,7 +3,7 @@ import { quranSurahs } from '@/data/quranSurahs';
 import { BookOpen, Search, X } from 'lucide-react';
 import type { QuranSegmentUI } from '../types/types';
 
-import { useQuranSegmentInputLogic } from "../hooks/useQuranSegmentInputLogic";
+import { useQuranSegmentInputLogic } from "../hooks/ui";
 
 import type { CompletedSurah } from '@/Api/DailyMark/sectionApi';
 
