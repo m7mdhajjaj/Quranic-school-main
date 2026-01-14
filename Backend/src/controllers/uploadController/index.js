@@ -15,6 +15,8 @@ const {
 const {
   uploadHeroImage,
   getHeroImage,
+  getAllHeroImages,
+  deleteHeroImage,
 } = require("./heroUpload");
 
 // Import Logo Upload Controllers
@@ -53,6 +55,8 @@ module.exports = {
   // Hero Controllers
   uploadHeroImage,
   getHeroImage,
+  getAllHeroImages,
+  deleteHeroImage,
   
   // Logo Controllers
   uploadLogo,

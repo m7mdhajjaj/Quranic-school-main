@@ -15,6 +15,21 @@ export interface MultipleUploadResponse {
   files?: Array<{ url: string; publicId: string }>;
 }
 
+export interface HeroImage {
+  url: string;
+  publicId: string;
+  width?: number;
+  height?: number;
+  createdAt?: string;
+}
+
+export interface AllHeroImagesResponse {
+  success: boolean;
+  images: HeroImage[];
+  total: number;
+  message?: string;
+}
+
 /**
  * رفع صورة واحدة للأخبار
  */
@@ -96,6 +111,22 @@ export const uploadHeroImage = async (file: File): Promise<UploadResponse> => {
  */
 export const getHeroImage = async (): Promise<UploadResponse> => {
   const response = await axios.get(`${API_URL}/hero`);
+  return response.data;
+};
+
+/**
+ * جلب جميع صور الهيرو للكاروسيل
+ */
+export const getAllHeroImages = async (): Promise<AllHeroImagesResponse> => {
+  const response = await axios.get(`${API_URL}/hero/all`);
+  return response.data;
+};
+
+/**
+ * حذف صورة هيرو
+ */
+export const deleteHeroImage = async (publicId: string): Promise<{ success: boolean; message: string }> => {
+  const response = await axios.delete(`${API_URL}/hero/${encodeURIComponent(publicId)}`);
   return response.data;
 };
 

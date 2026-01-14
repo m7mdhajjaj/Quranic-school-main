@@ -36,7 +36,7 @@ const uploadHeroImage = async (req, res) => {
 };
 
 /**
- * @desc    Get current hero image
+ * @desc    Get current hero image (latest one)
  * @route   GET /api/upload/hero
  * @access  Public
  */
@@ -72,7 +72,97 @@ const getHeroImage = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Get all hero images for carousel
+ * @route   GET /api/upload/hero/all
+ * @access  Public
+ */
+const getAllHeroImages = async (req, res) => {
+  try {
+    // Get all resources in the Hero folder, sorted by uploaded_at desc
+    const result = await cloudinary.search
+      .expression("folder:quranic-school/Hero")
+      .sort_by("uploaded_at", "desc")
+      .max_results(10) // Maximum 10 images for carousel
+      .execute();
+
+    if (result.resources && result.resources.length > 0) {
+      const images = result.resources.map((resource) => ({
+        url: resource.secure_url,
+        publicId: resource.public_id,
+        width: resource.width,
+        height: resource.height,
+        createdAt: resource.created_at,
+      }));
+
+      res.json({
+        success: true,
+        images,
+        total: images.length,
+      });
+    } else {
+      res.json({
+        success: true,
+        images: [],
+        total: 0,
+        message: "لم يتم رفع صور هيرو بعد",
+      });
+    }
+  } catch (error) {
+    console.error("Get all hero images error:", error);
+    res.status(500).json({
+      success: false,
+      message: "حدث خطأ أثناء جلب صور الهيرو",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * @desc    Delete a hero image
+ * @route   DELETE /api/upload/hero/:publicId
+ * @access  Admin/Teacher
+ */
+const deleteHeroImage = async (req, res) => {
+  try {
+    const { publicId } = req.params;
+    
+    if (!publicId) {
+      return res.status(400).json({
+        success: false,
+        message: "معرف الصورة مطلوب",
+      });
+    }
+
+    // Decode the publicId (it may be URL encoded)
+    const decodedPublicId = decodeURIComponent(publicId);
+
+    const result = await cloudinary.uploader.destroy(decodedPublicId);
+
+    if (result.result === "ok") {
+      res.json({
+        success: true,
+        message: "تم حذف الصورة بنجاح",
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: "فشل في حذف الصورة",
+      });
+    }
+  } catch (error) {
+    console.error("Delete hero image error:", error);
+    res.status(500).json({
+      success: false,
+      message: "حدث خطأ أثناء حذف الصورة",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   uploadHeroImage,
   getHeroImage,
+  getAllHeroImages,
+  deleteHeroImage,
 };

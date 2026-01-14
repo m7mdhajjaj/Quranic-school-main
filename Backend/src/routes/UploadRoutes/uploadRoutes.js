@@ -13,6 +13,8 @@ const {
   uploadMultipleNewsImages,
   uploadHeroImage,
   getHeroImage,
+  getAllHeroImages,
+  deleteHeroImage,
   uploadLogo: uploadLogoHandler,
   getLogo,
   uploadAvatarSimple,
@@ -32,6 +34,8 @@ router.post(
 // ============= Hero Image Routes =============
 router.post('/hero', uploadHero.single('image'), uploadHeroImage);
 router.get('/hero', getHeroImage);
+router.get('/hero/all', getAllHeroImages);
+router.delete('/hero/:publicId', protect, deleteHeroImage);
 
 // ============= Logo Routes =============
 router.post('/logo', uploadLogo.single('image'), uploadLogoHandler);

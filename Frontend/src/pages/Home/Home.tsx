@@ -1,19 +1,29 @@
 import AOS from 'aos';
 import 'aos/dist/aos.css';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { getHeroImage, uploadHeroImage } from '@/Api/uploadApi';
+import { getAllHeroImages, uploadHeroImage, deleteHeroImage } from '@/Api/uploadApi';
+
+// Define HeroImage type locally to avoid cache issues
+export interface HeroImage {
+  url: string;
+  publicId: string;
+  width?: number;
+  height?: number;
+  createdAt?: string;
+}
 import {
   showSuccessMessage,
   showErrorMessage,
+  showConfirmMessage,
 } from '@/utils/sweetalertUtils';
 import { HeroSection, VisionSection, ValuesSection } from './components';
 
 const Home = () => {
   const { user: currentUser } = useAuth();
 
-  // Hero Image State
-  const [heroImage, setHeroImage] = useState<string | null>(null);
+  // Hero Images State (for carousel)
+  const [heroImages, setHeroImages] = useState<HeroImage[]>([]);
   const [heroImageLoading, setHeroImageLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -40,7 +50,7 @@ const Home = () => {
     };
   }, []);
 
-  // Refresh AOS when hero image loads
+  // Refresh AOS when hero images load
   useEffect(() => {
     if (!heroImageLoading) {
       setTimeout(() => {
@@ -49,24 +59,24 @@ const Home = () => {
     }
   }, [heroImageLoading]);
 
-  // Load Hero Image
-  useEffect(() => {
-    const fetchHeroImage = async () => {
-      setHeroImageLoading(true);
-      try {
-        const data = await getHeroImage();
-        if (data.success && data.url) {
-          setHeroImage(data.url);
-        }
-      } catch (error) {
-        console.error('Error fetching hero image:', error);
-      } finally {
-        setHeroImageLoading(false);
+  // Load Hero Images
+  const fetchHeroImages = useCallback(async () => {
+    setHeroImageLoading(true);
+    try {
+      const data = await getAllHeroImages();
+      if (data.success && data.images) {
+        setHeroImages(data.images);
       }
-    };
-
-    fetchHeroImage();
+    } catch (error) {
+      console.error('Error fetching hero images:', error);
+    } finally {
+      setHeroImageLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchHeroImages();
+  }, [fetchHeroImages]);
 
   // Check if user is teacher or admin
   const isTeacherOrAdmin =
@@ -103,8 +113,9 @@ const Home = () => {
       const data = await uploadHeroImage(file);
 
       if (data.success && data.url) {
-        setHeroImage(data.url);
-        showSuccessMessage('تم التحديث بنجاح', 'تم تحديث صورة الهيرو بنجاح');
+        // Refresh the images list
+        await fetchHeroImages();
+        showSuccessMessage('تم الرفع بنجاح', 'تم إضافة الصورة للكاروسيل بنجاح');
       } else {
         showErrorMessage(
           'فشل في الرفع',
@@ -125,6 +136,32 @@ const Home = () => {
     }
   };
 
+  // Handle Delete Image
+  const handleDeleteImage = async (publicId: string) => {
+    const result = await showConfirmMessage(
+      'هل أنت متأكد؟',
+      'سيتم حذف هذه الصورة من الكاروسيل نهائياً',
+      'حذف',
+      'إلغاء'
+    );
+
+    if (!result.isConfirmed) return;
+
+    try {
+      const response = await deleteHeroImage(publicId);
+      if (response.success) {
+        // Remove from local state
+        setHeroImages((prev) => prev.filter((img) => img.publicId !== publicId));
+        showSuccessMessage('تم الحذف', 'تم حذف الصورة بنجاح');
+      } else {
+        showErrorMessage('فشل في الحذف', response.message || 'حدث خطأ أثناء الحذف');
+      }
+    } catch (error) {
+      console.error('Error deleting image:', error);
+      showErrorMessage('خطأ', 'حدث خطأ أثناء حذف الصورة');
+    }
+  };
+
   // Trigger file input click
   const handleEditButtonClick = () => {
     if (fileInputRef.current) {
@@ -138,15 +175,16 @@ const Home = () => {
       dir="rtl"
     >
       <div className="container mx-auto py-12 px-4">
-        {/* Hero Section - مع skeleton للصورة فقط */}
+        {/* Hero Section - Carousel */}
         <HeroSection
           currentUser={currentUser}
-          heroImage={heroImage}
+          heroImages={heroImages}
           heroImageLoading={heroImageLoading}
           uploading={uploading}
           isTeacherOrAdmin={isTeacherOrAdmin}
           onImageChange={handleHeroImageChange}
           onEditButtonClick={handleEditButtonClick}
+          onDeleteImage={handleDeleteImage}
           fileInputRef={fileInputRef}
         />
 
