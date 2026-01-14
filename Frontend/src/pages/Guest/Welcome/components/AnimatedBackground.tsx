@@ -21,8 +21,8 @@ export const AnimatedBackground = ({
   } = useAnimatedBackground(videoUrl, fallbackVideoUrl);
 
   return (
-    <div className="absolute inset-0 overflow-hidden">
-      {/* Video Background */}
+    <div className="absolute inset-0 overflow-hidden bg-emerald-950">
+      {/* Video Background - Responsive */}
       {!videoError && (
         <video
           key={currentVideoUrl}
@@ -31,7 +31,11 @@ export const AnimatedBackground = ({
           muted
           playsInline
           preload="auto"
-          className="absolute inset-0 w-full h-full object-cover z-0"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 min-w-full min-h-full w-auto h-auto z-0"
+          style={{
+            objectFit: 'cover',
+            objectPosition: 'center center',
+          }}
           onError={handleVideoError}
           onLoadedData={(e) => {
             handleVideoLoaded();
@@ -49,10 +53,10 @@ export const AnimatedBackground = ({
       )}
 
       {/* Dark Overlay for better text readability - خفيف */}
-      <div className="absolute inset-0 bg-black/40" />
+      <div className="absolute inset-0 bg-black/40 z-[1]" />
       
       {/* Vignette Effect - خفيف */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/30" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/30 z-[2]" />
     </div>
   );
 };
