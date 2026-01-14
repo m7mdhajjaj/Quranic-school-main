@@ -19,8 +19,10 @@ const TimetablePage = () => {
   } = useTimetableData();
 
   // ✅ العمليات (CRUD) - تتواصل مع Backend API (للمعلم فقط)
+  // ✅ Optimistic Updates: التحديث الفوري مع rollback عند الخطأ
   const { addSession, editSession, removeSession } = useTimetableActions({
     setSessions,
+    refetchSessions,
   });
 
   // ✅ توجيه حسب الدور - كل دور له عرض خاص

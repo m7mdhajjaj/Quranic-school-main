@@ -297,3 +297,117 @@ export const isValidTime = (timeStr: string): boolean => {
   
   return false;
 };
+
+// ============================================================================
+// ✅ Data Validation - التحقق من صحة البيانات قبل الإرسال
+// ============================================================================
+
+interface ValidationResult {
+  isValid: boolean;
+  errors: string[];
+}
+
+interface SessionFormDataForValidation {
+  sessionDate?: string;
+  startHour?: string;
+  endHour?: string;
+  note?: string;
+  teacherId?: string;
+}
+
+/**
+ * التحقق من صحة بيانات الموعد
+ * @param data - بيانات النموذج
+ * @returns نتيجة التحقق مع الأخطاء إن وجدت
+ */
+export const validateSessionData = (data: SessionFormDataForValidation): ValidationResult => {
+  const errors: string[] = [];
+
+  // ✅ 1. التحقق من التاريخ
+  if (!data.sessionDate) {
+    errors.push('التاريخ مطلوب');
+  } else {
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    const isValidFormat = dateRegex.test(data.sessionDate) || 
+                         !isNaN(Date.parse(data.sessionDate));
+    if (!isValidFormat) {
+      errors.push('صيغة التاريخ غير صحيحة');
+    } else {
+      const sessionDate = new Date(data.sessionDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      // السماح بالتواريخ السابقة فقط لمدة أسبوع
+      const oneWeekAgo = new Date(today);
+      oneWeekAgo.setDate(today.getDate() - 7);
+      
+      if (sessionDate < oneWeekAgo) {
+        errors.push('لا يمكن إضافة موعد لتاريخ قبل أسبوع من اليوم');
+      }
+    }
+  }
+
+  // ✅ 2. التحقق من وقت البداية
+  if (!data.startHour) {
+    errors.push('وقت البداية مطلوب');
+  } else {
+    const timeRegex = /^(0?[1-9]|1[0-2]):(00|30)\s?(AM|PM)$/i;
+    if (!timeRegex.test(data.startHour.trim())) {
+      errors.push('صيغة وقت البداية غير صحيحة (مثال: 2:00 PM)');
+    }
+  }
+
+  // ✅ 3. التحقق من وقت النهاية
+  if (!data.endHour) {
+    errors.push('وقت النهاية مطلوب');
+  } else {
+    const timeRegex = /^(0?[1-9]|1[0-2]):(00|30)\s?(AM|PM)$/i;
+    if (!timeRegex.test(data.endHour.trim())) {
+      errors.push('صيغة وقت النهاية غير صحيحة (مثال: 3:30 PM)');
+    }
+  }
+
+  // ✅ 4. التحقق من ترتيب الأوقات
+  if (data.startHour && data.endHour) {
+    const startMinutes = timeToMinutes(data.startHour);
+    const endMinutes = timeToMinutes(data.endHour);
+    
+    if (startMinutes >= endMinutes) {
+      errors.push('وقت النهاية يجب أن يكون بعد وقت البداية');
+    }
+    
+    // التحقق من أن المدة معقولة (30 دقيقة - 4 ساعات)
+    const duration = endMinutes - startMinutes;
+    if (duration < 30) {
+      errors.push('مدة الحصة يجب أن تكون 30 دقيقة على الأقل');
+    }
+    if (duration > 240) {
+      errors.push('مدة الحصة لا يمكن أن تتجاوز 4 ساعات');
+    }
+  }
+
+  // ✅ 5. التحقق من اسم الحلقة (اختياري لكن إذا موجود يجب أن يكون صحيح)
+  if (data.note && data.note.trim().length > 100) {
+    errors.push('اسم الحلقة طويل جداً (الحد الأقصى 100 حرف)');
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+  };
+};
+
+/**
+ * تنظيف وتنسيق بيانات الموعد
+ * @param data - البيانات الخام
+ * @returns البيانات المنظفة
+ */
+export const sanitizeSessionData = <T extends SessionFormDataForValidation>(data: T): T => {
+  return {
+    ...data,
+    sessionDate: data.sessionDate?.trim(),
+    startHour: data.startHour?.trim(),
+    endHour: data.endHour?.trim(),
+    note: data.note?.trim(),
+  };
+};

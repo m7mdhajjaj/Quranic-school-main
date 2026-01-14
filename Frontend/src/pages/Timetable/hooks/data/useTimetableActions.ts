@@ -2,8 +2,9 @@
 // useTimetableActions - هوك لإدارة عمليات الجدول (CRUD Operations)
 // ============================================================================
 // ⚠️ النظام الجديد: يعتمد على sessionDate (التاريخ المحدد)
+// ✅ Optimistic Updates: التحديث الفوري ثم التحقق من الـ Server
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import {
   createTimetable,
   updateTimetable,
@@ -12,15 +13,20 @@ import {
 import type { Session, SessionFormData } from "../../types/timetable.types";
 import { showConfirmDialog, showErrorMessage } from "@/utils/sweetalertUtils";
 import { showSuccessToast } from "@/utils/toastUtils";
-import { getCurrentUser, formatDateShort, getDayNameFromDate } from "../../utils";
+import { getCurrentUser, formatDateShort, getDayNameFromDate, validateSessionData } from "../../utils";
 
 interface UseTimetableActionsProps {
   setSessions: React.Dispatch<React.SetStateAction<Session[]>>;
+  refetchSessions?: () => Promise<void>;
 }
 
 export const useTimetableActions = ({
   setSessions,
+  refetchSessions,
 }: UseTimetableActionsProps) => {
+  
+  // ✅ Ref لحفظ الـ state السابق للـ rollback
+  const previousSessionsRef = useRef<Session[]>([]);
   
   // ============================================
   // 🔄 Helper: تحويل Response إلى Session (DRY)
@@ -57,15 +63,53 @@ export const useTimetableActions = ({
   }, []);
   
   // ============================================
-  // ➕ إضافة موعد جديد
+  // ➕ إضافة موعد جديد (Optimistic Update)
   // ============================================
   const addSession = useCallback(
     async (formData: SessionFormData) => {
-      try {
-        const response = await createTimetable(formData);
-        const sessionToAdd = mapResponseToSession(response.data);
+      // ✅ 1. Validation قبل الإرسال
+      const validation = validateSessionData(formData);
+      if (!validation.isValid) {
+        await showErrorMessage("❌ بيانات غير صحيحة", validation.errors.join('\n'));
+        return false;
+      }
 
-        setSessions((prev) => [...prev, sessionToAdd]);
+      // ✅ 2. إنشاء Session مؤقت للـ Optimistic Update
+      const tempId = `temp_${Date.now()}`;
+      const currentUser = getCurrentUser();
+      const optimisticSession: Session = {
+        _id: tempId,
+        sessionDate: formData.sessionDate,
+        day: getDayNameFromDate(formData.sessionDate),
+        startHour: formData.startHour,
+        endHour: formData.endHour,
+        note: formData.note || '',
+        description: formData.description || '',
+        sessionType: formData.sessionType || 'both',
+        groupId: formData.groupId,
+        teacherId: currentUser ? {
+          _id: currentUser._id,
+          firstName: currentUser.firstName,
+          lastName: currentUser.lastName || ''
+        } as any : formData.teacherId,
+        sectionId: formData.sectionId,
+      };
+
+      // ✅ 3. حفظ الـ state الحالي للـ rollback
+      setSessions((prev) => {
+        previousSessionsRef.current = prev;
+        return [...prev, optimisticSession];
+      });
+
+      try {
+        // ✅ 4. إرسال للـ Server
+        const response = await createTimetable(formData);
+        const sessionFromServer = mapResponseToSession(response.data);
+
+        // ✅ 5. استبدال الـ temp session بالـ real session
+        setSessions((prev) =>
+          prev.map((s) => (s._id === tempId ? sessionFromServer : s))
+        );
 
         const dayName = getDayNameFromDate(formData.sessionDate);
         const dateDisplay = formatDateShort(formData.sessionDate);
@@ -76,6 +120,8 @@ export const useTimetableActions = ({
 
         return true;
       } catch (error: any) {
+        // ❌ Rollback في حالة الخطأ
+        setSessions(previousSessionsRef.current);
         
         if (error?.isConflict) {
           await showErrorMessage("⚠️ تعارض في المواعيد", error.message);
@@ -96,22 +142,57 @@ export const useTimetableActions = ({
   );
 
   // ============================================
-  // ✏️ تعديل موعد موجود
+  // ✏️ تعديل موعد موجود (Optimistic Update)
   // ============================================
   const editSession = useCallback(
     async (sessionId: string, formData: SessionFormData) => {
-      try {
-        const response = await updateTimetable(sessionId, formData);
-        const sessionToUpdate = mapResponseToSession(response.data);
+      // ✅ 1. Validation قبل الإرسال
+      const validation = validateSessionData(formData);
+      if (!validation.isValid) {
+        await showErrorMessage("❌ بيانات غير صحيحة", validation.errors.join('\n'));
+        return false;
+      }
 
+      // ✅ 2. حفظ الـ state الحالي للـ rollback
+      let previousSession: Session | undefined;
+      setSessions((prev) => {
+        previousSessionsRef.current = prev;
+        previousSession = prev.find((s) => s._id === sessionId);
+        
+        // ✅ 3. Optimistic Update
+        return prev.map((s) =>
+          s._id === sessionId
+            ? {
+                ...s,
+                sessionDate: formData.sessionDate,
+                day: getDayNameFromDate(formData.sessionDate),
+                startHour: formData.startHour,
+                endHour: formData.endHour,
+                note: formData.note || s.note,
+                description: formData.description || s.description,
+                sessionType: formData.sessionType || s.sessionType,
+                groupId: formData.groupId || s.groupId,
+              }
+            : s
+        );
+      });
+
+      try {
+        // ✅ 4. إرسال للـ Server
+        const response = await updateTimetable(sessionId, formData);
+        const sessionFromServer = mapResponseToSession(response.data);
+
+        // ✅ 5. تحديث بالبيانات الفعلية من الـ Server
         setSessions((prev) =>
-          prev.map((s) => (s._id === sessionId ? sessionToUpdate : s))
+          prev.map((s) => (s._id === sessionId ? sessionFromServer : s))
         );
 
         showSuccessToast("تم تحديث موعد الحلقة بنجاح ✓");
 
         return true;
       } catch (error: any) {
+        // ❌ Rollback في حالة الخطأ
+        setSessions(previousSessionsRef.current);
         
         if (error?.isConflict) {
           await showErrorMessage("⚠️ تعارض في المواعيد", error.message);
@@ -132,7 +213,7 @@ export const useTimetableActions = ({
   );
 
   // ============================================
-  // 🗑️ حذف موعد
+  // 🗑️ حذف موعد (Optimistic Update)
   // ============================================
   const removeSession = useCallback(
     async (session: Session) => {
@@ -153,15 +234,24 @@ export const useTimetableActions = ({
       if (!result.isConfirmed) return false;
 
       if (session._id) {
+        // ✅ 1. حفظ الـ state الحالي للـ rollback
+        setSessions((prev) => {
+          previousSessionsRef.current = prev;
+          // ✅ 2. Optimistic Delete
+          return prev.filter((s) => s._id !== session._id);
+        });
+
         try {
+          // ✅ 3. إرسال للـ Server
           await deleteTimetable(session._id);
-          
-          setSessions((prev) => prev.filter((s) => s._id !== session._id));
 
           showSuccessToast("تم حذف الموعد بنجاح ✓");
 
           return true;
         } catch (error: any) {
+          // ❌ Rollback في حالة الخطأ
+          setSessions(previousSessionsRef.current);
+          
           const errorMsg =
             error?.response?.data?.message ||
             error?.message ||

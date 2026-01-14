@@ -24,4 +24,7 @@ export {
   getTodayDate,
   isSameDay,
   getWeekDates,
+  // ✅ Data Validation
+  validateSessionData,
+  sanitizeSessionData,
 } from './timetableHelpers';
