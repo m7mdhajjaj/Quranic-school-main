@@ -102,50 +102,50 @@ export default function WarningsScreen() {
   if (isTeacher) {
     return (
       <View className="flex-1 bg-gray-50">
-        <View className="flex-1 px-4 pt-6 pb-12">
-          {/* العنوان */}
-          <View className="bg-white rounded-2xl p-6 mb-6 shadow-lg border-2 border-red-200">
-            <View className="flex-row items-center gap-4 mb-2">
-              <View className="bg-red-100 rounded-full p-3">
-                <Text className="text-4xl">⚠️</Text>
+        {/* العنوان */}
+        <View className="bg-white px-4 py-3 shadow-sm border-b border-red-200">
+          <View className="flex-row items-center gap-2">
+            <View className="bg-red-100 rounded-full p-2">
+              <Text className="text-2xl">⚠️</Text>
+            </View>
+            <View className="flex-1">
+              <Text className="text-lg font-bold text-gray-900">
+                إدارة الإنذارات
+              </Text>
+            </View>
+          </View>
+          {statistics && !selectedGroup && (
+            <View className="flex-row gap-1.5 mt-2">
+              <View className="flex-1 bg-gray-100 rounded-lg p-1.5">
+                <Text className="text-gray-600 text-[10px]">إجمالي</Text>
+                <Text className="text-gray-900 font-bold text-sm">
+                  {statistics.totalWarnings}
+                </Text>
               </View>
-              <View className="flex-1">
-                <Text className="text-2xl font-bold text-gray-900">
-                  إدارة الإنذارات
+              <View className="flex-1 bg-gray-100 rounded-lg p-1.5">
+                <Text className="text-gray-600 text-[10px]">طلاب</Text>
+                <Text className="text-gray-900 font-bold text-sm">
+                  {statistics.studentsWithWarnings}
+                </Text>
+              </View>
+              <View className="flex-1 bg-gray-100 rounded-lg p-1.5">
+                <Text className="text-gray-600 text-[10px]">مفصولين</Text>
+                <Text className="text-gray-900 font-bold text-sm">
+                  {statistics.expelledStudents}
                 </Text>
               </View>
             </View>
-            {statistics && !selectedGroup && (
-              <View className="flex-row gap-3 mt-4">
-                <View className="flex-1 bg-gray-100 rounded-xl p-3 border border-gray-300">
-                  <Text className="text-gray-600 text-xs mb-1">إجمالي</Text>
-                  <Text className="text-gray-900 font-bold text-xl">
-                    {statistics.totalWarnings}
-                  </Text>
-                </View>
-                <View className="flex-1 bg-gray-100 rounded-xl p-3 border border-gray-300">
-                  <Text className="text-gray-600 text-xs mb-1">طلاب</Text>
-                  <Text className="text-gray-900 font-bold text-xl">
-                    {statistics.studentsWithWarnings}
-                  </Text>
-                </View>
-                <View className="flex-1 bg-gray-100 rounded-xl p-3 border border-gray-300">
-                  <Text className="text-gray-600 text-xs mb-1">مفصولين</Text>
-                  <Text className="text-gray-900 font-bold text-xl">
-                    {statistics.expelledStudents}
-                  </Text>
-                </View>
-              </View>
-            )}
-          </View>
+          )}
+        </View>
 
+        <View className="flex-1 px-3 pt-2 pb-20">
           {/* زر الرجوع */}
           {selectedGroup && (
             <TouchableOpacity
               onPress={handleBack}
-              className="flex-row items-center gap-2 mb-4 bg-white rounded-xl p-4 shadow-sm">
-              <Text className="text-2xl">←</Text>
-              <Text className="text-gray-700 font-semibold">
+              className="flex-row items-center gap-2 mb-2 bg-white rounded-lg p-2 shadow-sm">
+              <Text className="text-lg">←</Text>
+              <Text className="text-gray-700 font-medium text-sm">
                 العودة للحلقات
               </Text>
             </TouchableOpacity>
@@ -167,40 +167,34 @@ export default function WarningsScreen() {
               <>
                 {/* إحصائيات الحلقة */}
                 {selectedGroup.statistics && (
-                  <View className="bg-white rounded-2xl p-4 mb-4 shadow-md">
-                    <Text className="text-gray-700 font-bold text-lg mb-3">
-                      📊 إحصائيات {selectedGroup.name}
+                  <View className="bg-white rounded-lg p-2 mb-2 shadow-sm">
+                    <Text className="text-gray-700 font-bold text-xs mb-1.5">
+                      📊 {selectedGroup.name}
                     </Text>
-                    <View className="flex-row flex-wrap gap-2">
-                      <View className="flex-1 min-w-[45%] bg-yellow-100 rounded-xl p-3">
-                        <Text className="text-yellow-700 text-xs mb-1">
+                    <View className="flex-row gap-1.5">
+                      <View className="flex-1 bg-yellow-100 rounded-lg p-1.5">
+                        <Text className="text-yellow-700 text-[10px]">
                           تنبيه
                         </Text>
-                        <Text className="text-yellow-900 font-bold text-xl">
+                        <Text className="text-yellow-900 font-bold text-sm">
                           {selectedGroup.statistics.warning}
                         </Text>
                       </View>
-                      <View className="flex-1 min-w-[45%] bg-orange-100 rounded-xl p-3">
-                        <Text className="text-orange-700 text-xs mb-1">
-                          إنذار أول
-                        </Text>
-                        <Text className="text-orange-900 font-bold text-xl">
+                      <View className="flex-1 bg-orange-100 rounded-lg p-1.5">
+                        <Text className="text-orange-700 text-[10px]">أول</Text>
+                        <Text className="text-orange-900 font-bold text-sm">
                           {selectedGroup.statistics.first}
                         </Text>
                       </View>
-                      <View className="flex-1 min-w-[45%] bg-red-100 rounded-xl p-3">
-                        <Text className="text-red-700 text-xs mb-1">
-                          إنذار ثاني
-                        </Text>
-                        <Text className="text-red-900 font-bold text-xl">
+                      <View className="flex-1 bg-red-100 rounded-lg p-1.5">
+                        <Text className="text-red-700 text-[10px]">ثاني</Text>
+                        <Text className="text-red-900 font-bold text-sm">
                           {selectedGroup.statistics.second}
                         </Text>
                       </View>
-                      <View className="flex-1 min-w-[45%] bg-red-200 rounded-xl p-3">
-                        <Text className="text-red-800 text-xs mb-1">
-                          إنذار ثالث
-                        </Text>
-                        <Text className="text-red-950 font-bold text-xl">
+                      <View className="flex-1 bg-red-200 rounded-lg p-1.5">
+                        <Text className="text-red-800 text-[10px]">ثالث</Text>
+                        <Text className="text-red-950 font-bold text-sm">
                           {selectedGroup.statistics.third}
                         </Text>
                       </View>
