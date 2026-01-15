@@ -17,7 +17,13 @@ export const useSecretariesActions = () => {
     try {
       const response = await createSecretaryApi(data);
       if (!response.success) {
-        throw new Error(response.message || "فشل في إنشاء السكرتير");
+        // استخراج رسالة الخطأ المفصلة من الباك إند
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const res = response as any;
+        const errorMsg = res.message || 
+          (res.errors && Array.isArray(res.errors) ? res.errors.join('\n') : null) ||
+          "فشل في إنشاء السكرتير";
+        throw new Error(errorMsg);
       }
       return response;
     } finally {
@@ -30,7 +36,12 @@ export const useSecretariesActions = () => {
     try {
       const response = await updateSecretaryApi(id, data);
       if (!response.success) {
-        throw new Error(response.message || "فشل في تحديث السكرتير");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const res = response as any;
+        const errorMsg = res.message || 
+          (res.errors && Array.isArray(res.errors) ? res.errors.join('\n') : null) ||
+          "فشل في تحديث السكرتير";
+        throw new Error(errorMsg);
       }
       return response;
     } finally {
@@ -43,7 +54,10 @@ export const useSecretariesActions = () => {
     try {
       const response = await deleteSecretaryApi(id);
       if (!response.success) {
-        throw new Error(response.message || "فشل في حذف السكرتير");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const res = response as any;
+        const errorMsg = res.message || "فشل في حذف السكرتير";
+        throw new Error(errorMsg);
       }
       return response;
     } finally {

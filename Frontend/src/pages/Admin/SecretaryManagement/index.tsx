@@ -1,6 +1,8 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, memo, useMemo } from "react";
 import { Shield } from "lucide-react";
-import { showSuccessToast, showErrorToast } from "@/utils/toastUtils";
+import { showSuccessToast } from "@/utils/toastUtils";
+import { showErrorMessage } from "@/utils/sweetalertUtils";
+import { EmptyState } from "@/components/UI/EmptyState";
 
 // Components
 import {
@@ -22,14 +24,18 @@ import {
 // Types
 import type { Secretary, ViewMode } from "./types";
 
+// ============================================================================
+// Memoized Sub-Components لتحسين الأداء
+// ============================================================================
+
 // Confirmation Modal Component
-const ConfirmDeleteModal: React.FC<{
+const ConfirmDeleteModal = memo<{
   isOpen: boolean;
   secretary: Secretary | null;
   onConfirm: () => void;
   onCancel: () => void;
   isLoading: boolean;
-}> = ({ isOpen, secretary, onConfirm, onCancel, isLoading }) => {
+}>(({ isOpen, secretary, onConfirm, onCancel, isLoading }) => {
   if (!isOpen || !secretary) return null;
 
   return (
@@ -79,17 +85,22 @@ const ConfirmDeleteModal: React.FC<{
       </div>
     </div>
   );
-};
+});
+
+ConfirmDeleteModal.displayName = "ConfirmDeleteModal";
 
 // Skeleton Loader
-const SecretariesSkeleton: React.FC<{ viewMode: ViewMode }> = ({ viewMode }) => {
+const SecretariesSkeleton = memo<{ viewMode: ViewMode }>(({ viewMode }) => {
+  // استخدام useMemo لتجنب إعادة إنشاء المصفوفة
+  const skeletonItems = useMemo(() => [...Array(viewMode === "grid" ? 6 : 5)], [viewMode]);
+
   if (viewMode === "grid") {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {[...Array(6)].map((_, i) => (
+        {skeletonItems.map((_, i) => (
           <div
             key={i}
-            className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
+            className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden animate-pulse"
           >
             <div className="h-24 bg-gray-200" />
             <div className="p-4 space-y-3">
@@ -106,8 +117,8 @@ const SecretariesSkeleton: React.FC<{ viewMode: ViewMode }> = ({ viewMode }) => 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
       <div className="divide-y divide-gray-100">
-        {[...Array(5)].map((_, i) => (
-          <div key={i} className="p-4 flex items-center gap-4">
+        {skeletonItems.map((_, i) => (
+          <div key={i} className="p-4 flex items-center gap-4 animate-pulse">
             <div className="w-10 h-10 bg-gray-200 rounded-full" />
             <div className="flex-1 space-y-2">
               <div className="h-4 bg-gray-200 rounded w-1/4" />
@@ -119,7 +130,9 @@ const SecretariesSkeleton: React.FC<{ viewMode: ViewMode }> = ({ viewMode }) => 
       </div>
     </div>
   );
-};
+});
+
+SecretariesSkeleton.displayName = "SecretariesSkeleton";
 
 // Main Component
 const SecretaryManagement: React.FC = () => {
@@ -178,9 +191,10 @@ const SecretaryManagement: React.FC = () => {
       showSuccessToast("تم حذف السكرتير بنجاح");
       setDeleteConfirmation({ isOpen: false, secretary: null });
       refetch();
-      refetchStats(); // تحديث الإحصائيات
-    } catch {
-      showErrorToast("حدث خطأ أثناء حذف السكرتير");
+      refetchStats();
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "حدث خطأ غير متوقع";
+      showErrorMessage("فشل حذف السكرتير", errorMessage);
     }
   }, [deleteConfirmation.secretary, deleteSecretary, refetch, refetchStats]);
 
@@ -197,12 +211,12 @@ const SecretaryManagement: React.FC = () => {
         setIsFormOpen(false);
         setSelectedSecretary(null);
         refetch();
-        refetchStats(); // تحديث الإحصائيات
-      } catch {
-        showErrorToast(
-          selectedSecretary
-            ? "حدث خطأ أثناء تحديث السكرتير"
-            : "حدث خطأ أثناء إضافة السكرتير"
+        refetchStats();
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "حدث خطأ غير متوقع";
+        showErrorMessage(
+          selectedSecretary ? "فشل تحديث السكرتير" : "فشل إضافة السكرتير",
+          errorMessage
         );
       }
     },
@@ -270,26 +284,24 @@ const SecretaryManagement: React.FC = () => {
       {isLoading ? (
         <SecretariesSkeleton viewMode={viewMode} />
       ) : filteredSecretaries.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Shield className="w-8 h-8 text-gray-400" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            لا يوجد سكرتيرين
-          </h3>
-          <p className="text-gray-600 mb-4">
-            {searchQuery || genderFilter !== "all"
-              ? "لم يتم العثور على نتائج تطابق البحث"
-              : "ابدأ بإضافة سكرتير جديد"}
-          </p>
-          {!searchQuery && genderFilter === "all" && (
-            <button
-              onClick={handleAddSecretary}
-              className="px-6 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors"
-            >
-              إضافة سكرتير
-            </button>
-          )}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+          <EmptyState
+            icon={<Shield className="w-12 h-12 text-gray-400" />}
+            title="لا يوجد سكرتيرين"
+            description={
+              searchQuery || genderFilter !== "all"
+                ? "لم يتم العثور على نتائج تطابق البحث"
+                : "ابدأ بإضافة سكرتير جديد"
+            }
+            action={
+              !searchQuery && genderFilter === "all"
+                ? {
+                    label: "إضافة سكرتير",
+                    onClick: handleAddSecretary,
+                  }
+                : undefined
+            }
+          />
         </div>
       ) : viewMode === "grid" ? (
         <SecretaryGridView
