@@ -198,22 +198,17 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
           {/* أزرار الإجراءات */}
           <View style={styles.actionsRow}>
             <TouchableOpacity
-              onPress={() => onManageMarks(exam)}
-              style={styles.marksButton}>
-              <Award size={18} color="white" />
-              <Text style={styles.marksButtonText}>إدارة العلامات</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
               onPress={() => onEdit(exam)}
               style={styles.editButton}>
               <Edit size={18} color="white" />
+              <Text style={styles.editButtonText}>تعديل</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               onPress={() => handleDelete(exam._id, exam.name)}
               style={styles.deleteButton}>
               <Trash2 size={18} color="white" />
+              <Text style={styles.deleteButtonText}>حذف</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -450,9 +445,9 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 4,
   },
-  marksButton: {
+  editButton: {
     flex: 1,
-    backgroundColor: "#059669",
+    backgroundColor: "#3b82f6",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -460,20 +455,25 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 10,
   },
-  marksButtonText: {
+  editButtonText: {
     color: "white",
     fontWeight: "bold",
     fontSize: 14,
   },
-  editButton: {
-    backgroundColor: "#3b82f6",
-    padding: 10,
+  deleteButton: {
+    flex: 1,
+    backgroundColor: "#ef4444",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 10,
     borderRadius: 10,
   },
-  deleteButton: {
-    backgroundColor: "#ef4444",
-    padding: 10,
-    borderRadius: 10,
+  deleteButtonText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 14,
   },
   // حالة فارغة
   emptyState: {

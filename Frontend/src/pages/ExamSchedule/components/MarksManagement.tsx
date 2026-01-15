@@ -203,27 +203,19 @@ const MarksManagement: React.FC<MarksManagementProps> = () => {
   const handleAddMark = async (studentId: string, studentName: string) => {
     if (!selectedExam) return;
 
-    try {
-      const response = await api.post(`/exam-schedule/marks`, {
-        examId: selectedExam._id,
-        studentId,
-        mark: 0,
-      });
+    // إضافة علامة مؤقتة محلياً لتمكين وضع التحرير
+    const tempId = `temp_${studentId}`;
+    const tempMark: Mark = {
+      _id: tempId,
+      studentId,
+      studentName,
+      mark: 0,
+      examId: String(selectedExam._id),
+    };
 
-      // تحديث فوري للواجهة
-      const newMark: Mark = {
-        _id: response.data.mark?._id || response.data._id,
-        studentId,
-        studentName,
-        mark: 0,
-        examId: String(selectedExam._id),
-      };
-      setMarks((prevMarks) => [...prevMarks, newMark]);
-      showSuccessToast("تم إضافة العلامة بنجاح");
-    } catch (error) {
-      console.error("Error adding mark:", error);
-      showErrorToast("حدث خطأ أثناء إضافة العلامة");
-    }
+    setMarks((prevMarks) => [...prevMarks, tempMark]);
+    setEditingMarkId(tempId);
+    setEditValue(0);
   };
 
   const handleUpdateMark = async (markId: string, newMark: number) => {
@@ -238,21 +230,59 @@ const MarksManagement: React.FC<MarksManagementProps> = () => {
       return;
     }
 
-    // تحديث فوري للواجهة (Optimistic Update)
-    const previousMarks = [...marks];
-    setMarks(
-      marks.map((m) => (m._id === markId ? { ...m, mark: newMark } : m))
-    );
-    setEditingMarkId(null);
+    // التحقق إذا كانت علامة مؤقتة (جديدة) أو موجودة
+    const isNewMark = markId.startsWith("temp_");
 
-    try {
-      await api.put(`/exam-schedule/marks/${markId}`, { mark: newMark });
-      showSuccessToast("تم تحديث العلامة بنجاح");
-    } catch (error) {
-      console.error("Error updating mark:", error);
-      // إرجاع التغيير في حالة الخطأ
-      setMarks(previousMarks);
-      showErrorToast("حدث خطأ أثناء تحديث العلامة");
+    if (isNewMark) {
+      // إضافة علامة جديدة
+      const mark = marks.find((m) => m._id === markId);
+      if (!mark) return;
+
+      try {
+        const response = await api.post(`/exam-schedule/marks`, {
+          examId: selectedExam._id,
+          studentId: mark.studentId,
+          mark: newMark,
+        });
+
+        // استبدال العلامة المؤقتة بالعلامة الحقيقية
+        const realMark: Mark = {
+          _id: response.data.mark?._id || response.data._id,
+          studentId: mark.studentId,
+          studentName: mark.studentName,
+          mark: newMark,
+          examId: String(selectedExam._id),
+        };
+
+        setMarks((prevMarks) =>
+          prevMarks.map((m) => (m._id === markId ? realMark : m))
+        );
+        setEditingMarkId(null);
+        showSuccessToast("تم إضافة العلامة بنجاح");
+      } catch (error) {
+        console.error("Error adding mark:", error);
+        // حذف العلامة المؤقتة في حالة الخطأ
+        setMarks((prevMarks) => prevMarks.filter((m) => m._id !== markId));
+        setEditingMarkId(null);
+        showErrorToast("حدث خطأ أثناء إضافة العلامة");
+      }
+    } else {
+      // تحديث علامة موجودة
+      const previousMarks = [...marks];
+      setMarks(
+        marks.map((m) => (m._id === markId ? { ...m, mark: newMark } : m))
+      );
+      setEditingMarkId(null);
+
+      try {
+        await api.put(`/exam-schedule/marks/${markId}`, { mark: newMark });
+        showSuccessToast("تم تحديث العلامة بنجاح");
+      } catch (error) {
+        console.error("Error updating mark:", error);
+        // إرجاع التغيير في حالة الخطأ
+        setMarks(previousMarks);
+        showErrorToast("حدث خطأ أثناء تحديث العلامة");
+      }
     }
   };
 
@@ -703,7 +733,19 @@ const MarksManagement: React.FC<MarksManagementProps> = () => {
                                     <Save className="w-4 h-4" />
                                   </button>
                                   <button
-                                    onClick={() => setEditingMarkId(null)}
+                                    onClick={() => {
+                                      // إذا كانت علامة مؤقتة، احذفها عند الإلغاء
+                                      if (
+                                        studentMark._id?.startsWith("temp_")
+                                      ) {
+                                        setMarks((prevMarks) =>
+                                          prevMarks.filter(
+                                            (m) => m._id !== studentMark._id
+                                          )
+                                        );
+                                      }
+                                      setEditingMarkId(null);
+                                    }}
                                     className="p-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors"
                                     title="إلغاء">
                                     <X className="w-4 h-4" />
