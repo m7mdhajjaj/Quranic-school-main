@@ -14,7 +14,52 @@ import {
 export const getStudentExams = async (): Promise<StudentExamResult[]> => {
   const response = await api.get("/exam-schedule/my-exams");
   // الـ Backend يُرجع المصفوفة مباشرة أو داخل data
-  return response.data.data || response.data;
+  const rawExams = response.data.data || response.data || [];
+
+  // تحويل البيانات للصيغة المتوقعة من StudentView
+  // الباك إند يُرجع: [{ _id, name, date, marks: [...], ... }]
+  // الموبايل يتوقع: [{ exam: {...}, mark: {...}, status: '...' }]
+  return rawExams.map((examData: any) => {
+    const isPast = new Date(examData.date) < new Date();
+    // البحث عن علامة الطالب الحالي (ستكون undefined إذا لم توجد)
+    const studentMark = examData.marks?.find((m: any) => m.student) || null;
+
+    // تحديد الحالة
+    let status: "graded" | "pending" | "not-graded" = "not-graded";
+    if (studentMark) {
+      status = "graded";
+    } else if (!isPast) {
+      status = "pending";
+    }
+
+    return {
+      exam: {
+        _id: examData._id,
+        name: examData.name,
+        date: examData.date,
+        time: examData.time || "09:00",
+        subject: examData.subject || "",
+        examType: examData.type || examData.examType || "شفهي",
+        duration: examData.duration ?? 60,
+        totalMarks: examData.totalMarks ?? 20,
+        passingMarks: examData.passingMarks ?? 10,
+        group: examData.group,
+        marks: examData.marks || [],
+        createdBy: examData.createdBy,
+        createdAt: examData.createdAt,
+        updatedAt: examData.updatedAt,
+      },
+      mark: studentMark
+        ? {
+            _id: studentMark._id,
+            student: studentMark.student?._id || studentMark.student,
+            mark: studentMark.mark,
+            date: studentMark.date || studentMark.createdAt,
+          }
+        : undefined,
+      status,
+    };
+  });
 };
 
 // ======= Teacher APIs =======
