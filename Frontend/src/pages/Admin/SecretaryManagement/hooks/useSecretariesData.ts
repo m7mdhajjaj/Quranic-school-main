@@ -20,10 +20,10 @@ export const useSecretariesData = () => {
       );
     };
 
-    socketManager.subscribe('user-status', handleUserStatus);
+    socketManager.on('user-status', handleUserStatus);
 
     return () => {
-      socketManager.unsubscribe('user-status', handleUserStatus);
+      socketManager.off('user-status', handleUserStatus);
     };
   }, []);
 

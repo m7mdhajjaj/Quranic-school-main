@@ -7,22 +7,39 @@ interface SecretaryGridViewProps {
   secretaries: Secretary[];
   onEdit: (secretary: Secretary) => void;
   onDelete: (secretary: Secretary) => void;
+  selectedIds?: Set<string>;
+  onToggleSelection?: (id: string) => void;
 }
 
 export const SecretaryGridView: React.FC<SecretaryGridViewProps> = memo(({
   secretaries,
   onEdit,
   onDelete,
+  selectedIds = new Set(),
+  onToggleSelection,
 }) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" dir="rtl">
       {secretaries.map((secretary) => (
         <div
           key={secretary._id}
-          className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all group"
+          className={`bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all group relative ${selectedIds.has(secretary._id) ? 'ring-2 ring-emerald-500 shadow-md transform scale-[1.02]' : ''}`}
         >
+          {/* Checkbox Selection Overlay */}
+          <div className="absolute top-2 right-2 z-20">
+             <div 
+               className={`w-6 h-6 rounded-full border-2 flex items-center justify-center cursor-pointer transition-colors bg-white ${selectedIds.has(secretary._id) ? 'border-emerald-500 bg-emerald-50' : 'border-white/40 hover:border-white'}`}
+               onClick={() => onToggleSelection?.(secretary._id)}
+             >
+               {selectedIds.has(secretary._id) && (
+                 <div className="w-3 h-3 bg-emerald-500 rounded-full" />
+               )}
+             </div>
+          </div>
+
           {/* Header with gradient */}
           <div className="bg-gradient-to-r from-emerald-600 to-emerald-500 p-4 relative">
+            
             <div className="absolute top-2 left-2 flex gap-1 z-10">
               <button
                 onClick={() => onEdit(secretary)}

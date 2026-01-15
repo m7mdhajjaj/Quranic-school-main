@@ -2,7 +2,8 @@ import { useState, useCallback } from "react";
 import { 
   deleteSecretary as deleteSecretaryApi,
   createSecretary as createSecretaryApi,
-  updateSecretary as updateSecretaryApi 
+  updateSecretary as updateSecretaryApi,
+  bulkDeleteSecretaries as bulkDeleteSecretariesApi
 } from "@/Api/secretaryApi";
 import type { Secretary } from "../types";
 
@@ -65,6 +66,22 @@ export const useSecretariesActions = () => {
     }
   }, []);
 
+  const bulkDeleteSecretaries = useCallback(async (ids: string[]) => {
+    setIsSubmitting(true);
+    try {
+      const response = await bulkDeleteSecretariesApi(ids);
+      if (!response.success) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const res = response as any;
+        const errorMsg = res.message || "فشل في حذف السكرتيرين";
+        throw new Error(errorMsg);
+      }
+      return response;
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, []);
+
   // Handle export
   const handleExport = useCallback((secretaries: Secretary[]) => {
     const csvContent = [
@@ -93,6 +110,7 @@ export const useSecretariesActions = () => {
     createSecretary,
     updateSecretary,
     deleteSecretary,
+    bulkDeleteSecretaries,
     handleExport,
     isSubmitting,
   };

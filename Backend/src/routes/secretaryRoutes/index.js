@@ -14,6 +14,7 @@ const {
   updateSecretary,
   updateSecretaryPermissions,
   deleteSecretary,
+  bulkDeleteSecretaries,
   changeSecretaryPassword,
   getCurrentSecretary,
   getSecretaryStats,
@@ -51,6 +52,9 @@ router.get("/stats", adminProtect, getSecretaryStats);
 
 // التحقق من تكرار البيانات (email, phoneNumber, idNumber)
 router.post("/check-duplicate", adminProtect, checkDuplicate);
+
+// حذف مجموعة من السكرتيرين دفعة واحدة
+router.post("/bulk-delete", adminProtect, bulkDeleteSecretaries);
 
 // الحصول على جميع السكرتيرين
 router.get("/", adminProtect, getAllSecretaries);

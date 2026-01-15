@@ -1,14 +1,18 @@
 import React, { memo } from "react";
-import { FaUserShield, FaPlus, FaDownload } from "react-icons/fa";
+import { FaUserShield, FaPlus, FaDownload, FaTrash } from "react-icons/fa";
 
 interface SecretariesHeaderProps {
   onAddSecretary: () => void;
   onExport: () => void;
+  selectedCount?: number;
+  onBulkDelete?: () => void;
 }
 
 export const SecretariesHeader: React.FC<SecretariesHeaderProps> = memo(({
   onAddSecretary,
   onExport,
+  selectedCount = 0,
+  onBulkDelete,
 }) => (
   <div className="bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-xl shadow-md p-5 mb-6">
     <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
@@ -21,12 +25,22 @@ export const SecretariesHeader: React.FC<SecretariesHeaderProps> = memo(({
             إدارة السكرتيرين
           </h1>
           <p className="text-white/90 text-sm mt-0.5">
-            نظام متكامل لإدارة بيانات السكرتيرين
+            {selectedCount > 0 ? `تم تحديد ${selectedCount} سكرتير` : "نظام متكامل لإدارة بيانات السكرتيرين"}
           </p>
         </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
+        {selectedCount > 0 && onBulkDelete && (
+          <button
+            onClick={onBulkDelete}
+            className="flex items-center gap-2 px-4 py-2.5 bg-red-500/90 backdrop-blur-sm text-white rounded-lg hover:bg-red-600 transition-colors border border-red-400/30 text-sm font-medium"
+          >
+            <FaTrash className="w-4 h-4" />
+            <span>حذف المحدد ({selectedCount})</span>
+          </button>
+        )}
+
         <button
           onClick={onExport}
           className="flex items-center gap-2 px-4 py-2.5 bg-white/20 backdrop-blur-sm text-white rounded-lg hover:bg-white/30 transition-colors border border-white/30 text-sm font-medium"
