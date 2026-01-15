@@ -2,7 +2,8 @@ import * as yup from 'yup';
 
 // Regex Patterns - متطابقة مع الباك اند
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-const phoneRegex = /^05\d{8}$/;
+const phoneRegex = /^05\d{8}$/;     // 10 أرقام يبدأ بـ 05
+const idNumberRegex = /^\d{9}$/;    // 9 أرقام بالضبط
 
 // Secretary Permissions Interface
 export interface SecretaryPermissions {
@@ -180,17 +181,7 @@ export const secretaryValidationSchema = yup.object().shape({
     .string()
     .required('رقم الهوية مطلوب')
     .trim()
-    .test('only-numbers', 'رقم الهوية يجب أن يحتوي على أرقام فقط', function(value) {
-      if (!value) return false;
-      return /^\d+$/.test(value);
-    })
-    .test('exactly-nine-digits', 'رقم الهوية يجب أن يتكون من 9 أرقام بالضبط', function(value) {
-      if (!value) return false;
-      return value.length === 9;
-    })
-    .min(9, 'رقم الهوية يجب أن يتكون من 9 أرقام')
-    .max(9, 'رقم الهوية يجب أن يتكون من 9 أرقام')
-    .matches(/^\d{9}$/, 'رقم الهوية يجب أن يتكون من 9 أرقام فقط'),
+    .matches(idNumberRegex, 'رقم الهوية يجب أن يتكون من 9 أرقام بالضبط'),
 
   birthDate: yup
     .string()
@@ -200,10 +191,10 @@ export const secretaryValidationSchema = yup.object().shape({
       if (!value) return false;
       return new Date(value) <= new Date();
     })
-    .test('age-validation', 'يجب أن يكون عمر السكرتير 18 عام على الأقل', function(value) {
+    .test('age-validation', 'يجب أن يكون عمر السكرتير 21 عام على الأقل', function(value) {
       if (!value) return false;
       const age = calculateAge(value);
-      return age >= 18;
+      return age >= 21;
     }),
 
   gender: yup

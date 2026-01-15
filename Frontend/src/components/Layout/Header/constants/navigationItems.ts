@@ -63,6 +63,12 @@ export const getPrimaryNavItems = (
             color: 'from-green-600 to-emerald-600',
           },
           {
+            to: '/admin/secretaries',
+            label: 'إدارة السكرتارية',
+            icon: UserCheck,
+            color: 'from-amber-600 to-orange-600',
+          },
+          {
             to: '/admin/groups',
             label: 'إدارة الحلقات',
             icon: BookOpen,

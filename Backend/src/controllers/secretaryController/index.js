@@ -74,7 +74,6 @@ exports.createSecretary = async (req, res) => {
       motherName,
       email,
       phoneNumber,
-      password,
       idNumber,
       birthDate,
       gender,
@@ -82,24 +81,74 @@ exports.createSecretary = async (req, res) => {
       permissions,
     } = req.body;
 
-    // التحقق من عدم وجود سكرتير بنفس البريد الإلكتروني أو رقم الهاتف
+    // =================== Validations ===================
+    // التحقق من رقم الهوية (9 أرقام بالضبط)
+    if (!idNumber || !/^\d{9}$/.test(idNumber)) {
+      return res.status(400).json({
+        success: false,
+        message: "رقم الهوية يجب أن يتكون من 9 أرقام بالضبط",
+      });
+    }
+
+    // التحقق من رقم الهاتف (10 أرقام يبدأ بـ 05)
+    if (!phoneNumber || !/^05\d{8}$/.test(phoneNumber)) {
+      return res.status(400).json({
+        success: false,
+        message: "رقم الهاتف يجب أن يبدأ بـ 05 ويتكون من 10 أرقام",
+      });
+    }
+
+    // التحقق من البريد الإلكتروني
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    if (!email || !emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: "صيغة البريد الإلكتروني غير صحيحة",
+      });
+    }
+
+    // التحقق من العمر (21 سنة على الأقل)
+    if (birthDate) {
+      const birthYear = new Date(birthDate).getFullYear();
+      const currentYear = new Date().getFullYear();
+      const age = currentYear - birthYear;
+      if (age < 21) {
+        return res.status(400).json({
+          success: false,
+          message: "يجب أن يكون عمر السكرتير 21 عام على الأقل",
+        });
+      }
+    }
+
+    // التحقق من عدم وجود سكرتير بنفس البريد الإلكتروني أو رقم الهاتف أو رقم الهوية
     const existingSecretary = await Secretary.findOne({
-      $or: [{ email }, { phoneNumber }],
+      $or: [{ email }, { phoneNumber }, { idNumber }],
     });
 
     if (existingSecretary) {
+      let message = "البريد الإلكتروني أو رقم الهاتف أو رقم الهوية مستخدم بالفعل";
+      if (existingSecretary.email === email) {
+        message = "البريد الإلكتروني مستخدم بالفعل";
+      } else if (existingSecretary.phoneNumber === phoneNumber) {
+        message = "رقم الهاتف مستخدم بالفعل";
+      } else if (existingSecretary.idNumber === idNumber) {
+        message = "رقم الهوية مستخدم بالفعل";
+      }
       return res.status(400).json({
         success: false,
-        message: "البريد الإلكتروني أو رقم الهاتف مستخدم بالفعل",
+        message,
       });
     }
 
     // الحصول على الـ ID التالي
     const secretaryId = await Counter.getNextId("secretary");
 
+    // كلمة المرور الافتراضية = رقم الهوية
+    const defaultPassword = idNumber;
+
     // تشفير كلمة المرور
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const hashedPassword = await bcrypt.hash(defaultPassword, salt);
 
     // إنشاء السكرتير
     const secretary = await Secretary.create({
@@ -329,6 +378,82 @@ exports.getCurrentSecretary = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "حدث خطأ أثناء جلب بيانات السكرتير",
+    });
+  }
+};
+
+/**
+ * الحصول على إحصائيات السكرتيرين
+ * @access Admin only
+ */
+exports.getSecretaryStats = async (req, res) => {
+  try {
+    // استخدام aggregation للحصول على الإحصائيات
+    const stats = await Secretary.aggregate([
+      {
+        $facet: {
+          // العدد الإجمالي
+          total: [{ $count: "count" }],
+          // عدد الذكور
+          male: [
+            {
+              $match: {
+                $or: [{ gender: "ذكر" }, { gender: "male" }],
+              },
+            },
+            { $count: "count" },
+          ],
+          // عدد الإناث
+          female: [
+            {
+              $match: {
+                $or: [{ gender: "أنثى" }, { gender: "female" }],
+              },
+            },
+            { $count: "count" },
+          ],
+          // متوسط العمر
+          avgAge: [
+            {
+              $match: { age: { $exists: true, $ne: null, $gt: 0 } },
+            },
+            {
+              $group: {
+                _id: null,
+                avgAge: { $avg: "$age" },
+              },
+            },
+          ],
+        },
+      },
+    ]);
+
+    const result = stats[0];
+    const total = result.total[0]?.count || 0;
+    const male = result.male[0]?.count || 0;
+    const female = result.female[0]?.count || 0;
+    const avgAge = result.avgAge[0]?.avgAge || 0;
+
+    // حساب النسب
+    const malePercentage = total > 0 ? Math.round((male / total) * 100) : 0;
+    const femalePercentage = total > 0 ? Math.round((female / total) * 100) : 0;
+
+    res.status(200).json({
+      success: true,
+      data: {
+        total,
+        male,
+        female,
+        avgAge: Math.round(avgAge * 10) / 10, // تقريب لرقم عشري واحد
+        malePercentage,
+        femalePercentage,
+      },
+    });
+  } catch (error) {
+    console.error("Get secretary stats error:", error);
+    res.status(500).json({
+      success: false,
+      message: "حدث خطأ أثناء جلب إحصائيات السكرتيرين",
     });
   }
 };

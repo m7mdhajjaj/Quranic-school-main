@@ -6,6 +6,8 @@ const mongoose = require('mongoose');
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 // رقم يبدأ بـ05 ويتكوّن من 10 أرقام
 const phoneRegex = /^05\d{8}$/;
+// رقم الهوية: 9 أرقام بالضبط
+const idNumberRegex = /^\d{9}$/;
 
 const secretarySchema = new mongoose.Schema(
   {
@@ -33,7 +35,8 @@ const secretarySchema = new mongoose.Schema(
     idNumber: { 
       type: String, 
       required: [true, 'رقم الهوية مطلوب'],
-      trim: true 
+      trim: true,
+      match: [idNumberRegex, 'رقم الهوية يجب أن يتكون من 9 أرقام بالضبط'],
     },
     email: {
       type: String,
@@ -55,7 +58,10 @@ const secretarySchema = new mongoose.Schema(
       type: String, 
       required: [true, 'تاريخ الميلاد مطلوب'] 
     },
-    age: { type: Number, min: [0, 'العمر يجب أن يكون رقماً موجباً'] },
+    age: { 
+      type: Number, 
+      min: [21, 'يجب أن يكون عمر السكرتير 21 عام على الأقل'] 
+    },
     gender: {
       type: String,
       required: [true, 'الجنس مطلوب'],

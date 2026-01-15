@@ -3,7 +3,7 @@
 // ============================================================================
 
 import React, { useState } from 'react';
-import { X, AlertTriangle, UserX, Users, CheckCircle, Calendar, History, RotateCcw } from 'lucide-react';
+import { X, AlertTriangle, UserX, CheckCircle, Calendar, History, RotateCcw } from 'lucide-react';
 import { useDisableBodyScroll } from '@/hooks/useDisableBodyScroll';
 import { useStudentHistory } from '../hooks/useStudentHistory';
 import Avatar from '@/components/Avatar/Avatar';
@@ -403,7 +403,9 @@ export const StudentFullHistorySidebar: React.FC<StudentFullHistorySidebarProps>
                   إرجاع الطالب للحلقة
                 </h3>
                 <button
+                  type="button"
                   onClick={() => setShowRestoreModal(false)}
+                  aria-label="إغلاق"
                   className="p-2 hover:bg-gray-100 rounded-full transition-colors"
                 >
                   <X className="w-5 h-5" />

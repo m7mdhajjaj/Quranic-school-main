@@ -16,6 +16,7 @@ const {
   deleteSecretary,
   changeSecretaryPassword,
   getCurrentSecretary,
+  getSecretaryStats,
 } = require("../../controllers/secretaryController");
 
 const {
@@ -43,6 +44,9 @@ router.get("/me", secretaryProtect, getCurrentSecretary);
 // ============================================================================
 // Admin Routes - مسارات الإدارة
 // ============================================================================
+
+// الحصول على إحصائيات السكرتيرين
+router.get("/stats", adminProtect, getSecretaryStats);
 
 // الحصول على جميع السكرتيرين
 router.get("/", adminProtect, getAllSecretaries);
