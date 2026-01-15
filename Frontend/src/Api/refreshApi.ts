@@ -50,7 +50,7 @@ export interface OnlineUsersResponse {
       publicId?: string;
     };
     lastSeen: string;
-    role: 'student' | 'teacher' | 'admin';
+    role: 'student' | 'teacher' | 'admin' | 'secretary';
   }>;
   total: number;
   page: number;

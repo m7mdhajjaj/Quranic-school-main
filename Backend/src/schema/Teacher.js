@@ -150,7 +150,11 @@ const teacherSchema = new mongoose.Schema(
       },
     ],
   },
-  { timestamps: true }
+  { 
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+  }
 );
 
 // ====================================
@@ -196,6 +200,51 @@ teacherSchema.index(
     name: "teacher_text_search",
   }
 );
+
+// ============================================================================
+// HOOKS - حساب العمر التلقائي
+// ============================================================================
+
+// حساب العمر تلقائياً من تاريخ الميلاد
+teacherSchema.pre('save', function (next) {
+  if (this.birthDate && this.isModified('birthDate')) {
+    try {
+      const birthYear = new Date(this.birthDate).getFullYear();
+      const currentYear = new Date().getFullYear();
+      this.age = currentYear - birthYear;
+    } catch (error) {
+      console.error('Error calculating age:', error);
+    }
+  }
+  next();
+});
+
+// حساب العمر عند التحديث باستخدام findOneAndUpdate
+teacherSchema.pre('findOneAndUpdate', function (next) {
+  const update = this.getUpdate();
+  
+  // Check for birthDate in both direct update and $set operator
+  const birthDate = update?.birthDate || update?.$set?.birthDate;
+  
+  if (birthDate) {
+    try {
+      const birthYear = new Date(birthDate).getFullYear();
+      const currentYear = new Date().getFullYear();
+      const calculatedAge = currentYear - birthYear;
+      
+      // Set age in the appropriate location
+      if (update.$set) {
+        update.$set.age = calculatedAge;
+      } else {
+        update.age = calculatedAge;
+      }
+    } catch (error) {
+      console.error('Error calculating age:', error);
+    }
+  }
+  
+  next();
+});
 
 // ============================================================================
 // HOOKS - إعادة تدوير الـ ID عند الحذف

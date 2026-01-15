@@ -76,6 +76,7 @@ export const useHeader = ({ isGuest = false }: UseHeaderOptions = {}): UseHeader
   const isTeacher = currentUser?.role === 'teacher';
   const isAdmin = currentUser?.role === 'admin';
   const isStudent = currentUser?.role === 'student';
+  const isSecretary = currentUser?.role === 'secretary';
   const isTeacherOrAdmin = isTeacher || isAdmin;
 
   // ==================== Navigation ====================
@@ -83,6 +84,7 @@ export const useHeader = ({ isGuest = false }: UseHeaderOptions = {}): UseHeader
     isTeacher,
     isAdmin,
     isStudent,
+    isSecretary,
     isTeacherOrAdmin,
   });
 

@@ -43,8 +43,11 @@ export interface ProfileData {
   // Admin-specific fields
   adminId?: string;
   
+  // Secretary-specific fields
+  secretaryId?: string;
+  
   // User role
-  role?: 'student' | 'teacher' | 'admin';
+  role?: 'student' | 'teacher' | 'admin' | 'secretary';
 }
 
 /**
@@ -93,7 +96,7 @@ export const validateProfileData = async (data: ProfileData, isUpdate: boolean =
 export const validateField = async (
   fieldName: string, 
   value: string | number | boolean | undefined, 
-  role: 'student' | 'teacher' | 'admin' = 'student'
+  role: 'student' | 'teacher' | 'admin' | 'secretary' = 'student'
 ): Promise<string> => {
   // Create a partial profile data object with just this field
   const partialData: ProfileData = {

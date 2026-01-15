@@ -4,6 +4,7 @@
 
 const Student = require("../../schema/Student/Student");
 const Teacher = require("../../schema/Teacher");
+const Secretary = require("../../schema/Secretary");
 const Group = require("../../schema/Group");
 const Conversation = require("../../schema/Chat/Conversation");
 
@@ -61,6 +62,15 @@ module.exports = (io, socket, userId, userRole) => {
         }
         if (process.env.NODE_ENV === 'development') {
           console.log(`✅ Admin ${userId} auto-joined all groups`);
+        }
+      } else if (normalizedRole === "secretary") {
+        // Secretary can access all groups like admin
+        const allGroups = await Group.find({});
+        for (const group of allGroups) {
+          socket.join(`group:${group._id}`);
+        }
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`✅ Secretary ${userId} auto-joined all groups`);
         }
       }
     } catch (err) {

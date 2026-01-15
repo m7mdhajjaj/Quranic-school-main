@@ -5,6 +5,7 @@
 const Student = require("../../schema/Student/Student");
 const Teacher = require("../../schema/Teacher");
 const Admin = require("../../schema/Admin");
+const Secretary = require("../../schema/Secretary");
 const Group = require("../../schema/Group");
 
 class ContactsService {
@@ -26,6 +27,9 @@ class ContactsService {
         break;
       case "Admin":
         result = await this._getAdminContacts(userId, search);
+        break;
+      case "Secretary":
+        result = await this._getSecretaryContacts(userId, search);
         break;
     }
 
@@ -192,14 +196,51 @@ class ContactsService {
   }
 
   /**
+   * Private: Get Secretary Contacts
+   * - All students
+   * - All teachers
+   * - All admins
+   * - No groups (like Admin)
+   */
+  async _getSecretaryContacts(secretaryId, search) {
+    const searchRegex = search ? new RegExp(search, 'i') : null;
+    const query = searchRegex ? {
+      $or: [
+        { firstName: searchRegex },
+        { lastName: searchRegex }
+      ]
+    } : {};
+
+    // Secretary can see everyone
+    const [students, teachers, admins, secretaries] = await Promise.all([
+      Student.find(query).select("firstName lastName avatar studentId group").sort({ firstName: 1, lastName: 1 }).lean(),
+      Teacher.find(query).select("firstName lastName avatar teacherId").sort({ firstName: 1, lastName: 1 }).lean(),
+      Admin.find(query).select("firstName lastName avatar adminId").sort({ firstName: 1, lastName: 1 }).lean(),
+      Secretary.find({ ...query, _id: { $ne: secretaryId } }).select("firstName lastName avatar secretaryId").sort({ firstName: 1, lastName: 1 }).lean()
+    ]);
+    
+    const contacts = [
+      ...students.map(s => ({ ...s, role: "student" })),
+      ...teachers.map(t => ({ ...t, role: "teacher" })),
+      ...admins.map(a => ({ ...a, role: "admin" })),
+      ...secretaries.map(s => ({ ...s, role: "secretary" }))
+    ];
+    
+    // Secretary sees NO groups
+    const groups = [];
+
+    return { contacts, groups };
+  }
+
+  /**
    * Check if user can chat with target
    */
   async canChat(senderId, senderRole, targetId, targetRole) {
     const normalizedSenderRole = senderRole.charAt(0).toUpperCase() + senderRole.slice(1);
     const normalizedTargetRole = targetRole.charAt(0).toUpperCase() + targetRole.slice(1);
 
-    // Admin can chat with anyone
-    if (normalizedSenderRole === "Admin") return true;
+    // Admin/Secretary can chat with anyone
+    if (normalizedSenderRole === "Admin" || normalizedSenderRole === "Secretary") return true;
     
     // Can't chat with self
     if (senderId.toString() === targetId.toString()) return false;
@@ -262,6 +303,7 @@ class ContactsService {
     if (await Student.exists({ _id: recipientId })) return "Student";
     if (await Teacher.exists({ _id: recipientId })) return "Teacher";
     if (await Admin.exists({ _id: recipientId })) return "Admin";
+    if (await Secretary.exists({ _id: recipientId })) return "Secretary";
     return null;
   }
 }

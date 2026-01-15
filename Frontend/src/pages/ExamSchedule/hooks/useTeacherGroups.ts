@@ -14,7 +14,7 @@ interface User {
   firstName?: string;
   fatherName?: string;
   lastName?: string;
-  role?: 'student' | 'teacher' | 'admin';
+  role?: 'student' | 'teacher' | 'admin' | 'secretary';
 }
 
 interface Group {
@@ -74,7 +74,7 @@ const isTeacherMatch = (
  * @param role - دور المستخدم
  * @returns حلقات المعلم وحالة التحميل
  */
-export function useTeacherGroups(role: 'student' | 'teacher' | 'admin') {
+export function useTeacherGroups(role: 'student' | 'teacher' | 'admin' | 'secretary') {
   const [teacherGroups, setTeacherGroups] = useState<string[]>([]);
   const [loadingTeacherGroups, setLoadingTeacherGroups] = useState(false);
 

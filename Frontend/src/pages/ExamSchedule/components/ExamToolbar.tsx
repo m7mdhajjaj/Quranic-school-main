@@ -12,7 +12,7 @@ interface ExamToolbarProps {
   marksFilter: string;
   setMarksFilter: (v: string) => void;
   loadingExams: boolean;
-  role: 'student' | 'teacher' | 'admin';
+  role: 'student' | 'teacher' | 'admin' | 'secretary';
   teacherGroups?: string[]; // Optional since we removed the check
   onAddExamClick: () => void;
 }
@@ -56,6 +56,17 @@ export const ExamToolbar: React.FC<ExamToolbarProps> = ({
       filterDot: 'bg-emerald-500',
     },
     admin: {
+      bg: 'from-emerald-500 to-teal-600',
+      hover: 'hover:from-emerald-600 hover:to-teal-700',
+      border: 'border-emerald-100',
+      focus: 'focus:border-emerald-400 focus:ring-emerald-50',
+      text: 'text-emerald-400 group-focus-within:text-emerald-600',
+      filterBg: 'from-emerald-50/50 to-teal-50/50',
+      filterActive: 'bg-emerald-50 border-emerald-400 text-emerald-700',
+      filterHover: 'hover:border-emerald-300',
+      filterDot: 'bg-emerald-500',
+    },
+    secretary: {
       bg: 'from-emerald-500 to-teal-600',
       hover: 'hover:from-emerald-600 hover:to-teal-700',
       border: 'border-emerald-100',

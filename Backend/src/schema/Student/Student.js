@@ -122,7 +122,11 @@ const studentSchema = new mongoose.Schema(
     ],
   },
 
-  { timestamps: true }
+  { 
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+  }
 );
 
 // إضافة فهارس مركبة لتحسين أداء البحث
@@ -272,6 +276,59 @@ studentSchema.virtual("computedAge").get(function () {
   const m = today.getMonth() - this.birthDate.getMonth();
   if (m < 0 || (m === 0 && today.getDate() < this.birthDate.getDate())) age--;
   return age;
+});
+
+// ============================================================================
+// HOOKS - حساب العمر التلقائي
+// ============================================================================
+
+// حساب العمر تلقائياً من تاريخ الميلاد
+studentSchema.pre('save', function (next) {
+  if (this.birthDate && this.isModified('birthDate')) {
+    try {
+      const today = new Date();
+      let age = today.getFullYear() - this.birthDate.getFullYear();
+      const m = today.getMonth() - this.birthDate.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < this.birthDate.getDate())) {
+        age--;
+      }
+      this.age = age;
+    } catch (error) {
+      console.error('Error calculating age:', error);
+    }
+  }
+  next();
+});
+
+// حساب العمر عند التحديث باستخدام findOneAndUpdate
+studentSchema.pre('findOneAndUpdate', function (next) {
+  const update = this.getUpdate();
+  
+  // Check for birthDate in both direct update and $set operator
+  const birthDate = update?.birthDate || update?.$set?.birthDate;
+  
+  if (birthDate) {
+    try {
+      const today = new Date();
+      const birth = new Date(birthDate);
+      let age = today.getFullYear() - birth.getFullYear();
+      const m = today.getMonth() - birth.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+        age--;
+      }
+      
+      // Set age in the appropriate location
+      if (update.$set) {
+        update.$set.age = age;
+      } else {
+        update.age = age;
+      }
+    } catch (error) {
+      console.error('Error calculating age:', error);
+    }
+  }
+  
+  next();
 });
 
 module.exports = mongoose.model("Student", studentSchema);

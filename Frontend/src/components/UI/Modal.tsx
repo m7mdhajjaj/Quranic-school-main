@@ -78,17 +78,30 @@ export const Modal: React.FC<ModalProps> = ({
   }, [isOpen]);
 
   // Handle wheel event to prevent scroll bleeding to parent
-  const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
-    const target = e.currentTarget;
-    const { scrollTop, scrollHeight, clientHeight } = target;
-    const isAtTop = scrollTop === 0;
-    const isAtBottom = scrollTop + clientHeight >= scrollHeight;
-    
-    // Prevent scroll bleeding when at boundaries
-    if ((isAtTop && e.deltaY < 0) || (isAtBottom && e.deltaY > 0)) {
-      e.preventDefault();
-    }
-  }, []);
+  // Using useEffect to add non-passive event listener
+  useEffect(() => {
+    const bodyElement = bodyRef.current;
+    if (!bodyElement) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      const target = e.currentTarget as HTMLDivElement;
+      const { scrollTop, scrollHeight, clientHeight } = target;
+      const isAtTop = scrollTop === 0;
+      const isAtBottom = scrollTop + clientHeight >= scrollHeight;
+      
+      // Prevent scroll bleeding when at boundaries
+      if ((isAtTop && e.deltaY < 0) || (isAtBottom && e.deltaY > 0)) {
+        e.preventDefault();
+      }
+    };
+
+    // Add non-passive event listener
+    bodyElement.addEventListener('wheel', handleWheel, { passive: false });
+
+    return () => {
+      bodyElement.removeEventListener('wheel', handleWheel);
+    };
+  }, [isOpen]);
 
   if (!isOpen || !mounted) return null;
 
@@ -132,7 +145,6 @@ export const Modal: React.FC<ModalProps> = ({
         <div 
           ref={bodyRef}
           className={`p-6 overflow-y-auto flex-1 min-h-0 overscroll-contain ${bodyClassName || ''} scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent`}
-          onWheel={handleWheel}
         >
            {children}
         </div>

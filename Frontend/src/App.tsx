@@ -111,6 +111,7 @@ import GroupManagement from "./pages/Admin/GroupManagement/index";
 import StudentChatView from "./pages/chat/Views/StudentChatView";
 import TeacherChatView from "./pages/chat/Views/TeacherChatView";
 import AdminChatView from "./pages/chat/Views/AdminChatView";
+import SecretaryChatView from "./pages/chat/Views/SecretaryChatView";
 
 // ============================================================================
 // Other Components
@@ -304,7 +305,7 @@ const TeacherRoutes: React.FC = () => {
   const LoadingFallback = ({ message }: { message: string }) => (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100">
       <div className="text-center">
-        <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto"></div>
+        <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
         <p className="mt-4 text-gray-600 font-medium">{message}</p>
       </div>
     </div>
@@ -453,12 +454,87 @@ const TeacherRoutes: React.FC = () => {
  * 6. Islamic Resources (Prayer Times, Quran, Azkar)
  * 7. User Settings & Special Pages
  */
+
+// ============================================================================
+// Secretary Routes Component
+// ============================================================================
+/**
+ * Handles all routing for secretary users
+ * - Simplified menu: Home, Goals, Profile only
+ * - No management or admin features in header menu
+ * - Can still access other pages via direct navigation
+ * 
+ * Secretary Routes Structure:
+ * 1. Home & Goals (shown in profile menu)
+ * 2. Profile
+ * 3. Authentication
+ */
+const SecretaryRoutes: React.FC = () => {
+  return (
+    <Layout>
+      <Routes>
+        {/* ============================================
+            الصفحة الرئيسية - Home
+            ============================================ */}
+        <Route path="/" element={<Home />} />
+        <Route path="/home" element={<Home />} />
+        <Route path="/welcome" element={<WelcomePage />} />
+        <Route path="/secretary" element={<Navigate to="/" replace />} />
+        <Route path="/secretary/dashboard" element={<Navigate to="/" replace />} />
+
+        {/* ============================================
+            الأهداف - Goals
+            ============================================ */}
+        <Route 
+          path="/goals" 
+          element={
+            <React.Suspense fallback={
+              <div className="min-h-screen flex items-center justify-center">
+                <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
+              </div>
+            }>
+              <Goals />
+            </React.Suspense>
+          } 
+        />
+
+        {/* ============================================
+            المحادثات - Chat (with Teachers & Admin only)
+            ============================================ */}
+        <Route path="/chat" element={<SecretaryChatView />} />
+
+        {/* ============================================
+            الإعدادات الشخصية - User Settings
+            ============================================ */}
+        <Route path="/profile" element={<Profile />} />
+
+        {/* ============================================
+            تسجيل الدخول - Authentication
+            ============================================ */}
+        <Route path="/login" element={<Login />} />
+
+        {/* ============================================
+            صفحات خاصة - Special Pages
+            ============================================ */}
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/contact" element={<Contact />} />
+
+        {/* ============================================
+            Fallback - إعادة توجيه للصفحة الرئيسية
+            ============================================ */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Layout>
+  );
+};
+
 const StudentRoutes: React.FC = () => {
   // Loading fallback component
   const LoadingFallback = ({ message }: { message: string }) => (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100">
       <div className="text-center">
-        <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto"></div>
+        <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
         <p className="mt-4 text-gray-600 font-medium">{message}</p>
       </div>
     </div>
@@ -656,6 +732,9 @@ function AppContent() {
   switch (user?.role) {
     case "admin":
       routeComponent = <AdminRoutes />;
+      break;
+    case "secretary":
+      routeComponent = <SecretaryRoutes />;
       break;
     case "teacher":
       routeComponent = <TeacherRoutes />;

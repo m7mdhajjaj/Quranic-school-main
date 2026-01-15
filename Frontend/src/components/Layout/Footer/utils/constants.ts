@@ -67,6 +67,17 @@ export const ADMIN_QUICK_LINKS: QuickLink[] = [
 ];
 
 /**
+ * الروابط السريعة للسكرتير
+ */
+export const SECRETARY_QUICK_LINKS: QuickLink[] = [
+  { name: 'الرئيسية', path: '/' },
+  { name: 'الأهداف', path: '/goals' },
+  { name: 'المحادثة', path: '/chat' },
+  { name: 'الملف الشخصي', path: '/profile', icon: FaUser },
+  { name: 'تواصل معنا', path: '/contact' },
+];
+
+/**
  * الروابط السريعة للمستخدمين العاديين
  */
 export const DEFAULT_QUICK_LINKS: QuickLink[] = [

@@ -8,7 +8,7 @@ const deviceTokenSchema = new mongoose.Schema({
   },
   userModel: {
     type: String,
-    enum: ['Student', 'Teacher', 'Admin', 'User'],
+    enum: ['Student', 'Teacher', 'Admin', 'Secretary', 'User'],
     required: true,
   },
   token: {

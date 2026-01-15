@@ -20,7 +20,7 @@ const chatSchema = new mongoose.Schema(
     senderModel: {
       type: String,
       required: true,
-      enum: ["Teacher", "Student", "Admin"], // إذا ما عندك Admin احذفها
+      enum: ["Teacher", "Student", "Admin", "Secretary"],
     },
 
     // ============ DM ============
@@ -35,7 +35,7 @@ const chatSchema = new mongoose.Schema(
     },
     recipientModel: {
       type: String,
-      enum: ["Teacher", "Student", "Admin"],
+      enum: ["Teacher", "Student", "Admin", "Secretary"],
       required: function () {
         return this.chatType === "DM";
       },

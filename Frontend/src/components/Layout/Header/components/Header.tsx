@@ -168,7 +168,13 @@ const Header: React.FC<HeaderProps> = ({ className = '', isGuest = false }) => {
                             : currentUser?.firstName || "المستخدم"}
                         </span>
                         <span className="text-emerald-100 text-[9px] lg:text-xs font-medium truncate">
-                          {currentUser?.role === "teacher" ? "معلم" : currentUser?.role === "admin" ? "مدير" : "طالب"}
+                          {currentUser?.role === "teacher" 
+                            ? "معلم" 
+                            : currentUser?.role === "admin" 
+                            ? "مدير" 
+                            : currentUser?.role === "secretary"
+                            ? "سكرتير"
+                            : "طالب"}
                         </span>
                       </div>
                       <ChevronDown

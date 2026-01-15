@@ -150,6 +150,10 @@ const HeroSection = ({
                   } ${currentUser.fatherName || ''} ${
                     currentUser.lastName || ''
                   }`.trim()
+                : currentUser.role === 'secretary'
+                ? `أهلاً وسهلاً بك في أكاديمية المهاجرين، السكرتير ${
+                    currentUser.firstName || ''
+                  } ${currentUser.lastName || ''}`.trim()
                 : `أهلاً وسهلاً بك في أكاديمية المهاجرين، المعلم الفاضل ${
                     currentUser.firstName || currentUser.name || ''
                   } ${currentUser.lastName || ''}`.trim()}

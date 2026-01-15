@@ -25,7 +25,7 @@ interface ExamFormModalProps {
   open: boolean;
   onClose: () => void;
   onSubmit: (examData: ExamFormData, selectedGroup?: string) => Promise<void>;
-  role: 'student' | 'teacher' | 'admin';
+  role: 'student' | 'teacher' | 'admin' | 'secretary';
   teacherGroups: string[];
   initialData?: ExamFormData & { group?: string };
   mode: 'add' | 'edit';

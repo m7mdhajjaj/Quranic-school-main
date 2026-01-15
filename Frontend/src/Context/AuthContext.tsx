@@ -11,7 +11,7 @@ export interface User {
   lastName?: string;
   fatherName?: string;
   name?: string;
-  role: 'student' | 'teacher' | 'admin';
+  role: 'student' | 'teacher' | 'admin' | 'secretary';
   email?: string;
   studentId?: string;
   teacherId?: string;

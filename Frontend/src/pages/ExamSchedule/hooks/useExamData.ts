@@ -8,7 +8,7 @@ interface UseExamDataOptions {
   marksStatus?: string;
 }
 
-export function useExamData(_role: 'student' | 'teacher' | 'admin', options: UseExamDataOptions = {}) {
+export function useExamData(_role: 'student' | 'teacher' | 'admin' | 'secretary', options: UseExamDataOptions = {}) {
 
   const [exams, setExams] = useState<Exam[]>([]);
   const [loadingExams, setLoadingExams] = useState(true);

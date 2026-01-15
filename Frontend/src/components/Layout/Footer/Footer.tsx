@@ -32,6 +32,7 @@ import {
   DEFAULT_PARTNERS,
   SOCIAL_LINKS,
   ADMIN_QUICK_LINKS,
+  SECRETARY_QUICK_LINKS,
   DEFAULT_QUICK_LINKS,
   GUEST_QUICK_LINKS,
   FOUNDING_DATE,
@@ -51,6 +52,7 @@ export const Footer: React.FC<FooterProps> = ({
   // Get auth info only if not explicitly guest
   const auth = useAuth();
   const isAdminUser = !isGuest && auth?.isAdmin ? auth.isAdmin() : false;
+  const isSecretaryUser = !isGuest && auth?.user?.role === 'secretary';
   const isLoggedIn = !isGuest && auth?.isAuthenticated ? auth.isAuthenticated : false;
 
   // Determine which links to use based on user role
@@ -63,6 +65,9 @@ export const Footer: React.FC<FooterProps> = ({
   } else if (isAdminUser) {
     // Admin user
     quickLinks = ADMIN_QUICK_LINKS;
+  } else if (isSecretaryUser) {
+    // Secretary user
+    quickLinks = SECRETARY_QUICK_LINKS;
   } else {
     // Regular user (teacher/student)
     quickLinks = DEFAULT_QUICK_LINKS;

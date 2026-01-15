@@ -158,8 +158,8 @@ class ConversationService {
       deletedFor: { $ne: userId }
     };
 
-    // ✅ Admin sees ONLY DMs (No Groups)
-    if (normalizedRole === 'Admin') {
+    // ✅ Admin/Secretary sees ONLY DMs (No Groups)
+    if (normalizedRole === 'Admin' || normalizedRole === 'Secretary') {
       query = {
         "participants.userId": userId,
         type: "DM",

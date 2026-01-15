@@ -97,7 +97,13 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
                 </h3>
                 {user?.role && (
                   <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-emerald-100 text-emerald-700 border border-emerald-200 flex-shrink-0">
-                    {user.role === "teacher" ? "معلم" : user.role === "admin" ? "مدير" : "طالب"}
+                    {user.role === "teacher" 
+                      ? "معلم" 
+                      : user.role === "admin" 
+                      ? "مدير" 
+                      : user.role === "secretary"
+                      ? "سكرتير"
+                      : "طالب"}
                   </span>
                 )}
               </div>

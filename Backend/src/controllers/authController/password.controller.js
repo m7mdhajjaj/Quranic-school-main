@@ -1,6 +1,7 @@
 const Student = require("../../schema/Student");
 const Teacher = require("../../schema/Teacher");
 const Admin = require("../../schema/Admin");
+const Secretary = require("../../schema/Secretary");
 const bcrypt = require("bcryptjs");
 
 /**
@@ -33,6 +34,8 @@ exports.changePassword = async (req, res) => {
       user = await Admin.findById(userId);
     } else if (userType === "teacher") {
       user = await Teacher.findById(userId);
+    } else if (userType === "secretary") {
+      user = await Secretary.findById(userId);
     } else {
       user = await Student.findById(userId);
     }
@@ -49,8 +52,8 @@ exports.changePassword = async (req, res) => {
     // التحقق من كلمة المرور الحالية
     let isCurrentPasswordValid = false;
 
-    if (userType === "admin" || userType === "teacher") {
-      // للأدمن والمعلمين، التحقق من كلمة المرور المشفرة
+    if (userType === "admin" || userType === "teacher" || userType === "secretary") {
+      // للأدمن والمعلمين والسكرتير، التحقق من كلمة المرور المشفرة
       isCurrentPasswordValid = await bcrypt.compare(
         currentPassword,
         user.password
@@ -97,6 +100,10 @@ exports.changePassword = async (req, res) => {
       });
     } else if (userType === "teacher") {
       await Teacher.findByIdAndUpdate(userId, {
+        password: hashedNewPassword,
+      });
+    } else if (userType === "secretary") {
+      await Secretary.findByIdAndUpdate(userId, {
         password: hashedNewPassword,
       });
     } else {
@@ -236,6 +243,36 @@ exports.resetPassword = async (req, res) => {
       }
     }
 
+    // إذا لم نجد في المسؤولين، ابحث في السكرتيرين
+    if (!user) {
+      const secretary = await Secretary.findOne({
+        $or: [{ idNumber: idNumber }, { secretaryId: parseInt(idNumber) }],
+      });
+
+      if (secretary) {
+        const birthDateMatch = secretary.birthDate
+          ? new Date(secretary.birthDate).toISOString().split("T")[0] === birthDate
+          : false;
+
+        if (
+          secretary.firstName.trim().toLowerCase() === firstName.toLowerCase() &&
+          secretary.fatherName &&
+          secretary.fatherName.trim().toLowerCase() === fatherName.toLowerCase() &&
+          secretary.grandFatherName &&
+          secretary.grandFatherName.trim().toLowerCase() ===
+            grandFatherName.toLowerCase() &&
+          secretary.lastName.trim().toLowerCase() === lastName.toLowerCase() &&
+          secretary.motherName &&
+          secretary.motherName.trim().toLowerCase() === motherName.toLowerCase() &&
+          (secretary.idNumber === idNumber || secretary.secretaryId === parseInt(idNumber)) &&
+          birthDateMatch
+        ) {
+          user = secretary;
+          userType = "secretary";
+        }
+      }
+    }
+
     if (!user) {
       return res.status(400).json({
         success: false,
@@ -258,6 +295,10 @@ exports.resetPassword = async (req, res) => {
       });
     } else if (userType === "admin") {
       await Admin.findByIdAndUpdate(user._id, {
+        password: hashedPassword,
+      });
+    } else if (userType === "secretary") {
+      await Secretary.findByIdAndUpdate(user._id, {
         password: hashedPassword,
       });
     }

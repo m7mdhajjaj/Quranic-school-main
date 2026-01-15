@@ -47,11 +47,12 @@ export interface LoginResponse {
     lastName?: string;
     fatherName?: string;
     name?: string;
-    role: 'student' | 'teacher' | 'admin';
+    role: 'student' | 'teacher' | 'admin' | 'secretary';
     email?: string;
     studentId?: string;
     teacherId?: string;
     adminId?: string;
+    secretaryId?: string;
     group?: string;
     imageUrl?: string;
     avatar?: {
@@ -149,7 +150,7 @@ export interface ChangePasswordRequest {
   currentPassword: string;
   newPassword: string;
   userId: string;
-  userType: 'student' | 'teacher' | 'admin';
+  userType: 'student' | 'teacher' | 'admin' | 'secretary';
 }
 
 export interface ChangePasswordResponse {
@@ -244,7 +245,7 @@ export interface ValidationRule {
 // UTILITY TYPES - أنواع مساعدة
 // ============================================================================
 
-export type UserType = 'student' | 'teacher' | 'admin';
+export type UserType = 'student' | 'teacher' | 'admin' | 'secretary';
 export type ResetStep = 1 | 2;
 export type PasswordVisibility = {
   current: boolean;

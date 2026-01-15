@@ -239,6 +239,25 @@ export const getPrimaryNavItems = (
     ];
   }
 
+  // ==================== Secretary Navigation ====================
+  if (rolePermissions.isSecretary) {
+    return [
+      homeItem,
+      {
+        to: '/goals',
+        label: 'الأهداف',
+        icon: Target,
+        color: 'from-green-500 to-emerald-500',
+      },
+      {
+        to: '/chat',
+        label: 'المحادثة',
+        icon: MessageSquare,
+        color: 'from-blue-500 to-cyan-500',
+      },
+    ];
+  }
+
   // ==================== Student Navigation ====================
   if (rolePermissions.isStudent) {
     return [

@@ -6,6 +6,7 @@
 const Student = require("../../schema/Student");
 const Teacher = require("../../schema/Teacher");
 const Admin = require("../../schema/Admin");
+const Secretary = require("../../schema/Secretary");
 
 /**
  * @desc    Update user profile
@@ -24,6 +25,7 @@ const updateUserProfile = async (req, res) => {
     delete updateData.studentId;
     delete updateData.teacherId;
     delete updateData.adminId;
+    delete updateData.secretaryId;
     // منع تعديل رقم الهوية - لا يمكن تغييره بعد الإنشاء
     delete updateData.idNumber;
 
@@ -37,6 +39,10 @@ const updateUserProfile = async (req, res) => {
         );
       } else if (userType === "admin") {
         currentUser = await Admin.findById(userId).select(
+          "birthDate birthDateEditHistory"
+        );
+      } else if (userType === "secretary") {
+        currentUser = await Secretary.findById(userId).select(
           "birthDate birthDateEditHistory"
         );
       } else {
@@ -119,6 +125,11 @@ const updateUserProfile = async (req, res) => {
         new: true,
         runValidators: true,
       }).select("-password");
+    } else if (userType === "secretary") {
+      updatedUser = await Secretary.findByIdAndUpdate(userId, updateData, {
+        new: true,
+        runValidators: true,
+      }).select("-password");
     } else {
       updatedUser = await Teacher.findByIdAndUpdate(userId, updateData, {
         new: true,
@@ -154,6 +165,11 @@ const updateUserProfile = async (req, res) => {
           updatedUser.birthDateEditHistory = cleanedHistory;
         } else if (userType === "admin") {
           await Admin.findByIdAndUpdate(userId, {
+            birthDateEditHistory: cleanedHistory,
+          });
+          updatedUser.birthDateEditHistory = cleanedHistory;
+        } else if (userType === "secretary") {
+          await Secretary.findByIdAndUpdate(userId, {
             birthDateEditHistory: cleanedHistory,
           });
           updatedUser.birthDateEditHistory = cleanedHistory;

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from "@/hooks/useAuth";
-import { loginStudent, loginTeacher, loginAdmin } from "@/Api/authApi";
+import { loginStudent, loginTeacher, loginAdmin, loginSecretary } from "@/Api/authApi";
 import { useLogo } from "@/components/Hooks/useLogo";
 import type { User } from "@/Context/AuthContext";
 import type { LoginFormData } from '../../types';
@@ -175,10 +175,28 @@ export const useLoginLogic = () => {
               : 'خطأ في تسجيل دخول الإداري';
             loginErrors.push(`إداري: ${adminMsg}`);
 
-            throw new Error(
-              `فشل تسجيل الدخول. البيانات غير صحيحة أو المستخدم غير موجود.\n\n` +
-                `محاولات تسجيل الدخول:\n${loginErrors.join('\n')}`
-            );
+            // Try secretary login
+            try {
+              response = await loginSecretary({
+                secretaryId: formData.userId,
+                password: formData.password,
+                userType: 'secretary',
+                rememberMe: rememberMe,
+              });
+              if (import.meta.env.DEV) {
+                console.log('✅ Secretary login successful');
+              }
+            } catch (secretaryError) {
+              const secretaryMsg = axios.isAxiosError(secretaryError)
+                ? secretaryError.response?.data?.message
+                : 'خطأ في تسجيل دخول السكرتير';
+              loginErrors.push(`سكرتير: ${secretaryMsg}`);
+
+              throw new Error(
+                `فشل تسجيل الدخول. البيانات غير صحيحة أو المستخدم غير موجود.\n\n` +
+                  `محاولات تسجيل الدخول:\n${loginErrors.join('\n')}`
+              );
+            }
           }
         }
       }
@@ -214,6 +232,9 @@ export const useLoginLogic = () => {
         } else if (userRole === 'admin') {
           // Admin dashboard كافتراضي للـ Admin
           targetPage = '/admin/dashboard';
+        } else if (userRole === 'secretary') {
+          // Secretary dashboard كافتراضي للـ Secretary
+          targetPage = '/secretary/dashboard';
         }
         
         setTimeout(() => {

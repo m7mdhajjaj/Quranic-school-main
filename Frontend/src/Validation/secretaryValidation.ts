@@ -1,0 +1,287 @@
+import * as yup from 'yup';
+
+// Regex Patterns - متطابقة مع الباك اند
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const phoneRegex = /^05\d{8}$/;
+
+// Secretary Permissions Interface
+export interface SecretaryPermissions {
+  canManageStudents?: boolean;
+  canManageAttendance?: boolean;
+  canManageNews?: boolean;
+  canViewReports?: boolean;
+  canManageTimetable?: boolean;
+  canManageMessages?: boolean;
+}
+
+// Secretary Form Data Interface
+export interface SecretaryFormData {
+  secretaryId?: number;
+  password?: string;
+  firstName: string;
+  lastName: string;
+  fatherName?: string;
+  grandFatherName?: string;
+  motherName?: string;
+  idNumber: string;
+  email: string;
+  phoneNumber: string;
+  birthDate: string;
+  age?: number;
+  gender: 'male' | 'female' | 'ذكر' | 'أنثى';
+  residence: string;
+  permissions?: SecretaryPermissions;
+}
+
+// Secretary Interface - متطابقة مع نموذج الباك اند
+export interface Secretary {
+  _id: string;
+  secretaryId: number;
+  password: string;
+  firstName: string;
+  lastName: string;
+  fatherName?: string;
+  grandFatherName?: string;
+  motherName?: string;
+  idNumber: string;
+  email: string;
+  phoneNumber: string;
+  birthDate: string;
+  age?: number;
+  gender: 'male' | 'female' | 'ذكر' | 'أنثى';
+  residence: string;
+  avatar?: {
+    url?: string;
+    publicId?: string;
+  };
+  hasAvatar?: boolean;
+  lastSeen: Date;
+  permissions: SecretaryPermissions;
+  fullName?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// دالة حساب العمر
+const calculateAge = (birthDate: string): number => {
+  if (!birthDate) return 0;
+
+  const today = new Date();
+  const birthDateObj = new Date(birthDate);
+
+  if (isNaN(birthDateObj.getTime())) return 0;
+
+  let age = today.getFullYear() - birthDateObj.getFullYear();
+  const monthDiff = today.getMonth() - birthDateObj.getMonth();
+
+  if (
+    monthDiff < 0 ||
+    (monthDiff === 0 && today.getDate() < birthDateObj.getDate())
+  ) {
+    age--;
+  }
+
+  return age;
+};
+
+// Secretary Validation Schema - متطابقة مع الباك اند
+export const secretaryValidationSchema = yup.object().shape({
+  // الحقول المطلوبة
+  firstName: yup
+    .string()
+    .required('الاسم الأول مطلوب')
+    .trim()
+    .min(2, 'الاسم الأول يجب أن يكون حرفين على الأقل')
+    .max(50, 'الاسم الأول يجب أن يكون 50 حرف على الأكثر'),
+
+  lastName: yup
+    .string()
+    .required('اسم العائلة مطلوب')
+    .trim()
+    .min(2, 'اسم العائلة يجب أن يكون حرفين على الأقل')
+    .max(50, 'اسم العائلة يجب أن يكون 50 حرف على الأكثر'),
+
+  email: yup
+    .string()
+    .required('البريد الإلكتروني مطلوب')
+    .email('صيغة البريد الإلكتروني غير صحيحة')
+    .matches(emailRegex, 'صيغة البريد الإلكتروني غير صحيحة')
+    .lowercase()
+    .trim(),
+
+  phoneNumber: yup
+    .string()
+    .required('رقم الهاتف مطلوب')
+    .matches(phoneRegex, 'الرقم يجب أن يبدأ بـ 05 ويتكوّن من 10 أرقام')
+    .trim(),
+
+  residence: yup
+    .string()
+    .required('مكان السكن مطلوب')
+    .trim()
+    .max(100, 'مكان السكن يجب أن يكون 100 حرف على الأكثر'),
+
+  // كلمة المرور (مطلوبة للإنشاء، اختيارية للتحديث)
+  password: yup
+    .string()
+    .when('$isUpdate', {
+      is: false,
+      then: (schema) => schema.required('كلمة المرور مطلوبة'),
+      otherwise: (schema) => schema.notRequired(),
+    })
+    .test('password-strength', 'كلمة المرور لا تلبي المتطلبات', function(value) {
+      const { isUpdate } = this.options.context || {};
+      
+      // إذا لم يكن تحديث (إنشاء جديد) يجب التحقق من قوة كلمة المرور
+      if (!isUpdate && value) {
+        // التحقق من الطول الأدنى
+        if (value.length < 4) {
+          return this.createError({ message: 'كلمة المرور يجب أن تكون 4 أحرف على الأقل' });
+        }
+        
+        // عد الأرقام والحروف (يدعم الأرقام العربية والإنجليزية)
+        const numbers = (value.match(/[\d٠-٩]/g) || []).length;
+        const letters = (value.match(/[a-zA-Z\u0600-\u06FF]/g) || []).length;
+        
+        // التحقق من القواعد الجديدة
+        const hasMinimumNumbers = numbers >= 4;
+        const hasMinimumLettersWithNumbers = letters >= 3 && numbers >= 1;
+        
+        if (!hasMinimumNumbers && !hasMinimumLettersWithNumbers) {
+          return this.createError({ 
+            message: 'كلمة المرور يجب أن تحتوي على 4 أرقام على الأقل، أو 3 حروف مع أرقام' 
+          });
+        }
+      }
+      
+      return true;
+    }),
+
+  // الحقول الاختيارية
+  fatherName: yup
+    .string()
+    .trim()
+    .max(50, 'اسم الأب يجب أن يكون 50 حرف على الأكثر')
+    .nullable(),
+
+  grandFatherName: yup
+    .string()
+    .trim()
+    .max(50, 'اسم الجد يجب أن يكون 50 حرف على الأكثر')
+    .nullable(),
+
+  motherName: yup
+    .string()
+    .trim()
+    .max(50, 'اسم الأم يجب أن يكون 50 حرف على الأكثر')
+    .nullable(),
+
+  idNumber: yup
+    .string()
+    .required('رقم الهوية مطلوب')
+    .trim()
+    .test('only-numbers', 'رقم الهوية يجب أن يحتوي على أرقام فقط', function(value) {
+      if (!value) return false;
+      return /^\d+$/.test(value);
+    })
+    .test('exactly-nine-digits', 'رقم الهوية يجب أن يتكون من 9 أرقام بالضبط', function(value) {
+      if (!value) return false;
+      return value.length === 9;
+    })
+    .min(9, 'رقم الهوية يجب أن يتكون من 9 أرقام')
+    .max(9, 'رقم الهوية يجب أن يتكون من 9 أرقام')
+    .matches(/^\d{9}$/, 'رقم الهوية يجب أن يتكون من 9 أرقام فقط'),
+
+  birthDate: yup
+    .string()
+    .required('تاريخ الميلاد مطلوب')
+    .matches(/^\d{4}-\d{2}-\d{2}$/, 'صيغة التاريخ يجب أن تكون YYYY-MM-DD')
+    .test('not-future', 'تاريخ الميلاد لا يمكن أن يكون في المستقبل', (value) => {
+      if (!value) return false;
+      return new Date(value) <= new Date();
+    })
+    .test('age-validation', 'يجب أن يكون عمر السكرتير 18 عام على الأقل', function(value) {
+      if (!value) return false;
+      const age = calculateAge(value);
+      return age >= 18;
+    }),
+
+  gender: yup
+    .string()
+    .required('الجنس مطلوب')
+    .oneOf(['male', 'female', 'ذكر', 'أنثى'], 'القيمة المسموحة للحقل gender هي male/female/ذكر/أنثى'),
+
+  secretaryId: yup
+    .number()
+    .positive('رقم السكرتير يجب أن يكون رقم موجب')
+    .integer('رقم السكرتير يجب أن يكون رقم صحيح')
+    .min(501, 'رقم السكرتير يجب أن يكون 501 فأكثر')
+    .nullable(),
+
+  permissions: yup.object().shape({
+    canManageStudents: yup.boolean().nullable(),
+    canManageAttendance: yup.boolean().nullable(),
+    canManageNews: yup.boolean().nullable(),
+    canViewReports: yup.boolean().nullable(),
+    canManageTimetable: yup.boolean().nullable(),
+    canManageMessages: yup.boolean().nullable(),
+  }).nullable(),
+});
+
+// دالة التحقق من السكرتير مع Yup
+export const validateSecretaryWithYup = async (
+  data: SecretaryFormData,
+  isUpdate = false
+): Promise<{ isValid: boolean; errors: Record<string, string> }> => {
+  try {
+    await secretaryValidationSchema.validate(data, { 
+      abortEarly: false,
+      context: { isUpdate }
+    });
+    return { isValid: true, errors: {} };
+  } catch (error) {
+    if (error instanceof yup.ValidationError) {
+      const errors: Record<string, string> = {};
+      error.inner.forEach((err) => {
+        if (err.path) {
+          errors[err.path] = err.message;
+        }
+      });
+      return { isValid: false, errors };
+    }
+    return { isValid: false, errors: { general: 'حدث خطأ في التحقق من البيانات' } };
+  }
+};
+
+// دالة تنظيف البيانات
+export const sanitizeSecretaryData = (data: SecretaryFormData): SecretaryFormData => {
+  const normalize = (value: string | undefined) => 
+    typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : value;
+
+  return {
+    ...data,
+    firstName: normalize(data.firstName) || '',
+    lastName: normalize(data.lastName) || '',
+    fatherName: normalize(data.fatherName),
+    grandFatherName: normalize(data.grandFatherName),
+    motherName: normalize(data.motherName),
+    residence: normalize(data.residence) || '',
+    idNumber: normalize(data.idNumber),
+    email: typeof data.email === 'string' ? data.email.toLowerCase().trim() : data.email,
+    phoneNumber: normalize(data.phoneNumber) || '',
+  };
+};
+
+// دالة التحقق من الصلاحيات
+export const validateSecretaryPermissions = (permissions: SecretaryPermissions): boolean => {
+  const validKeys = [
+    'canManageStudents',
+    'canManageAttendance',
+    'canManageNews',
+    'canViewReports',
+    'canManageTimetable',
+    'canManageMessages'
+  ];
+  
+  return Object.keys(permissions).every(key => validKeys.includes(key));
+};

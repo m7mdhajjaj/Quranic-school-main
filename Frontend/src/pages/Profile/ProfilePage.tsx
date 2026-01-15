@@ -348,7 +348,9 @@ const ProfilePage = () => {
                     <div className="space-y-3 mt-3">
                       <DatePicker
                         value={
-                          edited?.birthDate ? edited.birthDate.slice(0, 10) : ""
+                          edited?.birthDate && !isNaN(new Date(edited.birthDate).getTime())
+                            ? edited.birthDate.slice(0, 10)
+                            : ""
                         }
                         onChange={(dateString) => {
                           updateField(

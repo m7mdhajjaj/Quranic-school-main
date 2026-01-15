@@ -6,6 +6,7 @@
 const Student = require("../../schema/Student");
 const Teacher = require("../../schema/Teacher");
 const Admin = require("../../schema/Admin");
+const Secretary = require("../../schema/Secretary");
 
 /**
  * @desc    Get current user profile
@@ -22,6 +23,8 @@ const getUserProfile = async (req, res) => {
       user = await Student.findById(userId).select("-password");
     } else if (userType === "admin") {
       user = await Admin.findById(userId).select("-password");
+    } else if (userType === "secretary") {
+      user = await Secretary.findById(userId).select("-password");
     } else {
       user = await Teacher.findById(userId).select("-password");
     }

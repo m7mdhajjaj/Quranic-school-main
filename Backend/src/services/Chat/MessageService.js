@@ -15,6 +15,7 @@ const {
 const Student = require("../../schema/Student");
 const Teacher = require("../../schema/Teacher");
 const Admin = require("../../schema/Admin");
+const Secretary = require("../../schema/Secretary");
 const Group = require("../../schema/Group");
 const Conversation = require("../../schema/Chat/Conversation");
 
@@ -151,6 +152,7 @@ class MessageService {
           let userModel = "Student";
           if (await Teacher.exists({ _id: userId })) userModel = "Teacher";
           else if (await Admin.exists({ _id: userId })) userModel = "Admin";
+          else if (await Secretary.exists({ _id: userId })) userModel = "Secretary";
 
           processedMentions.push({
             type: "user",

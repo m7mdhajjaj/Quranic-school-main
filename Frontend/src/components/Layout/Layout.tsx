@@ -22,6 +22,7 @@ import { useLocation } from 'react-router-dom';
 import Header from './Header';
 import { Footer } from './Footer';
 import { AiChatbot } from '../AiChatbot';
+import { useAuth } from '@/hooks/useAuth';
 
 // ============================================================================
 // Types & Interfaces
@@ -83,6 +84,7 @@ const shouldHideLayout = (pathname: string): boolean => {
  */
 const Layout: React.FC<LayoutProps> = ({ children, isGuest = false }) => {
   const location = useLocation();
+  const { user } = useAuth();
 
   // Determine what to show based on current route
   const hideLayout = shouldHideLayout(location.pathname);
@@ -92,6 +94,9 @@ const Layout: React.FC<LayoutProps> = ({ children, isGuest = false }) => {
 
   // Use unified Header component for all roles
   const HeaderComponent = Header;
+
+  // Show chatbot only for teacher and student (not for admin, secretary, or guests)
+  const showChatbot = !isGuest && (user?.role === 'teacher' || user?.role === 'student');
 
   return (
     <div className="app-content m-0 p-0 min-h-screen flex flex-col">
@@ -108,8 +113,8 @@ const Layout: React.FC<LayoutProps> = ({ children, isGuest = false }) => {
       {/* Footer - Conditional rendering based on route */}
       {showFooter && <Footer isGuest={isGuest} />}
 
-      {/* Global AI Chatbot - للمعلم والطالب فقط (not for guests) */}
-      {!isGuest && <AiChatbot />}
+      {/* Global AI Chatbot - للمعلم والطالب فقط */}
+      {showChatbot && <AiChatbot />}
     </div>
   );
 };

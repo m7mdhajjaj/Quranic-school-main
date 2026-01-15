@@ -6,6 +6,7 @@
 const Student = require("../../schema/Student");
 const Teacher = require("../../schema/Teacher");
 const Admin = require("../../schema/Admin");
+const Secretary = require("../../schema/Secretary");
 
 /**
  * @desc    Get edit limits for a specific field
@@ -32,6 +33,8 @@ const getEditLimits = async (req, res) => {
       user = await Student.findById(userId).select("birthDateEditHistory");
     } else if (userType === "admin") {
       user = await Admin.findById(userId).select("birthDateEditHistory");
+    } else if (userType === "secretary") {
+      user = await Secretary.findById(userId).select("birthDateEditHistory");
     } else {
       user = await Teacher.findById(userId).select("birthDateEditHistory");
     }

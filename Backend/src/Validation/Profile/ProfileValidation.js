@@ -1,10 +1,11 @@
 // Validation/ProfileValidation.js
 // Profile validation middleware that uses role-based validation
-// يستخدم validation من TeacherValidation, StudentValidation, AdminValidation حسب الـ role
+// يستخدم validation من TeacherValidation, StudentValidation, AdminValidation, SecretaryValidation حسب الـ role
 
 const { validateTeacherData } = require('../Teacher/TeacherValidation');
 const { validateStudentData } = require('../Student/StudentValidation');
 const { validateAdminData } = require('../Admin/AdminValidation');
+const { validateSecretaryData } = require('../Secretary/SecretaryValidation');
 
 /**
  * Main validation middleware for profile data based on user role
@@ -13,6 +14,7 @@ const { validateAdminData } = require('../Admin/AdminValidation');
  * للمعلمين: يستخدم validateTeacherData
  * للطلاب: يستخدم validateStudentData
  * للأدمن: يستخدم validateAdminData
+ * للسكرتير: يستخدم validateSecretaryData
  */
 const validateProfileData = async (req, res, next) => {
   try {
@@ -40,6 +42,9 @@ const validateProfileData = async (req, res, next) => {
     } else if (userRole === 'admin') {
       console.log('📚 Using Admin Validation');
       return validateAdminData(req, res, next);
+    } else if (userRole === 'secretary') {
+      console.log('📚 Using Secretary Validation');
+      return validateSecretaryData(req, res, next);
     } else {
       // Unknown role - pass through without validation
       console.log('⚠️ Unknown role, passing through without validation');

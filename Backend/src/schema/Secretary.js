@@ -30,7 +30,11 @@ const secretarySchema = new mongoose.Schema(
     motherName: { type: String, trim: true },
 
     // هوية/تواصل
-    idNumber: { type: String, trim: true },
+    idNumber: { 
+      type: String, 
+      required: [true, 'رقم الهوية مطلوب'],
+      trim: true 
+    },
     email: {
       type: String,
       required: [true, 'البريد الإلكتروني مطلوب'],
@@ -47,10 +51,14 @@ const secretarySchema = new mongoose.Schema(
       trim: true,
     },
 
-    birthDate: { type: String },
+    birthDate: { 
+      type: String, 
+      required: [true, 'تاريخ الميلاد مطلوب'] 
+    },
     age: { type: Number, min: [0, 'العمر يجب أن يكون رقماً موجباً'] },
     gender: {
       type: String,
+      required: [true, 'الجنس مطلوب'],
       enum: {
         values: ['male', 'female', 'ذكر', 'أنثى'],
         message: 'القيمة المسموحة للحقل gender هي male/female/ذكر/أنثى',

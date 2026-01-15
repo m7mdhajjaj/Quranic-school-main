@@ -31,7 +31,7 @@ const StudentMarkDisplay: React.FC<{ mark?: string; isDesktop?: boolean }> = ({ 
 export { formatArabicDate as formatDateArabic, formatTime12Arabic };
 
 export function createExamColumns(params: {
-  role: 'student' | 'teacher' | 'admin';
+  role: 'student' | 'teacher' | 'admin' | 'secretary';
   examAverages: Record<string, number | null>;
   studentMarks: Record<string, string>;
   ActionsComponent?: React.FC<{ exam: Exam }>;

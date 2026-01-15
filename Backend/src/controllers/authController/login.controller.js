@@ -19,7 +19,8 @@ exports.login = async (req, res) => {
       req.body.identifier ||
       req.body.studentId ||
       req.body.teacherId ||
-      req.body.adminId;
+      req.body.adminId ||
+      req.body.secretaryId;
     const password =
       req.validatedData?.password || req.body.idNumber || req.body.password;
     const rememberMe =
@@ -59,11 +60,14 @@ exports.login = async (req, res) => {
       return await authenticateAdmin(admin, password, rememberMe, res);
     }
 
-    // 4. محاولة البحث كسكرتير (secretaryId)
-    const secretary = await Secretary.findOne({ secretaryId: identifier });
-    
-    if (secretary) {
-      return await authenticateSecretary(secretary, password, rememberMe, res);
+    // 4. محاولة البحث كسكرتير (secretaryId) - secretaryId هو Number
+    const secretaryIdNumber = parseInt(identifier);
+    if (!isNaN(secretaryIdNumber)) {
+      const secretary = await Secretary.findOne({ secretaryId: secretaryIdNumber });
+      
+      if (secretary) {
+        return await authenticateSecretary(secretary, password, rememberMe, res);
+      }
     }
 
     // لم يتم العثور على المستخدم في أي نوع

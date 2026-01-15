@@ -141,7 +141,7 @@ const validateSenderType = (senderType) => {
   }
   
   const typeStr = senderType.toString().trim().toLowerCase();
-  const validTypes = ['student', 'teacher', 'admin', 'system'];
+  const validTypes = ['student', 'teacher', 'admin', 'secretary', 'system'];
   
   if (!validTypes.includes(typeStr)) {
     return { isValid: false, message: 'نوع المرسل غير صحيح' };

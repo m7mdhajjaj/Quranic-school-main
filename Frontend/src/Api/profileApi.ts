@@ -18,18 +18,27 @@ export interface UserProfile {
   email?: string;
   phoneNumber?: string;
   groups?: string[];
-  role?: 'student' | 'teacher' | 'admin';
+  role?: 'student' | 'teacher' | 'admin' | 'secretary';
   createdAt?: string;
   updatedAt?: string;
   age?: number;
   teacherId?: number;
   studentId?: number;
+  secretaryId?: number;
   group?: string;
   teacher?: string;
   avatar?: string;
+  permissions?: {
+    canManageStudents?: boolean;
+    canManageAttendance?: boolean;
+    canManageNews?: boolean;
+    canViewReports?: boolean;
+    canManageTimetable?: boolean;
+    canManageMessages?: boolean;
+  };
 }
 
-type Endpoint = 'students' | 'teachers' | 'admins';
+type Endpoint = 'students' | 'teachers' | 'admins' | 'secretaries';
 
 export interface ChangePasswordRequest {
   currentPassword: string;
@@ -125,6 +134,7 @@ export const deleteUserAvatar = async (
 export const getUserEndpoint = (role?: string): Endpoint => {
   if (role === 'admin' || role?.includes('admin')) return 'admins';
   if (role === 'teacher' || role?.includes('teacher')) return 'teachers';
+  if (role === 'secretary' || role?.includes('secretary')) return 'secretaries';
   return 'students';
 };
 
@@ -149,17 +159,24 @@ export const getUserWithFallback = async (userId: string, userRole?: string): Pr
   // Try primary endpoint based on role first
   if (userRole === 'admin') endpoints.push('admins');
   if (userRole === 'teacher' || userRole?.includes('teacher')) endpoints.push('teachers');
+  if (userRole === 'secretary') endpoints.push('secretaries');
   endpoints.push('students');
   
   // Add remaining endpoints as fallbacks
   if (!endpoints.includes('teachers')) endpoints.push('teachers');
   if (!endpoints.includes('admins')) endpoints.push('admins');
+  if (!endpoints.includes('secretaries')) endpoints.push('secretaries');
   
   for (const endpoint of endpoints) {
     try {
       const user = await getUserById(endpoint, userId);
-      const role = user.role ?? (endpoint === 'admins' ? 'admin' : endpoint === 'teachers' ? 'teacher' : 'student');
-      return { user: { ...user, role: role as 'student' | 'teacher' | 'admin' }, endpoint };
+      const role = user.role ?? (
+        endpoint === 'admins' ? 'admin' : 
+        endpoint === 'teachers' ? 'teacher' : 
+        endpoint === 'secretaries' ? 'secretary' : 
+        'student'
+      );
+      return { user: { ...user, role: role as 'student' | 'teacher' | 'admin' | 'secretary' }, endpoint };
     } catch (error: unknown) {
       const axiosError = error as { response?: { status?: number } };
       if (axiosError?.response?.status !== 404) {

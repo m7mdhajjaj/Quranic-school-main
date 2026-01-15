@@ -80,6 +80,8 @@ const avatarStorage = new CloudinaryStorage({
         userSubFolder = 'Students';
       } else if (req.user.role === 'teacher') {
         userSubFolder = 'Teachers';
+      } else if (req.user.role === 'secretary') {
+        userSubFolder = 'Secretaries';
       }
     }
 

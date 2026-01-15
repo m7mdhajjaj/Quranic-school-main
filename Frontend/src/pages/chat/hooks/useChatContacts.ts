@@ -6,10 +6,11 @@ export interface Contact {
   firstName: string;
   lastName: string;
   avatar?: { url: string };
-  role: 'student' | 'teacher' | 'admin';
+  role: 'student' | 'teacher' | 'admin' | 'secretary';
   teacherId?: number;
   studentId?: number;
   adminId?: number;
+  secretaryId?: number;
 }
 
 export interface Group {

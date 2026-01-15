@@ -24,6 +24,13 @@ interface LoginAdminRequest {
   rememberMe?: boolean;
 }
 
+interface LoginSecretaryRequest {
+  secretaryId: string;
+  password: string;
+  userType: 'secretary';
+  rememberMe?: boolean;
+}
+
 interface VerifyIdentityRequest {
   firstName: string;
   fatherName: string;
@@ -80,6 +87,12 @@ export const loginTeacher = async (data: LoginTeacherRequest): Promise<AuthRespo
 
 // Admin Login
 export const loginAdmin = async (data: LoginAdminRequest): Promise<AuthResponse> => {
+  const response = await api.post('/auth/login', data);
+  return response.data;
+};
+
+// Secretary Login
+export const loginSecretary = async (data: LoginSecretaryRequest): Promise<AuthResponse> => {
   const response = await api.post('/auth/login', data);
   return response.data;
 };
