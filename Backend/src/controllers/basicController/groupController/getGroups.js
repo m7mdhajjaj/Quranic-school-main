@@ -7,9 +7,17 @@ const Student = require("../../../schema/Student");
 const ExamSchedule = require("../../../schema/ExamSchedule");
 const TimeTable = require("../../../schema/TimeTable");
 const Teacher = require("../../../schema/Teacher");
-const { getStudentCountsForAllGroups, getStudentCountsForTeacher } = require("./cache");
+const {
+  getStudentCountsForAllGroups,
+  getStudentCountsForTeacher,
+} = require("./cache");
 const { getTeacherInfo } = require("./helpers");
-const { successResponse, notFoundResponse, handleError, getStudentCountPipeline } = require("./utils");
+const {
+  successResponse,
+  notFoundResponse,
+  handleError,
+  getStudentCountPipeline,
+} = require("./utils");
 
 /**
  * الحصول على جميع الحلقات مع الفلترة والترتيب والـ pagination
@@ -24,8 +32,8 @@ exports.getAllGroups = async (req, res) => {
       search,
       capacity,
       status,
-      sortBy = 'createdAt',
-      sortOrder = 'desc',
+      sortBy = "createdAt",
+      sortOrder = "desc",
       page = 1,
       limit = 1000,
     } = req.query;
@@ -41,44 +49,63 @@ exports.getAllGroups = async (req, res) => {
     // 1. Join مع Teacher collection للبحث في أسماء المعلمين
     pipeline.push({
       $lookup: {
-        from: 'teachers',
-        localField: 'teacher',
-        foreignField: '_id',
-        as: 'teacherData'
-      }
+        from: "teachers",
+        localField: "teacher",
+        foreignField: "_id",
+        as: "teacherData",
+      },
     });
 
     // 2. إضافة حقول متعددة للبحث عن المعلم
     pipeline.push({
       $addFields: {
-        teacherFirstName: { $arrayElemAt: ['$teacherData.firstName', 0] },
-        teacherFatherName: { $arrayElemAt: ['$teacherData.fatherName', 0] },
-        teacherLastName: { $arrayElemAt: ['$teacherData.lastName', 0] },
+        teacherFirstName: { $arrayElemAt: ["$teacherData.firstName", 0] },
+        teacherFatherName: { $arrayElemAt: ["$teacherData.fatherName", 0] },
+        teacherLastName: { $arrayElemAt: ["$teacherData.lastName", 0] },
         teacherFullName: {
           $trim: {
             input: {
               $concat: [
-                { $ifNull: [{ $arrayElemAt: ['$teacherData.firstName', 0] }, ''] },
-                ' ',
-                { $ifNull: [{ $arrayElemAt: ['$teacherData.fatherName', 0] }, ''] },
-                ' ',
-                { $ifNull: [{ $arrayElemAt: ['$teacherData.lastName', 0] }, ''] }
-              ]
-            }
-          }
+                {
+                  $ifNull: [
+                    { $arrayElemAt: ["$teacherData.firstName", 0] },
+                    "",
+                  ],
+                },
+                " ",
+                {
+                  $ifNull: [
+                    { $arrayElemAt: ["$teacherData.fatherName", 0] },
+                    "",
+                  ],
+                },
+                " ",
+                {
+                  $ifNull: [{ $arrayElemAt: ["$teacherData.lastName", 0] }, ""],
+                },
+              ],
+            },
+          },
         },
         teacherFirstLast: {
           $trim: {
             input: {
               $concat: [
-                { $ifNull: [{ $arrayElemAt: ['$teacherData.firstName', 0] }, ''] },
-                ' ',
-                { $ifNull: [{ $arrayElemAt: ['$teacherData.lastName', 0] }, ''] }
-              ]
-            }
-          }
-        }
-      }
+                {
+                  $ifNull: [
+                    { $arrayElemAt: ["$teacherData.firstName", 0] },
+                    "",
+                  ],
+                },
+                " ",
+                {
+                  $ifNull: [{ $arrayElemAt: ["$teacherData.lastName", 0] }, ""],
+                },
+              ],
+            },
+          },
+        },
+      },
     });
 
     // 3. بناء الفلاتر
@@ -91,30 +118,30 @@ exports.getAllGroups = async (req, res) => {
         { name: searchRegex },
         { description: searchRegex },
         { schedule: searchRegex },
-        { teacherFirstName: searchRegex },      // الاسم الأول فقط
-        { teacherFullName: searchRegex },       // الاسم الثلاثي
-        { teacherFirstLast: searchRegex },      // الاسم الأول + العائلة
+        { teacherFirstName: searchRegex }, // الاسم الأول فقط
+        { teacherFullName: searchRegex }, // الاسم الثلاثي
+        { teacherFirstLast: searchRegex }, // الاسم الأول + العائلة
       ];
     }
 
     // فلتر السعة
-    if (capacity && capacity !== 'all') {
+    if (capacity && capacity !== "all") {
       switch (capacity) {
-        case 'small':
+        case "small":
           matchStage.capacity = { $lte: 15 };
           break;
-        case 'medium':
+        case "medium":
           matchStage.capacity = { $gt: 15, $lte: 25 };
           break;
-        case 'large':
+        case "large":
           matchStage.capacity = { $gt: 25 };
           break;
       }
     }
 
     // فلتر الحالة
-    if (status && status !== 'all') {
-      matchStage.activeStatus = status === 'active';
+    if (status && status !== "all") {
+      matchStage.activeStatus = status === "active";
     }
 
     if (Object.keys(matchStage).length > 0) {
@@ -122,13 +149,13 @@ exports.getAllGroups = async (req, res) => {
     }
 
     // 4. إحصاء الكلي قبل pagination
-    const countPipeline = [...pipeline, { $count: 'total' }];
+    const countPipeline = [...pipeline, { $count: "total" }];
     const countResult = await Group.aggregate(countPipeline);
     const totalCount = countResult.length > 0 ? countResult[0].total : 0;
 
     // 5. الترتيب
     const sortOptions = {};
-    sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
+    sortOptions[sortBy] = sortOrder === "desc" ? -1 : 1;
     pipeline.push({ $sort: sortOptions });
 
     // 6. Pagination
@@ -146,12 +173,14 @@ exports.getAllGroups = async (req, res) => {
       groups.map(async (group) => {
         const currentStudents = studentCountMap[group.name] || 0;
         const capacity = group.capacity || 30;
-        const capacityPercentage = Math.round((currentStudents / capacity) * 100);
+        const capacityPercentage = Math.round(
+          (currentStudents / capacity) * 100
+        );
         const isFull = currentStudents >= capacity;
 
         // استخدام اسم المعلم الكامل من الـ aggregation
         const teacherName = group.teacherFullName || "غير محدد";
-        
+
         // جلب معلومات المعلم الكاملة إذا كان موجود
         let teacherInfo = null;
         if (group.teacher) {
@@ -166,7 +195,15 @@ exports.getAllGroups = async (req, res) => {
           .lean();
 
         // ترتيب الأيام بشكل صحيح
-        const daysOrder = ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"];
+        const daysOrder = [
+          "السبت",
+          "الأحد",
+          "الاثنين",
+          "الثلاثاء",
+          "الأربعاء",
+          "الخميس",
+          "الجمعة",
+        ];
         const sortedTimetable = timetable.sort((a, b) => {
           return daysOrder.indexOf(a.day) - daysOrder.indexOf(b.day);
         });
@@ -337,14 +374,16 @@ exports.getGroupsMonthlyStats = async (req, res) => {
 exports.getGroupStudents = async (req, res) => {
   try {
     const { id } = req.params;
-    const { includeDetails = 'true', search, gender } = req.query;
-    
-    console.log(`👥 جلب طلاب الحلقة - ID: ${id}, مع التفاصيل: ${includeDetails}, بحث: ${search}, جنس: ${gender}`);
+    const { includeDetails = "true", search, gender } = req.query;
+
+    console.log(
+      `👥 جلب طلاب الحلقة - ID: ${id}, مع التفاصيل: ${includeDetails}, بحث: ${search}, جنس: ${gender}`
+    );
     const startTime = Date.now();
 
     // 1. جلب الحلقة
     const group = await Group.findById(id).lean();
-    
+
     if (!group) {
       return res.status(404).json({
         success: false,
@@ -354,28 +393,35 @@ exports.getGroupStudents = async (req, res) => {
 
     // 2. بناء query للطلاب
     const query = { group: group.name };
-    
+
     // فلتر الجنس
-    if (gender && (gender === 'ذكر' || gender === 'أنثى' || gender === 'male' || gender === 'female')) {
-      const normalizedGender = gender === 'male' ? 'ذكر' : gender === 'female' ? 'أنثى' : gender;
+    if (
+      gender &&
+      (gender === "ذكر" ||
+        gender === "أنثى" ||
+        gender === "male" ||
+        gender === "female")
+    ) {
+      const normalizedGender =
+        gender === "male" ? "ذكر" : gender === "female" ? "أنثى" : gender;
       query.gender = normalizedGender;
     }
 
     // 3. جلب الطلاب
     let students;
-    
+
     // Note: Suspended students have group=null, so they are automatically excluded by the query { group: group.name }
 
-    if (includeDetails === 'true') {
+    if (includeDetails === "true") {
       // جلب الطلاب مع كامل معلوماتهم
       students = await Student.find(query)
-        .select('-password') // استبعاد الحقول الحساسة
+        .select("-password") // استبعاد الحقول الحساسة
         .lean()
         .sort({ firstName: 1, lastName: 1 });
     } else {
       // جلب الطلاب بمعلومات مختصرة فقط (مع رقم الهاتف والجنس)
       students = await Student.find(query)
-        .select('studentId firstName lastName phoneNumber gender') // إضافة phoneNumber و gender
+        .select("studentId firstName lastName phoneNumber gender") // إضافة phoneNumber و gender
         .lean()
         .sort({ firstName: 1, lastName: 1 });
     }
@@ -389,18 +435,18 @@ exports.getGroupStudents = async (req, res) => {
           student.firstName,
           student.fatherName,
           student.grandFatherName,
-          student.lastName
+          student.lastName,
         ]
           .filter(Boolean)
-          .join(' ')
+          .join(" ")
           .toLowerCase();
-        
+
         // البحث في رقم الهوية
-        const idNumber = student.idNumber ? student.idNumber.toLowerCase() : '';
-        
+        const idNumber = student.idNumber ? student.idNumber.toLowerCase() : "";
+
         // البحث في رقم الطالب
-        const studentId = student.studentId ? student.studentId.toString() : '';
-        
+        const studentId = student.studentId ? student.studentId.toString() : "";
+
         return (
           fullName.includes(searchTerm) ||
           idNumber.includes(searchTerm) ||
@@ -410,7 +456,9 @@ exports.getGroupStudents = async (req, res) => {
     }
 
     const duration = Date.now() - startTime;
-    console.log(`✅ تم جلب ${students.length} طالب من الحلقة "${group.name}" في ${duration}ms`);
+    console.log(
+      `✅ تم جلب ${students.length} طالب من الحلقة "${group.name}" في ${duration}ms`
+    );
 
     res.json({
       success: true,
@@ -444,14 +492,18 @@ exports.getGroupStudents = async (req, res) => {
 exports.getGroupsByTeacherIdWithFilters = async (req, res) => {
   try {
     const { teacherId } = req.params;
-    const { filter = 'all', includeStudents = 'false' } = req.query;
+    const { filter = "all", includeStudents = "false" } = req.query;
 
-    console.log(`⚡ جلب حلقات المعلم - ID: ${teacherId}, فلتر: ${filter}, مع الطلاب: ${includeStudents}`);
+    console.log(
+      `⚡ جلب حلقات المعلم - ID: ${teacherId}, فلتر: ${filter}, مع الطلاب: ${includeStudents}`
+    );
     const startTime = Date.now();
 
     // 1. جلب المعلم
     const Teacher = require("../../../schema/Teacher");
-    const teacher = await Teacher.findById(teacherId).select("firstName lastName");
+    const teacher = await Teacher.findById(teacherId).select(
+      "firstName lastName"
+    );
 
     if (!teacher) {
       return res.status(404).json({
@@ -464,7 +516,7 @@ exports.getGroupsByTeacherIdWithFilters = async (req, res) => {
 
     // 2. جلب حلقات المعلم
     const groups = await Group.find({
-      teacher: teacherId
+      teacher: teacherId,
     })
       .select("name _id capacity description schedule activeStatus")
       .lean()
@@ -474,10 +526,10 @@ exports.getGroupsByTeacherIdWithFilters = async (req, res) => {
 
     // 3. جلب عدد الطلاب وعدد الامتحانات لكل حلقة
     const groupNames = groups.map((g) => g.name);
-    
+
     // استخدام Pipeline موحد لضمان تطابق المنطق في كل مكان
     const studentCountPipeline = getStudentCountPipeline({
-      group: { $in: groupNames }
+      group: { $in: groupNames },
     });
 
     const [studentCounts, examCounts] = await Promise.all([
@@ -485,13 +537,13 @@ exports.getGroupsByTeacherIdWithFilters = async (req, res) => {
       ExamSchedule.aggregate([
         { $match: { group: { $in: groupNames } } },
         { $group: { _id: "$group", count: { $sum: 1 } } },
-      ])
+      ]),
     ]);
 
     const studentCountMap = new Map(
       studentCounts.map((item) => [item._id, item.count])
     );
-    
+
     const examCountMap = new Map(
       examCounts.map((item) => [item._id, item.count])
     );
@@ -502,7 +554,7 @@ exports.getGroupsByTeacherIdWithFilters = async (req, res) => {
       const examCount = examCountMap.get(group.name) || 0;
       // ✅ حساب حالة النشاط بشكل ديناميكي: الحلقة نشطة إذا فيها طالب واحد على الأقل
       const isActive = currentStudents > 0;
-      
+
       return {
         ...group,
         currentStudents,
@@ -516,38 +568,68 @@ exports.getGroupsByTeacherIdWithFilters = async (req, res) => {
     });
 
     // 5. تطبيق الفلتر
-    if (filter === 'withStudents') {
+    if (filter === "withStudents") {
       groupsWithInfo = groupsWithInfo.filter((g) => g.hasStudents);
       console.log(`🔍 فلترة: ${groupsWithInfo.length} حلقة فيها طلاب`);
-    } else if (filter === 'withoutStudents') {
+    } else if (filter === "withoutStudents") {
       groupsWithInfo = groupsWithInfo.filter((g) => g.isEmpty);
       console.log(`🔍 فلترة: ${groupsWithInfo.length} حلقة فارغة`);
-    } else if (filter === 'active') {
+    } else if (filter === "active") {
       // ✅ فلترة الحلقات النشطة (التي فيها طلاب فعلياً)
       groupsWithInfo = groupsWithInfo.filter((g) => g.currentStudents > 0);
       console.log(`🔍 فلترة: ${groupsWithInfo.length} حلقة نشطة (فيها طلاب)`);
     }
 
+    console.log(
+      `🔑 includeStudents value: "${includeStudents}" (type: ${typeof includeStudents})`
+    );
+
     // 6. جلب الطلاب إذا كان مطلوباً
-    if (includeStudents === 'true') {
-      console.log('👥 جلب بيانات الطلاب...');
-      
+    if (includeStudents === "true") {
+      console.log("👥 جلب بيانات الطلاب...");
+
       const groupsWithStudents = await Promise.all(
         groupsWithInfo.map(async (group) => {
+          console.log(`🔍 البحث عن طلاب الحلقة: "${group.name}"`);
+
           // استبدال aggregate بـ find لأن المفصولين لديهم group=null
           const students = await Student.find({ group: group.name })
             .select("studentId firstName lastName group phoneNumber gender") // إضافة phoneNumber و gender
             .lean()
             .sort({ firstName: 1 });
 
+          console.log(
+            `📊 تم العثور على ${students.length} طالب في حلقة "${group.name}"`
+          );
+          if (students.length === 0) {
+            // محاولة البحث بطريقة مختلفة للتصحيح
+            const allStudentsInGroup = await Student.find({})
+              .select("group firstName lastName")
+              .lean();
+            const matching = allStudentsInGroup.filter(
+              (s) => s.group === group.name
+            );
+            console.log(`🔎 البحث اليدوي: ${matching.length} طالب مطابق`);
+            console.log(`📋 جميع قيم group الموجودة:`, [
+              ...new Set(allStudentsInGroup.map((s) => s.group)),
+            ]);
+          }
+
           return {
             ...group,
-            students: students.map(s => ({
+            students: students.map((s) => ({
               _id: s._id,
               studentId: s.studentId,
               name: `${s.firstName} ${s.lastName}`,
+              firstName: s.firstName,
+              lastName: s.lastName,
               phoneNumber: s.phoneNumber,
-              gender: s.gender === 'ذكر' ? 'male' : (s.gender === 'أنثى' || s.gender === 'انثى' ? 'female' : 'male'), // تحويل للجنس
+              gender:
+                s.gender === "ذكر"
+                  ? "male"
+                  : s.gender === "أنثى" || s.gender === "انثى"
+                  ? "female"
+                  : "male", // تحويل للجنس
             })),
             totalStudents: students.length, // تحديث العدد الفعلي من الطلاب المجلوبين
           };
@@ -570,9 +652,16 @@ exports.getGroupsByTeacherIdWithFilters = async (req, res) => {
         groups: groupsWithInfo,
         summary: {
           totalGroups: groups.length,
-          groupsWithStudents: groups.filter(g => studentCountMap.get(g.name) > 0).length,
-          emptyGroups: groups.filter(g => (studentCountMap.get(g.name) || 0) === 0).length,
-          totalStudents: Array.from(studentCountMap.values()).reduce((sum, count) => sum + count, 0),
+          groupsWithStudents: groups.filter(
+            (g) => studentCountMap.get(g.name) > 0
+          ).length,
+          emptyGroups: groups.filter(
+            (g) => (studentCountMap.get(g.name) || 0) === 0
+          ).length,
+          totalStudents: Array.from(studentCountMap.values()).reduce(
+            (sum, count) => sum + count,
+            0
+          ),
         },
       },
     });
@@ -602,20 +691,20 @@ exports.getGroupsStats = async (req, res) => {
 
     // حساب الإحصائيات
     const totalGroups = groups.length;
-    
+
     let totalStudents = 0;
     let fullGroups = 0;
     let emptyGroups = 0;
     let totalCapacity = 0;
     const teacherStats = {};
 
-    groups.forEach(group => {
+    groups.forEach((group) => {
       const capacity = group.capacity || 30;
       const currentStudents = studentCountMap[group.name] || 0;
-      
+
       totalCapacity += capacity;
       totalStudents += currentStudents;
-      
+
       // تحديد الحلقات الممتلئة والفارغة
       if (currentStudents >= capacity) {
         fullGroups++;
@@ -625,7 +714,7 @@ exports.getGroupsStats = async (req, res) => {
       }
 
       // إحصائيات حسب المعلم
-      const teacherName = group.teacher || 'غير محدد';
+      const teacherName = group.teacher || "غير محدد";
       if (!teacherStats[teacherName]) {
         teacherStats[teacherName] = {
           teacher: teacherName,
@@ -638,9 +727,8 @@ exports.getGroupsStats = async (req, res) => {
     });
 
     const availableSeats = Math.max(0, totalCapacity - totalStudents);
-    const occupancyRate = totalCapacity > 0 
-      ? Math.round((totalStudents / totalCapacity) * 100) 
-      : 0;
+    const occupancyRate =
+      totalCapacity > 0 ? Math.round((totalStudents / totalCapacity) * 100) : 0;
 
     const endTime = Date.now();
     const duration = endTime - startTime;
@@ -658,7 +746,9 @@ exports.getGroupsStats = async (req, res) => {
         availableSeats,
         occupancyRate,
         activeGroups: totalGroups - emptyGroups,
-        byTeacher: Object.values(teacherStats).sort((a, b) => b.groupsCount - a.groupsCount),
+        byTeacher: Object.values(teacherStats).sort(
+          (a, b) => b.groupsCount - a.groupsCount
+        ),
       },
     });
   } catch (error) {

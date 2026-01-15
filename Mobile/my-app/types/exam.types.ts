@@ -2,14 +2,21 @@ export interface Exam {
   _id: string;
   name: string;
   date: string;
-  examType: "تحريري" | "شفهي";
+  time?: string;
+  type?: "تحريري" | "شفهي" | "تقييم شامل" | "كتابي"; // الباك إند يستخدم type
+  examType?: "تحريري" | "شفهي" | "تقييم شامل" | "كتابي"; // للتوافق مع الكود القديم
   subject: string;
+  duration?: number;
   totalMarks: number;
-  groups: string[];
-  createdBy: string;
-  createdAt: string;
-  updatedAt: string;
+  passingMarks?: number;
+  group?: string; // الباك إند يستخدم group (مفرد)
+  groups?: string[]; // للتوافق مع الكود القديم
+  createdBy?: string;
+  teacher?: string;
+  createdAt?: string;
+  updatedAt?: string;
   marksEntered?: boolean;
+  marks?: any[];
 }
 
 export interface Student {
@@ -59,8 +66,57 @@ export interface MarksFormData {
 export interface ExamFormData {
   name: string;
   date: string;
-  examType: "تحريري" | "شفهي";
+  time: string;
+  examType: "تحريري" | "شفهي" | "تقييم شامل";
   subject: string;
+  duration: number;
   totalMarks: number;
+  passingMarks: number;
   groups: string[];
+}
+
+// ======= Marks Management Types =======
+
+export interface TeacherGroupStudent {
+  _id: string;
+  studentId: string;
+  name: string;
+  firstName: string;
+  lastName: string;
+}
+
+export interface TeacherGroup {
+  _id: string;
+  name: string;
+  capacity?: number;
+  description?: string;
+  students: TeacherGroupStudent[];
+  totalStudents: number;
+  examCount: number;
+  hasStudents: boolean;
+}
+
+export interface TeacherGroupsData {
+  teacher: {
+    _id: string;
+    name: string;
+  };
+  groups: TeacherGroup[];
+  summary: {
+    totalGroups: number;
+    totalStudents: number;
+  };
+}
+
+export interface TeacherGroupsResponse {
+  success: boolean;
+  data: TeacherGroupsData;
+}
+
+export interface MarkWithStudent {
+  _id: string;
+  studentId: string;
+  studentName: string;
+  mark: number;
+  examId: string;
 }

@@ -17,10 +17,12 @@ export const useExamData = (filters: ExamFilters) => {
     ExamWithMarks[] | StudentExamResult[] | null
   >(null);
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const fetchExams = useCallback(async () => {
     try {
       setLoading(true);
+      console.log("🔄 Fetching exams for role:", role);
       let data;
 
       if (role === "student") {
@@ -31,8 +33,11 @@ export const useExamData = (filters: ExamFilters) => {
         data = await getAdminExams();
       }
 
+      console.log("✅ Exams received:", data?.length || 0, "exams");
+      console.log("📋 Exams data:", JSON.stringify(data, null, 2));
       setExams(data || []);
     } catch (error: any) {
+      console.log("❌ Error fetching exams:", error?.response?.data || error);
       Alert.alert(
         "خطأ",
         error?.response?.data?.message || "حدث خطأ في التحميل"
@@ -43,9 +48,16 @@ export const useExamData = (filters: ExamFilters) => {
     }
   }, [role]);
 
+  // إعادة التحميل عند تغيير المفتاح
   useEffect(() => {
     fetchExams();
-  }, [fetchExams]);
+  }, [fetchExams, refreshKey]);
+
+  // دالة لإعادة التحميل يدوياً
+  const refetch = useCallback(() => {
+    console.log("🔃 Refetch triggered");
+    setRefreshKey((prev) => prev + 1);
+  }, []);
 
   // تطبيق الفلاتر
   const filteredExams = exams
@@ -55,8 +67,8 @@ export const useExamData = (filters: ExamFilters) => {
         // فلتر البحث
         if (
           filters.query &&
-          !exam.name.toLowerCase().includes(filters.query.toLowerCase()) &&
-          !exam.subject.toLowerCase().includes(filters.query.toLowerCase())
+          !exam.name?.toLowerCase().includes(filters.query.toLowerCase()) &&
+          !exam.subject?.toLowerCase().includes(filters.query.toLowerCase())
         ) {
           return false;
         }
@@ -74,17 +86,18 @@ export const useExamData = (filters: ExamFilters) => {
           if (examDate >= today) return false;
         }
 
-        // فلتر النوع
-        if (filters.typeFilter && exam.examType !== filters.typeFilter) {
+        // فلتر النوع (الباك إند يستخدم type وليس examType)
+        const examType = exam.type || exam.examType;
+        if (filters.typeFilter && examType !== filters.typeFilter) {
           return false;
         }
 
         // فلتر العلامات (للمعلمين فقط)
         if (role === "teacher" && filters.marksFilter) {
-          if (filters.marksFilter === "entered" && !exam.marksEntered)
-            return false;
-          if (filters.marksFilter === "not-entered" && exam.marksEntered)
-            return false;
+          // الباك إند يستخدم marks array
+          const hasMarks = exam.marks && exam.marks.length > 0;
+          if (filters.marksFilter === "entered" && !hasMarks) return false;
+          if (filters.marksFilter === "not-entered" && hasMarks) return false;
         }
 
         return true;
