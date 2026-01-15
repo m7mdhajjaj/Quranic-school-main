@@ -5,7 +5,7 @@
 
 export const AveragesBarSkeleton = () => {
   return (
-    <div className="p-6 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 border-t-2 border-emerald-300 rounded-xl shadow-lg animate-pulse">
+    <div className="p-6 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 border-t-2 border-emerald-300 rounded-xl shadow-lg animate-pulse skeleton-container">
       {/* Header skeleton */}
       <div className="flex flex-col md:flex-row items-center justify-between mb-6 gap-4">
         <div className="flex items-center gap-3">
@@ -41,9 +41,9 @@ export const AveragesBarSkeleton = () => {
             
             {/* Progress ring skeleton */}
             <div className="mt-3 flex justify-center">
-              <div className="relative inline-flex items-center justify-center">
+              <div className="relative inline-flex items-center justify-center contain-layout">
                 <div className="w-20 h-20 bg-emerald-200 rounded-full"></div>
-                <div className="absolute inset-0 flex items-center justify-center">
+                <div className="absolute inset-0 flex items-center justify-center contain-layout">
                   <div className="w-8 h-5 bg-emerald-300 rounded"></div>
                 </div>
               </div>

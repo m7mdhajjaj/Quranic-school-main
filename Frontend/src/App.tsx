@@ -739,14 +739,14 @@ function AppContent() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100">
-        <div className="text-center">
-          <div className="relative inline-flex">
-            <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-8 h-8 bg-indigo-600 rounded-full opacity-20 animate-pulse"></div>
+        <div className="text-center contain-layout">
+          <div className="relative inline-flex contain-layout">
+            <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin will-change-transform"></div>
+            <div className="absolute inset-0 flex items-center justify-center contain-layout">
+              <div className="w-8 h-8 bg-indigo-600 rounded-full opacity-20"></div>
             </div>
           </div>
-          <p className="mt-4 text-gray-600 font-medium animate-pulse">جاري التحميل...</p>
+          <p className="mt-4 text-gray-600 font-medium">جاري التحميل...</p>
         </div>
       </div>
     );

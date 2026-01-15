@@ -1,13 +1,13 @@
 const ImageSkeleton = () => {
   return (
-    <div className="relative w-full h-full overflow-hidden bg-gray-200">
+    <div className="relative w-full h-full overflow-hidden bg-gray-200 content-visibility-auto">
       {/* Shimmer Effect */}
-      <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/60 to-transparent"></div>
+      <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/60 to-transparent will-change-transform"></div>
       
-      {/* Placeholder Icon with Pulse */}
-      <div className="absolute inset-0 flex items-center justify-center">
+      {/* Placeholder Icon - static, no animation to reduce CLS */}
+      <div className="absolute inset-0 flex items-center justify-center contain-layout">
         <svg
-          className="w-20 h-20 text-gray-400 animate-pulse"
+          className="w-20 h-20 text-gray-400"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"

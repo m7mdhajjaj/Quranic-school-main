@@ -5,8 +5,7 @@ import {
   useStudentManagement, 
   useTeacherNavigation 
 } from "./hooks";
-import { GroupsList, StudentsList, StudentFormModal } from "./components";
-import type { Student } from "@/Api/studentApi";
+import { GroupsList, StudentsList } from "./components";
 
 const TeacherStudentManagement: React.FC = () => {
   const { user } = useAuth();
@@ -24,14 +23,8 @@ const TeacherStudentManagement: React.FC = () => {
 
   // Student management logic
   const {
-    isFormOpen,
-    selectedStudent,
-    isEditMode,
-    handleAddStudent,
     handleEditStudent,
     handleDeleteStudent,
-    handleFormSuccess,
-    closeForm,
   } = useStudentManagement({
     onRefetchGroups: () => {
       refetchGroups();
@@ -56,26 +49,14 @@ const TeacherStudentManagement: React.FC = () => {
   // عرض قائمة الطلاب
   if (viewMode === "students" && selectedGroupId) {
     return (
-      <>
-        <StudentsList
-          groupId={selectedGroupId}
-          groupName={selectedGroupName}
-          onBack={navigateToGroups}
-          refreshTrigger={refreshTrigger}
-          onAddStudent={handleAddStudent}
-          onEditStudent={handleEditStudent}
-          onDeleteStudent={handleDeleteStudent}
-        />
-        <StudentFormModal
-          isOpen={isFormOpen}
-          onClose={closeForm}
-          onSuccess={handleFormSuccess}
-          student={isEditMode ? selectedStudent : undefined}
-          defaultGroup={selectedGroupName}
-          restrictToGroup={selectedGroupName}
-          groups={groups?.groups ?? []}
-        />
-      </>
+      <StudentsList
+        groupId={selectedGroupId}
+        groupName={selectedGroupName}
+        onBack={navigateToGroups}
+        refreshTrigger={refreshTrigger}
+        onEditStudent={handleEditStudent}
+        onDeleteStudent={handleDeleteStudent}
+      />
     );
   }
 

@@ -14,6 +14,13 @@ async function getTeacherIdByGroupName(groupName) {
 exports.notifyStudentAddedToGroup = async (student, groupName, io, adminName = null) => {
   try {
     console.log(`🔔 notifyStudentAddedToGroup called: ${student.firstName} to ${groupName}`);
+    
+    // إرسال الإشعار فقط إذا كان من قبل الأدمن أو السكرتير
+    if (!adminName) {
+      console.log(`⏭️ Skipping teacher notification - not added by admin/secretary`);
+      return;
+    }
+    
     const teacherId = await getTeacherIdByGroupName(groupName);
     
     if (!teacherId) {
@@ -21,9 +28,7 @@ exports.notifyStudentAddedToGroup = async (student, groupName, io, adminName = n
       return;
     }
 
-    const message = adminName 
-      ? `قام ${adminName} بإضافة الطالب ${student.firstName} ${student.lastName} إلى حلقتك (${groupName})`
-      : `تم إضافة الطالب ${student.firstName} ${student.lastName} إلى حلقتك (${groupName})`;
+    const message = `قام ${adminName} بإضافة الطالب ${student.firstName} ${student.lastName} إلى حلقتك (${groupName})`;
 
     const notificationData = {
       recipient: teacherId,

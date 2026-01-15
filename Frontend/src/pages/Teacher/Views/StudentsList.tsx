@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { ArrowRight, Plus, Users, Search, Phone, Mail, GraduationCap, User, UserCheck, Cake, MapPin, Filter, X, CreditCard } from "lucide-react";
+import { ArrowRight, Users, Search, Phone, Mail, GraduationCap, User, UserCheck, Cake, MapPin, Filter, X, CreditCard } from "lucide-react";
 import { useGroupStudents, useStudentsListLogic } from "../hooks";
 import type { Student } from "@/Api/studentApi";
 import { EmptyState } from "@/components/UI/EmptyState";
@@ -21,7 +21,6 @@ interface StudentsListProps {
   groupId: string;
   groupName: string;
   onBack: () => void;
-  onAddStudent: () => void;
   onEditStudent: (student: Student) => void;
   onDeleteStudent: (studentId: string) => void;
   refreshTrigger?: number;
@@ -31,7 +30,6 @@ export const StudentsList: React.FC<StudentsListProps> = ({
   groupId,
   groupName,
   onBack,
-  onAddStudent,
   onEditStudent,
   onDeleteStudent,
   refreshTrigger = 0,
@@ -124,13 +122,6 @@ export const StudentsList: React.FC<StudentsListProps> = ({
                 </div>
               </div>
             </div>
-            <button
-              onClick={onAddStudent}
-              className="flex items-center gap-2 px-6 py-3 bg-white text-emerald-700 rounded-xl hover:bg-emerald-50 transition-all shadow-lg hover:shadow-xl font-semibold transform hover:scale-105"
-            >
-              <Plus className="w-5 h-5" />
-              إضافة طالب
-            </button>
           </div>
 
           {/* Search and Filters */}
@@ -211,15 +202,7 @@ export const StudentsList: React.FC<StudentsListProps> = ({
             description={
               searchTerm || genderFilter !== 'all'
                 ? "لم يتم العثور على طلاب يطابقون البحث أو الفلتر"
-                : "ابدأ بإضافة أول طالب إلى هذه الحلقة"
-            }
-            action={
-              !searchTerm && genderFilter === 'all'
-                ? {
-                    label: "إضافة طالب جديد",
-                    onClick: onAddStudent,
-                  }
-                : undefined
+                : "لا يوجد طلاب في هذه الحلقة حالياً"
             }
           />
         ) : (

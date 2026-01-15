@@ -12,10 +12,10 @@ const CardSkeleton = ({
   contentLines = 3,
 }: CardSkeletonProps) => {
   return (
-    <div className="animate-pulse">
+    <div className="animate-pulse skeleton-container">
       <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-md">
         {/* Global Shimmer Overlay (stronger visibility) */}
-        <div className="pointer-events-none absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-gray-100/80 to-transparent" />
+        <div className="pointer-events-none absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-gray-100/80 to-transparent will-change-transform" />
 
         {/* Image Skeleton */}
         {hasImage && (

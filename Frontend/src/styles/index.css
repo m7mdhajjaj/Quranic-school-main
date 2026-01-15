@@ -763,3 +763,34 @@ body {
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
 }
+
+/* ============================================
+   Layout Optimization Classes - Reduce CLS
+   ============================================ */
+
+/* Contain layout to prevent layout shifts */
+.contain-layout {
+  contain: layout;
+}
+
+/* Will-change for optimized animations */
+.will-change-transform {
+  will-change: transform;
+}
+
+/* Content visibility for performance */
+.content-visibility-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: auto;
+}
+
+/* Skeleton container optimization */
+.skeleton-container {
+  contain: layout;
+  content-visibility: auto;
+}
+
+/* Shimmer animation optimization */
+.shimmer-optimized {
+  will-change: transform;
+}

@@ -41,14 +41,14 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
 
   const spinner = (
     <>
-      <div className="relative">
+      <div className="relative contain-layout">
         {showIcon && (
-          <div className={`absolute inset-0 flex items-center justify-center ${iconSizes[size]} opacity-60`}>
+          <div className={`absolute inset-0 flex items-center justify-center contain-layout ${iconSizes[size]} opacity-60`}>
             📚
           </div>
         )}
         <div
-          className={`animate-spin rounded-full border-t-transparent ${sizes[size]} ${colors[color]} shadow-sm`}
+          className={`animate-spin rounded-full border-t-transparent will-change-transform ${sizes[size]} ${colors[color]} shadow-sm`}
         />
       </div>
       {text && (
