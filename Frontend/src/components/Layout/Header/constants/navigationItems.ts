@@ -6,14 +6,11 @@ import {
   CalendarDays,
   Clock,
   ClipboardList,
-  FileCheck2,
   Headphones,
   Home,
-  Medal,
   MessageSquare,
   Newspaper,
   PieChart,
-  Sparkles,
   Target,
   UserCheck,
   Users,
@@ -21,7 +18,6 @@ import {
   GraduationCap,
   LayoutDashboard,
   ScrollText,
-  Activity,
 } from 'lucide-react';
 import type {
   NavigationItem,
@@ -210,26 +206,6 @@ export const getPrimaryNavItems = (
         ],
       },
       {
-        to: '#activities',
-        label: 'الأنشطة',
-        icon: Sparkles,
-        color: 'from-yellow-500 to-orange-500',
-        subItems: [
-          {
-            to: '/points-game',
-            label: 'لعبة النقاط',
-            icon: Award,
-            color: 'from-yellow-500 to-orange-500',
-          },
-          {
-            to: '/ranking',
-            label: 'الترتيب',
-            icon: Medal,
-            color: 'from-yellow-500 to-orange-500',
-          },
-        ],
-      },
-      {
         to: '/chat',
         label: 'المحادثة',
         icon: MessageSquare,
@@ -362,32 +338,6 @@ export const getPrimaryNavItems = (
         ],
       },
       {
-        to: '#activities',
-        label: 'أنشطة وتحديات',
-        icon: Activity,
-        color: 'from-yellow-500 to-orange-500',
-        subItems: [
-          {
-            to: '/points-game',
-            label: 'حصاد النقاط',
-            icon: Award,
-            color: 'from-yellow-500 to-orange-500',
-          },
-          {
-            to: '/ranking',
-            label: 'لوحة الشرف',
-            icon: Medal,
-            color: 'from-yellow-500 to-orange-500',
-          },
-          {
-            to: '/test',
-            label: 'اختبر حفظك',
-            icon: FileCheck2,
-            color: 'from-indigo-500 to-purple-500',
-          },
-        ],
-      },
-      {
         to: '/chat',
         label: 'المحادثات',
         icon: MessageSquare,
@@ -400,9 +350,7 @@ export const getPrimaryNavItems = (
   return [homeItem];
 };
 
-export const getSecondaryNavItems = (
-  rolePermissions: RolePermissions
-): NavigationItem[] => {
+export const getSecondaryNavItems = (): NavigationItem[] => {
   // تم نقل جميع العناصر إلى القائمة الرئيسية (getPrimaryNavItems)
   // لتقديم هيكلية مبنية على الأقسام والقوائم المنسدلة
   return [];
