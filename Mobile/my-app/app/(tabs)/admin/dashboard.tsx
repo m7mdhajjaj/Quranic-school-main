@@ -13,7 +13,11 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Users, UserCheck, BookOpen, TrendingUp } from "lucide-react-native";
-import { fetchDashboardStats, type DashboardStats } from "@/Api/dashboardApi";
+import {
+  fetchDashboardStats,
+  type DashboardStats,
+  fetchDashboardCharts,
+} from "@/Api/dashboardApi";
 import { AddStudentModal } from "@/components/students/AddStudentModal";
 import { AddTeacherModal } from "@/components/teachers/AddTeacherModal";
 import { AddGroupModal } from "@/components/groups/AddGroupModal";
@@ -21,6 +25,11 @@ import type { Student } from "@/types/student.types";
 import type { Teacher } from "@/Api/teacherApi";
 import type { Group } from "@/Api/groupApi";
 import { getAllTeachers } from "@/Api/teacherApi";
+
+interface ChartData {
+  groupDistribution: { name: string; count: number; percentage: number }[];
+  genderDistribution: { label: string; count: number; percentage: number }[];
+}
 
 export default function AdminDashboardScreen() {
   const [stats, setStats] = useState<DashboardStats>({
@@ -40,6 +49,13 @@ export default function AdminDashboardScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Charts data
+  const [chartsData, setChartsData] = useState<ChartData>({
+    groupDistribution: [],
+    genderDistribution: [],
+  });
+  const [loadingCharts, setLoadingCharts] = useState(true);
 
   // Modal states
   const [showStudentModal, setShowStudentModal] = useState(false);
@@ -75,6 +91,7 @@ export default function AdminDashboardScreen() {
   useEffect(() => {
     loadStats();
     loadTeachers();
+    loadCharts();
   }, []);
 
   // Load teachers for AddGroupModal
@@ -89,8 +106,24 @@ export default function AdminDashboardScreen() {
     }
   };
 
+  // Load charts data
+  const loadCharts = async () => {
+    try {
+      setLoadingCharts(true);
+      const data = await fetchDashboardCharts();
+      if (data.success && data.data) {
+        setChartsData(data.data);
+      }
+    } catch (err) {
+      console.error("Error loading charts:", err);
+    } finally {
+      setLoadingCharts(false);
+    }
+  };
+
   const onRefresh = () => {
     loadStats(true);
+    loadCharts();
   };
 
   // Modal handlers
@@ -249,15 +282,105 @@ export default function AdminDashboardScreen() {
         </View>
       )}
 
-      {/* Coming Soon Sections */}
+      {/* Charts Section */}
+      {loadingCharts ? (
+        <View style={styles.chartsContainer}>
+          <ActivityIndicator size="large" color="#10b981" />
+        </View>
+      ) : (
+        <>
+          {/* Group Distribution */}
+          {chartsData.groupDistribution.length > 0 && (
+            <View style={styles.chartSection}>
+              <Text style={styles.chartTitle}>📊 توزيع الطلاب حسب الحلقات</Text>
+              <View style={styles.chartCard}>
+                {chartsData.groupDistribution.map((item, index) => {
+                  const total = chartsData.groupDistribution.reduce(
+                    (sum, g) => sum + g.count,
+                    0
+                  );
+                  const percentage =
+                    total > 0 ? Math.round((item.count / total) * 100) : 0;
+
+                  return (
+                    <View key={index} style={styles.distributionItem}>
+                      <View style={styles.distributionHeader}>
+                        <Text style={styles.distributionLabel}>
+                          {item.name}
+                        </Text>
+                        <Text style={styles.distributionValue}>
+                          {item.count} طالب ({percentage}%)
+                        </Text>
+                      </View>
+                      <View style={styles.distributionBarContainer}>
+                        <View
+                          style={[
+                            styles.distributionBar,
+                            {
+                              width: `${percentage}%`,
+                              backgroundColor: [
+                                "#10b981",
+                                "#059669",
+                                "#047857",
+                                "#065f46",
+                                "#064e3b",
+                              ][index % 5],
+                            },
+                          ]}
+                        />
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+          )}
+
+          {/* Gender Distribution */}
+          {chartsData.genderDistribution.length > 0 && (
+            <View style={styles.chartSection}>
+              <Text style={styles.chartTitle}>👥 توزيع الطلاب حسب الجنس</Text>
+              <View style={styles.chartCard}>
+                {chartsData.genderDistribution.map((item, index) => {
+                  const total = chartsData.genderDistribution.reduce(
+                    (sum, g) => sum + g.count,
+                    0
+                  );
+                  const percentage =
+                    total > 0 ? Math.round((item.count / total) * 100) : 0;
+                  const genderName = item.label === "male" ? "ذكور" : "إناث";
+                  const color = item.label === "male" ? "#3b82f6" : "#ec4899";
+
+                  return (
+                    <View key={index} style={styles.distributionItem}>
+                      <View style={styles.distributionHeader}>
+                        <Text style={styles.distributionLabel}>
+                          {genderName}
+                        </Text>
+                        <Text style={styles.distributionValue}>
+                          {item.count} طالب ({percentage}%)
+                        </Text>
+                      </View>
+                      <View style={styles.distributionBarContainer}>
+                        <View
+                          style={[
+                            styles.distributionBar,
+                            { width: `${percentage}%`, backgroundColor: color },
+                          ]}
+                        />
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+          )}
+        </>
+      )}
+
+      {/* Coming Soon Section */}
       <View style={styles.comingSoonContainer}>
         <Text style={styles.comingSoonTitle}>قريباً</Text>
-        <View style={styles.comingSoonCard}>
-          <Text style={styles.comingSoonText}>📊 توزيع الطلاب حسب الحلقات</Text>
-        </View>
-        <View style={styles.comingSoonCard}>
-          <Text style={styles.comingSoonText}>👥 توزيع الطلاب حسب الجنس</Text>
-        </View>
         <View style={styles.comingSoonCard}>
           <Text style={styles.comingSoonText}>🏆 أفضل الطلاب والمعلمين</Text>
         </View>
@@ -490,6 +613,62 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     color: "#1f2937",
+  },
+
+  // Charts
+  chartsContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 40,
+    alignItems: "center",
+  },
+  chartSection: {
+    paddingHorizontal: 20,
+    marginBottom: 24,
+  },
+  chartTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#1f2937",
+    marginBottom: 12,
+  },
+  chartCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  distributionItem: {
+    marginBottom: 16,
+  },
+  distributionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  distributionLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#1f2937",
+  },
+  distributionValue: {
+    fontSize: 13,
+    color: "#6b7280",
+    fontWeight: "500",
+  },
+  distributionBarContainer: {
+    height: 8,
+    backgroundColor: "#e5e7eb",
+    borderRadius: 4,
+    overflow: "hidden",
+  },
+  distributionBar: {
+    height: "100%",
+    borderRadius: 4,
   },
 
   // Coming Soon

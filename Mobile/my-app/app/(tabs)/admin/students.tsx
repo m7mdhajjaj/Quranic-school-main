@@ -78,9 +78,9 @@ export default function StudentsScreen() {
   return (
     <View className="flex-1 bg-gray-50">
       {/* Header */}
-      <View className="bg-blue-600 pt-12 pb-6 px-6">
+      <View className="bg-white-600 pt-12 pb-6 px-6">
         <Text className="text-black text-3xl font-bold mb-2">إدارة الطلاب</Text>
-        <Text className="text-blue-100 text-sm">
+        <Text className="text-blue-400 text-sm">
           إدارة وتنظيم بيانات الطلاب
         </Text>
       </View>
