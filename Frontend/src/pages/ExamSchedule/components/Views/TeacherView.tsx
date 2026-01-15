@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import React, { useState } from "react";
+import { Trash2 } from "lucide-react";
 import type { Exam } from "@/Api/ExamShedule";
-import { bulkDeleteExams } from '@/Api/ExamShedule';
-import { ExamToolbar } from '../ExamToolbar';
-import { GroupedExamTable } from '../GroupedExamTable';
-import { showSuccessMessage, showErrorMessage, showConfirmDialog } from '@/utils/sweetalertUtils';
+import { bulkDeleteExams } from "@/Api/ExamShedule";
+import { ExamToolbar } from "../ExamToolbar";
+import { GroupedExamTable } from "../GroupedExamTable";
+import {
+  showSuccessMessage,
+  showErrorMessage,
+  showConfirmDialog,
+} from "@/utils/sweetalertUtils";
 
 interface TeacherViewProps {
   exams: Exam[];
@@ -48,7 +52,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
 
   // Toggle selection for single exam
   const toggleExamSelection = (examId: string) => {
-    setSelectedExams(prev => {
+    setSelectedExams((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(examId)) {
         newSet.delete(examId);
@@ -64,7 +68,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
     if (selectedExams.size === exams.length) {
       setSelectedExams(new Set());
     } else {
-      setSelectedExams(new Set(exams.map(e => String(e._id ?? e.id))));
+      setSelectedExams(new Set(exams.map((e) => String(e._id ?? e.id))));
     }
   };
 
@@ -73,10 +77,10 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
     if (selectedExams.size === 0) return;
 
     const result = await showConfirmDialog(
-      'حذف جماعي',
+      "حذف جماعي",
       `هل أنت متأكد من حذف ${selectedExams.size} امتحان؟<br/><span class="text-red-600 font-bold">سيتم حذف جميع العلامات المرتبطة!</span>`,
-      'نعم، احذف الكل',
-      'إلغاء'
+      "نعم، احذف الكل",
+      "إلغاء"
     );
 
     if (!result.isConfirmed) return;
@@ -85,13 +89,14 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
     try {
       const examIds = Array.from(selectedExams);
       const response = await bulkDeleteExams(examIds);
-      
-      showSuccessMessage('نجاح', response.message);
+
+      showSuccessMessage("نجاح", response.message);
       setSelectedExams(new Set());
       window.location.reload(); // Reload to refresh data
     } catch (error: any) {
-      const errorMessage = error?.response?.data?.message || 'حدث خطأ أثناء الحذف الجماعي';
-      showErrorMessage('خطأ', errorMessage);
+      const errorMessage =
+        error?.response?.data?.message || "حدث خطأ أثناء الحذف الجماعي";
+      showErrorMessage("خطأ", errorMessage);
     } finally {
       setIsDeleting(false);
     }
@@ -118,17 +123,15 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
             <button
               onClick={() => setSelectedExams(new Set())}
               className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-all font-medium"
-              disabled={isDeleting}
-            >
+              disabled={isDeleting}>
               إلغاء التحديد
             </button>
             <button
               onClick={handleBulkDelete}
               disabled={isDeleting}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white rounded-lg transition-all font-medium disabled:opacity-50"
-            >
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white rounded-lg transition-all font-medium disabled:opacity-50">
               <Trash2 className="w-4 h-4" />
-              {isDeleting ? 'جاري الحذف...' : 'حذف المحدد'}
+              {isDeleting ? "جاري الحذف..." : "حذف المحدد"}
             </button>
           </div>
         </div>

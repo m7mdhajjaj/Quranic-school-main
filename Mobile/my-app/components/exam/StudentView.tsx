@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, FlatList, TouchableOpacity } from "react-native";
+import { View, Text } from "react-native";
 import { Calendar, BookOpen, Award, Clock } from "lucide-react-native";
 import { StudentExamResult } from "@/types/exam.types";
 
@@ -18,7 +18,7 @@ export const StudentView: React.FC<StudentViewProps> = ({ exams }) => {
     }).format(date);
   };
 
-  const renderExamCard = ({ item }: { item: StudentExamResult }) => {
+  const renderExamCard = (item: StudentExamResult) => {
     const { exam, mark, status } = item;
     const isPast = new Date(exam.date) < new Date();
 
@@ -100,7 +100,7 @@ export const StudentView: React.FC<StudentViewProps> = ({ exams }) => {
     );
   };
 
-  if (exams.length === 0) {
+  if (!exams || exams.length === 0) {
     return (
       <View className="flex-1 items-center justify-center py-20">
         <Calendar size={64} color="#d1d5db" />
@@ -109,13 +109,14 @@ export const StudentView: React.FC<StudentViewProps> = ({ exams }) => {
     );
   }
 
+  // تصفية العناصر الصالحة فقط (التي تحتوي على exam و _id)
+  const validExams = exams.filter((item) => item && item.exam && item.exam._id);
+
   return (
-    <FlatList
-      data={exams}
-      renderItem={renderExamCard}
-      keyExtractor={(item) => item.exam._id}
-      contentContainerStyle={{ paddingBottom: 20 }}
-      showsVerticalScrollIndicator={false}
-    />
+    <View style={{ paddingBottom: 20 }}>
+      {validExams.map((item) => (
+        <View key={item.exam._id}>{renderExamCard(item)}</View>
+      ))}
+    </View>
   );
 };

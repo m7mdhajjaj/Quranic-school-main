@@ -7,7 +7,13 @@ import { Calendar, ClipboardList } from "lucide-react";
 import { ExamFormModal, MarksModal } from "./modals";
 
 // Import hooks
-import { useExamActions, useMarksModal, useMarkActions, useTeacherGroups, useExamData } from "./hooks";
+import {
+  useExamActions,
+  useMarksModal,
+  useMarkActions,
+  useTeacherGroups,
+  useExamData,
+} from "./hooks";
 
 // Import views
 import { TeacherView, StudentView, MarksManagement } from "./components";
@@ -33,10 +39,10 @@ const getUserRole = (): "student" | "teacher" | "admin" => {
 const ExamSchedule: React.FC = () => {
   // ——— الحالة (State)
   const role = getUserRole();
-  
+
   // حالة الصفحة النشطة
-  const [activePage, setActivePage] = useState<'exams' | 'marks'>('exams');
-  
+  const [activePage, setActivePage] = useState<"exams" | "marks">("exams");
+
   // فلاتر البحث (تُرسل للباك إند)
   const [query, setQuery] = useState("");
   const [dateFilter, setDateFilter] = useState("");
@@ -44,7 +50,13 @@ const ExamSchedule: React.FC = () => {
   const [marksFilter, setMarksFilter] = useState("");
 
   // جلب البيانات مع الفلاتر من الباك إند (بما فيها فلتر العلامات)
-  const { exams, loadingExams, examAverages, refreshAverageForExam, reloadExams } = useExamData(role, {
+  const {
+    exams,
+    loadingExams,
+    examAverages,
+    refreshAverageForExam,
+    reloadExams,
+  } = useExamData(role, {
     search: query,
     date: dateFilter,
     type: typeFilter,
@@ -53,7 +65,7 @@ const ExamSchedule: React.FC = () => {
 
   // Modals state
   const [showExamFormModal, setShowExamFormModal] = useState(false);
-  const [examFormMode, setExamFormMode] = useState<'add' | 'edit'>('add');
+  const [examFormMode, setExamFormMode] = useState<"add" | "edit">("add");
   const [editExam, setEditExam] = useState<Exam | null>(null);
 
   // إدارة مودال العلامات (hook)
@@ -78,10 +90,10 @@ const ExamSchedule: React.FC = () => {
   // لم نعد بحاجة لمرجع الإلغاء بعد نقل المنطق للهوك
 
   // استخدام hook للعمليات على الامتحانات
-  const { 
-    handleAddExam: handleAddExamAction, 
-    handleEditExam: handleEditExamAction, 
-    handleDeleteExam: handleDeleteExamAction 
+  const {
+    handleAddExam: handleAddExamAction,
+    handleEditExam: handleEditExamAction,
+    handleDeleteExam: handleDeleteExamAction,
   } = useExamActions({
     onExamsChange: reloadExams,
   });
@@ -90,10 +102,10 @@ const ExamSchedule: React.FC = () => {
 
   // ——— Wrappers للعمليات على الامتحانات
   const handleFormSubmit = async (examData: any, selectedGroup?: string) => {
-    if (examFormMode === 'add') {
+    if (examFormMode === "add") {
       // Add mode
-      await handleAddExamAction(examData, selectedGroup || '', role);
-    } else if (examFormMode === 'edit' && editExam) {
+      await handleAddExamAction(examData, selectedGroup || "", role);
+    } else if (examFormMode === "edit" && editExam) {
       // Edit mode
       await handleEditExamAction({ ...editExam, ...examData });
     }
@@ -107,7 +119,11 @@ const ExamSchedule: React.FC = () => {
   };
 
   // ——— CRUD (Marks)
-  const { handleAddMark: doAddMarks, handleSaveSingleMark: doSaveSingleMark, handleDeleteMark: doDeleteMark } = useMarkActions({ refreshAverageForExam, setMarks });
+  const {
+    handleAddMark: doAddMarks,
+    handleSaveSingleMark: doSaveSingleMark,
+    handleDeleteMark: doDeleteMark,
+  } = useMarkActions({ refreshAverageForExam, setMarks });
 
   const handleAddMark = async (e: React.FormEvent) => {
     if (!selectedExam) return;
@@ -116,7 +132,10 @@ const ExamSchedule: React.FC = () => {
     closeAndReset();
   };
 
-  const handleDeleteMark = async (examIdRaw: string | number, studentIdRaw: string | number) => {
+  const handleDeleteMark = async (
+    examIdRaw: string | number,
+    studentIdRaw: string | number
+  ) => {
     await doDeleteMark(String(examIdRaw), String(studentIdRaw));
   };
 
@@ -190,8 +209,6 @@ const ExamSchedule: React.FC = () => {
     }
   }, [role, exams]); // تنفيذ عندما تتغير الامتحانات
 
-
-
   // ——— واجهة المستخدم
   return (
     <div
@@ -199,7 +216,6 @@ const ExamSchedule: React.FC = () => {
       dir="rtl"
       lang="ar">
       <div className="w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 md:pt-10 pb-12 sm:pb-16 md:pb-20">
-        
         {/* العنوان */}
         <PageHeader
           title="جدول الامتحانات"
@@ -208,31 +224,29 @@ const ExamSchedule: React.FC = () => {
         />
 
         {/* Segmented Control - للمعلمين فقط */}
-        {role === 'teacher' && (
+        {role === "teacher" && (
           <div className="mb-6">
             <div className="inline-flex bg-white rounded-xl shadow-lg border-2 border-emerald-200 p-1.5">
               {/* زر صفحة الامتحانات */}
               <button
-                onClick={() => setActivePage('exams')}
+                onClick={() => setActivePage("exams")}
                 className={`flex items-center gap-2 px-6 py-3 rounded-lg font-bold transition-all ${
-                  activePage === 'exams'
-                    ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md'
-                    : 'bg-transparent hover:bg-emerald-50 text-gray-700 hover:text-emerald-700'
-                }`}
-              >
+                  activePage === "exams"
+                    ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md"
+                    : "bg-transparent hover:bg-emerald-50 text-gray-700 hover:text-emerald-700"
+                }`}>
                 <Calendar className="w-5 h-5" />
                 <span>صفحة الامتحانات</span>
               </button>
-              
+
               {/* زر صفحة إدارة العلامات */}
               <button
-                onClick={() => setActivePage('marks')}
+                onClick={() => setActivePage("marks")}
                 className={`flex items-center gap-2 px-6 py-3 rounded-lg font-bold transition-all ${
-                  activePage === 'marks'
-                    ? 'bg-emerald-500 text-white'
-                    : 'bg-transparent hover:bg-emerald-50 text-gray-700 hover:text-emerald-700'
-                }`}
-              >
+                  activePage === "marks"
+                    ? "bg-emerald-500 text-white"
+                    : "bg-transparent hover:bg-emerald-50 text-gray-700 hover:text-emerald-700"
+                }`}>
                 <ClipboardList className="w-5 h-5" />
                 <span>إدارة العلامات</span>
               </button>
@@ -241,96 +255,103 @@ const ExamSchedule: React.FC = () => {
         )}
 
         {/* عرض المحتوى حسب الصفحة النشطة */}
-        {activePage === 'exams' ? (
+        {activePage === "exams" ? (
           // صفحة الامتحانات
-          role === 'student' ? (
-          <StudentView
-            exams={exams}
-            loadingExams={loadingExams}
-            studentMarks={studentMarks}
-            query={query}
-            setQuery={setQuery}
-            dateFilter={dateFilter}
-            setDateFilter={setDateFilter}
-            typeFilter={typeFilter}
-            setTypeFilter={setTypeFilter}
-            marksFilter={marksFilter}
-            setMarksFilter={setMarksFilter}
-          />
-        ) : (
-          <TeacherView
-            exams={exams}
-            loadingExams={loadingExams}
-            examAverages={examAverages}
-            query={query}
-            setQuery={setQuery}
-            dateFilter={dateFilter}
-            setDateFilter={setDateFilter}
-            typeFilter={typeFilter}
-            setTypeFilter={setTypeFilter}
-            marksFilter={marksFilter}
-            setMarksFilter={setMarksFilter}
-            teacherGroups={teacherGroups}
-            onAddExamClick={() => {
-              setExamFormMode('add');
-              setEditExam(null);
-              setShowExamFormModal(true);
-            }}
-            onOpenMarks={(ex) => {
-              setSelectedExam(ex);
-              setShowMarkModal(true);
-            }}
-            onEditExam={(ex) => {
-              setExamFormMode('edit');
-              setEditExam({ ...ex });
-              setShowExamFormModal(true);
-            }}
-            onDeleteExam={(id) => handleDeleteExam(id)}
-          />
-        )
+          role === "student" ? (
+            <StudentView
+              exams={exams}
+              loadingExams={loadingExams}
+              studentMarks={studentMarks}
+              query={query}
+              setQuery={setQuery}
+              dateFilter={dateFilter}
+              setDateFilter={setDateFilter}
+              typeFilter={typeFilter}
+              setTypeFilter={setTypeFilter}
+              marksFilter={marksFilter}
+              setMarksFilter={setMarksFilter}
+            />
+          ) : (
+            <TeacherView
+              exams={exams}
+              loadingExams={loadingExams}
+              examAverages={examAverages}
+              query={query}
+              setQuery={setQuery}
+              dateFilter={dateFilter}
+              setDateFilter={setDateFilter}
+              typeFilter={typeFilter}
+              setTypeFilter={setTypeFilter}
+              marksFilter={marksFilter}
+              setMarksFilter={setMarksFilter}
+              teacherGroups={teacherGroups}
+              onAddExamClick={() => {
+                setExamFormMode("add");
+                setEditExam(null);
+                setShowExamFormModal(true);
+              }}
+              onOpenMarks={(ex) => {
+                setSelectedExam(ex);
+                setShowMarkModal(true);
+              }}
+              onEditExam={(ex) => {
+                setExamFormMode("edit");
+                setEditExam({ ...ex });
+                setShowExamFormModal(true);
+              }}
+              onDeleteExam={(id) => handleDeleteExam(id)}
+            />
+          )
         ) : (
           // صفحة إدارة العلامات
           <MarksManagement teacherGroups={teacherGroups} />
         )}
 
-      {/* ———————————————— مودال: إضافة/تعديل الامتحان ———————————————— */}
-      <ExamFormModal
-        open={showExamFormModal}
-        onClose={() => {
-          setShowExamFormModal(false);
-          setEditExam(null);
-        }}
-        onSubmit={handleFormSubmit}
-        role={role}
-        teacherGroups={teacherGroups}
-        initialData={editExam ? {
-          name: editExam.name,
-          date: typeof editExam.date === 'string' ? editExam.date : editExam.date.toISOString(),
-          time: editExam.time,
-          subject: editExam.subject,
-          type: editExam.type,
-          duration: editExam.duration,
-          totalMarks: editExam.totalMarks,
-          passingMarks: editExam.passingMarks,
-          group: editExam.group,
-        } : undefined}
-        mode={examFormMode}
-      />
+        {/* ———————————————— مودال: إضافة/تعديل الامتحان ———————————————— */}
+        <ExamFormModal
+          open={showExamFormModal}
+          onClose={() => {
+            setShowExamFormModal(false);
+            setEditExam(null);
+          }}
+          onSubmit={handleFormSubmit}
+          role={role}
+          teacherGroups={teacherGroups}
+          initialData={
+            editExam
+              ? {
+                  name: editExam.name,
+                  date:
+                    typeof editExam.date === "string"
+                      ? editExam.date
+                      : editExam.date.toISOString(),
+                  time: editExam.time,
+                  subject: editExam.subject,
+                  type: editExam.type,
+                  duration: editExam.duration,
+                  totalMarks: editExam.totalMarks,
+                  passingMarks: editExam.passingMarks,
+                  group: editExam.group,
+                }
+              : undefined
+          }
+          mode={examFormMode}
+        />
 
-      {/* ———————————————— مودال: إدارة العلامات ———————————————— */}
-      <MarksModal
-        open={showMarkModal}
-        onClose={() => setShowMarkModal(false)}
-        onCancel={handleCancelMarksModal}
-        selectedExam={selectedExam}
-        loading={loadingStudents}
-        students={students}
-        marks={marks}
-        setMarks={setMarks}
-        onSubmitAll={handleAddMark}
-        onSaveSingleMark={handleSaveSingleMark}
-        onDeleteMark={handleDeleteMark}
-      />
+        {/* ———————————————— مودال: إدارة العلامات ———————————————— */}
+        <MarksModal
+          open={showMarkModal}
+          onClose={() => setShowMarkModal(false)}
+          onCancel={handleCancelMarksModal}
+          selectedExam={selectedExam}
+          loading={loadingStudents}
+          students={students}
+          marks={marks}
+          setMarks={setMarks}
+          onSubmitAll={handleAddMark}
+          onSaveSingleMark={handleSaveSingleMark}
+          onDeleteMark={handleDeleteMark}
+        />
       </div>
     </div>
   );
