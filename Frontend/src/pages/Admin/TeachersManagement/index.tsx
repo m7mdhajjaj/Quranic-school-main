@@ -31,7 +31,8 @@ const TeachersManagement: React.FC = () => {
   const { user: currentUser } = useAuth();
 
   const userRole = currentUser?.role || "";
-  const hasPermission = userRole === "admin";
+  const hasPermission = userRole === "admin" || userRole === "secretary";
+  const isReadOnly = userRole === "secretary"; // السكرتير قراءة فقط
 
   // View Mode State
   const [viewMode, setViewMode] = useState<ViewMode>("table");
@@ -125,7 +126,25 @@ const TeachersManagement: React.FC = () => {
           }}
           onExport={() => handleExport(buildFiltersObject())}
           hasTeachers={teachers.length > 0}
+          isReadOnly={isReadOnly}
         />
+
+        {/* Read Only Notice for Secretary */}
+        {isReadOnly && (
+          <div className="mb-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <FaUserTie className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="font-medium text-blue-800">وضع العرض فقط</p>
+                <p className="text-sm text-blue-600">
+                  يمكنك عرض بيانات المعلمين فقط. للتعديل أو الإضافة، يرجى التواصل مع المدير.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Stats Cards with Skeleton */}
         {isLoading && teachers.length === 0 ? (
@@ -212,6 +231,7 @@ const TeachersManagement: React.FC = () => {
             teachers={teachers}
             onEdit={handleEdit}
             onDelete={(teacher) => handleDelete(teacher._id!)}
+            isReadOnly={isReadOnly}
           />
         )}
 
@@ -219,7 +239,7 @@ const TeachersManagement: React.FC = () => {
         {viewMode === "table" && teachers.length > 0 && (
           <>
             {/* Bulk Delete Button */}
-            {selectedTeachers.size > 0 && (
+            {!isReadOnly && selectedTeachers.size > 0 && (
               <div className="mb-4 bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center justify-between">
                 <div className="flex items-center gap-2 text-emerald-700">
                   <span className="font-semibold">
@@ -245,9 +265,10 @@ const TeachersManagement: React.FC = () => {
               sortField={sortField}
               sortOrder={sortOrder}
               onSort={(field) => handleSort(field as any)}
-              selectedTeachers={selectedTeachers}
-              onToggleTeacher={handleToggleSelect}
-              onToggleAll={handleToggleSelectAll}
+              selectedTeachers={isReadOnly ? undefined : selectedTeachers}
+              onToggleTeacher={isReadOnly ? undefined : handleToggleSelect}
+              onToggleAll={isReadOnly ? undefined : handleToggleSelectAll}
+              isReadOnly={isReadOnly}
             />
           </>
         )}

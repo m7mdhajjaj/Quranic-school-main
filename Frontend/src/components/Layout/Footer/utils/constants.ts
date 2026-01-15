@@ -10,7 +10,7 @@ import {
   FaCog,
   FaUser,
 } from 'react-icons/fa';
-import type { Partner, QuickLink, SocialLink } from '../types';
+import type { Partner, QuickLink, SocialLink } from '../Types/types';
 
 /**
  * معلومات فريق العمل
@@ -71,6 +71,8 @@ export const ADMIN_QUICK_LINKS: QuickLink[] = [
  */
 export const SECRETARY_QUICK_LINKS: QuickLink[] = [
   { name: 'الرئيسية', path: '/' },
+  { name: 'الطلاب', path: '/students' },
+  { name: 'المعلمين', path: '/teachers' },
   { name: 'الأهداف', path: '/goals' },
   { name: 'المحادثة', path: '/chat' },
   { name: 'الملف الشخصي', path: '/profile', icon: FaUser },

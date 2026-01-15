@@ -42,7 +42,6 @@ export const getPrimaryNavItems = (
   // ==================== Admin Navigation ====================
   if (rolePermissions.isAdmin) {
     return [
-      homeItem,
       {
         to: '/admin/dashboard',
         label: 'لوحة الإدارة',
@@ -243,6 +242,18 @@ export const getPrimaryNavItems = (
   if (rolePermissions.isSecretary) {
     return [
       homeItem,
+      {
+        to: '/students',
+        label: 'الطلاب',
+        icon: Users,
+        color: 'from-blue-500 to-indigo-500',
+      },
+      {
+        to: '/teachers',
+        label: 'المعلمين',
+        icon: GraduationCap,
+        color: 'from-purple-500 to-violet-500',
+      },
       {
         to: '/goals',
         label: 'الأهداف',

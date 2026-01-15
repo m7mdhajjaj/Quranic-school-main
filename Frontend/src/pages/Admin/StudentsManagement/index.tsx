@@ -128,7 +128,7 @@ const StudentsManagement: React.FC = () => {
   const { user: currentUser } = useAuth();
   const hasPermission = useMemo(() => {
     const userRole = currentUser?.role || '';
-    return userRole === 'teacher' || userRole === 'admin';
+    return userRole === 'teacher' || userRole === 'admin' || userRole === 'secretary';
   }, [currentUser?.role]);
 
   const [viewMode, setViewMode] = useState<ViewMode>('table');

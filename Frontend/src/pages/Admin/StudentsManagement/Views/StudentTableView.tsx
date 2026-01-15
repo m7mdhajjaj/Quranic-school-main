@@ -132,6 +132,9 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
                     />
                   </th>
                 )}
+                <th className="px-3 py-4 text-center font-bold text-sm whitespace-nowrap w-12">
+                  #
+                </th>
                 <th className="px-4 py-4 text-center font-bold text-sm whitespace-nowrap w-12">
                   {/* Expand Icon */}
                 </th>
@@ -161,7 +164,7 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
 
             {/* Table Body */}
             <tbody className="divide-y divide-emerald-100/50">
-              {students.map((student) => {
+              {students.map((student, index) => {
                 const isExpanded = expandedRows.has(student._id || '');
                 return (
                   <React.Fragment key={student._id}>
@@ -179,6 +182,13 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
                           />
                         </td>
                       )}
+
+                      {/* Row Number */}
+                      <td className="px-3 py-4 text-center">
+                        <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gray-100 text-gray-700 text-sm font-semibold">
+                          {index + 1}
+                        </span>
+                      </td>
 
                       {/* Expand Button */}
                       <td className="px-4 py-4 text-center">

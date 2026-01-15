@@ -19,12 +19,14 @@ interface TeacherGridViewProps {
   teachers: Teacher[];
   onEdit: (teacher: Teacher) => void;
   onDelete: (teacher: Teacher) => void;
+  isReadOnly?: boolean;
 }
 
 export const TeacherGridView: React.FC<TeacherGridViewProps> = ({
   teachers,
   onEdit,
   onDelete,
+  isReadOnly = false,
 }) => {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
@@ -149,22 +151,24 @@ export const TeacherGridView: React.FC<TeacherGridViewProps> = ({
           </div>
 
           {/* Card Footer - Actions */}
-          <div className="p-3 bg-gradient-to-br from-gray-50 to-emerald-50/30 border-t border-gray-100">
-            <div className="flex gap-2">
-              <button
-                onClick={() => onEdit(teacher)}
-                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-lg hover:from-emerald-600 hover:to-emerald-700 transition-all duration-200 text-xs font-medium shadow-sm hover:shadow-md transform hover:-translate-y-0.5">
-                <FaEdit className="w-3 h-3" />
-                تعديل
-              </button>
-              <button
-                onClick={() => onDelete(teacher)}
-                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 text-xs font-medium shadow-sm hover:shadow-md transform hover:-translate-y-0.5">
-                <FaTrash className="w-3 h-3" />
-                حذف
-              </button>
+          {!isReadOnly && (
+            <div className="p-3 bg-gradient-to-br from-gray-50 to-emerald-50/30 border-t border-gray-100">
+              <div className="flex gap-2">
+                <button
+                  onClick={() => onEdit(teacher)}
+                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-lg hover:from-emerald-600 hover:to-emerald-700 transition-all duration-200 text-xs font-medium shadow-sm hover:shadow-md transform hover:-translate-y-0.5">
+                  <FaEdit className="w-3 h-3" />
+                  تعديل
+                </button>
+                <button
+                  onClick={() => onDelete(teacher)}
+                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 text-xs font-medium shadow-sm hover:shadow-md transform hover:-translate-y-0.5">
+                  <FaTrash className="w-3 h-3" />
+                  حذف
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       ))}
     </div>

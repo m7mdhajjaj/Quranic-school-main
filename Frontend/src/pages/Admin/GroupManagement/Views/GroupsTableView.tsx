@@ -91,6 +91,7 @@ export const GroupsTableView: React.FC<GroupsTableViewProps> = ({
                     aria-label="تحديد جميع الحلقات"
                   />
                 </th>
+                <th className="w-12 px-3 py-4 text-center text-sm font-bold text-white">#</th>
                 <th className="w-12 px-2 py-4"></th>
                 <th className="px-5 py-4 text-right text-sm font-bold text-white w-[220px]">اسم الحلقة</th>
                 <th className="px-4 py-4 text-center text-sm font-bold text-white w-[130px]">حالة النشاط</th>
@@ -102,14 +103,14 @@ export const GroupsTableView: React.FC<GroupsTableViewProps> = ({
             <tbody className="divide-y divide-gray-100">
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center">
+                  <td colSpan={8} className="px-4 py-8 text-center">
                     <div className="flex justify-center">
                       <div className="animate-spin rounded-full h-10 w-10 border-3 border-emerald-600 border-t-transparent"></div>
                     </div>
                   </td>
                 </tr>
               ) : (
-                groups.map((group) => {
+                groups.map((group, index) => {
                   const isExpanded = expandedRows.has(group._id || "");
                   const activeStatus = group.activeStatus;
                   const percentage = group.capacityPercentage || 0;
@@ -128,6 +129,11 @@ export const GroupsTableView: React.FC<GroupsTableViewProps> = ({
                             className="w-4 h-4 rounded border-2 border-gray-400 text-emerald-600"
                             aria-label={`تحديد حلقة ${group.name}`}
                           />
+                        </td>
+                        <td className="px-3 py-3 text-center">
+                          <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gray-100 text-gray-700 text-sm font-semibold">
+                            {index + 1}
+                          </span>
                         </td>
                         <td className="px-2 py-3 text-center">
                           <button

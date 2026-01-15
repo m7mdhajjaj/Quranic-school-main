@@ -499,6 +499,38 @@ const SecretaryRoutes: React.FC = () => {
         />
 
         {/* ============================================
+            إدارة الطلاب - Students Management
+            ============================================ */}
+        <Route 
+          path="/students" 
+          element={
+            <React.Suspense fallback={
+              <div className="min-h-screen flex items-center justify-center">
+                <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
+              </div>
+            }>
+              <StudentsManagement />
+            </React.Suspense>
+          } 
+        />
+
+        {/* ============================================
+            عرض المعلمين - Teachers View (Read Only)
+            ============================================ */}
+        <Route 
+          path="/teachers" 
+          element={
+            <React.Suspense fallback={
+              <div className="min-h-screen flex items-center justify-center">
+                <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
+              </div>
+            }>
+              <TeachersManagement />
+            </React.Suspense>
+          } 
+        />
+
+        {/* ============================================
             المحادثات - Chat (with Teachers & Admin only)
             ============================================ */}
         <Route path="/chat" element={<SecretaryChatView />} />

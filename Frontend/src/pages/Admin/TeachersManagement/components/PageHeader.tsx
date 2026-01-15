@@ -5,12 +5,14 @@ interface TeachersHeaderProps {
   onAddTeacher: () => void;
   onExport: () => void;
   hasTeachers: boolean;
+  isReadOnly?: boolean;
 }
 
 const TeachersHeader: React.FC<TeachersHeaderProps> = ({
   onAddTeacher,
   onExport,
   hasTeachers,
+  isReadOnly = false,
 }) => {
   return (
     <div className="bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-xl shadow-md p-5 mb-6">
@@ -34,13 +36,15 @@ const TeachersHeader: React.FC<TeachersHeaderProps> = ({
             <span className="hidden sm:inline">تصدير</span>
           </button>
 
-          <button
-            onClick={onAddTeacher}
-            className="flex items-center gap-2 px-4 py-2.5 bg-white text-emerald-600 rounded-lg hover:bg-white/90 transition-colors shadow-sm text-sm font-medium font-semibold">
-            <FaPlus className="w-4 h-4" />
-            <span className="hidden sm:inline">إضافة معلم</span>
-            <span className="sm:hidden">إضافة</span>
-          </button>
+          {!isReadOnly && (
+            <button
+              onClick={onAddTeacher}
+              className="flex items-center gap-2 px-4 py-2.5 bg-white text-emerald-600 rounded-lg hover:bg-white/90 transition-colors shadow-sm text-sm font-medium font-semibold">
+              <FaPlus className="w-4 h-4" />
+              <span className="hidden sm:inline">إضافة معلم</span>
+              <span className="sm:hidden">إضافة</span>
+            </button>
+          )}
         </div>
       </div>
     </div>

@@ -22,6 +22,7 @@ interface TeacherTableViewProps {
   selectedTeachers?: Set<string>;
   onToggleTeacher?: (teacherId: string) => void;
   onToggleAll?: () => void;
+  isReadOnly?: boolean;
 }
 
 export const TeacherTableView: React.FC<TeacherTableViewProps> = ({
@@ -32,6 +33,7 @@ export const TeacherTableView: React.FC<TeacherTableViewProps> = ({
   selectedTeachers,
   onToggleTeacher,
   onToggleAll,
+  isReadOnly = false,
 }) => {
   const { toggleRow, isRowExpanded } = useExpandableRows();
   const userStatusContext = useContext(UserStatusContext);
@@ -86,6 +88,9 @@ export const TeacherTableView: React.FC<TeacherTableViewProps> = ({
                   />
                 </th>
               )}
+              <th className="px-3 py-4 text-center font-bold text-sm whitespace-nowrap w-12">
+                #
+              </th>
               <th className="px-4 py-4 text-center font-bold text-sm whitespace-nowrap w-12">
                 {/* Expand Icon */}
               </th>
@@ -107,15 +112,17 @@ export const TeacherTableView: React.FC<TeacherTableViewProps> = ({
               <th className="px-6 py-4 text-center font-bold text-sm whitespace-nowrap">
                 الحلقات المدرسة
               </th>
-              <th className="px-6 py-4 text-center font-bold text-sm whitespace-nowrap w-32">
-                الإجراءات
-              </th>
+              {!isReadOnly && (
+                <th className="px-6 py-4 text-center font-bold text-sm whitespace-nowrap w-32">
+                  الإجراءات
+                </th>
+              )}
             </tr>
           </thead>
 
           {/* Table Body */}
           <tbody className="divide-y divide-emerald-100/50">
-            {teachers.map((teacher) => {
+            {teachers.map((teacher, index) => {
               const isExpanded = isRowExpanded(teacher._id);
 
               return (
@@ -134,7 +141,14 @@ export const TeacherTableView: React.FC<TeacherTableViewProps> = ({
                         />
                       </td>
                     )}
-                    
+
+                    {/* Row Number */}
+                    <td className="px-3 py-4 text-center">
+                      <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gray-100 text-gray-700 text-sm font-semibold">
+                        {index + 1}
+                      </span>
+                    </td>
+
                     {/* Expand Button */}
                     <td className="px-4 py-4 text-center">
                       <button
@@ -247,24 +261,26 @@ export const TeacherTableView: React.FC<TeacherTableViewProps> = ({
                     </td>
 
                     {/* Actions */}
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-center gap-2">
-                        <button
-                          onClick={() => onEdit(teacher)}
-                          className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
-                          title="تعديل"
-                        >
-                              <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => onDelete(teacher)}
-                          className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
-                          title="حذف"
-                        >
+                    {!isReadOnly && (
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => onEdit(teacher)}
+                            className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                            title="تعديل"
+                          >
+                                <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => onDelete(teacher)}
+                            className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                            title="حذف"
+                          >
             <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
 
                   {/* Expanded Details Row */}
