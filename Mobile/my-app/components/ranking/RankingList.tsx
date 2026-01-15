@@ -1,10 +1,10 @@
 /**
  * Ranking List Component
- * Displays all students in a FlatList
+ * Displays all students in a list
  */
 
 import React from "react";
-import { View, Text, StyleSheet, FlatList } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import type {
   RankingListProps,
@@ -100,13 +100,13 @@ export const RankingList: React.FC<RankingListProps> = ({ students }) => {
       {/* List */}
       <View style={styles.listContainer}>
         {students.length > 0 ? (
-          <FlatList
-            data={students}
-            renderItem={renderStudentCard}
-            keyExtractor={(item) => item._id}
-            contentContainerStyle={styles.listContent}
-            showsVerticalScrollIndicator={false}
-          />
+          <View style={styles.listContent}>
+            {students.map((student, index) => (
+              <View key={student._id}>
+                {renderStudentCard({ item: student, index })}
+              </View>
+            ))}
+          </View>
         ) : (
           <View style={styles.emptyState}>
             <Text style={styles.emptyIcon}>👥</Text>
