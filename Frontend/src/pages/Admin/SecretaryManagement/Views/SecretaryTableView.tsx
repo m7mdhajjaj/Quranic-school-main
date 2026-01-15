@@ -149,22 +149,10 @@ export const SecretaryTableView: React.FC<SecretaryTableViewProps> = memo(({
                     {/* Name with Avatar */}
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <Avatar
-                          user={{
-                            _id: secretary._id,
-                            firstName: secretary.firstName,
-                            lastName: secretary.lastName,
-                            gender: secretary.gender,
-                            role: "secretary",
-                            avatar: secretary.avatar,
-                          }}
-                          userName={`${secretary.firstName} ${secretary.lastName}`}
-                          gender={secretary.gender as "male" | "female" | "ذكر" | "أنثى"}
-                          size="sm"
-                        />
+                        {/* Avatar removed as requested */}
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-bold text-gray-900">
-                            {[secretary.firstName, secretary.fatherName, secretary.grandFatherName, secretary.lastName].filter(Boolean).join(' ')}
+                            {[secretary.firstName, secretary.fatherName, secretary.lastName].filter(Boolean).join(' ')}
                           </div>
                         </div>
                       </div>
@@ -278,7 +266,7 @@ export const SecretaryTableView: React.FC<SecretaryTableViewProps> = memo(({
                               المعلومات الشخصية
                             </h4>
 
-                            <div className="space-y-2 text-sm">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-sm">
                               {/* رقم السكرتير */}
                               <div className="flex items-center justify-between py-2 border-b border-gray-100">
                                 <span className="text-sm font-semibold text-gray-600 flex items-center gap-1">
@@ -290,13 +278,38 @@ export const SecretaryTableView: React.FC<SecretaryTableViewProps> = memo(({
                                 </span>
                               </div>
 
-                              {/* الاسم الكامل */}
+                              {/* حالة الاتصال */}
                               <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                                <span className="text-sm font-semibold text-gray-600">الاسم الكامل:</span>
-                                <span className="text-sm font-bold text-gray-900 text-right">
-                                  {secretary.firstName} {secretary.fatherName || ''} {secretary.grandFatherName || ''} {secretary.lastName}
+                                <span className="text-sm font-semibold text-gray-600">حالة الاتصال:</span>
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                                  secretary.lastSeen && new Date(secretary.lastSeen).getTime() > Date.now() - 5 * 60 * 1000 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-gray-100 text-gray-800'
+                                }`}>
+                                  <span className={`w-1.5 h-1.5 rounded-full ml-1.5 ${
+                                    secretary.lastSeen && new Date(secretary.lastSeen).getTime() > Date.now() - 5 * 60 * 1000 
+                                    ? 'bg-green-500' 
+                                    : 'bg-gray-400'
+                                  }`}></span>
+                                  {secretary.lastSeen && new Date(secretary.lastSeen).getTime() > Date.now() - 5 * 60 * 1000 ? 'متصل' : 'غير متصل'}
                                 </span>
                               </div>
+
+                              {/* الاسم الكامل */}
+                              <div className="flex items-center justify-start gap-4 py-2 border-b border-gray-100 col-span-1 md:col-span-2">
+                                <span className="text-sm font-semibold text-gray-600">الاسم الكامل:</span>
+                                <span className="text-sm font-bold text-gray-900">
+                                  {[secretary.firstName, secretary.fatherName, secretary.grandFatherName, secretary.lastName].filter(Boolean).join(' ')}
+                                </span>
+                              </div>
+
+                              {/* اسم الجد */}
+                              {secretary.grandFatherName && (
+                                <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                                  <span className="text-sm font-semibold text-gray-600">اسم الجد:</span>
+                                  <span className="text-sm text-gray-900 text-right">{secretary.grandFatherName}</span>
+                                </div>
+                              )}
 
                               {/* اسم الأم */}
                               {secretary.motherName && (

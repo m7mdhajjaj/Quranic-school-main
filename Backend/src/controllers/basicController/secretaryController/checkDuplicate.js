@@ -3,7 +3,7 @@
  * يستخدم duplicateChecker.js الموجود في Validation
  */
 
-const { checkDuplicateFields } = require("../../Validation/validators/duplicateChecker");
+const { checkDuplicateFields } = require("../../../Validation/validators/duplicateChecker");
 
 const checkDuplicate = async (req, res) => {
   try {

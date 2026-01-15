@@ -12,6 +12,9 @@ import {
 } from '@/Api/teacherApi';
 import { type Group } from '@/Api/groupApi';
 import { showErrorMessage } from '@/utils/sweetalertUtils';
+import { showInfoToast } from '@/utils/toastUtils';
+import { isEqual } from '@/utils/objectUtils';
+
 
 // دالة لتحويل التاريخ من الخادم إلى تنسيق input[type="date"]
 const formatDateForInput = (dateValue?: string | Date): string => {
@@ -97,6 +100,28 @@ export const useTeacherForm = ({
   const [checkingDuplicate, setCheckingDuplicate] = useState<
     Record<string, boolean>
   >({});
+  
+  // تخزين البيانات الأولية للمقارنة
+  const [initialData, setInitialData] = useState<any>(null);
+
+  useEffect(() => {
+    if (teacher) {
+      setInitialData({
+        firstName: teacher.firstName || '',
+        fatherName: teacher.fatherName || '',
+        grandFatherName: teacher.grandFatherName || '',
+        motherName: teacher.motherName || '',
+        lastName: teacher.lastName || '',
+        idNumber: teacher.idNumber || '',
+        birthDate: formatDateForInput(teacher.birthDate),
+        gender: teacher.gender || '',
+        residence: teacher.residence || '',
+        email: teacher.email || '',
+        phoneNumber: teacher.phoneNumber || '',
+        groups: teacher.groups || [],
+      });
+    }
+  }, [teacher]);
 
   // Refs for debounce timers
   const debounceTimers = useRef<{ [key: string]: NodeJS.Timeout }>({});
@@ -370,6 +395,15 @@ export const useTeacherForm = ({
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
+
+      // التحقق مما إذا كانت هناك تغييرات عند التعديل
+      if (teacher?._id && initialData) {
+        if (isEqual(formData, initialData)) {
+          showInfoToast("لم يتم إجراء أي تغييرات");
+          onClose();
+          return;
+        }
+      }
 
       // Validate all fields
       const validationResult = await validateTeacherWithYup(formData);

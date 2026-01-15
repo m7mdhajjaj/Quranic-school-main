@@ -2,7 +2,7 @@
  * الحصول على إحصائيات السكرتيرين
  * @access Admin only
  */
-const Secretary = require("../../schema/Secretary");
+const Secretary = require("../../../schema/Secretary");
 
 const getSecretaryStats = async (req, res) => {
   try {

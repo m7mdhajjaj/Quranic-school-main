@@ -10,8 +10,10 @@ import {
   type Group,
 } from "@/Api/groupApi";
 import { getAllTeachers, type Teacher } from "@/Api/teacherApi";
-import { showSuccessToast } from "@/utils/toastUtils";
+import { showSuccessToast, showInfoToast } from "@/utils/toastUtils";
 import { showErrorMessage } from "@/utils/sweetalertUtils";
+import { isEqual } from "@/utils/objectUtils";
+
 
 interface UseGroupFormProps {
   group?: Group;
@@ -42,6 +44,22 @@ export const useGroupForm = ({
   const [internalTeachers, setInternalTeachers] = useState<Teacher[]>([]);
   const [internalLoadingTeachers, setInternalLoadingTeachers] = useState(false);
   const [checkingDuplicate, setCheckingDuplicate] = useState<Record<string, boolean>>({});
+
+  // تخزين البيانات الأولية للمقارنة
+  const [initialData, setInitialData] = useState<GroupFormData | null>(null);
+
+  useEffect(() => {
+    if (group) {
+      setInitialData({
+        name: group.name || "",
+        teacher: group.teacher || "",
+        description: group.description || "",
+        capacity: group.capacity || 30,
+      });
+    } else {
+      setInitialData(null);
+    }
+  }, [group]);
 
   // Refs for debounce timers
   const debounceTimers = useRef<{ [key: string]: NodeJS.Timeout }>({});
@@ -180,6 +198,15 @@ export const useGroupForm = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // التحقق مما إذا كانت هناك تغييرات عند التعديل
+    if (group?._id && initialData) {
+      if (isEqual(formData, initialData)) {
+        showInfoToast("لم يتم إجراء أي تغييرات");
+        onClose();
+        return;
+      }
+    }
 
     // تعيين جميع الحقول المطلوبة كـ touched
     const allFields = new Set(["name", "teacher"]);

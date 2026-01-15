@@ -2,7 +2,7 @@
  * تحديث صلاحيات السكرتير
  * @access Admin only
  */
-const Secretary = require("../../schema/Secretary");
+const Secretary = require("../../../schema/Secretary");
 
 const updateSecretaryPermissions = async (req, res) => {
   try {

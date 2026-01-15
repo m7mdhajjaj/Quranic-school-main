@@ -24,6 +24,7 @@ export interface SecretariesToolbarProps {
   ageRange: [number, number];
   setAgeRange: (range: [number, number]) => void;
   onResetFilters: () => void;
+  onExport: () => void;
 }
 
 export const SecretariesToolbar: React.FC<SecretariesToolbarProps> = memo(({
@@ -41,6 +42,7 @@ export const SecretariesToolbar: React.FC<SecretariesToolbarProps> = memo(({
   ageRange,
   setAgeRange,
   onResetFilters,
+  onExport,
 }) => {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
@@ -61,6 +63,20 @@ export const SecretariesToolbar: React.FC<SecretariesToolbarProps> = memo(({
 
         {/* Actions */}
         <div className="flex gap-2">
+             {/* Export Button */}
+          <button
+            onClick={onExport}
+            className="px-4 py-2.5 rounded-lg font-medium flex items-center gap-2 text-sm bg-blue-600 text-white hover:bg-blue-700 shadow-sm transition-colors"
+            title="تصدير إلى Excel"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            <span className="hidden sm:inline">تصدير</span>
+          </button>
+
           {/* Filter Toggle */}
           <button
             onClick={onToggleFilters}

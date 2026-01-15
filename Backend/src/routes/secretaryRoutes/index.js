@@ -18,7 +18,7 @@ const {
   getCurrentSecretary,
   getSecretaryStats,
   checkDuplicate,
-} = require("../../controllers/secretaryController");
+} = require("../../controllers/basicController/secretaryController");
 
 const {
   protect,

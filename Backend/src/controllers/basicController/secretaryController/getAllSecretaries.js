@@ -2,7 +2,7 @@
  * الحصول على جميع السكرتيرين
  * @access Admin only
  */
-const Secretary = require("../../schema/Secretary");
+const Secretary = require("../../../schema/Secretary");
 
 const getAllSecretaries = async (req, res) => {
   try {

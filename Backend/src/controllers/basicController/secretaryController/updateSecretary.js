@@ -2,7 +2,7 @@
  * تحديث بيانات سكرتير
  * @access Admin, Secretary (self - limited)
  */
-const Secretary = require("../../schema/Secretary");
+const Secretary = require("../../../schema/Secretary");
 
 const updateSecretary = async (req, res) => {
   try {

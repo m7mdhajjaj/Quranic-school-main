@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { Secretary } from "../types";
 import { checkDuplicate } from "@/Api/secretaryApi";
+import { isEqual } from "@/utils/objectUtils";
+import { showInfoToast } from "@/utils/toastUtils";
+
 
 // =================== Types ===================
 export interface SecretaryFormData {
@@ -34,6 +37,7 @@ export interface UseSecretaryFormProps {
   secretary?: Secretary | null;
   isOpen: boolean;
   onSubmit: (data: SecretaryFormData) => Promise<void>;
+  onClose?: () => void;
 }
 
 export interface UseSecretaryFormReturn {
@@ -85,11 +89,15 @@ export const useSecretaryForm = ({
   secretary,
   isOpen,
   onSubmit,
+  onClose,
 }: UseSecretaryFormProps): UseSecretaryFormReturn => {
   const [formData, setFormData] = useState<SecretaryFormData>(initialFormData);
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   
+  // تخزين البيانات الأولية للمقارنة
+  const [initialData, setInitialData] = useState<SecretaryFormData | null>(null);
+
   // Debounce timers for duplicate checks
   const debounceTimers = useRef<Record<string, NodeJS.Timeout>>({});
 
@@ -148,12 +156,13 @@ export const useSecretaryForm = ({
       setFormData(initialFormData);
       setErrors({});
       setShowPassword(false);
+      setInitialData(null);
       return;
     }
 
     // عند الفتح - تحميل البيانات
     if (secretary) {
-      setFormData({
+      const data: SecretaryFormData = {
         // الأسماء
         firstName: secretary.firstName || "",
         lastName: secretary.lastName || "",
@@ -178,9 +187,13 @@ export const useSecretaryForm = ({
           canManageTimetable: secretary.permissions?.canManageTimetable ?? false,
           canManageMessages: secretary.permissions?.canManageMessages ?? true,
         },
-      });
+      };
+
+      setFormData(data);
+      setInitialData(data);
     } else {
       setFormData(initialFormData);
+      setInitialData(null);
     }
     setErrors({});
   }, [secretary, isOpen]);
@@ -290,6 +303,32 @@ export const useSecretaryForm = ({
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // التحقق مما إذا كانت هناك تغييرات عند التعديل
+    if (isEditMode && initialData) {
+      if (isEqual(formData, initialData)) {
+        // إغلاق المودال بدون إرسال طلب
+        // نحتاج إلى طريقة لإغلاق المودال من هنا أو إرجاع قيمة
+      }
+      
+      // لتجنب تعقيد تمرير onClose، سنقوم بفحص التغييرات وتنبيه المستخدم
+      // ولكن onSubmit يتوقع إتمام العملية.
+      // الحل الأمثل: إضافة فحص isEqual قبل استدعاء onSubmit
+      
+      const formDataToCheck = { ...formData };
+      delete formDataToCheck.password; // كلمة المرور لا تأتي من السيرفر، لذا نتجاهلها في المقارنة المبدئية إلا إذا تم تعيينها
+      
+      const initialDataToCheck = { ...initialData };
+      delete initialDataToCheck.password;
+
+      // إذا كانت كلمة المرور فارغة في التعديل، نتجاهلها
+      if (!formData.password && isEqual(formDataToCheck, initialDataToCheck)) {
+        showInfoToast("لم يتم إجراء أي تغييرات");
+        if (onClose) onClose();
+        return; 
+      }
+    }
+
     if (!validateForm()) return;
 
     const submitData = { ...formData };
@@ -298,7 +337,7 @@ export const useSecretaryForm = ({
     }
 
     await onSubmit(submitData);
-  }, [formData, isEditMode, validateForm, onSubmit]);
+  }, [formData, isEditMode, validateForm, onSubmit, initialData]);
 
   return {
     formData,

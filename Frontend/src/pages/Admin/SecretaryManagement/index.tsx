@@ -223,10 +223,63 @@ const SecretaryManagement: React.FC = () => {
     [selectedSecretary, createSecretary, updateSecretary, refetch, refetchStats]
   );
 
-  const handleExport = useCallback(() => {
-    // TODO: Implement export functionality
-    showSuccessToast("جاري تصدير البيانات...");
-  }, []);
+  const handleExport = useCallback(async () => {
+    try {
+      showSuccessToast("جاري إعداد الملف للتصدير...");
+      
+      const { utils, writeFile } = await import("xlsx");
+      
+      // 1. Data Processing
+      const exportData = filteredSecretaries.map((sec, index) => ({
+        "م": index + 1,
+        "الاسم الكامل": [sec.firstName, sec.fatherName, sec.grandFatherName, sec.lastName].filter(Boolean).join(" "),
+        "رقم السكرتير": sec.secretaryId || "-",
+        "حالة الاتصال": sec.lastSeen && new Date(sec.lastSeen).getTime() > Date.now() - 5 * 60 * 1000 ? "متصل" : "غير متصل",
+        "الجنس": sec.gender === 'male' || sec.gender === 'ذكر' ? 'ذكر' : 'أنثى',
+        "العمر": sec.age ? `${sec.age} سنة` : "-",
+        "رقم الهوية": sec.idNumber || "-",
+        "رقم الهاتف": sec.phoneNumber || "-",
+        "البريد الإلكتروني": sec.email || "-",
+        "السكن": sec.residence || "-",
+        "اسم الأم": sec.motherName || "-",
+        "تاريخ الاضافة": sec.createdAt ? new Date(sec.createdAt).toLocaleDateString('ar-EG') : "-",
+      }));
+
+      // 2. Create Workbook and Worksheet
+      const workbook = utils.book_new();
+      const worksheet = utils.json_to_sheet(exportData);
+
+      // 3. Styling Configuration (Widths)
+      const wscols = [
+        { wch: 5 },  // #
+        { wch: 30 }, // Full Name
+        { wch: 15 }, // ID
+        { wch: 12 }, // Status
+        { wch: 8 },  // Gender
+        { wch: 8 },  // Age
+        { wch: 15 }, // National ID
+        { wch: 15 }, // Phone
+        { wch: 25 }, // Email
+        { wch: 20 }, // Residence
+        { wch: 20 }, // Mother Name
+        { wch: 15 }, // Created Date
+      ];
+      worksheet["!cols"] = wscols;
+
+      // 4. Force RTL Direction
+      if (!worksheet["!views"]) worksheet["!views"] = [];
+      worksheet["!views"][0] = { rightToLeft: true };
+
+      // 5. Save File
+      utils.book_append_sheet(workbook, worksheet, "السكرتيرين");
+      writeFile(workbook, `Secretaries_List_${new Date().toLocaleDateString("en-GB").replace(/\//g, "-")}.xlsx`);
+      
+      showSuccessToast("تم تصدير ملف Excel بنجاح");
+    } catch (error) {
+      console.error("Export Error:", error);
+      showErrorMessage("فشل التصدير", "حدث خطأ أثناء محاولة تصدير البيانات");
+    }
+  }, [filteredSecretaries]);
 
   // Error State
   if (error) {
@@ -278,6 +331,7 @@ const SecretaryManagement: React.FC = () => {
         ageRange={ageRange}
         setAgeRange={setAgeRange}
         onResetFilters={resetFilters}
+        onExport={handleExport}
       />
 
       {/* Content */}

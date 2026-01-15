@@ -11,8 +11,10 @@ import {
 } from "@/Api/studentApi";
 import { getAllTeachers, type Teacher } from "@/Api/teacherApi";
 import { getAllGroups, type Group } from "@/Api/groupApi";
-import { showSuccessToast } from "@/utils/toastUtils";
+import { showSuccessToast, showInfoToast } from "@/utils/toastUtils";
 import { showErrorMessage } from "@/utils/sweetalertUtils";
+import { isEqual } from "@/utils/objectUtils";
+
 
 // دالة لتحويل التاريخ من الخادم إلى تنسيق input[type="date"]
 const formatDateForInput = (dateValue?: string | Date): string => {
@@ -96,6 +98,31 @@ export const useStudentForm = ({
     field: string;
     userType: string;
   } | null>(null);
+
+  // تخزين البيانات الأولية للمقارنة
+  const [initialData, setInitialData] = useState<any>(null);
+
+  useEffect(() => {
+    if (student) {
+      setInitialData({
+        firstName: student.firstName || "",
+        fatherName: student.fatherName || "",
+        grandFatherName: student.grandFatherName || "",
+        motherName: student.motherName || "",
+        lastName: student.lastName || "",
+        idNumber: student.idNumber || "",
+        birthDate: formatDateForInput(student.birthDate),
+        gender: student.gender || "",
+        residence: student.residence || "",
+        group: student.group || "",
+        teacher: student.teacher || "",
+        email: student.email || "",
+        phoneNumber: student.phoneNumber || "",
+      });
+    } else {
+      setInitialData(null);
+    }
+  }, [student]);
 
   // Refs for debounce timers
   const debounceTimers = useRef<{ [key: string]: NodeJS.Timeout }>({});
@@ -341,6 +368,15 @@ export const useStudentForm = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // التحقق مما إذا كانت هناك تغييرات عند التعديل
+    if (student?._id && initialData) {
+      if (isEqual(formData, initialData)) {
+        showInfoToast("لم يتم إجراء أي تغييرات");
+        onClose();
+        return;
+      }
+    }
 
     const allFields = new Set([
       "firstName",
