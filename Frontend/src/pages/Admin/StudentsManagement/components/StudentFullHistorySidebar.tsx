@@ -25,6 +25,7 @@ interface StudentFullHistorySidebarProps {
     avatar?: { url?: string; publicId?: string };
   };
   onStudentRestored?: () => void; // Callback لإعادة تحميل البيانات
+  canRestore?: boolean; // هل يستطيع المستخدم استرجاع الطلاب المفصولين
 }
 
 // ============================================================================
@@ -206,6 +207,7 @@ export const StudentFullHistorySidebar: React.FC<StudentFullHistorySidebarProps>
   studentName,
   student,
   onStudentRestored,
+  canRestore = true,
 }) => {
   useDisableBodyScroll(isOpen);
   const [showRestoreModal, setShowRestoreModal] = useState(false);
@@ -370,7 +372,10 @@ export const StudentFullHistorySidebar: React.FC<StudentFullHistorySidebarProps>
           ) : (
             <>
               {isExpelled && lastExpulsion && (
-                <ExpulsionCard expulsion={lastExpulsion} onRestore={handleRestoreClick} />
+                <ExpulsionCard 
+                  expulsion={lastExpulsion} 
+                  onRestore={canRestore ? handleRestoreClick : undefined} 
+                />
               )}
               <div className="relative">
                 {history.map((event, index) => (

@@ -21,8 +21,8 @@ exports.getExpelledStudentsFromGroupHistory = async (req, res) => {
       return res.status(404).json({ message: "الحلقة غير موجودة" });
     }
 
-    // 🔒 التحقق من أن المعلم يملك هذه الحلقة (إلا إذا كان مدير)
-    if (req.user.role !== 'admin') {
+    // 🔒 التحقق من أن المعلم يملك هذه الحلقة (إلا إذا كان مدير أو سكرتير)
+    if (req.user.role !== 'admin' && req.user.role !== 'secretary') {
       const isTeacherOfGroup = group.teacher.toString() === req.user._id.toString();
       
       if (!isTeacherOfGroup) {
@@ -158,7 +158,8 @@ exports.getStudentCompleteHistory = async (req, res) => {
     }
 
     // 🔒 التحقق من الصلاحيات
-    if (req.user.role !== 'admin') {
+    // الأدمن والسكرتير لديهم صلاحية كاملة
+    if (req.user.role !== 'admin' && req.user.role !== 'secretary') {
       // المعلم يمكنه رؤية تاريخ طلابه (حتى المفصولين من حلقاته)
       if (req.user.role === 'teacher') {
         const Group = require("../../../../schema/Group");
@@ -244,7 +245,8 @@ exports.getStudentHistoryStatistics = async (req, res) => {
     }
 
     // 🔒 التحقق من الصلاحيات
-    if (req.user.role !== 'admin') {
+    // الأدمن والسكرتير لديهم صلاحية كاملة
+    if (req.user.role !== 'admin' && req.user.role !== 'secretary') {
       if (req.user.role === 'teacher') {
         const Group = require("../../../../schema/Group");
         const Warning = require("../../../../schema/Warning");

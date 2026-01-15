@@ -126,10 +126,16 @@ GridSkeleton.displayName = 'GridSkeleton';
 
 const StudentsManagement: React.FC = () => {
   const { user: currentUser } = useAuth();
+  const userRole = currentUser?.role || '';
+  
   const hasPermission = useMemo(() => {
-    const userRole = currentUser?.role || '';
     return userRole === 'teacher' || userRole === 'admin' || userRole === 'secretary';
-  }, [currentUser?.role]);
+  }, [userRole]);
+
+  // السكرتير لا يستطيع استرجاع الطلاب المفصولين
+  const canRestoreStudents = useMemo(() => {
+    return userRole === 'teacher' || userRole === 'admin';
+  }, [userRole]);
 
   const [viewMode, setViewMode] = useState<ViewMode>('table');
 
@@ -265,6 +271,7 @@ const StudentsManagement: React.FC = () => {
               onToggleStudent={toggleStudent}
               onToggleAll={toggleAllStudents}
               onStudentRestored={fetchStudents}
+              canRestore={canRestoreStudents}
             />
           </>
         )}
