@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import { useRouter, usePathname } from "expo-router";
 import { Home, Award, UserCheck, MessageSquare } from "lucide-react-native";
+import { useAuth } from "@/hooks/useAuth";
 
 interface TabItem {
   name: string;
@@ -47,6 +48,12 @@ export default function CustomTabBar() {
   const router = useRouter();
   const pathname = usePathname();
   const scaleValue = React.useRef(new Animated.Value(1)).current;
+  const { isAdmin } = useAuth();
+
+  // Hide CustomTabBar completely for admin users
+  if (isAdmin()) {
+    return null;
+  }
 
   // Completely disable CustomTabBar for chat-related pages, notifications, and dailyMarks
   if (
@@ -58,7 +65,9 @@ export default function CustomTabBar() {
     pathname.includes("reports") ||
     pathname.includes("profile") ||
     pathname.includes("settings") ||
-    pathname.includes("points-game")
+    pathname.includes("points-game") ||
+    pathname.includes("admin ") ||
+    pathname.includes("dashboard")
   ) {
     return null;
   }
@@ -123,36 +132,34 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    paddingBottom: Platform.OS === "ios" ? 34 : 20,
-    paddingTop: 8,
-    paddingHorizontal: 20,
+    width: "100%",
     backgroundColor: "transparent",
     pointerEvents: "box-none",
   },
   tabBar: {
     backgroundColor: "#ffffff",
-    borderRadius: 35,
+    borderRadius: 0,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-around",
     paddingVertical: 16,
-    paddingHorizontal: 20,
-    marginHorizontal: 4,
+    paddingHorizontal: 8,
+    paddingBottom: Platform.OS === "ios" ? 30 : 16,
+    width: "100%",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 10 },
+    shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.1,
-    shadowRadius: 25,
+    shadowRadius: 15,
     elevation: 15,
-    borderWidth: 1,
-    borderColor: "#f1f5f9",
-    minHeight: 75,
-    // iOS specific styling to match the design
+    borderTopWidth: 1,
+    borderTopColor: "#f1f5f9",
+    minHeight: Platform.OS === "ios" ? 85 : 70,
     ...Platform.select({
       ios: {
         shadowColor: "#64748b",
-        shadowOffset: { width: 0, height: 8 },
+        shadowOffset: { width: 0, height: -3 },
         shadowOpacity: 0.12,
-        shadowRadius: 20,
+        shadowRadius: 12,
       },
       android: {
         elevation: 12,
@@ -162,16 +169,18 @@ const styles = StyleSheet.create({
   tab: {
     alignItems: "center",
     justifyContent: "center",
-    padding: 4,
+    padding: 8,
     flex: 1,
+    borderRadius: 12,
+    marginHorizontal: 4,
   },
   activeTab: {
-    // Additional styling for active tab can be added here
+    backgroundColor: "#e8f7f1",
   },
   iconContainer: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 50,
+    height: 50,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "transparent",
@@ -179,10 +188,9 @@ const styles = StyleSheet.create({
   activeIconContainer: {
     backgroundColor: "#10b981",
     shadowColor: "#10b981",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 8,
-    transform: [{ scale: 1.1 }],
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 6,
   },
 });
