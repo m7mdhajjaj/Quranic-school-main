@@ -1,5 +1,13 @@
-import React from "react";
-import { View, Text, FlatList, TouchableOpacity, Alert } from "react-native";
+import React, { useState, useMemo } from "react";
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  Alert,
+  TextInput,
+} from "react-native";
+import { Search, X } from "lucide-react-native";
 import { StudentWithWarnings, WarningType } from "@/types/warning.types";
 
 interface StudentsListProps {
@@ -13,6 +21,20 @@ export const StudentsList: React.FC<StudentsListProps> = ({
   onAddWarning,
   onDeleteWarning,
 }) => {
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // تصفية الطلاب بناءً على البحث
+  const filteredStudents = useMemo(() => {
+    if (!searchQuery.trim()) return students;
+
+    const query = searchQuery.toLowerCase().trim();
+    return students.filter((student) => {
+      const fullName =
+        `${student.firstName} ${student.middleName || ""} ${student.lastName}`.toLowerCase();
+      return fullName.includes(query);
+    });
+  }, [students, searchQuery]);
+
   const getFullName = (student: StudentWithWarnings) => {
     return `${student.firstName} ${student.middleName || ""} ${
       student.lastName
@@ -198,12 +220,47 @@ export const StudentsList: React.FC<StudentsListProps> = ({
   }
 
   return (
-    <FlatList
-      data={students}
-      renderItem={renderStudent}
-      keyExtractor={(item) => item._id}
-      contentContainerStyle={{ paddingBottom: 20 }}
-      showsVerticalScrollIndicator={false}
-    />
+    <View className="flex-1">
+      {/* Search Bar */}
+      <View className="bg-white rounded-2xl p-4 mb-4 shadow-md">
+        <View className="flex-row items-center bg-gray-100 rounded-xl px-4 py-3">
+          <Search size={20} color="#6b7280" />
+          <TextInput
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="ابحث عن طالب..."
+            placeholderTextColor="#9ca3af"
+            className="flex-1 mx-3 text-gray-800 text-base"
+            textAlign="right"
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery("")}>
+              <X size={20} color="#6b7280" />
+            </TouchableOpacity>
+          )}
+        </View>
+        {searchQuery.length > 0 && (
+          <Text className="text-gray-500 text-sm mt-2">
+            النتائج: {filteredStudents.length} طالب
+          </Text>
+        )}
+      </View>
+
+      {/* Students List */}
+      {filteredStudents.length === 0 ? (
+        <View className="flex-1 items-center justify-center py-20">
+          <Text className="text-6xl mb-4">🔍</Text>
+          <Text className="text-gray-500 text-lg">لا توجد نتائج</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredStudents}
+          renderItem={renderStudent}
+          keyExtractor={(item) => item._id}
+          contentContainerStyle={{ paddingBottom: 20 }}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
+    </View>
   );
 };
