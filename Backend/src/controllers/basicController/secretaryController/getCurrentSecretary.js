@@ -1,12 +1,12 @@
 /**
- * الحصول على سكرتير بواسطة ID
- * @access Admin, Secretary (self)
+ * الحصول على بيانات السكرتير الحالي
+ * @access Secretary only
  */
-const Secretary = require("../../schema/Secretary");
+const Secretary = require("../../../schema/Secretary");
 
-const getSecretaryById = async (req, res) => {
+const getCurrentSecretary = async (req, res) => {
   try {
-    const secretary = await Secretary.findById(req.params.id).select("-password");
+    const secretary = await Secretary.findById(req.user._id).select("-password");
 
     if (!secretary) {
       return res.status(404).json({
@@ -20,7 +20,7 @@ const getSecretaryById = async (req, res) => {
       data: secretary,
     });
   } catch (error) {
-    console.error("Get secretary by ID error:", error);
+    console.error("Get current secretary error:", error);
     res.status(500).json({
       success: false,
       message: "حدث خطأ أثناء جلب بيانات السكرتير",
@@ -28,4 +28,4 @@ const getSecretaryById = async (req, res) => {
   }
 };
 
-module.exports = getSecretaryById;
+module.exports = getCurrentSecretary;

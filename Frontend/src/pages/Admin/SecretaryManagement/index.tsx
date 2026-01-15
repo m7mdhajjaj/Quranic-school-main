@@ -89,6 +89,63 @@ const ConfirmDeleteModal = memo<{
 
 ConfirmDeleteModal.displayName = "ConfirmDeleteModal";
 
+// Bulk Delete Confirmation Modal
+const BulkDeleteConfirmModal = memo<{
+  isOpen: boolean;
+  count: number;
+  onConfirm: () => void;
+  onCancel: () => void;
+  isLoading: boolean;
+}>(({ isOpen, count, onConfirm, onCancel, isLoading }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto">
+      <div className="fixed inset-0 bg-black/50" onClick={onCancel} />
+      <div className="flex min-h-full items-center justify-center p-4">
+        <div className="relative bg-white rounded-2xl p-6 max-w-md w-full shadow-xl">
+          <div className="text-center">
+            <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
+              <Shield className="w-6 h-6 text-red-600" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              تأكيد حذف {count} سكرتير
+            </h3>
+            <p className="text-gray-600 mb-6">
+              هل أنت متأكد من حذف {count} سكرتير؟ لا يمكن التراجع عن هذا الإجراء.
+            </p>
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={onCancel}
+                className="px-6 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors"
+                disabled={isLoading}
+              >
+                إلغاء
+              </button>
+              <button
+                onClick={onConfirm}
+                disabled={isLoading}
+                className="px-6 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+              >
+                {isLoading ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    جاري الحذف...
+                  </>
+                ) : (
+                  "نعم، احذف الكل"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+BulkDeleteConfirmModal.displayName = "BulkDeleteConfirmModal";
+
 // Skeleton Loader
 const SecretariesSkeleton = memo<{ viewMode: ViewMode }>(({ viewMode }) => {
   // استخدام useMemo لتجنب إعادة إنشاء المصفوفة
@@ -143,10 +200,12 @@ const SecretaryManagement: React.FC = () => {
     isOpen: boolean;
     secretary: Secretary | null;
   }>({ isOpen: false, secretary: null });
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleteConfirmation, setBulkDeleteConfirmation] = useState(false);
 
   // Hooks
   const { secretaries, isLoading, error, refetch } = useSecretariesData();
-  const { createSecretary, updateSecretary, deleteSecretary, isSubmitting } = useSecretariesActions();
+  const { createSecretary, updateSecretary, deleteSecretary, bulkDeleteSecretaries, isSubmitting } = useSecretariesActions();
   const { refetch: refetchStats, ...stats } = useSecretariesStats(); // إحصائيات من الباك إند مباشرة
   const {
     searchQuery,
@@ -198,6 +257,49 @@ const SecretaryManagement: React.FC = () => {
     }
   }, [deleteConfirmation.secretary, deleteSecretary, refetch, refetchStats]);
 
+  // Bulk Delete Handlers
+  const handleToggleSelection = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  }, []);
+
+  const handleToggleSelectAll = useCallback(() => {
+    if (selectedIds.size === filteredSecretaries.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredSecretaries.map(s => s._id)));
+    }
+  }, [selectedIds.size, filteredSecretaries]);
+
+  const handleBulkDelete = useCallback(() => {
+    if (selectedIds.size === 0) return;
+    setBulkDeleteConfirmation(true);
+  }, [selectedIds.size]);
+
+  const handleConfirmBulkDelete = useCallback(async () => {
+    if (selectedIds.size === 0) return;
+
+    try {
+      const ids = Array.from(selectedIds);
+      await bulkDeleteSecretaries(ids);
+      showSuccessToast(`تم حذف ${selectedIds.size} سكرتير بنجاح`);
+      setSelectedIds(new Set());
+      setBulkDeleteConfirmation(false);
+      refetch();
+      refetchStats();
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "حدث خطأ غير متوقع";
+      showErrorMessage("فشل حذف السكرتيرين", errorMessage);
+    }
+  }, [selectedIds, bulkDeleteSecretaries, refetch, refetchStats]);
+
   const handleFormSubmit = useCallback(
     async (data: SecretaryFormData) => {
       try {
@@ -223,10 +325,61 @@ const SecretaryManagement: React.FC = () => {
     [selectedSecretary, createSecretary, updateSecretary, refetch, refetchStats]
   );
 
-  const handleExport = useCallback(() => {
-    // TODO: Implement export functionality
-    showSuccessToast("جاري تصدير البيانات...");
-  }, []);
+  const handleExport = useCallback(async () => {
+    try {
+      const { utils, writeFile } = await import("xlsx");
+      
+      // 1. Data Processing
+      const exportData = filteredSecretaries.map((sec, index) => ({
+        "م": index + 1,
+        "الاسم الكامل": [sec.firstName, sec.fatherName, sec.grandFatherName, sec.lastName].filter(Boolean).join(" "),
+        "رقم السكرتير": sec.secretaryId || "-",
+        "حالة الاتصال": sec.lastSeen && new Date(sec.lastSeen).getTime() > Date.now() - 5 * 60 * 1000 ? "متصل" : "غير متصل",
+        "الجنس": sec.gender === 'male' || sec.gender === 'ذكر' ? 'ذكر' : 'أنثى',
+        "العمر": sec.age ? `${sec.age} سنة` : "-",
+        "رقم الهوية": sec.idNumber || "-",
+        "رقم الهاتف": sec.phoneNumber || "-",
+        "البريد الإلكتروني": sec.email || "-",
+        "السكن": sec.residence || "-",
+        "اسم الأم": sec.motherName || "-",
+        "تاريخ الاضافة": sec.createdAt ? new Date(sec.createdAt).toLocaleDateString('ar-EG') : "-",
+      }));
+
+      // 2. Create Workbook and Worksheet
+      const workbook = utils.book_new();
+      const worksheet = utils.json_to_sheet(exportData);
+
+      // 3. Styling Configuration (Widths)
+      const wscols = [
+        { wch: 5 },  // #
+        { wch: 30 }, // Full Name
+        { wch: 15 }, // ID
+        { wch: 12 }, // Status
+        { wch: 8 },  // Gender
+        { wch: 8 },  // Age
+        { wch: 15 }, // National ID
+        { wch: 15 }, // Phone
+        { wch: 25 }, // Email
+        { wch: 20 }, // Residence
+        { wch: 20 }, // Mother Name
+        { wch: 15 }, // Created Date
+      ];
+      worksheet["!cols"] = wscols;
+
+      // 4. Force RTL Direction
+      if (!worksheet["!views"]) worksheet["!views"] = [];
+      worksheet["!views"][0] = { rightToLeft: true };
+
+      // 5. Save File
+      utils.book_append_sheet(workbook, worksheet, "السكرتيرين");
+      writeFile(workbook, `Secretaries_List_${new Date().toLocaleDateString("en-GB").replace(/\//g, "-")}.xlsx`);
+      
+      showSuccessToast("تم تصدير ملف Excel بنجاح ✅");
+    } catch (error) {
+      console.error("Export Error:", error);
+      showErrorMessage("فشل التصدير", "حدث خطأ أثناء محاولة تصدير البيانات");
+    }
+  }, [filteredSecretaries]);
 
   // Error State
   if (error) {
@@ -257,6 +410,8 @@ const SecretaryManagement: React.FC = () => {
       <SecretariesHeader
         onAddSecretary={handleAddSecretary}
         onExport={handleExport}
+        selectedCount={selectedIds.size}
+        onBulkDelete={handleBulkDelete}
       />
 
       {/* Stats Cards */}
@@ -308,6 +463,8 @@ const SecretaryManagement: React.FC = () => {
           secretaries={filteredSecretaries}
           onEdit={handleEditSecretary}
           onDelete={handleDeleteSecretary}
+          selectedIds={selectedIds}
+          onToggleSelection={handleToggleSelection}
         />
       ) : (
         <SecretaryTableView
@@ -317,6 +474,9 @@ const SecretaryManagement: React.FC = () => {
           sortField={sortField}
           sortOrder={sortOrder}
           onSort={handleSort}
+          selectedIds={selectedIds}
+          onToggleSelection={handleToggleSelection}
+          onToggleSelectAll={handleToggleSelectAll}
         />
       )}
 
@@ -338,6 +498,15 @@ const SecretaryManagement: React.FC = () => {
         secretary={deleteConfirmation.secretary}
         onConfirm={handleConfirmDelete}
         onCancel={() => setDeleteConfirmation({ isOpen: false, secretary: null })}
+        isLoading={isSubmitting}
+      />
+
+      {/* Bulk Delete Confirmation Modal */}
+      <BulkDeleteConfirmModal
+        isOpen={bulkDeleteConfirmation}
+        count={selectedIds.size}
+        onConfirm={handleConfirmBulkDelete}
+        onCancel={() => setBulkDeleteConfirmation(false)}
         isLoading={isSubmitting}
       />
     </div>

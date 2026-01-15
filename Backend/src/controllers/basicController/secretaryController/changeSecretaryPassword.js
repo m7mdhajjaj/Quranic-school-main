@@ -2,7 +2,7 @@
  * تغيير كلمة مرور السكرتير
  * @access Admin, Secretary (self)
  */
-const Secretary = require("../../schema/Secretary");
+const Secretary = require("../../../schema/Secretary");
 const bcrypt = require("bcryptjs");
 
 const changeSecretaryPassword = async (req, res) => {

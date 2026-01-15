@@ -2,8 +2,8 @@
  * حذف سكرتير
  * @access Admin only
  */
-const Secretary = require("../../schema/Secretary");
-const Counter = require("../../schema/Counter");
+const Secretary = require("../../../schema/Secretary");
+const Counter = require("../../../schema/Counter");
 
 const deleteSecretary = async (req, res) => {
   try {

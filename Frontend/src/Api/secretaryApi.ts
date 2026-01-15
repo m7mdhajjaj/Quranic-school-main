@@ -167,6 +167,29 @@ export const deleteSecretary = async (id: string): Promise<SecretaryApiResponse>
 };
 
 /**
+ * Bulk delete secretaries
+ */
+export const bulkDeleteSecretaries = async (ids: string[]): Promise<SecretaryApiResponse & { deletedCount?: number }> => {
+  try {
+    console.log('🗑️ حذف مجموعة من السكرتيرين:', ids.length);
+    const response = await api.post<SecretaryApiResponse & { deletedCount?: number }>('/secretaries/bulk-delete', { ids });
+    
+    if (response.data.success) {
+      console.log(`✅ تم حذف ${response.data.deletedCount || ids.length} سكرتير بنجاح`);
+    }
+    
+    return response.data;
+  } catch (error) {
+    console.error('❌ خطأ في حذف السكرتيرين:', error);
+    const axiosError = error as AxiosError<SecretaryApiResponse>;
+    return {
+      success: false,
+      message: axiosError.response?.data?.message || 'حدث خطأ أثناء حذف السكرتيرين'
+    };
+  }
+};
+
+/**
  * Update secretary permissions
  */
 export const updateSecretaryPermissions = async (id: string, permissions: SecretaryPermissions): Promise<SecretaryApiResponse> => {

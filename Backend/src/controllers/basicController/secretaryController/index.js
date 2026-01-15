@@ -14,6 +14,7 @@ const createSecretary = require("./createSecretary");
 const updateSecretary = require("./updateSecretary");
 const updateSecretaryPermissions = require("./updateSecretaryPermissions");
 const deleteSecretary = require("./deleteSecretary");
+const bulkDeleteSecretaries = require("./bulkDeleteSecretaries");
 const changeSecretaryPassword = require("./changeSecretaryPassword");
 const getCurrentSecretary = require("./getCurrentSecretary");
 const getSecretaryStats = require("./getSecretaryStats");
@@ -27,6 +28,7 @@ module.exports = {
   updateSecretary,
   updateSecretaryPermissions,
   deleteSecretary,
+  bulkDeleteSecretaries,
   changeSecretaryPassword,
   getCurrentSecretary,
   getSecretaryStats,

@@ -2,8 +2,8 @@
  * إنشاء سكرتير جديد
  * @access Admin only
  */
-const Secretary = require("../../schema/Secretary");
-const Counter = require("../../schema/Counter");
+const Secretary = require("../../../schema/Secretary");
+const Counter = require("../../../schema/Counter");
 const bcrypt = require("bcryptjs");
 
 const createSecretary = async (req, res) => {

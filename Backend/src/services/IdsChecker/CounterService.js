@@ -1,5 +1,5 @@
 // services/CounterService.js
-const Counter = require("../schema/Counter");
+const Counter = require("../../schema/Counter");
 
 /**
  * Counter Service - خدمة إدارة الأرقام التسلسلية
@@ -149,9 +149,9 @@ class CounterService {
    * يُستخدم مرة واحدة عند الترقية
    */
   static async initializeFromDatabase() {
-    const Student = require("../schema/Student/Student");
-    const Teacher = require("../schema/Teacher");
-    const Admin = require("../schema/Admin");
+    const Student = require("../../schema/Student/Student");
+    const Teacher = require("../../schema/Teacher");
+    const Admin = require("../../schema/Admin");
 
     console.log("🔄 [CounterService] Initializing counters from existing data...");
 
