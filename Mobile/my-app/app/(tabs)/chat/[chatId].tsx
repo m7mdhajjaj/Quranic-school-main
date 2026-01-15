@@ -9,6 +9,7 @@ import {
   Platform,
   ActivityIndicator,
   Image,
+  Keyboard,
 } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { Send, ArrowRight, Loader2 } from "lucide-react-native";
@@ -31,9 +32,31 @@ export default function ChatWindow() {
   const [inputText, setInputText] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const flatListRef = useRef<FlatList>(null);
 
   const { chatType, targetId, targetName, targetAvatar } = params;
+
+  // Handle keyboard on Android
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      (e) => {
+        setKeyboardHeight(e.endCoordinates.height);
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      () => {
+        setKeyboardHeight(0);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
 
   // Fetch messages
   useEffect(() => {
@@ -108,8 +131,9 @@ export default function ChatWindow() {
   return (
     <KeyboardAvoidingView
       className="flex-1 bg-gray-100"
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}>
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+      style={{ flex: 1 }}>
       {/* Header */}
       <View className="bg-white border-b border-gray-200 px-4 py-3 shadow-sm">
         <View className="flex-row items-center gap-3">
@@ -166,10 +190,20 @@ export default function ChatWindow() {
             flatListRef.current?.scrollToEnd({ animated: false });
           }
         }}
+        keyboardShouldPersistTaps="handled"
       />
 
       {/* Input */}
-      <View className="p-4 bg-white border-t border-gray-200">
+      <View
+        className="p-4 bg-white border-t border-gray-200"
+        style={{
+          paddingBottom:
+            Platform.OS === "android" && keyboardHeight > 0 ? 16 : 16,
+          marginBottom:
+            Platform.OS === "android" && keyboardHeight > 0
+              ? keyboardHeight
+              : 0,
+        }}>
         <View className="flex-row items-end gap-2 bg-gray-50 p-2 rounded-xl border border-gray-200">
           <TextInput
             value={inputText}
