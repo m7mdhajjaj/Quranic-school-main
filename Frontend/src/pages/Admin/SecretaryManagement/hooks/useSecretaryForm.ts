@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type { Secretary } from "../types";
+import { checkDuplicate } from "@/Api/secretaryApi";
 
 // =================== Types ===================
 export interface SecretaryFormData {
@@ -88,11 +89,69 @@ export const useSecretaryForm = ({
   const [formData, setFormData] = useState<SecretaryFormData>(initialFormData);
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  
+  // Debounce timers for duplicate checks
+  const debounceTimers = useRef<Record<string, NodeJS.Timeout>>({});
 
   const isEditMode = !!secretary;
+  const excludeId = isEditMode ? secretary?._id : undefined;
+
+  // =================== Duplicate Check Function ===================
+  const checkFieldDuplicate = useCallback(async (
+    field: 'email' | 'phoneNumber' | 'idNumber',
+    value: string
+  ) => {
+    // التحقق من صحة القيمة أولاً
+    if (field === 'email' && !EMAIL_REGEX.test(value)) return;
+    if (field === 'phoneNumber' && !PHONE_REGEX.test(value)) return;
+    if (field === 'idNumber' && !ID_REGEX.test(value)) return;
+
+    try {
+      const response = await checkDuplicate(field, value, excludeId);
+      if (response.isDuplicate) {
+        const fieldLabels: Record<string, string> = {
+          email: 'البريد الإلكتروني',
+          phoneNumber: 'رقم الهاتف',
+          idNumber: 'رقم الهوية',
+        };
+        setErrors(prev => ({
+          ...prev,
+          [field]: `${fieldLabels[field]} مُستخدم بالفعل (${response.existingUserType}: ${response.existingUserName})`
+        }));
+      }
+    } catch (error) {
+      console.error('Error checking duplicate:', error);
+    }
+  }, [excludeId]);
+
+  // =================== Debounced Duplicate Check ===================
+  const debouncedDuplicateCheck = useCallback((
+    field: 'email' | 'phoneNumber' | 'idNumber',
+    value: string
+  ) => {
+    // إلغاء المؤقت السابق
+    if (debounceTimers.current[field]) {
+      clearTimeout(debounceTimers.current[field]);
+    }
+    
+    // إنشاء مؤقت جديد (500ms)
+    debounceTimers.current[field] = setTimeout(() => {
+      checkFieldDuplicate(field, value);
+    }, 500);
+  }, [checkFieldDuplicate]);
 
   // =================== Reset Form on Open/Close ===================
   useEffect(() => {
+    // فقط عند فتح المودال
+    if (!isOpen) {
+      // إعادة تعيين الفورم عند الإغلاق
+      setFormData(initialFormData);
+      setErrors({});
+      setShowPassword(false);
+      return;
+    }
+
+    // عند الفتح - تحميل البيانات
     if (secretary) {
       setFormData({
         // الأسماء
@@ -124,7 +183,6 @@ export const useSecretaryForm = ({
       setFormData(initialFormData);
     }
     setErrors({});
-    setShowPassword(false);
   }, [secretary, isOpen]);
 
   // =================== Validation ===================
@@ -172,9 +230,13 @@ export const useSecretaryForm = ({
     if (!formData.birthDate) {
       newErrors.birthDate = "تاريخ الميلاد مطلوب";
     } else {
-      const birthYear = new Date(formData.birthDate).getFullYear();
-      const currentYear = new Date().getFullYear();
-      const age = currentYear - birthYear;
+      const birthDate = new Date(formData.birthDate);
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
       if (age < 21) {
         newErrors.birthDate = "يجب أن يكون عمر السكرتير 21 عام على الأقل";
       }
@@ -211,11 +273,20 @@ export const useSecretaryForm = ({
       }));
     }
 
-    // Clear error when field is changed
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
+    // Clear error when field is changed - استخدام functional update
+    setErrors((prev) => {
+      if (prev[name]) {
+        const { [name]: _, ...rest } = prev;
+        return rest;
+      }
+      return prev;
+    });
+
+    // التحقق من التكرار للحقول الحساسة
+    if (name === 'email' || name === 'phoneNumber' || name === 'idNumber') {
+      debouncedDuplicateCheck(name, value);
     }
-  }, [errors]);
+  }, [debouncedDuplicateCheck]);
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();

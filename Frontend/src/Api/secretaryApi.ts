@@ -284,7 +284,39 @@ export const deleteSecretaryAvatar = async (id: string): Promise<SecretaryApiRes
     };
   }
 };
+// Duplicate Check Response
+export interface DuplicateCheckResponse {
+  success: boolean;
+  isDuplicate?: boolean;
+  message?: string;
+  field?: string;
+  existingUserType?: string;
+  existingUserName?: string;
+}
 
+/**
+ * Check if field value is duplicate
+ */
+export const checkDuplicate = async (
+  field: 'email' | 'phoneNumber' | 'idNumber',
+  value: string,
+  excludeId?: string
+): Promise<DuplicateCheckResponse> => {
+  try {
+    const response = await api.post<DuplicateCheckResponse>('/secretaries/check-duplicate', {
+      field,
+      value,
+      excludeId
+    });
+    return response.data;
+  } catch (error) {
+    const axiosError = error as AxiosError<DuplicateCheckResponse>;
+    if (axiosError.response?.data) {
+      return axiosError.response.data;
+    }
+    return { success: false, message: 'حدث خطأ في التحقق' };
+  }
+};
 /**
  * Get secretary statistics
  */
@@ -321,4 +353,5 @@ export default {
   getSecretaryAvatar,
   deleteSecretaryAvatar,
   getSecretaryStats,
+  checkDuplicate,
 };

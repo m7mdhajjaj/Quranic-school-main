@@ -168,10 +168,16 @@ const validateBirthDate = (birthDate) => {
     return { isValid: false, message: 'تاريخ الميلاد لا يمكن أن يكون في المستقبل' };
   }
 
-  // Check minimum age (18 years for secretary)
-  const age = new Date().getFullYear() - date.getFullYear();
-  if (age < 18) {
-    return { isValid: false, message: 'يجب أن يكون عمر السكرتير 18 عام على الأقل' };
+  // Check minimum age (21 years for secretary)
+  const today = new Date();
+  let age = today.getFullYear() - date.getFullYear();
+  const monthDiff = today.getMonth() - date.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < date.getDate())) {
+    age--;
+  }
+  
+  if (age < 21) {
+    return { isValid: false, message: 'يجب أن يكون عمر السكرتير 21 عام على الأقل' };
   }
 
   return { isValid: true, value: dateStr };

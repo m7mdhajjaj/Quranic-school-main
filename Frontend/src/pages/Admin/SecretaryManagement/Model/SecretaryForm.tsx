@@ -1,13 +1,14 @@
-import React from "react";
+import React, { memo, useCallback } from "react";
 import { 
-  X, Shield, User, Mail, Phone, MapPin, 
-  Calendar, Lock, Users, AlertCircle, CheckCircle2,
+  X, Shield, User, Mail, Phone, MapPin, Calendar,
+  Lock, Users, AlertCircle, CheckCircle2,
   CreditCard, ClipboardList, MessageSquare 
 } from "lucide-react";
 import { FaMale, FaFemale } from "react-icons/fa";
 import Avatar from "@/components/Avatar/Avatar";
+import { DatePicker } from "@/components/UI/DatePicker";
 import type { Secretary } from "../types";
-import { useSecretaryForm, type SecretaryFormData } from "./useSecretaryForm";
+import { useSecretaryForm, type SecretaryFormData } from "../hooks/useSecretaryForm";
 
 // =================== Props ===================
 interface SecretaryFormProps {
@@ -19,7 +20,7 @@ interface SecretaryFormProps {
 }
 
 // =================== Component ===================
-export const SecretaryForm: React.FC<SecretaryFormProps> = ({
+export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
   isOpen,
   onClose,
   onSubmit,
@@ -35,6 +36,11 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = ({
     handleSubmit,
   } = useSecretaryForm({ secretary, isOpen, onSubmit });
 
+  // Memoized close handler
+  const handleClose = useCallback(() => {
+    onClose();
+  }, [onClose]);
+
   if (!isOpen) return null;
 
   return (
@@ -42,11 +48,14 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = ({
       {/* Backdrop with blur */}
       <div
         className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
-        onClick={onClose}
+        onClick={handleClose}
       />
 
-      {/* Modal */}
-      <div className="relative w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-2xl transform transition-all animate-in fade-in zoom-in duration-200 flex flex-col overflow-hidden">
+      {/* Modal - centered - stop propagation to prevent closing when clicking inside */}
+      <div 
+        className="relative w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-2xl transform transition-all animate-in fade-in zoom-in duration-200 flex flex-col overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header with Gradient */}
         <div className="relative bg-gradient-to-l from-emerald-600 via-teal-600 to-cyan-600 rounded-t-2xl p-6 overflow-hidden">
           {/* Decorative circles */}
@@ -88,7 +97,7 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = ({
               </div>
             </div>
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="p-2 bg-white/20 hover:bg-white/30 rounded-xl transition-colors"
               title="إغلاق"
             >
@@ -98,7 +107,7 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = ({
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+        <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[70vh] overflow-y-auto overscroll-contain">
           {/* =================== Section: الأسماء =================== */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 text-emerald-700 mb-3">
@@ -120,7 +129,7 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = ({
                   className={`w-full px-4 py-2.5 border-2 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all ${
                     errors.firstName ? "border-red-400 bg-red-50" : "border-gray-200 hover:border-gray-300"
                   }`}
-                  placeholder="الاسم الأول"
+                  placeholder="أدخل الاسم الأول"
                 />
                 {errors.firstName && (
                   <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
@@ -143,7 +152,7 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = ({
                   className={`w-full px-4 py-2.5 border-2 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all ${
                     errors.lastName ? "border-red-400 bg-red-50" : "border-gray-200 hover:border-gray-300"
                   }`}
-                  placeholder="اسم العائلة"
+                  placeholder="أدخل اسم العائلة"
                 />
                 {errors.lastName && (
                   <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
@@ -164,7 +173,7 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = ({
                   value={formData.fatherName || ""}
                   onChange={handleChange}
                   className="w-full px-4 py-2.5 border-2 border-gray-200 hover:border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
-                  placeholder="اسم الأب (اختياري)"
+                  placeholder="أدخل اسم الأب"
                 />
               </div>
 
@@ -179,7 +188,7 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = ({
                   value={formData.grandFatherName || ""}
                   onChange={handleChange}
                   className="w-full px-4 py-2.5 border-2 border-gray-200 hover:border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
-                  placeholder="اسم الجد (اختياري)"
+                  placeholder="أدخل اسم الجد"
                 />
               </div>
 
@@ -194,7 +203,7 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = ({
                   value={formData.motherName || ""}
                   onChange={handleChange}
                   className="w-full px-4 py-2.5 border-2 border-gray-200 hover:border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
-                  placeholder="اسم الأم (اختياري)"
+                  placeholder="أدخل اسم الأم"
                 />
               </div>
             </div>
@@ -308,74 +317,79 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = ({
           {/* =================== Section: البيانات الشخصية =================== */}
           <div className="space-y-4 pt-4 border-t border-gray-100">
             <div className="flex items-center gap-2 text-emerald-700 mb-3">
-              <Calendar className="w-5 h-5" />
+              <User className="w-5 h-5" />
               <h3 className="font-semibold">البيانات الشخصية</h3>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Birth Date */}
+              {/* Birth Date - Using DatePicker Component */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  <Calendar className="w-4 h-4 inline ml-1" />
-                  تاريخ الميلاد *
-                </label>
-                <input
-                  type="date"
-                  name="birthDate"
+                <DatePicker
+                  label="تاريخ الميلاد"
                   value={formData.birthDate}
-                  onChange={handleChange}
-                  title="تاريخ الميلاد"
-                  className={`w-full px-4 py-2.5 border-2 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all ${
-                    errors.birthDate ? "border-red-400 bg-red-50" : "border-gray-200 hover:border-gray-300"
-                  }`}
+                  onChange={(date) =>
+                    handleChange({
+                      target: { name: "birthDate", value: date },
+                    } as React.ChangeEvent<HTMLInputElement>)
+                  }
+                  error={errors.birthDate}
+                  required
+                  minYear={1950}
+                  maxYear={new Date().getFullYear() - 21}
                 />
-                {errors.birthDate && (
-                  <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
-                    <AlertCircle className="w-3.5 h-3.5" />
-                    {errors.birthDate}
-                  </p>
-                )}
               </div>
 
               {/* Gender */}
-              <div>
+              <div className="flex flex-col">
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   <Users className="w-4 h-4 inline ml-1" />
                   الجنس *
                 </label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="flex gap-3 flex-1 items-center">
                   <label
-                    className={`flex items-center justify-center gap-2 p-2.5 border-2 rounded-xl cursor-pointer transition-all ${
+                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 border-2 rounded-xl cursor-pointer transition-all ${
                       formData.gender === "ذكر"
                         ? "border-emerald-500 bg-emerald-50 text-emerald-700"
                         : "border-gray-200 hover:border-gray-300 text-gray-600"
                     }`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleChange({ target: { name: 'gender', value: 'ذكر' } } as any);
+                    }}
                   >
                     <input
                       type="radio"
                       name="gender"
                       value="ذكر"
                       checked={formData.gender === "ذكر"}
-                      onChange={handleChange}
+                      onChange={() => {}}
                       className="sr-only"
+                      tabIndex={-1}
+                      readOnly
                     />
                     <FaMale className="w-4 h-4" />
                     <span className="font-medium text-sm">ذكر</span>
                   </label>
                   <label
-                    className={`flex items-center justify-center gap-2 p-2.5 border-2 rounded-xl cursor-pointer transition-all ${
+                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 border-2 rounded-xl cursor-pointer transition-all ${
                       formData.gender === "أنثى"
                         ? "border-teal-500 bg-teal-50 text-teal-700"
                         : "border-gray-200 hover:border-gray-300 text-gray-600"
                     }`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleChange({ target: { name: 'gender', value: 'أنثى' } } as any);
+                    }}
                   >
                     <input
                       type="radio"
                       name="gender"
                       value="أنثى"
                       checked={formData.gender === "أنثى"}
-                      onChange={handleChange}
+                      onChange={() => {}}
                       className="sr-only"
+                      tabIndex={-1}
+                      readOnly
                     />
                     <FaFemale className="w-4 h-4" />
                     <span className="font-medium text-sm">أنثى</span>
@@ -423,13 +437,19 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = ({
                     ? "border-emerald-500 bg-emerald-50"
                     : "border-gray-200 hover:border-emerald-200 hover:bg-gray-50"
                 }`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleChange({ target: { name: 'permissions.canManageStudents', checked: !formData.permissions.canManageStudents, type: 'checkbox' } } as any);
+                }}
               >
                 <input
                   type="checkbox"
                   name="permissions.canManageStudents"
                   checked={formData.permissions.canManageStudents}
-                  onChange={handleChange}
+                  onChange={() => {}}
                   className="sr-only"
+                  tabIndex={-1}
+                  readOnly
                 />
                 <div className={`p-2 rounded-lg ${formData.permissions.canManageStudents ? "bg-emerald-500 text-white" : "bg-gray-100 text-gray-500"}`}>
                   <Users className="w-4 h-4" />
@@ -446,13 +466,19 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = ({
                     ? "border-teal-500 bg-teal-50"
                     : "border-gray-200 hover:border-teal-200 hover:bg-gray-50"
                 }`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleChange({ target: { name: 'permissions.canManageAttendance', checked: !formData.permissions.canManageAttendance, type: 'checkbox' } } as any);
+                }}
               >
                 <input
                   type="checkbox"
                   name="permissions.canManageAttendance"
                   checked={formData.permissions.canManageAttendance}
-                  onChange={handleChange}
+                  onChange={() => {}}
                   className="sr-only"
+                  tabIndex={-1}
+                  readOnly
                 />
                 <div className={`p-2 rounded-lg ${formData.permissions.canManageAttendance ? "bg-teal-500 text-white" : "bg-gray-100 text-gray-500"}`}>
                   <Calendar className="w-4 h-4" />
@@ -469,13 +495,19 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = ({
                     ? "border-cyan-500 bg-cyan-50"
                     : "border-gray-200 hover:border-cyan-200 hover:bg-gray-50"
                 }`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleChange({ target: { name: 'permissions.canManageNews', checked: !formData.permissions.canManageNews, type: 'checkbox' } } as any);
+                }}
               >
                 <input
                   type="checkbox"
                   name="permissions.canManageNews"
                   checked={formData.permissions.canManageNews}
-                  onChange={handleChange}
+                  onChange={() => {}}
                   className="sr-only"
+                  tabIndex={-1}
+                  readOnly
                 />
                 <div className={`p-2 rounded-lg ${formData.permissions.canManageNews ? "bg-cyan-500 text-white" : "bg-gray-100 text-gray-500"}`}>
                   <Mail className="w-4 h-4" />
@@ -492,13 +524,19 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = ({
                     ? "border-green-500 bg-green-50"
                     : "border-gray-200 hover:border-green-200 hover:bg-gray-50"
                 }`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleChange({ target: { name: 'permissions.canViewReports', checked: !formData.permissions.canViewReports, type: 'checkbox' } } as any);
+                }}
               >
                 <input
                   type="checkbox"
                   name="permissions.canViewReports"
                   checked={formData.permissions.canViewReports}
-                  onChange={handleChange}
+                  onChange={() => {}}
                   className="sr-only"
+                  tabIndex={-1}
+                  readOnly
                 />
                 <div className={`p-2 rounded-lg ${formData.permissions.canViewReports ? "bg-green-500 text-white" : "bg-gray-100 text-gray-500"}`}>
                   <Shield className="w-4 h-4" />
@@ -515,13 +553,19 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = ({
                     ? "border-lime-500 bg-lime-50"
                     : "border-gray-200 hover:border-lime-200 hover:bg-gray-50"
                 }`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleChange({ target: { name: 'permissions.canManageTimetable', checked: !formData.permissions.canManageTimetable, type: 'checkbox' } } as any);
+                }}
               >
                 <input
                   type="checkbox"
                   name="permissions.canManageTimetable"
                   checked={formData.permissions.canManageTimetable}
-                  onChange={handleChange}
+                  onChange={() => {}}
                   className="sr-only"
+                  tabIndex={-1}
+                  readOnly
                 />
                 <div className={`p-2 rounded-lg ${formData.permissions.canManageTimetable ? "bg-lime-500 text-white" : "bg-gray-100 text-gray-500"}`}>
                   <ClipboardList className="w-4 h-4" />
@@ -538,13 +582,19 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = ({
                     ? "border-sky-500 bg-sky-50"
                     : "border-gray-200 hover:border-sky-200 hover:bg-gray-50"
                 }`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleChange({ target: { name: 'permissions.canManageMessages', checked: !formData.permissions.canManageMessages, type: 'checkbox' } } as any);
+                }}
               >
                 <input
                   type="checkbox"
                   name="permissions.canManageMessages"
                   checked={formData.permissions.canManageMessages}
-                  onChange={handleChange}
+                  onChange={() => {}}
                   className="sr-only"
+                  tabIndex={-1}
+                  readOnly
                 />
                 <div className={`p-2 rounded-lg ${formData.permissions.canManageMessages ? "bg-sky-500 text-white" : "bg-gray-100 text-gray-500"}`}>
                   <MessageSquare className="w-4 h-4" />
@@ -564,7 +614,7 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = ({
             <div className="flex items-center gap-3">
               <button
                 type="button"
-                onClick={onClose}
+                onClick={handleClose}
                 className="px-6 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors font-medium"
                 disabled={isLoading}
               >
@@ -593,8 +643,11 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = ({
       </div>
     </div>
   );
-};
+});
+
+// Display name for debugging
+SecretaryForm.displayName = "SecretaryForm";
 
 // Re-export types
-export type { SecretaryFormData } from "./useSecretaryForm";
+export type { SecretaryFormData } from "../hooks/useSecretaryForm";
 export default SecretaryForm;

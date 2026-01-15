@@ -17,6 +17,7 @@ const {
   changeSecretaryPassword,
   getCurrentSecretary,
   getSecretaryStats,
+  checkDuplicate,
 } = require("../../controllers/secretaryController");
 
 const {
@@ -47,6 +48,9 @@ router.get("/me", secretaryProtect, getCurrentSecretary);
 
 // الحصول على إحصائيات السكرتيرين
 router.get("/stats", adminProtect, getSecretaryStats);
+
+// التحقق من تكرار البيانات (email, phoneNumber, idNumber)
+router.post("/check-duplicate", adminProtect, checkDuplicate);
 
 // الحصول على جميع السكرتيرين
 router.get("/", adminProtect, getAllSecretaries);
