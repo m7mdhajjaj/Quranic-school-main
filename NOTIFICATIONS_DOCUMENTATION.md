@@ -38,6 +38,7 @@ ChatHandler.notifyNewMessage(recipientId, 'Student', 'أحمد', 'السلام �
 | **المستلم** | الشخص المُشار إليه |
 | **Handler** | `ChatHandler.notifyMention()` |
 | **العنوان** | `إشارة من اسم_المرسل` |
+
 | **الرسالة** | نص الرسالة |
 
 ---
