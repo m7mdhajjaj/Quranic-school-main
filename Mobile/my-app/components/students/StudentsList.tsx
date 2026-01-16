@@ -15,8 +15,9 @@ import type { Student } from "@/types/student.types";
 interface StudentsListProps {
   students: Student[];
   loading: boolean;
-  onEdit: (student: Student) => void;
-  onDelete: (student: Student) => void;
+  onEdit?: (student: Student) => void;
+  onDelete?: (student: Student) => void;
+  readOnly?: boolean;
 }
 
 export const StudentsList: React.FC<StudentsListProps> = ({
@@ -24,6 +25,7 @@ export const StudentsList: React.FC<StudentsListProps> = ({
   loading,
   onEdit,
   onDelete,
+  readOnly = false,
 }) => {
   if (loading) {
     return (
@@ -138,19 +140,21 @@ export const StudentsList: React.FC<StudentsListProps> = ({
         )}
       </View>
 
-      {/* Actions */}
-      <View className="flex-row gap-2 mt-4">
-        <TouchableOpacity
-          onPress={() => onEdit(item)}
-          className="flex-1 bg-blue-500 rounded-xl py-3">
-          <Text className="text-white font-bold text-center">تعديل</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => onDelete(item)}
-          className="flex-1 bg-red-500 rounded-xl py-3">
-          <Text className="text-white font-bold text-center">حذف</Text>
-        </TouchableOpacity>
-      </View>
+      {/* Actions - Only show if not readOnly */}
+      {!readOnly && onEdit && onDelete && (
+        <View className="flex-row gap-2 mt-4">
+          <TouchableOpacity
+            onPress={() => onEdit(item)}
+            className="flex-1 bg-blue-500 rounded-xl py-3">
+            <Text className="text-white font-bold text-center">تعديل</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => onDelete(item)}
+            className="flex-1 bg-red-500 rounded-xl py-3">
+            <Text className="text-white font-bold text-center">حذف</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 

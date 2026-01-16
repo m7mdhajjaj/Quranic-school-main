@@ -15,10 +15,13 @@ import {
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { createStudent, updateStudent } from "@/Api/studentApi";
-import { getAllGroups } from "@/Api/groupApi";
+import {
+  createStudent,
+  updateStudent,
+  getGroupsForStudentAssignment,
+  type GroupForAssignment,
+} from "@/Api/studentApi";
 import type { Student, StudentFormData } from "@/types/student.types";
-import type { Group } from "@/types/group.types";
 
 interface AddStudentModalProps {
   visible: boolean;
@@ -54,15 +57,15 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date(2010, 0, 1));
-  const [groups, setGroups] = useState<Group[]>([]);
+  const [groups, setGroups] = useState<GroupForAssignment[]>([]);
   const [loadingGroups, setLoadingGroups] = useState(false);
 
-  // Fetch groups
+  // Fetch groups for student assignment (uses /students/groups-for-assignment endpoint)
   useEffect(() => {
     const fetchGroups = async () => {
       setLoadingGroups(true);
       try {
-        const result = await getAllGroups();
+        const result = await getGroupsForStudentAssignment();
         if (result.success && result.data) {
           setGroups(result.data);
         }

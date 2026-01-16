@@ -10,6 +10,15 @@ import { API_URL } from "../config/config";
 import { verifyToken } from "../Api/authApi";
 import { socketManager } from "../Socket";
 
+// تعريف صلاحيات السكرتير
+export type AccessLevel = "none" | "view" | "manage";
+
+export interface SecretaryPermissions {
+  groupsAccess?: AccessLevel;
+  teachersAccess?: AccessLevel;
+  studentsAccess?: AccessLevel;
+}
+
 // تعريف أنواع البيانات
 export interface User {
   _id: string;
@@ -17,11 +26,12 @@ export interface User {
   lastName?: string;
   fatherName?: string;
   name?: string;
-  role: "student" | "teacher" | "admin";
+  role: "student" | "teacher" | "admin" | "secretary";
   email?: string;
   studentId?: string;
   teacherId?: string;
   adminId?: string;
+  secretaryId?: string;
   group?: string;
   imageUrl?: string;
   avatar?: {
@@ -29,6 +39,7 @@ export interface User {
     publicId?: string;
   };
   isActive?: boolean;
+  permissions?: SecretaryPermissions; // صلاحيات السكرتير
   // يمكن إضافة المزيد من الخصائص حسب الحاجة
 }
 
@@ -49,6 +60,8 @@ export interface AuthContextType {
   isStudent: () => boolean;
   isTeacher: () => boolean;
   isAdmin: () => boolean;
+  isSecretary: () => boolean;
+  getSecretaryPermissions: () => SecretaryPermissions | null;
   getUserName: () => string;
   getUserId: () => string;
 }
@@ -246,6 +259,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const isStudent = (): boolean => user?.role === "student";
   const isTeacher = (): boolean => user?.role === "teacher";
   const isAdmin = (): boolean => user?.role === "admin";
+  const isSecretary = (): boolean => user?.role === "secretary";
+
+  // الحصول على صلاحيات السكرتير
+  const getSecretaryPermissions = (): SecretaryPermissions | null => {
+    if (user?.role !== "secretary") return null;
+    return (
+      user.permissions || {
+        groupsAccess: "none",
+        teachersAccess: "none",
+        studentsAccess: "none",
+      }
+    );
+  };
 
   // وظيفة الحصول على اسم المستخدم
   const getUserName = (): string => {
@@ -279,6 +305,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isStudent,
     isTeacher,
     isAdmin,
+    isSecretary,
+    getSecretaryPermissions,
     getUserName,
     getUserId,
   };
