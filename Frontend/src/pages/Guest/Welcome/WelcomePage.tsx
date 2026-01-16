@@ -44,32 +44,25 @@ const WelcomePage = () => {
           className="text-center mb-8"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
         >
-          {/* Main Title with Gradient Animation */}
+          {/* Main Title with Gradient - مبسط للأداء */}
           <motion.h1 
             className="text-4xl md:text-6xl lg:text-7xl font-bold mb-4"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
+            transition={{ delay: 0.5, duration: 0.6 }}
           >
-            <motion.span 
-              className="inline-block bg-gradient-to-r from-emerald-300 via-teal-200 to-cyan-300 bg-clip-text text-transparent"
-              animate={{
-                backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
-              }}
-              transition={{ duration: 5, repeat: Infinity }}
-              style={{ backgroundSize: '200% 200%' }}
-            >
+            <span className="inline-block bg-gradient-to-r from-emerald-300 via-teal-200 to-cyan-300 bg-clip-text text-transparent">
               أهلاً وسهلاً
-            </motion.span>
+            </span>
           </motion.h1>
 
           <motion.h2
             className="text-xl md:text-3xl text-emerald-200 mb-4 font-light"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.7 }}
+            transition={{ delay: 0.5, duration: 0.4 }}
           >
             في{' '}
             <span className="font-bold text-white">أكاديمية المهاجرين</span>
@@ -80,7 +73,7 @@ const WelcomePage = () => {
             className="text-gray-300 text-base md:text-lg max-w-xl mx-auto leading-relaxed"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.9 }}
+            transition={{ delay: 0.7, duration: 0.4 }}
           >
             منصة تعليمية متكاملة لتعلم القرآن الكريم وتحفيظه
           </motion.p>
@@ -91,7 +84,7 @@ const WelcomePage = () => {
           className="mt-4"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.1 }}
+          transition={{ delay: 0.9, duration: 0.4 }}
         >
           <CTAButton
             onClick={handleLoginClick}

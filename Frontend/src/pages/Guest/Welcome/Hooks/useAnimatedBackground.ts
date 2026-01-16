@@ -2,18 +2,26 @@
 // useAnimatedBackground.ts - Hook لإدارة خلفية الفيديو
 // ============================================================================
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 
 export const useAnimatedBackground = (videoUrl: string, fallbackVideoUrl: string) => {
   const [videoError, setVideoError] = useState(false);
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
 
-  // قائمة بجميع روابط الفيديوهات للتجربة
-  const videoUrls = useMemo(() => [
-    videoUrl, // Local or Primary
-    fallbackVideoUrl, // Cloudinary
-    'https://videos.pexels.com/video-files/3773486/3773486-hd_1920_1080_30fps.mp4', // Pexels Mosque
-  ], [videoUrl, fallbackVideoUrl]);
+  // قائمة بجميع روابط الفيديوهات للتجربة (الفيديو من Cloudinary أولاً)
+  const videoUrls = useMemo(() => {
+    // إذا كان videoUrl هو نفسه fallbackVideoUrl، استخدم واحد فقط
+    if (videoUrl === fallbackVideoUrl) {
+      return [videoUrl];
+    }
+    return [videoUrl]; // فقط الفيديو المخصص أو الافتراضي
+  }, [videoUrl, fallbackVideoUrl]);
+
+  // إعادة تعيين الحالة عند تغيير videoUrl
+  useEffect(() => {
+    setCurrentVideoIndex(0);
+    setVideoError(false);
+  }, [videoUrl]);
 
   const currentVideoUrl = videoUrls[currentVideoIndex];
 

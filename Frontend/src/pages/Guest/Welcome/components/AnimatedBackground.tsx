@@ -30,11 +30,14 @@ export const AnimatedBackground = ({
           loop
           muted
           playsInline
-          preload="auto"
+          preload="metadata"
+          loading="lazy"
           className="absolute inset-0 w-full h-full z-0"
           style={{
             objectFit: 'cover',
             objectPosition: 'center center',
+            willChange: 'transform',
+            transform: 'translateZ(0)',
           }}
           onError={handleVideoError}
           onLoadedData={(e) => {
@@ -52,11 +55,8 @@ export const AnimatedBackground = ({
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-950 via-teal-900 to-cyan-950 z-0" />
       )}
 
-      {/* Dark Overlay for better text readability - خفيف */}
-      <div className="absolute inset-0 bg-black/40 z-[1]" />
-      
-      {/* Vignette Effect - خفيف */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/30 z-[2]" />
+      {/* Combined Overlay - أداء أفضل */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/40 to-black/50 z-[1]" />
     </div>
   );
 };

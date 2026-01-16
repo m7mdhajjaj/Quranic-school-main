@@ -115,11 +115,19 @@ const getWelcomeVideo = async (req, res) => {
     // جلب رابط الفيديو من قاعدة البيانات
     const customVideoUrl = await Settings.getValue(WELCOME_VIDEO_KEY);
     
+    // إضافة headers لمنع cache
+    res.set({
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+    });
+    
     return res.status(200).json({
       success: true,
       data: {
         url: customVideoUrl || defaultVideoUrl,
         isCustom: !!customVideoUrl,
+        timestamp: Date.now(), // لضمان عدم استخدام cache
       },
     });
   } catch (error) {

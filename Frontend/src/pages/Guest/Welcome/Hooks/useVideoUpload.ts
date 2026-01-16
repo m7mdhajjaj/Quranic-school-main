@@ -83,11 +83,16 @@ export const useVideoUpload = (onVideoUploaded?: (url: string) => void): UseVide
         }
         
         console.log('✅ تم رفع الفيديو بنجاح وحفظه في قاعدة البيانات:', videoUrl);
+        console.log('🔄 جاري تحديث الفيديو في الصفحة...');
         
-        // إعادة تحميل الصفحة بعد ثانيتين لجلب الفيديو الجديد من Backend
+        // تحديث الـ cache في localStorage
+        localStorage.setItem('welcomeVideoUrl', videoUrl);
+        localStorage.setItem('welcomeVideoTimestamp', Date.now().toString());
+        
+        // إعادة تحميل الصفحة بعد 1.5 ثانية لعرض الفيديو الجديد
         setTimeout(() => {
           window.location.reload();
-        }, 2000);
+        }, 1500);
       } else {
         throw new Error(response.data.message || 'فشل رفع الفيديو');
       }
@@ -106,12 +111,21 @@ export const useVideoUpload = (onVideoUploaded?: (url: string) => void): UseVide
       
       setUploadedUrl('');
       
+      // حذف الـ cache من localStorage
+      localStorage.removeItem('welcomeVideoUrl');
+      localStorage.removeItem('welcomeVideoTimestamp');
+      
       console.log('✅ تم حذف الفيديو من قاعدة البيانات واستعادة الافتراضي');
       
       // إعادة تحميل الصفحة لجلب الفيديو الافتراضي
       window.location.reload();
     } catch (err) {
       console.error('❌ خطأ في حذف الفيديو:', err);
+      
+      // حذف الـ cache حتى في حالة الخطأ
+      localStorage.removeItem('welcomeVideoUrl');
+      localStorage.removeItem('welcomeVideoTimestamp');
+      
       setUploadedUrl('');
       window.location.reload();
     }

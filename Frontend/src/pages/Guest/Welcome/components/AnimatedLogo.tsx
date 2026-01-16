@@ -18,26 +18,23 @@ export const AnimatedLogo = () => {
         delay: 0.2 
       }}
     >
-      {/* Outer Glow Rings */}
-      {[0, 1, 2].map((i) => (
-        <motion.div
-          key={i}
-          className="absolute inset-0 rounded-full"
-          style={{
-            border: `${2 - i * 0.5}px solid rgba(16, 185, 129, ${0.3 - i * 0.1})`,
-            transform: `scale(${1 + i * 0.2})`,
-          }}
-          animate={{
-            scale: [1 + i * 0.2, 1.4 + i * 0.2, 1 + i * 0.2],
-            opacity: [0.3 - i * 0.1, 0, 0.3 - i * 0.1],
-          }}
-          transition={{
-            duration: 2.5,
-            repeat: Infinity,
-            delay: i * 0.3,
-          }}
-        />
-      ))}
+      {/* Outer Glow Ring - مبسط للأداء */}
+      <motion.div
+        className="absolute inset-0 rounded-full"
+        style={{
+          border: '2px solid rgba(16, 185, 129, 0.3)',
+          transform: 'scale(1)',
+        }}
+        animate={{
+          scale: [1, 1.3, 1],
+          opacity: [0.3, 0, 0.3],
+        }}
+        transition={{
+          duration: 2.5,
+          repeat: Infinity,
+          ease: 'easeInOut',
+        }}
+      />
 
       {/* Main Logo Container */}
       <motion.div
@@ -45,28 +42,23 @@ export const AnimatedLogo = () => {
         whileHover={{ scale: 1.1 }}
         transition={{ type: 'spring', stiffness: 300 }}
       >
-        {/* Rotating Border */}
+        {/* Rotating Border - مبسط */}
         <motion.div
           className="absolute inset-0 rounded-full"
           style={{
             background: 'conic-gradient(from 0deg, #10b981, #14b8a6, #06b6d4, #10b981)',
             padding: 3,
+            willChange: 'transform',
           }}
           animate={{ rotate: 360 }}
-          transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+          transition={{ duration: 10, repeat: Infinity, ease: 'linear' }}
         >
           <div className="w-full h-full rounded-full bg-gradient-to-br from-emerald-900 to-teal-900" />
         </motion.div>
 
         {/* Inner Circle with Icon */}
-        <div className="absolute inset-2 rounded-full bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 flex items-center justify-center shadow-2xl overflow-hidden">
-          {/* Shimmer Effect */}
-          <motion.div
-            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
-            animate={{ x: ['-100%', '100%'] }}
-            transition={{ duration: 3, repeat: Infinity, repeatDelay: 2 }}
-          />
-          <FaQuran className="text-5xl md:text-6xl text-white relative z-10 drop-shadow-lg" />
+        <div className="absolute inset-2 rounded-full bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 flex items-center justify-center shadow-2xl">
+          <FaQuran className="text-5xl md:text-6xl text-white drop-shadow-lg" />
         </div>
       </motion.div>
     </motion.div>
