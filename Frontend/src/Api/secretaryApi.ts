@@ -27,21 +27,47 @@ export interface SecretaryStatsResponse {
   data?: SecretaryStats;
 }
 
+// Filter Parameters Interface
+export interface SecretaryFiltersParams {
+  search?: string;
+  gender?: string;
+  minAge?: number;
+  maxAge?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
 // Re-export types
 export type { Secretary, SecretaryFormData, SecretaryPermissions };
 
 /**
- * Get all secretaries with search support
- * @param search - نص البحث (اختياري) - يدعم: ID، الهوية، الأسماء، الهاتف، البريد
+ * Get all secretaries with search, filters and sorting support
+ * @param filters - فلاتر البحث والترتيب
  */
-export const getAllSecretaries = async (search?: string): Promise<SecretaryApiResponse> => {
+export const getAllSecretaries = async (filters?: SecretaryFiltersParams): Promise<SecretaryApiResponse> => {
   try {
-    console.log('📊 جلب قائمة السكرتيرين...', search ? `(البحث: ${search})` : '');
+    console.log('📊 جلب قائمة السكرتيرين...', filters);
     
-    // إعداد معاملات البحث
-    const params: { search?: string } = {};
-    if (search && search.trim()) {
-      params.search = search.trim();
+    // إعداد معاملات البحث والفلترة
+    const params: Record<string, string | number> = {};
+    
+    if (filters?.search?.trim()) {
+      params.search = filters.search.trim();
+    }
+    if (filters?.gender && filters.gender !== 'all') {
+      params.gender = filters.gender;
+    }
+    if (filters?.minAge !== undefined && filters.minAge > 0) {
+      params.minAge = filters.minAge;
+    }
+    if (filters?.maxAge !== undefined && filters.maxAge < 100) {
+      params.maxAge = filters.maxAge;
+    }
+    if (filters?.sortBy) {
+      params.sortBy = filters.sortBy;
+    }
+    if (filters?.sortOrder) {
+      params.sortOrder = filters.sortOrder;
     }
     
     const response = await api.get<SecretaryApiResponse>('/secretaries', { params });

@@ -232,6 +232,7 @@ const TeachersManagement: React.FC = () => {
             onEdit={handleEdit}
             onDelete={(teacher) => handleDelete(teacher._id!)}
             isReadOnly={isReadOnly}
+            userRole={userRole}
           />
         )}
 
@@ -269,6 +270,7 @@ const TeachersManagement: React.FC = () => {
               onToggleTeacher={isReadOnly ? undefined : handleToggleSelect}
               onToggleAll={isReadOnly ? undefined : handleToggleSelectAll}
               isReadOnly={isReadOnly}
+              userRole={userRole}
             />
           </>
         )}

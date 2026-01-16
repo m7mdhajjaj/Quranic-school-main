@@ -5,18 +5,19 @@ import type { Messaging } from 'firebase/messaging';
 
 // Firebase configuration from environment
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyA92yiBW1-ys2swFZxGNWBDS2nrjjhCqDQ",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyAPCYf7HCTQ3DiW_PFwxTKBeHFp3EN5Qn4",
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "quranic-school-main.firebaseapp.com",
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "quranic-school-main",
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "quranic-school-main.firebasestorage.app",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "113132422081",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:113132422081:web:dae9d7d860047f3193e540"
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "570702964068",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:570702964068:web:64bb6b980db932cc3f8671",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-EHTEZ0CWYY"
 };
 
 // VAPID Key for web push (get from Firebase Console > Cloud Messaging > Web Push certificates)
-const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY || '';
+const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY || 'BL8lvVEg7bHx9Z7dm5HjS5TXImbL7HsDstJG-7istQ-FmafDheIdJsVkcRpucUiA6msThVR4nUXvG1pqyZQGCf8';
 
-if (!VAPID_KEY) {
+if (!VAPID_KEY || VAPID_KEY === '') {
   console.warn('⚠️ VITE_FIREBASE_VAPID_KEY is missing. Push notifications may fail. Generate a key pair in Firebase Console > Project Settings > Cloud Messaging > Web Push certificates.');
 }
 

@@ -28,6 +28,10 @@ const {
   secretaryOrAdminProtect,
 } = require("../../middleware/auth");
 
+const {
+  validateSecretaryFilters,
+} = require("../../Validation/Secretary/SecretaryValidation");
+
 // استيراد مسارات الصورة الشخصية
 const avatarRoutes = require("./avatar.routes");
 
@@ -56,8 +60,8 @@ router.post("/check-duplicate", adminProtect, checkDuplicate);
 // حذف مجموعة من السكرتيرين دفعة واحدة
 router.post("/bulk-delete", adminProtect, bulkDeleteSecretaries);
 
-// الحصول على جميع السكرتيرين
-router.get("/", adminProtect, getAllSecretaries);
+// الحصول على جميع السكرتيرين (مع validation للفلاتر)
+router.get("/", adminProtect, validateSecretaryFilters, getAllSecretaries);
 
 // الحصول على سكرتير بواسطة ID
 router.get("/:id", secretaryOrAdminProtect, getSecretaryById);

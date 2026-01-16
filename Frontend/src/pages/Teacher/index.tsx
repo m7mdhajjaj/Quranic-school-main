@@ -56,6 +56,7 @@ const TeacherStudentManagement: React.FC = () => {
         refreshTrigger={refreshTrigger}
         onEditStudent={handleEditStudent}
         onDeleteStudent={handleDeleteStudent}
+        userRole={user?.role}
       />
     );
   }

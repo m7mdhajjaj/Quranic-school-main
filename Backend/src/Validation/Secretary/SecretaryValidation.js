@@ -475,6 +475,112 @@ const validateSecretaryData = async (req, res, next) => {
   }
 };
 
+/**
+ * Validate secretary filters query parameters
+ * @query search - نص البحث
+ * @query gender - فلتر الجنس (all, ذكر, أنثى, male, female)
+ * @query minAge - الحد الأدنى للعمر (0-120)
+ * @query maxAge - الحد الأقصى للعمر (0-120)
+ * @query sortBy - حقل الترتيب (secretaryId, firstName, age, email, createdAt)
+ * @query sortOrder - اتجاه الترتيب (asc, desc)
+ */
+const validateSecretaryFilters = (req, res, next) => {
+  try {
+    const { search, gender, minAge, maxAge, sortBy, sortOrder } = req.query;
+    const validatedFilters = {};
+    const errors = [];
+
+    // Validate search (optional)
+    if (search !== undefined) {
+      const searchStr = search.toString().trim();
+      if (searchStr.length > 100) {
+        errors.push({ field: 'search', message: 'نص البحث طويل جداً (الحد الأقصى 100 حرف)' });
+      } else {
+        validatedFilters.search = searchStr;
+      }
+    }
+
+    // Validate gender (optional)
+    if (gender !== undefined) {
+      const validGenders = ['all', 'ذكر', 'أنثى', 'male', 'female'];
+      if (!validGenders.includes(gender)) {
+        errors.push({ field: 'gender', message: 'قيمة الجنس غير صحيحة' });
+      } else {
+        validatedFilters.gender = gender;
+      }
+    }
+
+    // Validate minAge (optional)
+    if (minAge !== undefined) {
+      const min = parseInt(minAge);
+      if (isNaN(min) || min < 0 || min > 120) {
+        errors.push({ field: 'minAge', message: 'الحد الأدنى للعمر يجب أن يكون بين 0 و 120' });
+      } else {
+        validatedFilters.minAge = min;
+      }
+    }
+
+    // Validate maxAge (optional)
+    if (maxAge !== undefined) {
+      const max = parseInt(maxAge);
+      if (isNaN(max) || max < 0 || max > 120) {
+        errors.push({ field: 'maxAge', message: 'الحد الأقصى للعمر يجب أن يكون بين 0 و 120' });
+      } else {
+        validatedFilters.maxAge = max;
+      }
+    }
+
+    // Validate age range logic
+    if (validatedFilters.minAge !== undefined && validatedFilters.maxAge !== undefined) {
+      if (validatedFilters.minAge > validatedFilters.maxAge) {
+        errors.push({ field: 'ageRange', message: 'الحد الأدنى للعمر يجب أن يكون أقل من أو يساوي الحد الأقصى' });
+      }
+    }
+
+    // Validate sortBy (optional)
+    if (sortBy !== undefined) {
+      const validSortFields = ['secretaryId', 'firstName', 'age', 'email', 'createdAt'];
+      if (!validSortFields.includes(sortBy)) {
+        errors.push({ field: 'sortBy', message: `حقل الترتيب غير صحيح. القيم المسموحة: ${validSortFields.join(', ')}` });
+      } else {
+        validatedFilters.sortBy = sortBy;
+      }
+    }
+
+    // Validate sortOrder (optional)
+    if (sortOrder !== undefined) {
+      const validSortOrders = ['asc', 'desc'];
+      if (!validSortOrders.includes(sortOrder)) {
+        errors.push({ field: 'sortOrder', message: 'اتجاه الترتيب غير صحيح. القيم المسموحة: asc, desc' });
+      } else {
+        validatedFilters.sortOrder = sortOrder;
+      }
+    }
+
+    // If there are errors, return them
+    if (errors.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'خطأ في معاملات الفلترة',
+        errorCode: 'VALIDATION_ERROR',
+        errors
+      });
+    }
+
+    // Merge validated filters into req.query
+    req.query = { ...req.query, ...validatedFilters };
+    next();
+
+  } catch (error) {
+    console.error('❌ خطأ في التحقق من فلاتر السكرتيرين:', error);
+    res.status(500).json({
+      success: false,
+      message: 'خطأ في خادم التحقق من الفلاتر',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   validateSecretaryData,
   sanitizeSecretaryData,
@@ -488,5 +594,6 @@ module.exports = {
   validateGender,
   validatePermissions,
   validateSearchQuery,
+  validateSecretaryFilters,
   hashPassword
 };

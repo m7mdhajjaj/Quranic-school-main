@@ -23,6 +23,7 @@ interface TeacherTableViewProps {
   onToggleTeacher?: (teacherId: string) => void;
   onToggleAll?: () => void;
   isReadOnly?: boolean;
+  userRole?: string;
 }
 
 export const TeacherTableView: React.FC<TeacherTableViewProps> = ({
@@ -34,7 +35,11 @@ export const TeacherTableView: React.FC<TeacherTableViewProps> = ({
   onToggleTeacher,
   onToggleAll,
   isReadOnly = false,
+  userRole,
 }) => {
+  // إخفاء teacherId للسكرتير
+  const showTeacherId = userRole !== 'secretary';
+  
   const { toggleRow, isRowExpanded } = useExpandableRows();
   const userStatusContext = useContext(UserStatusContext);
   const isUserOnline = userStatusContext?.isUserOnline || (() => false);
@@ -94,9 +99,11 @@ export const TeacherTableView: React.FC<TeacherTableViewProps> = ({
               <th className="px-4 py-4 text-center font-bold text-sm whitespace-nowrap w-12">
                 {/* Expand Icon */}
               </th>
-              <th className="px-4 py-4 text-center font-bold text-sm whitespace-nowrap">
-                رقم المعلم
-              </th>
+              {showTeacherId && (
+                <th className="px-4 py-4 text-center font-bold text-sm whitespace-nowrap">
+                  رقم المعلم
+                </th>
+              )}
               <th className="px-6 py-4 text-right font-bold text-sm whitespace-nowrap">
                 الاسم الكامل
               </th>
@@ -165,11 +172,13 @@ export const TeacherTableView: React.FC<TeacherTableViewProps> = ({
                     </td>
 
                     {/* Teacher ID */}
-                    <td className="px-4 py-4 text-center">
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {teacher.teacherId}
-                      </span>
-                    </td>
+                    {showTeacherId && (
+                      <td className="px-4 py-4 text-center">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          {teacher.teacherId}
+                        </span>
+                      </td>
+                    )}
 
                     {/* Name */}
                     <td className="px-6 py-4">

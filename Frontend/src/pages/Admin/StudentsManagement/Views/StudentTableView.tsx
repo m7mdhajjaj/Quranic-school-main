@@ -20,6 +20,7 @@ interface StudentTableViewProps {
   onToggleAll?: () => void;
   onStudentRestored?: () => void;
   canRestore?: boolean;
+  userRole?: string;
 }
 
 // دالة مساعدة للحصول على اسم الحلقة بشكل آمن
@@ -53,7 +54,10 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
   onStudentRestored,
   onToggleAll,
   canRestore = true,
+  userRole,
 }) => {
+  // إخفاء studentId للمعلم والسكرتير والطالب
+  const showStudentId = userRole !== 'secretary' && userRole !== 'teacher' && userRole !== 'student';
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [historyStudentId, setHistoryStudentId] = useState<string | null>(null);
   const [historyStudentName, setHistoryStudentName] = useState<string>('');
@@ -141,9 +145,11 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
                 <th className="px-4 py-4 text-center font-bold text-sm whitespace-nowrap w-12">
                   {/* Expand Icon */}
                 </th>
-                <th className="px-4 py-4 text-center font-bold text-sm whitespace-nowrap">
-                  رقم الطالب
-                </th>
+                {showStudentId && (
+                  <th className="px-4 py-4 text-center font-bold text-sm whitespace-nowrap">
+                    رقم الطالب
+                  </th>
+                )}
                 <th className="px-6 py-4 text-right font-bold text-sm whitespace-nowrap">
                   الاسم الكامل
                 </th>
@@ -209,11 +215,13 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
                       </td>
 
                       {/* Student ID */}
-                      <td className="px-4 py-4 text-center">
-                        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-300">
-                          #{student.studentId}
-                        </span>
-                      </td>
+                      {showStudentId && (
+                        <td className="px-4 py-4 text-center">
+                          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-300">
+                            #{student.studentId}
+                          </span>
+                        </td>
+                      )}
 
                       {/* Name */}
                       <td className="px-6 py-4 text-right">

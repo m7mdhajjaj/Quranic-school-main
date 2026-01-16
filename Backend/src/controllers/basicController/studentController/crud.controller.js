@@ -23,6 +23,20 @@ const {
 const { logRestorationEvent } = require("./history/helpers/restorationHistory");
 
 /**
+ * دالة مساعدة لإزالة studentId من البيانات للمعلم والسكرتير والطالب
+ * المعلم والسكرتير والطالب ممنوعين يشوفون studentId
+ */
+const removeStudentIdForRestrictedRoles = (students, userRole) => {
+  if (userRole === 'teacher' || userRole === 'secretary' || userRole === 'student') {
+    return students.map(student => {
+      const { studentId, ...rest } = student;
+      return rest;
+    });
+  }
+  return students;
+};
+
+/**
  * إرجاع طالب للحلقة بعد فصل (فقط للأدمن)
  * @route POST /api/students/:id/restore
  */
@@ -179,7 +193,11 @@ exports.getStudents = async (req, res) => {
     const total = await Student.countDocuments(query);
 
     // إضافة اسم المعلم الثلاثي للطلاب
-    const studentsWithTeacherName = await populateTeacherFullName(students);
+    let studentsWithTeacherName = await populateTeacherFullName(students);
+    
+    // إزالة studentId للمعلم والسكرتير
+    const userRole = req.user?.role;
+    studentsWithTeacherName = removeStudentIdForRestrictedRoles(studentsWithTeacherName, userRole);
 
     const endTime = Date.now();
     const duration = endTime - startTime;

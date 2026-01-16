@@ -257,6 +257,7 @@ const StudentsManagement: React.FC = () => {
             students={currentStudents}
             onEdit={handleEdit}
             onDelete={(student) => handleDelete(student._id!)}
+            userRole={userRole}
           />
         )}
 
@@ -272,6 +273,7 @@ const StudentsManagement: React.FC = () => {
               onToggleAll={toggleAllStudents}
               onStudentRestored={fetchStudents}
               canRestore={canRestoreStudents}
+              userRole={userRole}
             />
           </>
         )}

@@ -3,6 +3,7 @@ import { Shield } from "lucide-react";
 import { showSuccessToast } from "@/utils/toastUtils";
 import { showErrorMessage } from "@/utils/sweetalertUtils";
 import { EmptyState } from "@/components/UI/EmptyState";
+import type { SecretaryFiltersParams } from "@/Api/secretaryApi";
 
 // Components
 import {
@@ -18,11 +19,10 @@ import {
   useSecretariesData,
   useSecretariesActions,
   useSecretariesStats,
-  useSecretariesFilters,
 } from "./hooks";
 
 // Types
-import type { Secretary, ViewMode } from "./types";
+import type { Secretary, ViewMode, SortField, SortOrder, GenderFilter } from "./types";
 
 // ============================================================================
 // Memoized Sub-Components لتحسين الأداء
@@ -193,7 +193,55 @@ SecretariesSkeleton.displayName = "SecretariesSkeleton";
 
 // Main Component
 const SecretaryManagement: React.FC = () => {
-  // State
+  // State للفلاتر - كلها تذهب للباك إند
+  const [searchQuery, setSearchQuery] = useState("");
+  const [genderFilter, setGenderFilter] = useState<GenderFilter>("all");
+  const [ageRange, setAgeRange] = useState<[number, number]>([0, 100]);
+  const [sortField, setSortField] = useState<SortField>("secretaryId");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
+  const [viewMode, setViewMode] = useState<ViewMode>("table");
+  const [showFilters, setShowFilters] = useState(false);
+
+  // حساب عدد الفلاتر النشطة
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (genderFilter !== "all") count++;
+    if (ageRange[0] !== 0 || ageRange[1] !== 100) count++;
+    return count;
+  }, [genderFilter, ageRange]);
+
+  // إعادة تعيين الفلاتر
+  const resetFilters = useCallback(() => {
+    setGenderFilter("all");
+    setAgeRange([0, 100]);
+  }, []);
+
+  // تبديل عرض الفلاتر
+  const toggleFilters = useCallback(() => {
+    setShowFilters((prev) => !prev);
+  }, []);
+
+  // معالجة الترتيب
+  const handleSort = useCallback((field: SortField) => {
+    if (sortField === field) {
+      setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortOrder("asc");
+    }
+  }, [sortField]);
+
+  // بناء كائن الفلاتر للباك إند
+  const filtersParams: SecretaryFiltersParams = useMemo(() => ({
+    search: searchQuery || undefined,
+    gender: genderFilter !== "all" ? genderFilter : undefined,
+    minAge: ageRange[0] > 0 ? ageRange[0] : undefined,
+    maxAge: ageRange[1] < 100 ? ageRange[1] : undefined,
+    sortBy: sortField,
+    sortOrder: sortOrder,
+  }), [searchQuery, genderFilter, ageRange, sortField, sortOrder]);
+
+  // State أخرى
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedSecretary, setSelectedSecretary] = useState<Secretary | null>(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
@@ -202,31 +250,11 @@ const SecretaryManagement: React.FC = () => {
   }>({ isOpen: false, secretary: null });
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleteConfirmation, setBulkDeleteConfirmation] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
 
-  // Hooks - البحث من الباك إند
-  const { secretaries, isLoading, error, refetch } = useSecretariesData(searchQuery);
+  // Hooks - البيانات من الباك إند مع الفلاتر
+  const { secretaries, isLoading, error, refetch } = useSecretariesData(filtersParams);
   const { createSecretary, updateSecretary, deleteSecretary, bulkDeleteSecretaries, isSubmitting } = useSecretariesActions();
   const { refetch: refetchStats, ...stats } = useSecretariesStats();
-  
-  // الفلاتر المحلية (الجنس، العمر، الترتيب)
-  const {
-    genderFilter,
-    setGenderFilter,
-    sortField,
-    sortOrder,
-    viewMode,
-    setViewMode,
-    handleSort,
-    filteredSecretaries,
-    showFilters,
-    setShowFilters,
-    toggleFilters,
-    ageRange,
-    setAgeRange,
-    activeFiltersCount,
-    resetFilters,
-  } = useSecretariesFilters(secretaries);
 
   // Handlers
   const handleAddSecretary = useCallback(() => {
@@ -272,12 +300,12 @@ const SecretaryManagement: React.FC = () => {
   }, []);
 
   const handleToggleSelectAll = useCallback(() => {
-    if (selectedIds.size === filteredSecretaries.length) {
+    if (selectedIds.size === secretaries.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(filteredSecretaries.map(s => s._id)));
+      setSelectedIds(new Set(secretaries.map(s => s._id)));
     }
-  }, [selectedIds.size, filteredSecretaries]);
+  }, [selectedIds.size, secretaries]);
 
   const handleBulkDelete = useCallback(() => {
     if (selectedIds.size === 0) return;
@@ -331,7 +359,7 @@ const SecretaryManagement: React.FC = () => {
       const { utils, writeFile } = await import("xlsx");
       
       // 1. Data Processing
-      const exportData = filteredSecretaries.map((sec, index) => ({
+      const exportData = secretaries.map((sec, index) => ({
         "م": index + 1,
         "الاسم الكامل": [sec.firstName, sec.fatherName, sec.grandFatherName, sec.lastName].filter(Boolean).join(" "),
         "رقم السكرتير": sec.secretaryId || "-",
@@ -380,7 +408,7 @@ const SecretaryManagement: React.FC = () => {
       console.error("Export Error:", error);
       showErrorMessage("فشل التصدير", "حدث خطأ أثناء محاولة تصدير البيانات");
     }
-  }, [filteredSecretaries]);
+  }, [secretaries]);
 
   // Error State
   if (error) {
@@ -426,7 +454,7 @@ const SecretaryManagement: React.FC = () => {
         onGenderFilterChange={setGenderFilter}
         viewMode={viewMode}
         onViewModeChange={setViewMode}
-        totalCount={filteredSecretaries.length}
+        totalCount={secretaries.length}
         showFilters={showFilters}
         onToggleFilters={toggleFilters}
         setShowFilters={setShowFilters}
@@ -440,7 +468,7 @@ const SecretaryManagement: React.FC = () => {
       {/* Content */}
       {isLoading ? (
         <SecretariesSkeleton viewMode={viewMode} />
-      ) : filteredSecretaries.length === 0 ? (
+      ) : secretaries.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100">
           <EmptyState
             icon={<Shield className="w-12 h-12 text-gray-400" />}
@@ -462,7 +490,7 @@ const SecretaryManagement: React.FC = () => {
         </div>
       ) : viewMode === "grid" ? (
         <SecretaryGridView
-          secretaries={filteredSecretaries}
+          secretaries={secretaries}
           onEdit={handleEditSecretary}
           onDelete={handleDeleteSecretary}
           selectedIds={selectedIds}
@@ -470,7 +498,7 @@ const SecretaryManagement: React.FC = () => {
         />
       ) : (
         <SecretaryTableView
-          secretaries={filteredSecretaries}
+          secretaries={secretaries}
           onEdit={handleEditSecretary}
           onDelete={handleDeleteSecretary}
           sortField={sortField}

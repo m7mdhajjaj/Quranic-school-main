@@ -7,6 +7,7 @@ interface StudentGridViewProps {
   students: Student[];
   onEdit: (student: Student) => void;
   onDelete: (student: Student) => void;
+  userRole?: string;
 }
 
 // دالة مساعدة للحصول على اسم الحلقة بشكل آمن
@@ -22,7 +23,11 @@ export const StudentGridView: React.FC<StudentGridViewProps> = ({
   students,
   onEdit,
   onDelete,
+  userRole,
 }) => {
+  // إخفاء studentId للمعلم والسكرتير والطالب
+  const showStudentId = userRole !== 'secretary' && userRole !== 'teacher' && userRole !== 'student';
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {students.map((student) => (
@@ -68,10 +73,12 @@ export const StudentGridView: React.FC<StudentGridViewProps> = ({
                 <h3 className="font-bold text-lg">
                   {student.firstName} {student.lastName}
                 </h3>
-                <p className="text-white/80 text-sm flex items-center gap-1">
-                  <GraduationCap className="w-3 h-3" />
-                  طالب #{student.studentId}
-                </p>
+                {showStudentId && (
+                  <p className="text-white/80 text-sm flex items-center gap-1">
+                    <GraduationCap className="w-3 h-3" />
+                    طالب #{student.studentId}
+                  </p>
+                )}
               </div>
             </div>
           </div>

@@ -16,6 +16,7 @@ interface StudentsListProps {
   onAddStudent: () => void;
   onEditStudent: (student: Student) => void;
   onDeleteStudent: (studentId: string) => void;
+  userRole?: string;
 }
 
 export const StudentsList: React.FC<StudentsListProps> = ({
@@ -25,7 +26,11 @@ export const StudentsList: React.FC<StudentsListProps> = ({
   onAddStudent,
   onEditStudent,
   onDeleteStudent,
+  userRole,
 }) => {
+
+  // إخفاء studentId للمعلم والسكرتير والطالب
+  const showStudentId = userRole !== 'secretary' && userRole !== 'teacher' && userRole !== 'student';
 
   const context = useContext(UserStatusContext);
   const joinRoom = context?.joinRoom;
@@ -289,12 +294,14 @@ export const StudentsList: React.FC<StudentsListProps> = ({
                             buttonClassName="hover:bg-white/80"
                           />
                         </div>
-                        <div className="flex items-center justify-between gap-2 mb-2">
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-white/80 text-gray-700 border border-gray-200 shadow-sm">
-                            <GraduationCap className="w-3 h-3 mr-1" />
-                            #{student.studentId}
-                          </span>
-                        </div>
+                        {showStudentId && (
+                          <div className="flex items-center justify-between gap-2 mb-2">
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-white/80 text-gray-700 border border-gray-200 shadow-sm">
+                              <GraduationCap className="w-3 h-3 mr-1" />
+                              #{student.studentId}
+                            </span>
+                          </div>
+                        )}
                         {student.fatherName && (
                           <p className="text-xs text-gray-600 truncate">{student.fatherName}</p>
                         )}

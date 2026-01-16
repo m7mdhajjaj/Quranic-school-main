@@ -11,6 +11,20 @@ const {
 const { checkDuplicateFields } = require("../../../Validation/validators/duplicateChecker");
 
 /**
+ * دالة مساعدة لإزالة teacherId من البيانات للسكرتير
+ * السكرتير ممنوع يشوف teacherId بغض النظر عن صلاحياته
+ */
+const removeTeacherIdForSecretary = (teachers, userRole) => {
+  if (userRole === 'secretary') {
+    return teachers.map(teacher => {
+      const { teacherId, ...rest } = teacher;
+      return rest;
+    });
+  }
+  return teachers;
+};
+
+/**
  * جلب جميع المعلمين مع فلترة، بحث، ترتيب و pagination
  */
 exports.getAllTeachers = async (req, res) => {
@@ -239,11 +253,15 @@ exports.getAllTeachers = async (req, res) => {
     // حساب عدد الصفحات
     const totalPages = Math.ceil(totalCount / limitNum);
 
-    console.log(`✅ جلب ${teachersWithGroups.length} معلم من ${totalCount} - صفحة ${pageNum}/${totalPages}`);
+    // إزالة teacherId للسكرتير
+    const userRole = req.user?.role;
+    const finalTeachers = removeTeacherIdForSecretary(teachersWithGroups, userRole);
+
+    console.log(`✅ جلب ${finalTeachers.length} معلم من ${totalCount} - صفحة ${pageNum}/${totalPages}`);
 
     return res.status(200).json({
       success: true,
-      data: teachersWithGroups,
+      data: finalTeachers,
       pagination: {
         page: pageNum,
         limit: limitNum,

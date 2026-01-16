@@ -16,6 +16,7 @@ interface TeacherGridViewProps {
   onEdit: (teacher: Teacher) => void;
   onDelete: (teacher: Teacher) => void;
   isReadOnly?: boolean;
+  userRole?: string;
 }
 
 export const TeacherGridView: React.FC<TeacherGridViewProps> = ({
@@ -23,7 +24,11 @@ export const TeacherGridView: React.FC<TeacherGridViewProps> = ({
   onEdit,
   onDelete,
   isReadOnly = false,
+  userRole,
 }) => {
+  // إخفاء teacherId للسكرتير
+  const showTeacherId = userRole !== 'secretary';
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {teachers.map((teacher) => (
@@ -75,10 +80,12 @@ export const TeacherGridView: React.FC<TeacherGridViewProps> = ({
                 <h3 className="font-bold text-lg">
                   {teacher.firstName} {teacher.lastName}
                 </h3>
-                <p className="text-white/80 text-sm flex items-center gap-1">
-                  <FaUserTie className="w-3 h-3" />
-                  معلم #{teacher.teacherId}
-                </p>
+                {showTeacherId && (
+                  <p className="text-white/80 text-sm flex items-center gap-1">
+                    <FaUserTie className="w-3 h-3" />
+                    معلم #{teacher.teacherId}
+                  </p>
+                )}
               </div>
             </div>
           </div>

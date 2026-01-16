@@ -15,7 +15,8 @@ firebase.initializeApp({
   projectId: "quranic-school-main",
   storageBucket: "quranic-school-main.firebasestorage.app",
   messagingSenderId: "570702964068",
-  appId: "1:570702964068:web:64bb6b980db932cc3f8671"
+  appId: "1:570702964068:web:64bb6b980db932cc3f8671",
+  measurementId: "G-EHTEZ0CWYY"
 });
 
 // Retrieve an instance of Firebase Messaging so that it can handle background messages.
