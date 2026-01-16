@@ -173,7 +173,8 @@ const VideoUploadButton = ({ onVideoUploaded }: VideoUploadButtonProps) => {
                       <li>• الحجم الأقصى: 100MB</li>
                       <li>• الدقة الموصى بها: 1920x1080</li>
                       <li>• التنسيق: MP4, WebM, MOV</li>
-                      <li>• يتم الرفع عبر Backend API</li>
+                      <li>• يتم الحفظ في قاعدة البيانات ويبقى دائماً</li>
+                      <li>• الفيديو محفوظ على Cloudinary</li>
                     </ul>
                   </div>
                 </div>

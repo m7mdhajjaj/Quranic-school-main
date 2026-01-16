@@ -73,11 +73,13 @@ export interface LogoHookReturn {
 
 // Secretary Access Levels
 export type AccessLevel = 'none' | 'view' | 'manage';
+export type TimetableAccessLevel = 'none' | 'view'; // Timetable is view-only, no manage
 
 export interface SecretaryPermissions {
   groupsAccess?: AccessLevel;
   teachersAccess?: AccessLevel;
   studentsAccess?: AccessLevel;
+  timetableAccess?: TimetableAccessLevel; // View-only access for timetable
 }
 
 export interface RolePermissions {

@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const groupController = require('../../controllers/basicController/groupController');
 const authMiddleware = require('../../middleware/auth');
+const { createLimiter, updateLimiter, deleteLimiter } = require('../../middleware/rateLimiter');
+const { auditLogger } = require('../../middleware/logging/auditLogger.middleware');
 const {
   createGroupValidation,
   updateGroupValidation,
@@ -31,6 +33,8 @@ router.get('/', authMiddleware.secretaryGroupsAccess('view'), groupController.ge
 router.post(
   '/',
   authMiddleware.secretaryGroupsAccess('manage'),
+  createLimiter,
+  auditLogger(),
   createGroupValidation,
   groupController.createGroup
 );
@@ -61,12 +65,14 @@ router.get(
 router.put(
   '/:id',
   authMiddleware.secretaryGroupsAccess('manage'),
+  updateLimiter,
+  auditLogger(),
   updateGroupValidation,
   groupController.updateGroup
 );
 
 // حذف حلقة - إداري أو سكرتير لديه صلاحية إدارة
-router.delete('/:id', authMiddleware.secretaryGroupsAccess('manage'), deleteGroupValidation, groupController.deleteGroup);
+router.delete('/:id', authMiddleware.secretaryGroupsAccess('manage'), deleteLimiter, auditLogger(), deleteGroupValidation, groupController.deleteGroup);
 
 // إعادة تسمية مجموعة - إداري أو سكرتير لديه صلاحية إدارة
 router.post(

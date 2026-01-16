@@ -8,6 +8,7 @@ interface StudentGridViewProps {
   onEdit: (student: Student) => void;
   onDelete: (student: Student) => void;
   userRole?: string;
+  isReadOnly?: boolean;
 }
 
 // دالة مساعدة للحصول على اسم الحلقة بشكل آمن
@@ -24,35 +25,38 @@ export const StudentGridView: React.FC<StudentGridViewProps> = ({
   onEdit,
   onDelete,
   userRole,
+  isReadOnly = false,
 }) => {
   // إخفاء studentId للمعلم والسكرتير والطالب
   const showStudentId = userRole !== 'secretary' && userRole !== 'teacher' && userRole !== 'student';
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6" dir="rtl">
       {students.map((student) => (
         <div
           key={student._id}
-          className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all group"
+          className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all group"
         >
           {/* Header with gradient */}
           <div className="bg-gradient-to-r from-emerald-600 to-emerald-500 p-4 relative">
-            <div className="absolute top-2 left-2 flex gap-1">
-              <button
-                onClick={() => onEdit(student)}
-                className="p-2 bg-white/20 hover:bg-white/40 rounded-lg transition-colors"
-                title="تعديل"
-              >
-                <Edit className="w-4 h-4 text-white" />
-              </button>
-              <button
-                onClick={() => onDelete(student)}
-                className="p-2 bg-white/20 hover:bg-red-500 rounded-lg transition-colors"
-                title="حذف"
-              >
-                <Trash2 className="w-4 h-4 text-white" />
-              </button>
-            </div>
+            {!isReadOnly && (
+              <div className="absolute top-2 left-2 flex gap-1 z-10">
+                <button
+                  onClick={() => onEdit(student)}
+                  className="p-2 bg-white/20 hover:bg-white/40 rounded-lg transition-colors"
+                  title="تعديل"
+                >
+                  <Edit className="w-4 h-4 text-white" />
+                </button>
+                <button
+                  onClick={() => onDelete(student)}
+                  className="p-2 bg-white/20 hover:bg-red-500 rounded-lg transition-colors"
+                  title="حذف"
+                >
+                  <Trash2 className="w-4 h-4 text-white" />
+                </button>
+              </div>
+            )}
             
             <div className="flex items-center gap-3">
               <Avatar
@@ -69,8 +73,8 @@ export const StudentGridView: React.FC<StudentGridViewProps> = ({
                 border="ring"
                 showStatus={false}
               />
-              <div className="text-white">
-                <h3 className="font-bold text-lg">
+              <div className="text-white flex-1 min-w-0">
+                <h3 className="font-bold text-lg truncate">
                   {student.firstName} {student.lastName}
                 </h3>
                 {showStudentId && (
@@ -87,8 +91,9 @@ export const StudentGridView: React.FC<StudentGridViewProps> = ({
           <div className="p-4 space-y-3">
             {student.email && (
               <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Mail className="w-4 h-4 text-gray-400" />
-                <span className="truncate">{student.email}</span>
+                <Mail className="w-4 h-4 text-emerald-500/70" />
+                <span className="text-gray-400 text-xs text-nowrap">البريد:</span>
+                <span className="truncate font-medium">{student.email}</span>
               </div>
             )}
             

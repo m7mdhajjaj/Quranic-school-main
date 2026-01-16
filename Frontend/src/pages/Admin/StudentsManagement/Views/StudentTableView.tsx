@@ -21,6 +21,7 @@ interface StudentTableViewProps {
   onStudentRestored?: () => void;
   canRestore?: boolean;
   userRole?: string;
+  isReadOnly?: boolean;
 }
 
 // دالة مساعدة للحصول على اسم الحلقة بشكل آمن
@@ -55,6 +56,7 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
   onToggleAll,
   canRestore = true,
   userRole,
+  isReadOnly = false,
 }) => {
   // إخفاء studentId للمعلم والسكرتير والطالب
   const showStudentId = userRole !== 'secretary' && userRole !== 'teacher' && userRole !== 'student';
@@ -122,28 +124,29 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
         />
       )}
 
-      <div className="bg-white rounded-2xl shadow-xl overflow-hidden" dir="rtl">
+      <div className="bg-white rounded-lg sm:rounded-2xl shadow-lg sm:shadow-xl overflow-hidden" dir="rtl">
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[800px]">
             {/* Table Header */}
             <thead className="bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-white shadow-lg">
               <tr>
-                {selectedStudents && onToggleStudent && onToggleAll && (
-                  <th className="px-4 py-4 text-center font-bold text-sm whitespace-nowrap w-12">
+                {!isReadOnly && selectedStudents && onToggleStudent && onToggleAll && (
+                  <th className="px-2 sm:px-3 py-3 sm:py-4 text-center font-bold text-xs sm:text-sm whitespace-nowrap w-10 sm:w-12">
                     <input
                       type="checkbox"
                       checked={allSelected}
                       onChange={onToggleAll}
-                      className="w-4 h-4 text-white border-white rounded focus:ring-white cursor-pointer"
+                      className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
                       aria-label="تحديد جميع الطلاب"
+                      title="تحديد الكل"
                     />
                   </th>
                 )}
-                <th className="px-3 py-4 text-center font-bold text-sm whitespace-nowrap w-12">
+                <th className="px-2 sm:px-3 py-3 sm:py-4 text-center font-bold text-xs sm:text-sm whitespace-nowrap w-10 sm:w-12">
                   #
                 </th>
                 {showStudentId && (
-                  <th className="px-4 py-4 text-center font-bold text-sm whitespace-nowrap">
+                  <th className="px-3 sm:px-6 py-3 sm:py-4 text-center font-bold text-xs sm:text-sm whitespace-nowrap">
                     رقم الطالب
                   </th>
                 )}
@@ -180,7 +183,7 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
                     {/* Main Row */}
                     <tr className="hover:bg-gradient-to-r hover:from-emerald-50 hover:to-teal-50 transition-all duration-300">
                       {/* Checkbox */}
-                      {selectedStudents && onToggleStudent && (
+                      {!isReadOnly && selectedStudents && onToggleStudent && (
                         <td className="px-4 py-4 text-center">
                           <input
                             type="checkbox"
@@ -315,20 +318,24 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
                           >
                             <History className="w-4 h-4" />
                           </button>
-                          <button
-                            onClick={() => onEdit(student)}
-                            className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
-                            title="تعديل"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => onDelete(student)}
-                            className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
-                            title="حذف"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          {!isReadOnly && (
+                            <>
+                              <button
+                                onClick={() => onEdit(student)}
+                                className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                                title="تعديل"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => onDelete(student)}
+                                className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                                title="حذف"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </td>
 

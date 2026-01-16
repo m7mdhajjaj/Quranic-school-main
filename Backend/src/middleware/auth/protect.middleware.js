@@ -56,6 +56,15 @@ exports.protect = async (req, res, next) => {
     // التحقق من صحة الرمز
     const decoded = jwt.verify(token, JWT_SECRET);
 
+    // ✅ فحص انتهاء صلاحية التوكن قبل عمليات DB
+    const currentTime = Math.floor(Date.now() / 1000);
+    if (decoded.exp && decoded.exp < currentTime) {
+      return res.status(401).json({
+        success: false,
+        message: "انتهت صلاحية رمز المصادقة",
+      });
+    }
+
     // تحديد نوع المستخدم (طالب أو معلم أو إداري)
     if (decoded.role === "student" || !decoded.role) {
       // البحث عن الطالب في قاعدة البيانات

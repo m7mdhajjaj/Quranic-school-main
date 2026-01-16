@@ -31,8 +31,36 @@ const TeachersManagement: React.FC = () => {
   const { user: currentUser } = useAuth();
 
   const userRole = currentUser?.role || "";
-  const hasPermission = userRole === "admin" || userRole === "secretary";
-  const isReadOnly = userRole === "secretary"; // السكرتير قراءة فقط
+  const secretaryPermissions = currentUser?.permissions;
+  
+  console.log('📋 [TeachersManagement] Current User:', {
+    role: userRole,
+    permissions: secretaryPermissions,
+    teachersAccess: secretaryPermissions?.teachersAccess
+  });
+
+  // التحقق من صلاحية السكرتير
+  const teachersAccess = React.useMemo(() => {
+    if (userRole === 'admin') return 'manage';
+    if (userRole === 'secretary') {
+      const access = secretaryPermissions?.teachersAccess || 'none';
+      console.log('🔑 [TeachersManagement] Secretary Access Level:', access);
+      return access;
+    }
+    return 'none';
+  }, [userRole, secretaryPermissions]);
+
+  const hasPermission = React.useMemo(() => {
+    const hasAccess = teachersAccess !== 'none';
+    console.log('✅ [TeachersManagement] Has Permission:', hasAccess);
+    return hasAccess;
+  }, [teachersAccess]);
+
+  const isReadOnly = React.useMemo(() => {
+    const readOnly = teachersAccess === 'view';
+    console.log('👁️ [TeachersManagement] Is ReadOnly:', readOnly);
+    return readOnly;
+  }, [teachersAccess]);
 
   // View Mode State
   const [viewMode, setViewMode] = useState<ViewMode>("table");
@@ -113,6 +141,21 @@ const TeachersManagement: React.FC = () => {
 
   // تعطيل scroll الصفحة عند فتح الـ Modal
   useDisableBodyScroll(isFormVisible);
+
+  // إذا لم يكن لديه أي صلاحية (none)، نظهر رسالة
+  if (!hasPermission) {
+    console.log('🚫 [TeachersManagement] Access Denied - No Permission');
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="text-center">
+          <FaUserTie className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">غير مصرح</h2>
+          <p className="text-gray-600">ليس لديك صلاحية للوصول إلى صفحة المعلمين</p>
+          <p className="text-sm text-gray-500 mt-2">يرجى التواصل مع المدير لمنحك الصلاحية</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen p-4 md:p-6" dir="rtl">

@@ -257,6 +257,17 @@ export const getPrimaryNavItems = (
       });
     }
     
+    // صلاحية الجدول - عرض فقط (لا توجد إدارة)
+    const timetableAccess = rolePermissions.secretaryPermissions?.timetableAccess;
+    if (timetableAccess && timetableAccess === 'view') {
+      items.push({
+        to: '/timetable',
+        label: 'مواعيد الحلقات',
+        icon: CalendarDays,
+        color: 'from-indigo-500 to-purple-500',
+      });
+    }
+    
     // المحادثة - متاحة دائماً
     items.push({
       to: '/chat',

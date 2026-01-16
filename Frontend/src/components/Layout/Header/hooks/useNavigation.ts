@@ -26,6 +26,8 @@ export const useNavigation = (params: UseNavigationParams): NavigationHookReturn
       rolePermissions.isTeacherOrAdmin,
       rolePermissions.secretaryPermissions?.groupsAccess,
       rolePermissions.secretaryPermissions?.teachersAccess,
+      rolePermissions.secretaryPermissions?.studentsAccess,
+      rolePermissions.secretaryPermissions?.timetableAccess,
     ]
   );
 

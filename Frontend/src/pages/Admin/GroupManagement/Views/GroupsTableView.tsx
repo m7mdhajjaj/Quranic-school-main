@@ -20,6 +20,7 @@ interface GroupsTableViewProps {
   sortField?: SortField;
   sortOrder?: SortOrder;
   onSort?: (field: SortField) => void;
+  isReadOnly?: boolean;
 }
 
 export const GroupsTableView: React.FC<GroupsTableViewProps> = ({
@@ -33,6 +34,7 @@ export const GroupsTableView: React.FC<GroupsTableViewProps> = ({
   sortField,
   sortOrder,
   onSort,
+  isReadOnly = false,
 }) => {
   // State for expanded rows
   const [expandedRows, setExpandedRows] = React.useState<Set<string>>(new Set());
@@ -59,7 +61,7 @@ export const GroupsTableView: React.FC<GroupsTableViewProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+    <div className="bg-white rounded-lg sm:rounded-2xl shadow-lg sm:shadow-xl overflow-hidden" dir="rtl">
       {/* Bulk Actions Bar */}
       {selectedGroups.size > 0 && (
         <div className="px-4 py-3 bg-emerald-50 border-b border-emerald-200 flex items-center justify-between">
@@ -77,27 +79,27 @@ export const GroupsTableView: React.FC<GroupsTableViewProps> = ({
           </button>
         </div>
       )}
-      <div className="overflow-hidden rounded-lg">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gradient-to-r from-emerald-500 to-emerald-600 sticky top-0 z-10">
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[800px]">
+            <thead className="bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-white shadow-lg">
               <tr>
-                <th className="w-12 px-3 py-4 text-center">
+                <th className="px-2 sm:px-3 py-3 sm:py-4 text-center font-bold text-xs sm:text-sm whitespace-nowrap w-10 sm:w-12">
                   <input
                     type="checkbox"
                     checked={selectedGroups.size === groups.length && groups.length > 0}
                     onChange={onSelectAll}
-                    className="w-4 h-4 rounded border-2 border-white/50 text-white bg-white/20"
+                    className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
                     aria-label="تحديد جميع الحلقات"
+                    title="تحديد الكل"
                   />
                 </th>
-                <th className="w-12 px-3 py-4 text-center text-sm font-bold text-white">#</th>
-                <th className="px-5 py-4 text-right text-sm font-bold text-white w-[220px]">اسم الحلقة</th>
-                <th className="px-4 py-4 text-center text-sm font-bold text-white w-[130px]">حالة النشاط</th>
-                <th className="px-5 py-4 text-center text-sm font-bold text-white w-[220px]">المعلم</th>
-                <th className="px-4 py-4 text-center text-sm font-bold text-white w-[130px]">الطلاب</th>
-                <th className="px-4 py-4 text-center text-sm font-bold text-white w-[140px]">الإجراءات</th>
-                <th className="w-12 px-2 py-4"></th>
+                <th className="px-2 sm:px-3 py-3 sm:py-4 text-center font-bold text-xs sm:text-sm whitespace-nowrap w-10 sm:w-12">#</th>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-right font-bold text-xs sm:text-sm whitespace-nowrap">اسم الحلقة</th>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-center font-bold text-xs sm:text-sm whitespace-nowrap hidden sm:table-cell">حالة النشاط</th>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-center font-bold text-xs sm:text-sm whitespace-nowrap hidden md:table-cell">المعلم</th>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-center font-bold text-xs sm:text-sm whitespace-nowrap">الطلاب</th>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-center font-bold text-xs sm:text-sm whitespace-nowrap w-20 sm:w-28">الإجراءات</th>
+                <th className="px-2 sm:px-3 py-3 sm:py-4 text-center font-bold text-xs sm:text-sm whitespace-nowrap w-10 sm:w-12"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -165,18 +167,22 @@ export const GroupsTableView: React.FC<GroupsTableViewProps> = ({
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-center gap-2">
-                            <button
-                              onClick={() => onEdit(group)}
-                              className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-all hover:shadow-sm"
-                              title="تعديل">
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => onDelete(group._id || "")}
-                              className="p-2 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-all hover:shadow-sm"
-                              title="حذف">
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                            {!isReadOnly && (
+                              <>
+                                <button
+                                  onClick={() => onEdit(group)}
+                                  className="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-all hover:shadow-sm"
+                                  title="تعديل">
+                                  <Edit2 className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => onDelete(group._id || "")}
+                                  className="p-2 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-all hover:shadow-sm"
+                                  title="حذف">
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </>
+                            )}
                           </div>
                         </td>
                         <td className="px-2 py-3 text-center">
@@ -282,7 +288,6 @@ export const GroupsTableView: React.FC<GroupsTableViewProps> = ({
             </tbody>
           </table>
         </div>
-      </div>
     </div>
   );
 };

@@ -150,15 +150,21 @@ export const createSecretary = async (secretaryData: SecretaryFormData): Promise
 export const updateSecretary = async (id: string, secretaryData: Partial<SecretaryFormData>): Promise<SecretaryApiResponse> => {
   try {
     console.log('📝 تحديث بيانات السكرتير:', id);
+    console.log('📤 البيانات الأصلية:', secretaryData);
     
     // تنظيف البيانات وإزالة الحقول الفارغة
     const cleanData: Partial<SecretaryFormData> = {};
     
     Object.entries(secretaryData).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
+      // معالجة خاصة لـ permissions - دائماً أضفها إذا كانت موجودة
+      if (key === 'permissions' && value && typeof value === 'object') {
+        (cleanData as Record<string, unknown>)[key] = value;
+      } else if (value !== undefined && value !== null && value !== '') {
         (cleanData as Record<string, unknown>)[key] = typeof value === 'string' ? value.trim() : value;
       }
     });
+    
+    console.log('📦 البيانات المُنظفة:', cleanData);
     
     const response = await api.put<SecretaryApiResponse>(`/secretaries/${id}`, cleanData);
     

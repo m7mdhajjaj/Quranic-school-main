@@ -11,6 +11,8 @@ const {
 } = require("../../Validation/Student/StudentQueryValidation");
 const { secretaryStudentsAccess } = require("../../middleware/auth");
 const { cacheMiddleware } = require("../../middleware");
+const { createLimiter, updateLimiter, deleteLimiter } = require("../../middleware/rateLimiter");
+const { auditLogger } = require("../../middleware/logging/auditLogger.middleware");
 
 /**
  * CRUD Routes for Students
@@ -95,6 +97,8 @@ router.get(
 router.post(
   "/",
   secretaryStudentsAccess("manage"),
+  createLimiter,
+  auditLogger(),
   sanitizeStudentData,
   validateStudentData,
   studentController.createStudent
@@ -111,6 +115,8 @@ router.post(
 router.put(
   "/:id",
   secretaryStudentsAccess("manage"),
+  updateLimiter,
+  auditLogger(),
   sanitizeStudentData,
   validateStudentData,
   studentController.updateStudent
@@ -120,6 +126,8 @@ router.put(
 router.delete(
   "/bulk",
   secretaryStudentsAccess("manage"),
+  deleteLimiter,
+  auditLogger(),
   studentController.bulkDeleteStudents
 );
 
@@ -127,6 +135,8 @@ router.delete(
 router.delete(
   "/:id",
   secretaryStudentsAccess("manage"),
+  deleteLimiter,
+  auditLogger(),
   studentController.deleteStudent
 );
 

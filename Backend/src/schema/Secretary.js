@@ -102,6 +102,12 @@ const secretarySchema = new mongoose.Schema(
         enum: ['none', 'view', 'manage'], 
         default: 'none' 
       },
+      // صلاحية الجدول (الأسبوعي والشهري): none = بدون وصول, view = عرض فقط
+      timetableAccess: { 
+        type: String, 
+        enum: ['none', 'view'], 
+        default: 'none' 
+      },
     },
 
     // تاريخ تعديلات birthDate (للتحكم بعدد التعديلات)

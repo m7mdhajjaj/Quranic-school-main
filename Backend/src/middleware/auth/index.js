@@ -20,6 +20,7 @@ const {
   secretaryGroupsAccess,
   secretaryTeachersAccess,
   secretaryStudentsAccess,
+  secretaryTimetableAccess,
 } = require("./role.middleware");
 
 module.exports = {
@@ -38,4 +39,5 @@ module.exports = {
   secretaryGroupsAccess,
   secretaryTeachersAccess,
   secretaryStudentsAccess,
+  secretaryTimetableAccess,
 };

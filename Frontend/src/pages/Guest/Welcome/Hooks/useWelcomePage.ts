@@ -2,8 +2,9 @@
 // useWelcomePage.ts - Hook مخصص لصفحة الترحيب
 // ============================================================================
 
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '@/Api/api';
 
 // ============================================================================
 // Constants - روابط الفيديو
@@ -17,11 +18,29 @@ export const CLOUDINARY_VIDEO_URL = 'https://videos.pexels.com/video-files/37734
 // ============================================================================
 export const useWelcomePage = () => {
   const navigate = useNavigate();
+  const [videoUrl, setVideoUrl] = useState<string>(LOCAL_VIDEO_URL);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // التحقق من وجود فيديو مرفوع من الأدمن في localStorage
-  const customVideoUrl = typeof window !== 'undefined' 
-    ? localStorage.getItem('welcomePageVideoUrl') 
-    : null;
+  // جلب رابط الفيديو من Backend عند تحميل الصفحة
+  useEffect(() => {
+    const fetchWelcomeVideo = async () => {
+      try {
+        const response = await api.get('/upload/welcome-video');
+        
+        if (response.data.success && response.data.data.url) {
+          setVideoUrl(response.data.data.url);
+          console.log('✅ تم جلب فيديو الترحيب من قاعدة البيانات:', response.data.data.url);
+        }
+      } catch (error) {
+        console.log('ℹ️ استخدام الفيديو الافتراضي');
+        // في حالة الخطأ، نستخدم الفيديو الافتراضي
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchWelcomeVideo();
+  }, []);
 
   // Navigation handlers
   const handleLoginClick = useCallback(() => {
@@ -34,8 +53,9 @@ export const useWelcomePage = () => {
 
   return {
     // Data
-    videoUrl: customVideoUrl || LOCAL_VIDEO_URL,
+    videoUrl,
     fallbackVideoUrl: CLOUDINARY_VIDEO_URL,
+    isLoading,
     
     // Handlers
     handleLoginClick,

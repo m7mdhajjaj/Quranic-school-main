@@ -252,14 +252,23 @@ const validatePermissions = (permissions) => {
   }
   
   const validAccessLevels = ['none', 'view', 'manage'];
-  const validPermissionKeys = ['groupsAccess', 'teachersAccess'];
+  const validTimetableLevels = ['none', 'view']; // فقط عرض للجدول
+  const validPermissionKeys = [
+    'groupsAccess', 
+    'teachersAccess', 
+    'studentsAccess',
+    'timetableAccess'   // صلاحية الجدول (أسبوعي وشهري)
+  ];
   
   const validatedPermissions = {};
   
   for (const key of validPermissionKeys) {
     if (permissions[key] !== undefined) {
+      // الجدول له validation خاص (فقط none أو view)
+      const allowedLevels = key === 'timetableAccess' ? validTimetableLevels : validAccessLevels;
+      
       // التحقق من أن القيمة صالحة
-      if (validAccessLevels.includes(permissions[key])) {
+      if (allowedLevels.includes(permissions[key])) {
         validatedPermissions[key] = permissions[key];
       } else {
         // إذا كانت القيمة غير صالحة، استخدم القيمة الافتراضية

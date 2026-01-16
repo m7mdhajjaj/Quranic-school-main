@@ -211,17 +211,38 @@ exports.secretaryGroupsAccess = (requiredLevel = 'view') => {
   return async (req, res, next) => {
     try {
       await protect(req, res, async () => {
+        console.log('🔑 [secretaryGroupsAccess] Required Level:', requiredLevel);
+        console.log('📊 [secretaryGroupsAccess] User:', { id: req.user.id, role: req.user.role });
+        
         // الأدمن لديه وصول كامل
         if (req.user.role === "admin") {
+          console.log('✅ [secretaryGroupsAccess] Admin - Full Access Granted');
           return next();
         }
         
+        // التحقق من صلاحيات المعلم (يسمح للمعلم برؤية الحلقات وطلاب حلقة معينة)
+        if (req.user.role === "teacher") {
+          console.log('✅ [secretaryGroupsAccess] Teacher - View Access Granted');
+          // المعلم يحق له فقط العرض (view)
+          if (requiredLevel === 'view') {
+            return next();
+          }
+          // إذا طلب إدارة، نمنعه
+          return res.status(403).json({
+            success: false,
+            message: "ليس لديك صلاحية لإدارة الحلقات",
+          });
+        }
+
         // التحقق من صلاحيات السكرتير
         if (req.user.role === "secretary") {
           const Secretary = require("../../schema/Secretary");
           const secretary = await Secretary.findById(req.user.id);
           
+          console.log('📑 [secretaryGroupsAccess] Secretary Found:', !!secretary);
+          
           if (!secretary) {
+            console.log('❌ [secretaryGroupsAccess] Secretary not found in database');
             return res.status(404).json({
               success: false,
               message: "السكرتير غير موجود",
@@ -231,19 +252,27 @@ exports.secretaryGroupsAccess = (requiredLevel = 'view') => {
           const groupsAccessLevel = secretary.permissions?.groupsAccess || 'none';
           const studentsAccessLevel = secretary.permissions?.studentsAccess || 'none';
           
+          console.log('🔐 [secretaryGroupsAccess] Permissions:', {
+            groupsAccess: groupsAccessLevel,
+            studentsAccess: studentsAccessLevel
+          });
+          
           // إذا كان المطلوب عرض فقط، نسمح لمن لديه صلاحية الحلقات أو الطلاب
           if (requiredLevel === 'view') {
             // السماح إذا كان لديه صلاحية الحلقات (view أو manage)
             if (groupsAccessLevel !== 'none') {
+              console.log('✅ [secretaryGroupsAccess] View Access Granted - Has Groups Permission');
               req.secretaryAccessLevel = groupsAccessLevel;
               return next();
             }
             // السماح إذا كان لديه صلاحية الطلاب (لأنه يحتاج يشوف الحلقات لإضافة طالب)
             if (studentsAccessLevel !== 'none') {
+              console.log('✅ [secretaryGroupsAccess] View Access Granted - Has Students Permission');
               req.secretaryAccessLevel = 'view'; // فقط عرض
               return next();
             }
             // لا يملك أي صلاحية
+            console.log('❌ [secretaryGroupsAccess] Access Denied - No Groups or Students Permission');
             return res.status(403).json({
               success: false,
               message: "ليس لديك صلاحية للوصول إلى الحلقات",
@@ -253,11 +282,13 @@ exports.secretaryGroupsAccess = (requiredLevel = 'view') => {
           // إذا كان المطلوب إدارة، يجب أن يكون لديه groupsAccess = manage
           if (requiredLevel === 'manage') {
             if (groupsAccessLevel !== 'manage') {
+              console.log('❌ [secretaryGroupsAccess] Manage Access Denied - Needs Manage Permission');
               return res.status(403).json({
                 success: false,
                 message: "ليس لديك صلاحية لإدارة الحلقات",
               });
             }
+            console.log('✅ [secretaryGroupsAccess] Manage Access Granted');
             req.secretaryAccessLevel = 'manage';
             return next();
           }
@@ -299,20 +330,31 @@ exports.secretaryTeachersAccess = (requiredLevel = 'view') => {
   return async (req, res, next) => {
     try {
       await protect(req, res, async () => {
+        console.log('🔑 [secretaryTeachersAccess] Required Level:', requiredLevel);
+        console.log('📊 [secretaryTeachersAccess] User:', { id: req.user.id, role: req.user.role });
+        
         // الأدمن لديه وصول كامل
         if (req.user.role === "admin") {
+          console.log('✅ [secretaryTeachersAccess] Admin - Full Access Granted');
           return next();
         }
         
         // السماح للمعلم بالوصول لبياناته الخاصة فقط (للعرض)
         if (req.user.role === "teacher") {
           const requestedId = req.params.id || req.params.teacherId;
+          console.log('🏫 [secretaryTeachersAccess] Teacher Self Access Check:', {
+            requestedId,
+            teacherId: req.user.id,
+            isSelf: requestedId === req.user.id
+          });
           // المعلم يمكنه فقط عرض بياناته الخاصة
           if (requestedId && requestedId === req.user.id && requiredLevel === 'view') {
+            console.log('✅ [secretaryTeachersAccess] Teacher Self-Access Granted');
             req.isSelfAccess = true;
             return next();
           }
           // لا يمكن للمعلم الوصول لبيانات معلمين آخرين أو إدارة البيانات
+          console.log('❌ [secretaryTeachersAccess] Teacher Access Denied - Not Self or Manage');
           return res.status(403).json({
             success: false,
             message: "غير مصرح لك بالوصول إلى بيانات معلمين آخرين",
@@ -324,7 +366,10 @@ exports.secretaryTeachersAccess = (requiredLevel = 'view') => {
           const Secretary = require("../../schema/Secretary");
           const secretary = await Secretary.findById(req.user.id);
           
+          console.log('📑 [secretaryTeachersAccess] Secretary Found:', !!secretary);
+          
           if (!secretary) {
+            console.log('❌ [secretaryTeachersAccess] Secretary not found in database');
             return res.status(404).json({
               success: false,
               message: "السكرتير غير موجود",
@@ -333,8 +378,11 @@ exports.secretaryTeachersAccess = (requiredLevel = 'view') => {
           
           const accessLevel = secretary.permissions?.teachersAccess || 'none';
           
+          console.log('🔐 [secretaryTeachersAccess] Permission Level:', accessLevel);
+          
           // التحقق من مستوى الصلاحية
           if (accessLevel === 'none') {
+            console.log('❌ [secretaryTeachersAccess] Access Denied - No Permission');
             return res.status(403).json({
               success: false,
               message: "ليس لديك صلاحية للوصول إلى المعلمين",
@@ -343,12 +391,14 @@ exports.secretaryTeachersAccess = (requiredLevel = 'view') => {
           
           // إذا كان المطلوب إدارة، يجب أن يكون manage
           if (requiredLevel === 'manage' && accessLevel !== 'manage') {
+            console.log('❌ [secretaryTeachersAccess] Manage Access Denied - View Only');
             return res.status(403).json({
               success: false,
               message: "ليس لديك صلاحية لإدارة المعلمين (عرض فقط)",
             });
           }
           
+          console.log('✅ [secretaryTeachersAccess] Access Granted - Level:', accessLevel);
           // إضافة مستوى الصلاحية للـ request
           req.secretaryAccessLevel = accessLevel;
           return next();
@@ -384,8 +434,12 @@ exports.secretaryStudentsAccess = (requiredLevel = 'view') => {
   return async (req, res, next) => {
     try {
       await protect(req, res, async () => {
+        console.log('🔑 [secretaryStudentsAccess] Required Level:', requiredLevel);
+        console.log('📊 [secretaryStudentsAccess] User:', { id: req.user.id, role: req.user.role });
+        
         // الأدمن لديه وصول كامل
         if (req.user.role === "admin") {
+          console.log('✅ [secretaryStudentsAccess] Admin - Full Access Granted');
           return next();
         }
         
@@ -409,7 +463,10 @@ exports.secretaryStudentsAccess = (requiredLevel = 'view') => {
           const Secretary = require("../../schema/Secretary");
           const secretary = await Secretary.findById(req.user.id);
           
+          console.log('📑 [secretaryStudentsAccess] Secretary Found:', !!secretary);
+          
           if (!secretary) {
+            console.log('❌ [secretaryStudentsAccess] Secretary not found in database');
             return res.status(404).json({
               success: false,
               message: "السكرتير غير موجود",
@@ -418,8 +475,11 @@ exports.secretaryStudentsAccess = (requiredLevel = 'view') => {
           
           const accessLevel = secretary.permissions?.studentsAccess || 'none';
           
+          console.log('🔐 [secretaryStudentsAccess] Permission Level:', accessLevel);
+          
           // التحقق من مستوى الصلاحية
           if (accessLevel === 'none') {
+            console.log('❌ [secretaryStudentsAccess] Access Denied - No Permission');
             return res.status(403).json({
               success: false,
               message: "ليس لديك صلاحية للوصول إلى الطلاب",
@@ -428,12 +488,14 @@ exports.secretaryStudentsAccess = (requiredLevel = 'view') => {
           
           // إذا كان المطلوب إدارة، يجب أن يكون manage
           if (requiredLevel === 'manage' && accessLevel !== 'manage') {
+            console.log('❌ [secretaryStudentsAccess] Manage Access Denied - View Only');
             return res.status(403).json({
               success: false,
               message: "ليس لديك صلاحية لإدارة الطلاب (عرض فقط)",
             });
           }
           
+          console.log('✅ [secretaryStudentsAccess] Access Granted - Level:', accessLevel);
           // إضافة مستوى الصلاحية للـ request
           req.secretaryAccessLevel = accessLevel;
           return next();
@@ -450,6 +512,75 @@ exports.secretaryStudentsAccess = (requiredLevel = 'view') => {
       return res.status(401).json({
         success: false,
         message: "خطأ في التحقق من صلاحيات الطلاب",
+      });
+    }
+  };
+};
+
+/**
+ * Secretary Timetable Access Middleware
+ * التحقق من صلاحية السكرتير للوصول للجدول (الأسبوعي والشهري)
+ * 
+ * @middleware
+ * @description يسمح للأدمن أو المعلم أو السكرتير الذي لديه صلاحية الجدول
+ *              ملاحظة: الجدول عرض فقط للسكرتير (بدون إدارة)
+ * @access Protected (Admin with full access, Teacher with view only, Secretary with view based on permission)
+ */
+exports.secretaryTimetableAccess = () => {
+  return async (req, res, next) => {
+    try {
+      await protect(req, res, async () => {
+        // الأدمن لديه وصول كامل
+        if (req.user.role === "admin") {
+          req.canManage = true; // الأدمن يستطيع الإدارة
+          return next();
+        }
+        
+        // المعلم لديه وصول للعرض فقط (لجدوله الخاص)
+        if (req.user.role === "teacher") {
+          req.canManage = false; // المعلم عرض فقط
+          return next();
+        }
+        
+        // التحقق من صلاحيات السكرتير
+        if (req.user.role === "secretary") {
+          const Secretary = require("../../schema/Secretary");
+          const secretary = await Secretary.findById(req.user.id);
+          
+          if (!secretary) {
+            return res.status(404).json({
+              success: false,
+              message: "السكرتير غير موجود",
+            });
+          }
+          
+          const accessLevel = secretary.permissions?.timetableAccess || 'none';
+          
+          // التحقق من مستوى الصلاحية (عرض فقط)
+          if (accessLevel === 'none') {
+            return res.status(403).json({
+              success: false,
+              message: "ليس لديك صلاحية للوصول إلى الجدول",
+            });
+          }
+          
+          // السكرتير عرض فقط (بدون إدارة)
+          req.canManage = false;
+          req.secretaryAccessLevel = 'view';
+          return next();
+        }
+        
+        // غير مصرح لأي دور آخر (الطلاب مثلاً)
+        return res.status(403).json({
+          success: false,
+          message: "غير مصرح لك بالوصول إلى الجدول",
+        });
+      });
+    } catch (error) {
+      console.error("Secretary timetable access middleware error:", error);
+      return res.status(401).json({
+        success: false,
+        message: "خطأ في التحقق من صلاحيات الجدول",
       });
     }
   };

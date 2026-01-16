@@ -4,9 +4,10 @@
 
 const { uploadVideoToCloudinary, deleteFromCloudinary, extractPublicIdFromUrl } = require('../../config/cloudinary/upload');
 const { CLOUDINARY_FOLDERS } = require('../../config/cloudinary/constants');
+const Settings = require('../../schema/Settings');
 
-// متغير لتخزين رابط الفيديو الحالي (يمكن استبداله بـ Database)
-let currentWelcomeVideoUrl = null;
+// مفتاح الإعداد في قاعدة البيانات
+const WELCOME_VIDEO_KEY = 'welcomePageVideoUrl';
 
 /**
  * رفع فيديو صفحة الترحيب
@@ -43,6 +44,7 @@ const uploadWelcomeVideo = async (req, res) => {
     console.log('📁 الحجم:', (req.file.size / (1024 * 1024)).toFixed(2), 'MB');
 
     // حذف الفيديو القديم إذا كان موجوداً
+    const currentWelcomeVideoUrl = await Settings.getValue(WELCOME_VIDEO_KEY);
     if (currentWelcomeVideoUrl) {
       const oldPublicId = extractPublicIdFromUrl(currentWelcomeVideoUrl);
       if (oldPublicId) {
@@ -69,8 +71,13 @@ const uploadWelcomeVideo = async (req, res) => {
       });
     }
 
-    // حفظ الرابط الجديد
-    currentWelcomeVideoUrl = result.url;
+    // حفظ الرابط الجديد في قاعدة البيانات
+    await Settings.setValue(
+      WELCOME_VIDEO_KEY,
+      result.url,
+      'رابط فيديو صفحة الترحيب',
+      req.user?._id // إذا كان المستخدم مسجل دخول
+    );
 
     console.log('✅ تم رفع فيديو الترحيب بنجاح:', result.url);
 
@@ -105,11 +112,14 @@ const getWelcomeVideo = async (req, res) => {
     // الفيديو الافتراضي من Pexels (مسجد)
     const defaultVideoUrl = 'https://videos.pexels.com/video-files/3773486/3773486-hd_1920_1080_30fps.mp4';
     
+    // جلب رابط الفيديو من قاعدة البيانات
+    const customVideoUrl = await Settings.getValue(WELCOME_VIDEO_KEY);
+    
     return res.status(200).json({
       success: true,
       data: {
-        url: currentWelcomeVideoUrl || defaultVideoUrl,
-        isCustom: !!currentWelcomeVideoUrl,
+        url: customVideoUrl || defaultVideoUrl,
+        isCustom: !!customVideoUrl,
       },
     });
   } catch (error) {
@@ -128,6 +138,9 @@ const getWelcomeVideo = async (req, res) => {
  */
 const deleteWelcomeVideo = async (req, res) => {
   try {
+    // جلب رابط الفيديو الحالي من قاعدة البيانات
+    const currentWelcomeVideoUrl = await Settings.getValue(WELCOME_VIDEO_KEY);
+    
     if (!currentWelcomeVideoUrl) {
       return res.status(400).json({
         success: false,
@@ -141,8 +154,8 @@ const deleteWelcomeVideo = async (req, res) => {
       await deleteFromCloudinary(publicId, 'video');
     }
 
-    // إعادة تعيين الرابط
-    currentWelcomeVideoUrl = null;
+    // حذف من قاعدة البيانات
+    await Settings.deleteValue(WELCOME_VIDEO_KEY);
 
     console.log('✅ تم حذف فيديو الترحيب واستعادة الافتراضي');
 

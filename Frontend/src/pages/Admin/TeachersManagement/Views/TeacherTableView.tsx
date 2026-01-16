@@ -76,44 +76,45 @@ export const TeacherTableView: React.FC<TeacherTableViewProps> = ({
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl overflow-hidden" dir="rtl">
+    <div className="bg-white rounded-lg sm:rounded-2xl shadow-lg sm:shadow-xl overflow-hidden" dir="rtl">
       <div className="overflow-x-auto">
-        <table className="w-full">
+        <table className="w-full min-w-[800px]">
           {/* Table Header */}
           <thead className="bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-white shadow-lg">
             <tr>
               {selectedTeachers && onToggleTeacher && onToggleAll && (
-                <th className="px-4 py-4 text-center font-bold text-sm whitespace-nowrap w-12">
+                <th className="px-2 sm:px-3 py-3 sm:py-4 text-center font-bold text-xs sm:text-sm whitespace-nowrap w-10 sm:w-12">
                   <input
                     type="checkbox"
                     checked={allSelected}
                     onChange={onToggleAll}
-                    className="w-4 h-4 text-white border-white rounded focus:ring-white cursor-pointer"
+                    className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
                     aria-label="تحديد جميع المعلمين"
+                    title="تحديد الكل"
                   />
                 </th>
               )}
-              <th className="px-3 py-4 text-center font-bold text-sm whitespace-nowrap w-12">
+              <th className="px-2 sm:px-3 py-3 sm:py-4 text-center font-bold text-xs sm:text-sm whitespace-nowrap w-10 sm:w-12">
                 #
               </th>
               {showTeacherId && (
-                <th className="px-4 py-4 text-center font-bold text-sm whitespace-nowrap">
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-center font-bold text-xs sm:text-sm whitespace-nowrap">
                   رقم المعلم
                 </th>
               )}
-              <th className="px-6 py-4 text-right font-bold text-sm whitespace-nowrap">
+              <th className="px-3 sm:px-6 py-3 sm:py-4 text-right font-bold text-xs sm:text-sm whitespace-nowrap">
                 الاسم الكامل
               </th>
-              <th className="px-6 py-4 text-center font-bold text-sm whitespace-nowrap">
+              <th className="px-3 sm:px-6 py-3 sm:py-4 text-center font-bold text-xs sm:text-sm whitespace-nowrap hidden md:table-cell">
                 البريد الإلكتروني
               </th>
-              <th className="px-6 py-4 text-center font-bold text-sm whitespace-nowrap">
+              <th className="px-3 sm:px-6 py-3 sm:py-4 text-center font-bold text-xs sm:text-sm whitespace-nowrap">
                 رقم الهاتف
               </th>
-              <th className="px-6 py-4 text-center font-bold text-sm whitespace-nowrap">
+              <th className="px-3 sm:px-6 py-3 sm:py-4 text-center font-bold text-xs sm:text-sm whitespace-nowrap hidden sm:table-cell">
                 الجنس
               </th>
-              <th className="px-6 py-4 text-center font-bold text-sm whitespace-nowrap">
+              <th className="px-3 sm:px-6 py-3 sm:py-4 text-center font-bold text-xs sm:text-sm whitespace-nowrap hidden lg:table-cell">
                 الحلقات المدرسة
               </th>
               {!isReadOnly && (

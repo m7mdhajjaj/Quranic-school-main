@@ -391,6 +391,14 @@ exports.getGroupStudents = async (req, res) => {
       });
     }
 
+    // 1.5 السماح للمعلم فقط إذا كان صاحب الحلقة
+    if (req.user?.role === 'teacher' && String(group.teacher) !== String(req.user.id)) {
+      return res.status(403).json({
+        success: false,
+        message: 'غير مصرح لك بالوصول إلى هذه الحلقة',
+      });
+    }
+
     // 2. بناء query للطلاب
     const query = { group: group.name };
 

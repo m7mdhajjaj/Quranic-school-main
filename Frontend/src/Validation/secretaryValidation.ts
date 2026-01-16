@@ -16,6 +16,8 @@ export interface SecretaryPermissions {
   teachersAccess?: AccessLevel;
   // صلاحية الطلاب: none = بدون وصول, view = عرض فقط, manage = إدارة كاملة
   studentsAccess?: AccessLevel;
+  // صلاحية الجدول: none = بدون وصول, view = عرض فقط (لا يوجد manage)
+  timetableAccess?: 'none' | 'view';
 }
 
 // Secretary Form Data Interface
@@ -215,6 +217,8 @@ export const secretaryValidationSchema = yup.object().shape({
   permissions: yup.object().shape({
     groupsAccess: yup.string().oneOf(['none', 'view', 'manage'], 'قيمة غير صالحة لصلاحية الحلقات').nullable(),
     teachersAccess: yup.string().oneOf(['none', 'view', 'manage'], 'قيمة غير صالحة لصلاحية المعلمين').nullable(),
+    studentsAccess: yup.string().oneOf(['none', 'view', 'manage'], 'قيمة غير صالحة لصلاحية الطلاب').nullable(),
+    timetableAccess: yup.string().oneOf(['none', 'view'], 'قيمة غير صالحة لصلاحية الجدول').nullable(),
   }).nullable(),
 });
 
@@ -264,19 +268,37 @@ export const sanitizeSecretaryData = (data: SecretaryFormData): SecretaryFormDat
 
 // دالة التحقق من الصلاحيات
 export const validateSecretaryPermissions = (permissions: SecretaryPermissions): boolean => {
-  const validKeys = ['groupsAccess', 'teachersAccess'];
+  const validKeys = ['groupsAccess', 'teachersAccess', 'studentsAccess', 'timetableAccess'];
   const validValues = ['none', 'view', 'manage'];
+  const validTimetableValues = ['none', 'view']; // فقط عرض للجدول
   
-  return Object.entries(permissions).every(([key, value]) => 
-    validKeys.includes(key) && (value === undefined || validValues.includes(value as string))
-  );
+  return Object.entries(permissions).every(([key, value]) => {
+    if (!validKeys.includes(key)) return false;
+    if (value === undefined) return true;
+    
+    // الجدول له validation خاص
+    if (key === 'timetableAccess') {
+      return validTimetableValues.includes(value as string);
+    }
+    
+    return validValues.includes(value as string);
+  });
 };
 
 // دالة التحقق من صلاحية معينة
-export const hasPermission = (permissions: SecretaryPermissions | undefined, permission: 'groupsAccess' | 'teachersAccess', level: 'view' | 'manage' = 'view'): boolean => {
+export const hasPermission = (
+  permissions: SecretaryPermissions | undefined, 
+  permission: 'groupsAccess' | 'teachersAccess' | 'studentsAccess' | 'timetableAccess', 
+  level: 'view' | 'manage' = 'view'
+): boolean => {
   if (!permissions || !permissions[permission]) return false;
   
   const accessLevel = permissions[permission];
+  
+  // الجدول لا يوجد به manage - فقط view
+  if (permission === 'timetableAccess') {
+    return accessLevel === 'view';
+  }
   
   if (level === 'view') {
     return accessLevel === 'view' || accessLevel === 'manage';

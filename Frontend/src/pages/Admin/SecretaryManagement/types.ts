@@ -9,6 +9,8 @@ export interface SecretaryPermissions {
   teachersAccess?: AccessLevel;
   // صلاحية الطلاب: none = بدون وصول, view = عرض فقط, manage = إدارة كاملة
   studentsAccess?: AccessLevel;
+  // صلاحية الجدول: none = بدون وصول, view = عرض فقط (لا يوجد manage)
+  timetableAccess?: 'none' | 'view';
 }
 
 // Secretary Interface - متطابق مع الـ Backend Schema

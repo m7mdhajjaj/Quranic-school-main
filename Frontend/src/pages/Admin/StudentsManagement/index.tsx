@@ -127,10 +127,36 @@ GridSkeleton.displayName = 'GridSkeleton';
 const StudentsManagement: React.FC = () => {
   const { user: currentUser } = useAuth();
   const userRole = currentUser?.role || '';
+  const secretaryPermissions = currentUser?.permissions;
   
+  console.log('📋 [StudentsManagement] Current User:', {
+    role: userRole,
+    permissions: secretaryPermissions,
+    studentsAccess: secretaryPermissions?.studentsAccess
+  });
+
+  // التحقق من صلاحية السكرتير
+  const studentsAccess = useMemo(() => {
+    if (userRole === 'admin' || userRole === 'teacher') return 'manage';
+    if (userRole === 'secretary') {
+      const access = secretaryPermissions?.studentsAccess || 'none';
+      console.log('🔑 [StudentsManagement] Secretary Access Level:', access);
+      return access;
+    }
+    return 'none';
+  }, [userRole, secretaryPermissions]);
+
   const hasPermission = useMemo(() => {
-    return userRole === 'teacher' || userRole === 'admin' || userRole === 'secretary';
-  }, [userRole]);
+    const hasAccess = studentsAccess !== 'none';
+    console.log('✅ [StudentsManagement] Has Permission:', hasAccess);
+    return hasAccess;
+  }, [studentsAccess]);
+
+  const isReadOnly = useMemo(() => {
+    const readOnly = studentsAccess === 'view';
+    console.log('👁️ [StudentsManagement] Is ReadOnly:', readOnly);
+    return readOnly;
+  }, [studentsAccess]);
 
   // السكرتير لا يستطيع استرجاع الطلاب المفصولين
   const canRestoreStudents = useMemo(() => {
@@ -139,6 +165,7 @@ const StudentsManagement: React.FC = () => {
 
   const [viewMode, setViewMode] = useState<ViewMode>('table');
 
+  // إذا لم يكن لديه صلاحية، سيظهر رسالة "غير مصرح"
   const { students, setStudents, isLoading, error, retryCount, apiStats, fetchStudents } = useStudentsData(hasPermission);
 
   const {
@@ -213,6 +240,21 @@ const StudentsManagement: React.FC = () => {
   const showEmptyState = !isLoading && currentStudents.length === 0;
   const hasActiveFilters = activeFiltersCount > 0 || !!searchTerm;
 
+  // إذا لم يكن لديه أي صلاحية (none)، نظهر رسالة
+  if (!hasPermission) {
+    console.log('🚫 [StudentsManagement] Access Denied - No Permission');
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="text-center">
+          <FaUserGraduate className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">غير مصرح</h2>
+          <p className="text-gray-600">ليس لديك صلاحية للوصول إلى صفحة الطلاب</p>
+          <p className="text-sm text-gray-500 mt-2">يرجى التواصل مع المدير لمنحك الصلاحية</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen p-4 md:p-6" dir="rtl">
       <div className="max-w-full mx-auto">
@@ -220,6 +262,7 @@ const StudentsManagement: React.FC = () => {
           onAddStudent={handleOpenAddForm}
           onExport={() => handleExport(buildFiltersObject())}
           hasStudents={filteredAndSortedStudents.length > 0}
+          isReadOnly={isReadOnly}
         />
 
         {isLoading && students.length === 0 ? (
@@ -258,22 +301,24 @@ const StudentsManagement: React.FC = () => {
             onEdit={handleEdit}
             onDelete={(student) => handleDelete(student._id!)}
             userRole={userRole}
+            isReadOnly={isReadOnly}
           />
         )}
 
         {viewMode === 'table' && currentStudents.length > 0 && (
           <>
-            {selectedStudents.size > 0 && <BulkActionsBar count={selectedStudents.size} onDelete={handleBulkDelete} />}
+            {!isReadOnly && selectedStudents.size > 0 && <BulkActionsBar count={selectedStudents.size} onDelete={handleBulkDelete} />}
             <StudentTableView
               students={currentStudents}
               onEdit={handleEdit}
               onDelete={(student) => handleDelete(student._id!)}
-              selectedStudents={selectedStudents}
-              onToggleStudent={toggleStudent}
-              onToggleAll={toggleAllStudents}
+              selectedStudents={isReadOnly ? undefined : selectedStudents}
+              onToggleStudent={isReadOnly ? undefined : toggleStudent}
+              onToggleAll={isReadOnly ? undefined : toggleAllStudents}
               onStudentRestored={fetchStudents}
               canRestore={canRestoreStudents}
               userRole={userRole}
+              isReadOnly={isReadOnly}
             />
           </>
         )}

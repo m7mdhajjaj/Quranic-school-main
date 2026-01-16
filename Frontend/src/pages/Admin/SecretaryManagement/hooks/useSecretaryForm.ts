@@ -30,6 +30,7 @@ export interface SecretaryFormData {
     groupsAccess: AccessLevel;   // صلاحية الحلقات
     teachersAccess: AccessLevel; // صلاحية المعلمين
     studentsAccess: AccessLevel; // صلاحية الطلاب
+    timetableAccess: 'none' | 'view';  // صلاحية الجدول (عرض فقط)
   };
 }
 
@@ -73,6 +74,7 @@ const initialFormData: SecretaryFormData = {
     groupsAccess: 'none',
     teachersAccess: 'none',
     studentsAccess: 'none',
+    timetableAccess: 'none',
   },
 };
 
@@ -180,6 +182,7 @@ export const useSecretaryForm = ({
           groupsAccess: (secretary.permissions?.groupsAccess as AccessLevel) ?? 'none',
           teachersAccess: (secretary.permissions?.teachersAccess as AccessLevel) ?? 'none',
           studentsAccess: (secretary.permissions?.studentsAccess as AccessLevel) ?? 'none',
+          timetableAccess: (secretary.permissions?.timetableAccess as 'none' | 'view') ?? 'none',
         },
       };
 
@@ -296,7 +299,7 @@ export const useSecretaryForm = ({
     const checked = (e.target as HTMLInputElement).checked;
 
     if (name.startsWith("permissions.")) {
-      const permissionKey = name.split(".")[1] as 'groupsAccess' | 'teachersAccess';
+      const permissionKey = name.split(".")[1] as keyof SecretaryFormData['permissions'];
       setFormData((prev) => ({
         ...prev,
         permissions: {

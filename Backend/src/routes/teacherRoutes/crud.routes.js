@@ -8,6 +8,8 @@ const {
   validateTeacherGroups,
   sanitizeTeacherData,
 } = require("../../Validation/Teacher/TeacherValidation");
+const { createLimiter, updateLimiter, deleteLimiter } = require("../../middleware/rateLimiter");
+const { auditLogger } = require("../../middleware/logging/auditLogger.middleware");
 
 /**
  * CRUD Routes for Teachers
@@ -40,6 +42,8 @@ router.get("/:id", secretaryTeachersAccess('view'), controller.getTeacherById);
 router.post(
   "/",
   secretaryTeachersAccess('manage'),
+  createLimiter,
+  auditLogger(),
   sanitizeTeacherData,
   validateTeacherData,
   validateTeacherGroups,
@@ -50,6 +54,8 @@ router.post(
 router.put(
   "/:id",
   secretaryTeachersAccess('manage'),
+  updateLimiter,
+  auditLogger(),
   sanitizeTeacherData,
   validateTeacherData,
   validateTeacherGroups,
@@ -57,9 +63,9 @@ router.put(
 );
 
 // Bulk delete teachers (must be before /:id) - إداري أو سكرتير لديه صلاحية إدارة
-router.delete("/bulk", secretaryTeachersAccess('manage'), controller.bulkDeleteTeachers);
+router.delete("/bulk", secretaryTeachersAccess('manage'), deleteLimiter, auditLogger(), controller.bulkDeleteTeachers);
 
 // Delete teacher - إداري أو سكرتير لديه صلاحية إدارة
-router.delete("/:id", secretaryTeachersAccess('manage'), controller.deleteTeacher);
+router.delete("/:id", secretaryTeachersAccess('manage'), deleteLimiter, auditLogger(), controller.deleteTeacher);
 
 module.exports = router;

@@ -2,7 +2,7 @@ import React, { memo, useCallback } from "react";
 import { 
   X, Shield, User, Mail, Phone, MapPin,
   Lock, Users, AlertCircle, CheckCircle2,
-  CreditCard, GraduationCap
+  CreditCard, GraduationCap, Calendar
 } from "lucide-react";
 import { FaMale, FaFemale } from "react-icons/fa";
 import { DatePicker } from "@/components/UI/DatePicker";
@@ -445,7 +445,7 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
               <h3 className="font-bold text-base">الصلاحيات</h3>
             </div>
             
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               {/* صلاحية الحلقات */}
               <div className="p-4 bg-white border-2 rounded-xl border-emerald-200 hover:border-emerald-400 hover:shadow-md transition-all">
                 <div className="flex items-center gap-2 mb-3">
@@ -510,6 +510,28 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
                   <option value="view">👁️ عرض</option>
                   <option value="manage">✏️ إدارة</option>
                 </select>
+              </div>
+              
+              {/* صلاحية الجدول (أسبوعي وشهري) */}
+              <div className="p-4 bg-white border-2 rounded-xl border-purple-200 hover:border-purple-400 hover:shadow-md transition-all">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="p-2 bg-gradient-to-br from-purple-400 to-purple-600 text-white rounded-lg shadow-sm">
+                    <Calendar className="w-5 h-5" />
+                  </div>
+                  <h4 className="font-semibold text-gray-800 text-sm">الجدول</h4>
+                </div>
+                <select
+                  name="permissions.timetableAccess"
+                  value={formData.permissions.timetableAccess}
+                  onChange={(e) => handleChange(e)}
+                  title="صلاحية عرض الجدول (عرض فقط - بدون إدارة)"
+                  aria-label="صلاحية عرض الجدول"
+                  className="w-full px-3 py-2.5 border-2 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all border-purple-200 text-sm font-medium bg-purple-50"
+                >
+                  <option value="none">🚫 بدون</option>
+                  <option value="view">👁️ عرض فقط</option>
+                </select>
+                <p className="text-xs text-gray-500 mt-2">* الجدول عرض فقط (لا يوجد إدارة)</p>
               </div>
             </div>
           </div>

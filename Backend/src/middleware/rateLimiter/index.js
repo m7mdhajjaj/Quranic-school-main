@@ -13,6 +13,9 @@ const {
   passwordResetLimiter,
   aiLimiter,
   strictLimiter,
+  createLimiter,
+  updateLimiter,
+  deleteLimiter,
   createRateLimiter,
 } = require('./rateLimiter.middleware');
 
@@ -25,6 +28,11 @@ module.exports = {
   passwordResetLimiter,
   aiLimiter,
   strictLimiter,
+  
+  // CRUD operation limiters
+  createLimiter,
+  updateLimiter,
+  deleteLimiter,
   
   // Factory function
   createRateLimiter,

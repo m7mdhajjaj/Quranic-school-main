@@ -22,7 +22,36 @@ const GroupManagement: React.FC = () => {
   const { user: currentUser } = useAuth();
 
   const userRole = currentUser?.role || '';
-  const hasPermission = userRole === 'teacher' || userRole === 'admin';
+  const secretaryPermissions = currentUser?.permissions;
+  
+  console.log('📋 [GroupManagement] Current User:', {
+    role: userRole,
+    permissions: secretaryPermissions,
+    groupsAccess: secretaryPermissions?.groupsAccess
+  });
+
+  // التحقق من صلاحية السكرتير
+  const groupsAccess = React.useMemo(() => {
+    if (userRole === 'admin' || userRole === 'teacher') return 'manage';
+    if (userRole === 'secretary') {
+      const access = secretaryPermissions?.groupsAccess || 'none';
+      console.log('🔑 [GroupManagement] Secretary Access Level:', access);
+      return access;
+    }
+    return 'none';
+  }, [userRole, secretaryPermissions]);
+
+  const hasPermission = React.useMemo(() => {
+    const hasAccess = groupsAccess !== 'none';
+    console.log('✅ [GroupManagement] Has Permission:', hasAccess);
+    return hasAccess;
+  }, [groupsAccess]);
+
+  const isReadOnly = React.useMemo(() => {
+    const readOnly = groupsAccess === 'view';
+    console.log('👁️ [GroupManagement] Is ReadOnly:', readOnly);
+    return readOnly;
+  }, [groupsAccess]);
 
   // View mode state
   const [viewMode, setViewMode] = useState<ViewMode>('table');
@@ -103,12 +132,14 @@ const GroupManagement: React.FC = () => {
   }, [hasPermission]);
 
   if (!hasPermission) {
+    console.log('🚫 [GroupManagement] Access Denied - No Permission');
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center">
           <FaUsers className="w-16 h-16 text-red-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-800 mb-2">غير مصرح</h2>
-          <p className="text-gray-600">ليس لديك صلاحية للوصول إلى هذه الصفحة</p>
+          <p className="text-gray-600">ليس لديك صلاحية للوصول إلى صفحة الحلقات</p>
+          <p className="text-sm text-gray-500 mt-2">يرجى التواصل مع المدير لمنحك الصلاحية</p>
         </div>
       </div>
     );
@@ -131,6 +162,7 @@ const GroupManagement: React.FC = () => {
             onExport={() => actions.handleExport(filters.getFiltersParams())}
             hasGroups={groups.length > 0}
             isConnected={false}
+            isReadOnly={isReadOnly}
           />
 
           {/* Statistics Cards */}
@@ -220,6 +252,7 @@ const GroupManagement: React.FC = () => {
               onSort={filters.handleSort}
               onEdit={actions.handleEdit}
               onDelete={actions.handleDelete}
+              isReadOnly={isReadOnly}
             />
           )}
 
@@ -234,6 +267,7 @@ const GroupManagement: React.FC = () => {
               onToggleSelection={actions.toggleGroupSelection}
               onEdit={actions.handleEdit}
               onDelete={actions.handleDelete}
+              isReadOnly={isReadOnly}
             />
           )}
 

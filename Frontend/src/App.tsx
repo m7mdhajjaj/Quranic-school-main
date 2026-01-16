@@ -533,6 +533,27 @@ const SecretaryRoutes: React.FC = () => {
         />
 
         {/* ============================================
+            عرض الحلقات - Groups View
+            ============================================ */}
+        <Route 
+          path="/groups" 
+          element={
+            <React.Suspense fallback={
+              <div className="min-h-screen flex items-center justify-center">
+                <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
+              </div>
+            }>
+              <GroupManagement />
+            </React.Suspense>
+          } 
+        />
+
+        {/* ============================================
+            الجدول - Timetable (View Only)
+            ============================================ */}
+        <Route path="/timetable" element={<Timetable />} />
+
+        {/* ============================================
             المحادثات - Chat (with Teachers & Admin only)
             ============================================ */}
         <Route path="/chat" element={<SecretaryChatView />} />
@@ -553,6 +574,11 @@ const SecretaryRoutes: React.FC = () => {
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/contact" element={<Contact />} />
+
+        {/* ============================================
+            Blocked Routes - منع الوصول لصفحات الإدارة
+            ============================================ */}
+        <Route path="/admin/*" element={<Navigate to="/" replace />} />
 
         {/* ============================================
             Fallback - إعادة توجيه للصفحة الرئيسية

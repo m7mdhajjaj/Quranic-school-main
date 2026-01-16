@@ -9,6 +9,17 @@ const updateSecretaryPermissions = async (req, res) => {
     const { id } = req.params;
     const { permissions } = req.body;
 
+    console.log('🔐 تحديث صلاحيات السكرتير:', id);
+    console.log('📥 الصلاحيات المستلمة:', JSON.stringify(permissions, null, 2));
+
+    // تأكد من أن الصلاحيات موجودة
+    if (!permissions || typeof permissions !== 'object') {
+      return res.status(400).json({
+        success: false,
+        message: "الصلاحيات مطلوبة",
+      });
+    }
+
     const secretary = await Secretary.findByIdAndUpdate(
       id,
       { permissions },
@@ -21,6 +32,8 @@ const updateSecretaryPermissions = async (req, res) => {
         message: "السكرتير غير موجود",
       });
     }
+
+    console.log('✅ تم تحديث الصلاحيات:', JSON.stringify(secretary.permissions, null, 2));
 
     res.status(200).json({
       success: true,

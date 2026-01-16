@@ -78,16 +78,13 @@ export const useVideoUpload = (onVideoUploaded?: (url: string) => void): UseVide
         setUploadedUrl(videoUrl);
         setUploading(false);
         
-        // حفظ في localStorage للاستخدام الفوري
-        localStorage.setItem('welcomePageVideoUrl', videoUrl);
-        
         if (onVideoUploaded) {
           onVideoUploaded(videoUrl);
         }
         
-        console.log('✅ تم رفع الفيديو بنجاح:', videoUrl);
+        console.log('✅ تم رفع الفيديو بنجاح وحفظه في قاعدة البيانات:', videoUrl);
         
-        // إعادة تحميل الصفحة بعد ثانيتين
+        // إعادة تحميل الصفحة بعد ثانيتين لجلب الفيديو الجديد من Backend
         setTimeout(() => {
           window.location.reload();
         }, 2000);
@@ -104,20 +101,17 @@ export const useVideoUpload = (onVideoUploaded?: (url: string) => void): UseVide
 
   const handleReset = useCallback(async () => {
     try {
-      // حذف من Backend
+      // حذف من Backend (قاعدة البيانات و Cloudinary)
       await api.delete('/upload/welcome-video');
       
-      // مسح من localStorage
-      localStorage.removeItem('welcomePageVideoUrl');
       setUploadedUrl('');
       
-      console.log('✅ تم استعادة الفيديو الافتراضي');
+      console.log('✅ تم حذف الفيديو من قاعدة البيانات واستعادة الافتراضي');
       
+      // إعادة تحميل الصفحة لجلب الفيديو الافتراضي
       window.location.reload();
     } catch (err) {
       console.error('❌ خطأ في حذف الفيديو:', err);
-      // حتى لو فشل، نمسح من localStorage
-      localStorage.removeItem('welcomePageVideoUrl');
       setUploadedUrl('');
       window.location.reload();
     }

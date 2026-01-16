@@ -6,7 +6,11 @@ const {
   validateSessionDate,
   validateCheckConflict 
 } = require("../../Validation/Timetable/TimetableValidation");
-const { protect } = require("../../middleware/auth");
+const { 
+  protect,
+  adminProtect,
+  secretaryTimetableAccess 
+} = require("../../middleware/auth");
 
 // ============================================
 // TIMETABLE ROUTES (NEW CRUD SYSTEM)
@@ -30,52 +34,52 @@ router.get("/day-schedule", protect, timetableController.getTeacherDaySchedule);
 // POST /api/timetable/check-conflict
 router.post("/check-conflict", protect, validateCheckConflict, timetableController.checkConflict);
 
-// ============ READ ============
+// ============ READ (Timetable - View Only for Secretary) ============
 
 // جلب جميع المواعيد (مع فلترة بالتاريخ/المعلم/الحلقة)
 // GET /api/timetable?teacherId=xxx&date=2026-01-12&groupId=xxx
-router.get("/", protect, timetableController.getTimetables);
+router.get("/", secretaryTimetableAccess(), timetableController.getTimetables);
 
 // جلب موعد محدد
-router.get("/:id", protect, timetableController.getTimetableById);
+router.get("/:id", secretaryTimetableAccess(), timetableController.getTimetableById);
 
 // جدول حلقة معينة (بالـ ID)
-router.get("/group/:groupId", protect, timetableController.getGroupTimetable);
+router.get("/group/:groupId", secretaryTimetableAccess(), timetableController.getGroupTimetable);
 
 // موعد مقطع محدد
-router.get("/section/:sectionId", protect, timetableController.getTimetableBySection);
+router.get("/section/:sectionId", secretaryTimetableAccess(), timetableController.getTimetableBySection);
 
 // مواعيد معلم معين
-router.get("/teacher/:teacherId", protect, timetableController.getTeacherTimetables);
+router.get("/teacher/:teacherId", secretaryTimetableAccess(), timetableController.getTeacherTimetables);
 
-// ============ CREATE ============
+// ============ CREATE (Admin Only) ============
 
-// إنشاء موعد جديد (يحتاج sessionDate)
+// إنشاء موعد جديد (يحتاج sessionDate) - Admin فقط
 // POST /api/timetable
-router.post("/", protect, validateTimetableData, timetableController.createTimetable);
+router.post("/", adminProtect, validateTimetableData, timetableController.createTimetable);
 
-// إنشاء موعد لمقطع محدد (التاريخ من المقطع تلقائياً)
+// إنشاء موعد لمقطع محدد (التاريخ من المقطع تلقائياً) - Admin فقط
 // POST /api/timetable/section/:sectionId
-router.post("/section/:sectionId", protect, validateSessionDate, timetableController.createTimetableForSection);
+router.post("/section/:sectionId", adminProtect, validateSessionDate, timetableController.createTimetableForSection);
 
-// ============ UPDATE ============
+// ============ UPDATE (Admin Only) ============
 
-// تحديث موعد كامل
-router.put("/:id", protect, validateTimetableData, timetableController.updateTimetable);
+// تحديث موعد كامل - Admin فقط
+router.put("/:id", adminProtect, validateTimetableData, timetableController.updateTimetable);
 
-// تحديث الوقت فقط (startHour, endHour)
-router.patch("/:id/time", protect, validateSessionDate, timetableController.updateTimetableTime);
+// تحديث الوقت فقط (startHour, endHour) - Admin فقط
+router.patch("/:id/time", adminProtect, validateSessionDate, timetableController.updateTimetableTime);
 
-// ربط موعد بمقطع
+// ربط موعد بمقطع - Admin فقط
 // POST /api/timetable/:id/link/:sectionId
-router.post("/:id/link/:sectionId", protect, timetableController.linkTimetableToSection);
+router.post("/:id/link/:sectionId", adminProtect, timetableController.linkTimetableToSection);
 
-// ============ DELETE ============
+// ============ DELETE (Admin Only) ============
 
-// حذف موعد
-router.delete("/:id", protect, timetableController.deleteTimetable);
+// حذف موعد - Admin فقط
+router.delete("/:id", adminProtect, timetableController.deleteTimetable);
 
-// فك ربط موعد من مقطع (بدون حذف الموعد)
-router.delete("/:id/unlink", protect, timetableController.unlinkTimetableFromSection);
+// فك ربط موعد من مقطع (بدون حذف الموعد) - Admin فقط
+router.delete("/:id/unlink", adminProtect, timetableController.unlinkTimetableFromSection);
 
 module.exports = router;

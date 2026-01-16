@@ -66,19 +66,66 @@ exports.getTeacherGroupsForAttendance = async (req, res) => {
       dateKey: dateKey
     });
 
-    if (!sectionOnDate) {
-      // تنسيق التاريخ للعرض
+    // 🆕 إذا لم يوجد مقطع، نرجع الحلقات بدون بيانات الحضور (بدل خطأ 400)
+    // هذا يسمح للمعلم برؤية حلقاته حتى لو لم يتم إضافة مقطع بعد
+    const hasSection = !!sectionOnDate;
+
+    // 🆕 إذا لم يوجد مقطع، نرجع الحلقات مع رسالة تنبيهية
+    if (!hasSection) {
       const formattedDate = targetDateStart.toLocaleDateString('ar-EG', {
         year: 'numeric',
         month: 'long',
         day: 'numeric'
       });
       
-      return res.status(400).json({ 
-        success: false, 
-        message: `لا يوجد مقطع مضاف بتاريخ ${formattedDate}. لا يمكن تسجيل الحضور إلا في أيام المقاطع المضافة.`,
-        noSection: true,
-        date: formattedDate
+      // جلب الحلقات مع عدد الطلاب
+      const groupsWithStudents = await Group.aggregate([
+        { $match: { teacher: new mongoose.Types.ObjectId(teacherId), activeStatus: true } },
+        {
+          $lookup: {
+            from: 'students',
+            let: { groupName: '$name' },
+            pipeline: [
+              { $match: { $expr: { $eq: ['$group', '$$groupName'] } } },
+              { $count: 'count' }
+            ],
+            as: 'studentCount'
+          }
+        },
+        {
+          $project: {
+            _id: 1,
+            name: 1,
+            totalStudents: { $ifNull: [{ $arrayElemAt: ['$studentCount.count', 0] }, 0] }
+          }
+        }
+      ]);
+
+      return res.json({
+        success: true,
+        data: {
+          teacher: { _id: teacher._id, name: teacherName },
+          groups: groupsWithStudents.map(g => ({
+            _id: g._id,
+            name: g.name,
+            totalStudents: g.totalStudents,
+            overallAttendanceRate: 0
+          })),
+          students: [],
+          attendanceInfo: {
+            date: dateKey,
+            isAttendanceTaken: false,
+            totalRecords: 0,
+            noSection: true,
+            noSectionMessage: `لا يوجد مقطع مضاف بتاريخ ${formattedDate}`
+          },
+          summary: {
+            totalStudents: 0,
+            presentToday: 0,
+            absentToday: 0,
+            attendanceRateToday: 0
+          }
+        }
       });
     }
 

@@ -146,6 +146,78 @@ const strictLimiter = rateLimit({
 });
 
 /**
+ * Rate limiter for create operations
+ * محدد معدل عمليات الإنشاء
+ */
+const createLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 دقيقة
+  max: 30, // 30 عملية إنشاء في الدقيقة
+  message: {
+    success: false,
+    message: 'تم تجاوز الحد الأقصى لعمليات الإضافة. يرجى الانتظار قليلاً.',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
+  handler: (req, res) => {
+    console.log(`🚫 Create rate limit exceeded for user: ${req.user?._id} IP: ${req.ip}`);
+    res.status(429).json({
+      success: false,
+      message: 'تم تجاوز الحد الأقصى لعمليات الإضافة. يرجى الانتظار.',
+      retryAfter: 60,
+    });
+  },
+});
+
+/**
+ * Rate limiter for update operations
+ * محدد معدل عمليات التحديث
+ */
+const updateLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 دقيقة
+  max: 50, // 50 عملية تحديث في الدقيقة
+  message: {
+    success: false,
+    message: 'تم تجاوز الحد الأقصى لعمليات التعديل. يرجى الانتظار قليلاً.',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
+  handler: (req, res) => {
+    console.log(`🚫 Update rate limit exceeded for user: ${req.user?._id} IP: ${req.ip}`);
+    res.status(429).json({
+      success: false,
+      message: 'تم تجاوز الحد الأقصى لعمليات التعديل. يرجى الانتظار.',
+      retryAfter: 60,
+    });
+  },
+});
+
+/**
+ * Rate limiter for delete operations
+ * محدد معدل عمليات الحذف
+ */
+const deleteLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 دقيقة
+  max: 20, // 20 عملية حذف في الدقيقة
+  message: {
+    success: false,
+    message: 'تم تجاوز الحد الأقصى لعمليات الحذف. يرجى الانتظار قليلاً.',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
+  handler: (req, res) => {
+    console.log(`🚫 Delete rate limit exceeded for user: ${req.user?._id} IP: ${req.ip}`);
+    res.status(429).json({
+      success: false,
+      message: 'تم تجاوز الحد الأقصى لعمليات الحذف. يرجى الانتظار.',
+      retryAfter: 60,
+    });
+  },
+});
+
+/**
  * Dynamic rate limiter factory
  * إنشاء rate limiter مخصص
  * 
@@ -180,6 +252,11 @@ module.exports = {
   passwordResetLimiter,
   aiLimiter,
   strictLimiter,
+  
+  // CRUD operation limiters
+  createLimiter,
+  updateLimiter,
+  deleteLimiter,
   
   // Factory function
   createRateLimiter,

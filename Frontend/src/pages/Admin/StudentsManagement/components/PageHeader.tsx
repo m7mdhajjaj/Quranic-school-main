@@ -9,9 +9,10 @@ interface StudentsHeaderProps {
   onAddStudent: () => void;
   onExport: () => void;
   hasStudents: boolean;
+  isReadOnly?: boolean;
 }
 
-const StudentsHeader: React.FC<StudentsHeaderProps> = memo(({ onAddStudent, onExport, hasStudents }) => (
+const StudentsHeader: React.FC<StudentsHeaderProps> = memo(({ onAddStudent, onExport, hasStudents, isReadOnly = false }) => (
   <div className="bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-xl shadow-md p-5 mb-6">
     <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
       <div className="flex items-center gap-3">
@@ -34,14 +35,16 @@ const StudentsHeader: React.FC<StudentsHeaderProps> = memo(({ onAddStudent, onEx
           <span className="hidden sm:inline">تصدير</span>
         </button>
 
-        <button
-          onClick={onAddStudent}
-          className="flex items-center gap-2 px-4 py-2.5 bg-white text-emerald-600 rounded-lg hover:bg-white/90 transition-colors shadow-sm text-sm font-medium font-semibold"
-        >
-          <FaPlus className="w-4 h-4" />
-          <span className="hidden sm:inline">إضافة طالب</span>
-          <span className="sm:hidden">إضافة</span>
-        </button>
+        {!isReadOnly && (
+          <button
+            onClick={onAddStudent}
+            className="flex items-center gap-2 px-4 py-2.5 bg-white text-emerald-600 rounded-lg hover:bg-white/90 transition-colors shadow-sm text-sm font-medium font-semibold"
+          >
+            <FaPlus className="w-4 h-4" />
+            <span className="hidden sm:inline">إضافة طالب</span>
+            <span className="sm:hidden">إضافة</span>
+          </button>
+        )}
       </div>
     </div>
   </div>
