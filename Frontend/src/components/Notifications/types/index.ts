@@ -8,22 +8,49 @@
 // ============================================================================
 
 /**
+ * أنواع الإشعارات المدعومة - متطابقة مع Backend
+ */
+export const NOTIFICATION_TYPES = {
+  // إشعارات عامة
+  GENERAL: ["general", "system", "success", "alert", "warning", "message", "mention", "news", "chat", "reminder"] as const,
+  
+  // إشعارات الطلاب والمعلمين
+  ACADEMIC: ["grade", "daily_marks", "exam", "attendance", "quran_progress", "memorization", "review", "test_result", "student_update", "timetable"] as const,
+  
+  // إشعارات الإدارة
+  ADMIN: [
+    "teacher_added", "teacher_updated", "teacher_deleted",
+    "student_added", "student_updated", "student_deleted",
+    "group_assigned", "group_updated", "group_deleted", "group_transferred",
+    "secretary_added", "secretary_updated", "secretary_deleted",
+    "admin_action", "user_approval", "role_change", "system_update",
+  ] as const,
+  
+  // إشعارات أخرى
+  OTHER: ["prayer_time", "goal", "achievement", "points", "ranking", "other"] as const,
+} as const;
+
+/**
  * نوع الإشعار
  */
 export type NotificationType = 
-  | 'grade'           // إشعار علامة
-  | 'message'         // رسالة
-  | 'prayer_time'     // وقت صلاة
-  | 'attendance'      // حضور/غياب
-  | 'exam'            // امتحان
-  | 'assignment'      // مقطع/واجب
-  | 'news'            // خبر/منشور
-  | 'general'         // عام
-  | 'daily_marks'     // العلامات اليومية
-  | 'warning'         // إنذار/تنبيه
-  | 'system'          // إشعار نظام
-  | 'success'         // نجاح/إنجاز
-  | 'alert';          // تنبيه هام/حذف
+  // General
+  | 'general' | 'system' | 'success' | 'alert' | 'warning' | 'message' | 'mention' | 'news' | 'chat' | 'reminder'
+  // Academic
+  | 'grade' | 'daily_marks' | 'exam' | 'attendance' | 'quran_progress' | 'memorization' | 'review' | 'test_result' | 'student_update' | 'timetable'
+  // Admin
+  | 'teacher_added' | 'teacher_updated' | 'teacher_deleted'
+  | 'student_added' | 'student_updated' | 'student_deleted'
+  | 'group_assigned' | 'group_updated' | 'group_deleted' | 'group_transferred'
+  | 'secretary_added' | 'secretary_updated' | 'secretary_deleted'
+  | 'admin_action' | 'user_approval' | 'role_change' | 'system_update'
+  // Other
+  | 'prayer_time' | 'goal' | 'achievement' | 'points' | 'ranking' | 'other';
+
+/**
+ * فئة الإشعار
+ */
+export type NotificationCategory = 'general' | 'academic' | 'admin' | 'other';
 
 /**
  * أولوية الإشعار
@@ -31,15 +58,77 @@ export type NotificationType =
 export type NotificationPriority = 'low' | 'medium' | 'high' | 'urgent';
 
 /**
- * أنواع العمليات للعلامات اليومية
+ * نوع الكيان المرتبط بالإشعار
+ */
+export type NotificationEntityType = 
+  | 'student' | 'teacher' | 'group' | 'section' 
+  | 'mark' | 'exam' | 'news' | 'timetable' | 'warning' | 'message' | 'attendance' | 'system' | 'other';
+
+/**
+ * أنواع العمليات العامة
+ */
+export type NotificationAction = 
+  // Section actions
+  | 'section_added' | 'section_updated' | 'section_deleted'
+  // Mark actions
+  | 'mark_added' | 'mark_updated' | 'mark_deleted'
+  // Group actions
+  | 'group_assigned' | 'group_updated' | 'group_deleted' | 'group_transferred'
+  | 'group_transferred_from' | 'group_transferred_to' | 'group_renamed'
+  // Student actions
+  | 'student_added' | 'student_removed' | 'student_moved' | 'student_moved_in' | 'student_moved_out'
+  // News actions
+  | 'news_created' | 'news_updated' | 'news_deleted'
+  // Attendance actions
+  | 'absence_recorded' | 'absence_removed'
+  // Timetable actions
+  | 'timetable_created' | 'timetable_updated' | 'timetable_deleted'
+  // Warning actions
+  | 'warning_received' | 'warning_issued'
+  // Chat actions
+  | 'new_message' | 'mentioned'
+  // General actions
+  | 'created' | 'updated' | 'deleted' | 'system_message';
+
+/**
+ * أنواع العمليات للعلامات اليومية (للتوافقية)
  */
 export type DailyMarkAction = 
-  | 'section_added'      // إضافة مقطع
-  | 'section_updated'    // تعديل مقطع
-  | 'section_deleted'    // حذف مقطع
-  | 'mark_added'         // إضافة علامة
-  | 'mark_updated'       // تعديل علامة
-  | 'mark_deleted';      // حذف علامة
+  | 'section_added' | 'section_updated' | 'section_deleted'
+  | 'mark_added' | 'mark_updated' | 'mark_deleted';
+
+/**
+ * ملخص الإشعار (للعرض السريع في القائمة)
+ */
+export interface NotificationSummary {
+  action?: string;
+  entityType?: NotificationEntityType;
+  entityId?: string;
+  entityName?: string;
+}
+
+/**
+ * بيانات العرض الإضافية
+ */
+export interface NotificationDisplayData {
+  icon?: string;
+  color?: string;
+  image?: string;
+  actionText?: string;
+  actionUrl?: string;
+}
+
+/**
+ * تفاصيل الإشعار الكاملة (يتم جلبها عند الطلب)
+ */
+export interface NotificationDetails {
+  _id: string;
+  message: string;
+  data: Record<string, unknown>;
+  link?: string;
+  displayData?: NotificationDisplayData;
+  createdAt: string;
+}
 
 /**
  * بيانات إشعار العلامات اليومية
@@ -62,20 +151,33 @@ export interface DailyMarkNotificationData {
 }
 
 /**
- * واجهة الإشعار الرئيسية
+ * واجهة الإشعار الرئيسية (خفيفة - للقائمة)
  */
 export interface Notification {
   _id: string;
   type: NotificationType;
+  category?: NotificationCategory;
   title: string;
-  message: string;
+  message?: string;
+  messageSummary?: string;
   createdAt: string;
   sentAt: string;
   isRead: boolean;
   priority: NotificationPriority;
   isNew?: boolean;
   link?: string;
-  data?: DailyMarkNotificationData | Record<string, unknown>;
+  summary?: NotificationSummary;
+  data?: { action?: string } & Record<string, unknown>;
+  // مرجع للتفاصيل الكاملة (يتم جلبها عند الحاجة)
+  details?: string | NotificationDetails;
+}
+
+/**
+ * إشعار كامل مع التفاصيل
+ */
+export interface NotificationWithDetails extends Notification {
+  details: NotificationDetails;
+  data: DailyMarkNotificationData | Record<string, unknown>;
 }
 
 /**

@@ -2,7 +2,7 @@ const Notification = require("../../schema/Notification");
 const cron = require("node-cron");
 const PrayerJob = require("../Jobs/PrayerJob");
 const ScheduleReminderJob = require("../Jobs/ScheduleReminderJob");
-const { sendRealTimeNotification } = require("../Core/SocketSender");
+const { sendRealTimeNotification, getCategoryFromType } = require("../Core/SocketSender");
 const { sendPushNotification, sendNotificationToDevices } = require("../Core/PushSender");
 const {
   notifySystemMessage,
@@ -30,7 +30,7 @@ const {
 } = require("../Handlers/AdminHandler");
 
 /**
- * NotificationManager - خدمة الإشعارات المركزية
+ * NotificationManager - خدمة الإشعارات المركزية (محسّنة)
  */
 class NotificationManager {
   constructor(io) {
@@ -44,18 +44,28 @@ class NotificationManager {
     this.scheduleReminderJob = new ScheduleReminderJob(this);
     this.scheduleReminderJob.setupScheduleReminders();
     
-    console.log("🔔 NotificationManager initialized with dynamic prayer times");
+    console.log("🔔 NotificationManager initialized with optimized schema");
   }
 
   /**
-   * Create and dispatch a notification
+   * Create and dispatch a notification (Optimized)
    */
   async createNotification(notificationData) {
     try {
+      // إضافة الفئة تلقائياً إذا لم تكن موجودة
+      if (!notificationData.category) {
+        notificationData.category = getCategoryFromType(notificationData.type);
+      }
+
+      // إضافة ملخص الرسالة إذا كانت الرسالة طويلة
+      if (notificationData.message && notificationData.message.length > 150 && !notificationData.messageSummary) {
+        notificationData.messageSummary = notificationData.message.substring(0, 147) + '...';
+      }
+
       const notification = new Notification(notificationData);
       const savedNotification = await notification.save();
 
-      // Send via Socket.IO (real-time)
+      // Send via Socket.IO (real-time) - lightweight payload
       try {
         await sendRealTimeNotification(this.io, savedNotification);
       } catch (err) {
@@ -69,10 +79,30 @@ class NotificationManager {
         console.error("❌ Error sending FCM push:", fcmErr);
       }
 
-      console.log(`✅ Notification created: ${savedNotification.title} for ${savedNotification.recipient}`);
+      console.log(`✅ Notification created: ${savedNotification.title} (${savedNotification.category}/${savedNotification.type})`);
       return savedNotification;
     } catch (error) {
       console.error("❌ Error creating notification:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create notification with details (for large data)
+   */
+  async createNotificationWithDetails(notificationData, detailedData = {}, summaryData = {}) {
+    try {
+      return await Notification.createWithDetails(
+        notificationData.recipient,
+        notificationData.recipientModel,
+        notificationData.type,
+        notificationData.title,
+        notificationData.message,
+        { ...detailedData, link: notificationData.link },
+        summaryData
+      );
+    } catch (error) {
+      console.error("❌ Error creating notification with details:", error);
       throw error;
     }
   }

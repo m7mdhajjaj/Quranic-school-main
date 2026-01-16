@@ -61,11 +61,14 @@ exports.notifySectionAdded = async (section, io) => {
       recipient: student._id,
       recipientModel: "Student",
       type: "daily_marks",
+      category: "academic",
       title: "مقطع جديد",
-      message: `تم إضافة مقطع جديد لحلقة ${groupName} بتاريخ ${dateStr}: حفظ ${section.memorizationSection}، مراجعة ${section.reviewSection}`,
+      message: `تم إضافة مقطع بتاريخ ${dateStr}`,
+      messageSummary: `مقطع - ${dateStr}`,
       data: {
         sectionId: section._id,
         action: "section_added",
+        entityType: "section",
         date: section.date,
       },
     }));
@@ -151,11 +154,14 @@ exports.notifySectionUpdated = async (section, oldSection, io) => {
       recipient: student._id,
       recipientModel: "Student",
       type: "daily_marks",
+      category: "academic",
       title: "تحديث مقطع",
-      message: `تم تحديث مقطع حلقة ${groupName} بتاريخ ${dateStr}: حفظ ${section.memorizationSection}، مراجعة ${section.reviewSection}`,
+      message: `تم تحديث مقطع بتاريخ ${dateStr}`,
+      messageSummary: `تحديث - ${dateStr}`,
       data: {
         sectionId: section._id,
         action: "section_updated",
+        entityType: "section",
       },
     }));
 
@@ -229,7 +235,7 @@ exports.notifySectionDeleted = async (section, io) => {
       recipientModel: "Student",
       type: "daily_marks",
       title: "حذف مقطع",
-      message: `تم حذف مقطع حلقة ${groupName} بتاريخ ${dateStr}: حفظ ${section.memorizationSection}، مراجعة ${section.reviewSection}`,
+      message: `تم حذف مقطع بتاريخ ${dateStr}`,
       data: {
         sectionId: section._id,
         action: "section_deleted",

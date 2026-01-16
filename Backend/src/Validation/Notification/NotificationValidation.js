@@ -69,6 +69,34 @@ const validateNotificationMessage = (message) => {
 };
 
 /**
+ * أنواع الإشعارات المدعومة - متطابقة مع Schema
+ */
+const NOTIFICATION_TYPES = {
+  // إشعارات عامة
+  GENERAL: ['general', 'system', 'success', 'alert', 'warning', 'message', 'mention', 'news', 'chat', 'reminder'],
+  // إشعارات الطلاب والمعلمين
+  ACADEMIC: ['grade', 'daily_marks', 'exam', 'attendance', 'quran_progress', 'memorization', 'review', 'test_result', 'student_update', 'timetable'],
+  // إشعارات الإدارة
+  ADMIN: [
+    'teacher_added', 'teacher_updated', 'teacher_deleted',
+    'student_added', 'student_updated', 'student_deleted',
+    'group_assigned', 'group_updated', 'group_deleted', 'group_transferred',
+    'secretary_added', 'secretary_updated', 'secretary_deleted',
+    'admin_action', 'user_approval', 'role_change', 'system_update',
+  ],
+  // إشعارات أخرى
+  OTHER: ['prayer_time', 'goal', 'achievement', 'points', 'ranking', 'other'],
+};
+
+// جمع كل الأنواع في مصفوفة واحدة
+const ALL_NOTIFICATION_TYPES = [
+  ...NOTIFICATION_TYPES.GENERAL,
+  ...NOTIFICATION_TYPES.ACADEMIC,
+  ...NOTIFICATION_TYPES.ADMIN,
+  ...NOTIFICATION_TYPES.OTHER,
+];
+
+/**
  * Validate notification type
  */
 const validateNotificationType = (type) => {
@@ -77,18 +105,30 @@ const validateNotificationType = (type) => {
   }
   
   const typeStr = type.toString().trim().toLowerCase();
-  const validTypes = [
-    'info', 'success', 'warning', 'error', 'announcement',
-    'exam', 'assignment', 'attendance', 'grade',
-    'event', 'reminder', 'system', 'urgent', 'general',
-    'daily_marks', 'prayer_time', 'message', 'news'
-  ];
   
-  if (!validTypes.includes(typeStr)) {
+  if (!ALL_NOTIFICATION_TYPES.includes(typeStr)) {
     return { isValid: false, message: 'نوع الإشعار غير مدعوم' };
   }
   
   return { isValid: true, value: typeStr };
+};
+
+/**
+ * Validate notification category
+ */
+const validateNotificationCategory = (category) => {
+  if (!category || category.toString().trim() === '') {
+    return { isValid: true, value: 'general' }; // Default category
+  }
+  
+  const categoryStr = category.toString().trim().toLowerCase();
+  const validCategories = ['general', 'academic', 'admin', 'other'];
+  
+  if (!validCategories.includes(categoryStr)) {
+    return { isValid: false, message: 'فئة الإشعار غير صحيحة' };
+  }
+  
+  return { isValid: true, value: categoryStr };
 };
 
 /**

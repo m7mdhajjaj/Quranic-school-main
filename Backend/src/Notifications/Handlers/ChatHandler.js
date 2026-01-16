@@ -13,9 +13,9 @@ const { sendRealTimeNotification } = require("../Core/SocketSender");
  */
 const notifyNewMessage = async (recipientId, recipientModel, senderName, text, conversationId, chatType, groupName) => {
   try {
-    let title = `رسالة جديدة من ${senderName}`;
+    let title = senderName;
     if (chatType === 'GROUP' && groupName) {
-      title = `${senderName} في ${groupName}`;
+      title = `${senderName} - ${groupName}`;
     }
 
     const message = text.length > 50 ? text.substring(0, 50) + "..." : text;
@@ -24,12 +24,17 @@ const notifyNewMessage = async (recipientId, recipientModel, senderName, text, c
       recipient: recipientId,
       recipientModel: recipientModel,
       type: "message",
+      category: "general",
       title: title,
-      message: message,
+      message: text,
+      messageSummary: message,
       link: "/chat",
       data: {
         conversationId: conversationId.toString(),
-        chatType: chatType
+        chatType: chatType,
+        action: "new_message",
+        entityType: "message",
+        senderName: senderName
       },
       isRead: false,
       sentAt: new Date()
@@ -56,9 +61,9 @@ const notifyNewMessage = async (recipientId, recipientModel, senderName, text, c
  */
 const notifyMention = async (recipientId, recipientModel, senderName, text, conversationId, chatType, groupName) => {
   try {
-    let title = `قام ${senderName} بذكرك`;
+    let title = `إشارة من ${senderName}`;
     if (chatType === 'GROUP' && groupName) {
-      title = `قام ${senderName} بذكرك في ${groupName}`;
+      title = `إشارة - ${groupName}`;
     }
 
     const message = text.length > 50 ? text.substring(0, 50) + "..." : text;
@@ -66,13 +71,18 @@ const notifyMention = async (recipientId, recipientModel, senderName, text, conv
     const notificationData = {
       recipient: recipientId,
       recipientModel: recipientModel,
-      type: "mention", // New type
+      type: "mention",
+      category: "general",
       title: title,
-      message: message,
+      message: text,
+      messageSummary: message,
       link: "/chat",
       data: {
         conversationId: conversationId.toString(),
-        chatType: chatType
+        chatType: chatType,
+        action: "mentioned",
+        entityType: "message",
+        senderName: senderName
       },
       isRead: false,
       sentAt: new Date()

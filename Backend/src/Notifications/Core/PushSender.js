@@ -7,7 +7,7 @@ const DeviceToken = require("../../schema/DeviceToken");
  */
 
 /**
- * Send push notification via FCM
+ * Send push notification via FCM (Optimized)
  */
 async function sendPushNotification(recipient, notificationData) {
   try {
@@ -30,16 +30,18 @@ async function sendPushNotification(recipient, notificationData) {
       console.warn(`⚠️ User ${recipient} has ${uniqueTokens.length} device tokens - consider cleanup`);
     }
 
+    // إرسال بيانات خفيفة فقط
     const payload = {
       notification: {
         title: notificationData.title,
-        body: notificationData.message,
+        body: notificationData.messageSummary || notificationData.message,
       },
       data: {
         notificationId: notificationData._id?.toString() || "",
         type: notificationData.type,
+        category: notificationData.category || "general",
         priority: notificationData.priority || "medium",
-        ...notificationData.data,
+        action: notificationData.data?.action || "",
       },
     };
 

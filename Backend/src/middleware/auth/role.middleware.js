@@ -204,7 +204,8 @@ exports.staffProtect = async (req, res, next) => {
  * @middleware
  * @param {'view' | 'manage'} requiredLevel - مستوى الصلاحية المطلوب
  * @description يسمح للأدمن أو السكرتير الذي لديه صلاحية الحلقات
- * @access Protected (Admin, Secretary with groupsAccess)
+ *              كما يسمح للسكرتير الذي لديه صلاحية الطلاب بعرض الحلقات (لإضافة طالب لحلقة)
+ * @access Protected (Admin, Secretary with groupsAccess or studentsAccess for view)
  */
 exports.secretaryGroupsAccess = (requiredLevel = 'view') => {
   return async (req, res, next) => {
@@ -227,27 +228,45 @@ exports.secretaryGroupsAccess = (requiredLevel = 'view') => {
             });
           }
           
-          const accessLevel = secretary.permissions?.groupsAccess || 'none';
+          const groupsAccessLevel = secretary.permissions?.groupsAccess || 'none';
+          const studentsAccessLevel = secretary.permissions?.studentsAccess || 'none';
           
-          // التحقق من مستوى الصلاحية
-          if (accessLevel === 'none') {
+          // إذا كان المطلوب عرض فقط، نسمح لمن لديه صلاحية الحلقات أو الطلاب
+          if (requiredLevel === 'view') {
+            // السماح إذا كان لديه صلاحية الحلقات (view أو manage)
+            if (groupsAccessLevel !== 'none') {
+              req.secretaryAccessLevel = groupsAccessLevel;
+              return next();
+            }
+            // السماح إذا كان لديه صلاحية الطلاب (لأنه يحتاج يشوف الحلقات لإضافة طالب)
+            if (studentsAccessLevel !== 'none') {
+              req.secretaryAccessLevel = 'view'; // فقط عرض
+              return next();
+            }
+            // لا يملك أي صلاحية
             return res.status(403).json({
               success: false,
               message: "ليس لديك صلاحية للوصول إلى الحلقات",
             });
           }
           
-          // إذا كان المطلوب إدارة، يجب أن يكون manage
-          if (requiredLevel === 'manage' && accessLevel !== 'manage') {
-            return res.status(403).json({
-              success: false,
-              message: "ليس لديك صلاحية لإدارة الحلقات (عرض فقط)",
-            });
+          // إذا كان المطلوب إدارة، يجب أن يكون لديه groupsAccess = manage
+          if (requiredLevel === 'manage') {
+            if (groupsAccessLevel !== 'manage') {
+              return res.status(403).json({
+                success: false,
+                message: "ليس لديك صلاحية لإدارة الحلقات",
+              });
+            }
+            req.secretaryAccessLevel = 'manage';
+            return next();
           }
           
-          // إضافة مستوى الصلاحية للـ request
-          req.secretaryAccessLevel = accessLevel;
-          return next();
+          // أي حالة أخرى
+          return res.status(403).json({
+            success: false,
+            message: "ليس لديك صلاحية للوصول إلى الحلقات",
+          });
         }
         
         // غير مصرح لأي دور آخر

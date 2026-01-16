@@ -9,6 +9,8 @@ import {
   markAsRead,
   markAllAsRead,
   deleteNotification,
+  getNotificationDetails,
+  type NotificationCategory,
 } from '@/Api/notificationApi';
 import type { Notification, NotificationStats, UseNotificationDataProps } from '../types';
 
@@ -24,6 +26,8 @@ interface NotificationState {
   isMarkingAll: boolean;
   hasMore: boolean;
   page: number;
+  categoryFilter: NotificationCategory | null; // فلتر الفئة
+  detailsCache: Record<string, Notification>; // Cache للتفاصيل الكاملة
 }
 
 type NotificationAction =
@@ -39,7 +43,9 @@ type NotificationAction =
   | { type: 'DELETE_NOTIFICATION'; payload: string }
   | { type: 'UPDATE_STATS'; payload: Partial<NotificationStats> }
   | { type: 'SET_PAGE'; payload: number }
-  | { type: 'SET_HAS_MORE'; payload: boolean };
+  | { type: 'SET_HAS_MORE'; payload: boolean }
+  | { type: 'SET_CATEGORY_FILTER'; payload: NotificationCategory | null }
+  | { type: 'CACHE_DETAILS'; payload: { id: string; notification: Notification } };
 
 // ============================================================================
 // Reducer
@@ -285,6 +291,18 @@ const notificationReducer = (
     case 'SET_HAS_MORE':
       return { ...state, hasMore: action.payload };
 
+    case 'SET_CATEGORY_FILTER':
+      return { ...state, categoryFilter: action.payload, page: 1 };
+
+    case 'CACHE_DETAILS':
+      return {
+        ...state,
+        detailsCache: {
+          ...state.detailsCache,
+          [action.payload.id]: action.payload.notification,
+        },
+      };
+
     default:
       return state;
   }
@@ -308,6 +326,8 @@ export const useNotificationDataOptimized = ({
     isMarkingAll: false,
     hasMore: true,
     page: 1,
+    categoryFilter: null,
+    detailsCache: {},
   });
 
   // Batch processing ref
@@ -328,27 +348,39 @@ export const useNotificationDataOptimized = ({
       try {
         dispatch({ type: 'SET_LOADING', payload: true });
         
-        console.log(`📡 Fetching notifications - page: ${pageNum}, reset: ${reset}`);
-        const { notifications: notificationsArray, hasMore } = await getAllNotifications(userId, pageNum, 20);
+        console.log(`📡 Fetching notifications - page: ${pageNum}, reset: ${reset}, category: ${state.categoryFilter || 'all'}`);
+        
+        // استخدام الـ API المحسّن مع الفلتر
+        const result = await getAllNotifications(
+          userId,
+          pageNum,
+          20,
+          state.categoryFilter ? { category: state.categoryFilter } : undefined
+        );
 
-        console.log(`✅ Received ${notificationsArray.length} notifications, hasMore: ${hasMore}`);
+        console.log(`✅ Received ${result.notifications.length} notifications, hasMore: ${result.hasMore}`);
 
-        const notifications: Notification[] = notificationsArray.map((n) => ({
+        const notifications: Notification[] = result.notifications.map((n) => ({
           _id: n._id,
           type: n.type,
+          category: n.category,
           title: n.title,
-          message: n.message,
+          message: n.message || n.messageSummary,
+          messageSummary: n.messageSummary,
           createdAt: n.createdAt || new Date().toISOString(),
           sentAt: n.sentAt || n.createdAt || new Date().toISOString(),
           isRead: n.isRead,
           priority: n.priority || 'medium',
           isNew: !n.isRead,
           data: n.data || {},
+          summary: n.summary,
+          link: n.link,
         }));
 
         dispatch({ type: 'SET_NOTIFICATIONS', payload: notifications, reset });
         dispatch({ type: 'SET_PAGE', payload: pageNum });
-        dispatch({ type: 'SET_HAS_MORE', payload: hasMore });
+        dispatch({ type: 'SET_HAS_MORE', payload: result.hasMore });
+        dispatch({ type: 'UPDATE_STATS', payload: result.stats });
         dispatch({ type: 'SET_LOADING', payload: false });
       } catch (error) {
         console.error('❌ خطأ في جلب الإشعارات:', error);
@@ -356,7 +388,7 @@ export const useNotificationDataOptimized = ({
         dispatch({ type: 'SET_LOADING', payload: false });
       }
     },
-    [userId, state.isLoading]
+    [userId, state.isLoading, state.categoryFilter]
   );
 
   // ============================================================================
@@ -421,7 +453,8 @@ export const useNotificationDataOptimized = ({
       // Optimistic update
       dispatch({ type: 'MARK_ALL_AS_READ' });
       
-      await markAllAsRead(userId);
+      // API uses auth token, no need for userId
+      await markAllAsRead();
       
       return { success: true };
     } catch (error) {
@@ -432,7 +465,7 @@ export const useNotificationDataOptimized = ({
     } finally {
       dispatch({ type: 'SET_MARKING_ALL', payload: false });
     }
-  }, [userId, state.stats.unreadCount, state.isMarkingAll, fetchNotifications]);
+  }, [state.stats.unreadCount, state.isMarkingAll, fetchNotifications]);
 
   // ============================================================================
   // Delete Notification (Optimistic)
@@ -480,6 +513,42 @@ export const useNotificationDataOptimized = ({
   }, [state.hasMore, state.isLoading, state.page, fetchNotifications]);
 
   // ============================================================================
+  // Filter by Category
+  // ============================================================================
+
+  const setCategory = useCallback((category: NotificationCategory | null) => {
+    dispatch({ type: 'SET_CATEGORY_FILTER', payload: category });
+    // سيتم إعادة التحميل بسبب تغير الـ categoryFilter
+  }, []);
+
+  // ============================================================================
+  // Load Details (On Demand)
+  // ============================================================================
+
+  const loadNotificationDetails = useCallback(async (notificationId: string): Promise<Notification | null> => {
+    // Check cache first
+    if (state.detailsCache[notificationId]) {
+      console.log('📋 Returning cached notification details:', notificationId);
+      return state.detailsCache[notificationId];
+    }
+
+    try {
+      console.log('📥 Fetching notification details:', notificationId);
+      const details = await getNotificationDetails(notificationId);
+      
+      if (details) {
+        dispatch({ type: 'CACHE_DETAILS', payload: { id: notificationId, notification: details as Notification } });
+        return details as Notification;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error loading notification details:', error);
+      return null;
+    }
+  }, [state.detailsCache]);
+
+  // ============================================================================
   // Process Batch (للإشعارات المتعددة دفعة واحدة)
   // ============================================================================
 
@@ -501,7 +570,7 @@ export const useNotificationDataOptimized = ({
     if (userId) {
       fetchNotifications(1, true);
     }
-  }, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [userId, state.categoryFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ============================================================================
   // Auto Refresh (Polling ذكي - فقط لو الـ tab active)
@@ -558,6 +627,7 @@ export const useNotificationDataOptimized = ({
     isLoading: state.isLoading,
     isMarkingAll: state.isMarkingAll,
     hasMore: state.hasMore,
+    categoryFilter: state.categoryFilter,
     fetchNotifications,
     loadMore,
     markAllAsReadLocal,
@@ -565,6 +635,8 @@ export const useNotificationDataOptimized = ({
     deleteNotificationLocal,
     addNotification,
     batchAddNotifications,
+    setCategory,
+    loadNotificationDetails,
     updateStats: useCallback((newStats: Partial<NotificationStats>) => {
       dispatch({ type: 'UPDATE_STATS', payload: newStats });
     }, []),

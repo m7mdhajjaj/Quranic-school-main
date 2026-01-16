@@ -3,13 +3,14 @@
 // ============================================================================
 // المكون الرئيسي للإشعارات مع بنية محسنة وقابلة لإعادة الاستخدام
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotificationsSocket } from '../../Socket';
 import { useFirebaseMessaging } from '@/hooks/useFirebaseMessaging';
 import { useSound } from '@/components/Hooks/useSounds';
 import { useNotificationDataOptimized as useNotificationData, usePrayerAlerts } from './hooks';
-import type { Notification, NotificationHeaderProps } from './types';
+import type { Notification, NotificationHeaderProps, NotificationCategory } from './types';
+import { Bell, GraduationCap, Shield, Sparkles } from 'lucide-react';
 import {
   NotificationBell,
   NotificationDropdownHeader,
@@ -33,11 +34,13 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
     isLoading,
     isMarkingAll,
     hasMore,
+    categoryFilter,
     loadMore,
     markAllAsReadLocal,
     markNotificationAsRead,
     deleteNotificationLocal,
     addNotification,
+    setCategory,
   } = useNotificationData({ userId });
 
   // إدارة الأصوات
@@ -196,6 +199,22 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
   }, [showDropdown]);
 
   // ============================================================================
+  // Category Filter Handler
+  // ============================================================================
+
+  const handleCategoryChange = useCallback((category: NotificationCategory | null) => {
+    setCategory(category);
+  }, [setCategory]);
+
+  // أزرار التصفية
+  const categoryButtons: { key: NotificationCategory | null; label: string; Icon: React.ComponentType<{ className?: string }> }[] = [
+    { key: null, label: 'الكل', Icon: Sparkles },
+    { key: 'general', label: 'عام', Icon: Bell },
+    { key: 'academic', label: 'أكاديمي', Icon: GraduationCap },
+    { key: 'admin', label: 'إداري', Icon: Shield },
+  ];
+
+  // ============================================================================
   // Render
   // ============================================================================
 
@@ -220,7 +239,7 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
         {/* القائمة المنسدلة */}
         {showDropdown && (
           <div 
-            className="fixed w-[320px] sm:w-[380px] bg-white rounded-xl shadow-2xl z-[150] animate-slideDown border border-gray-200 flex flex-col max-h-[70vh] sm:max-h-[500px]"
+            className="fixed w-[340px] sm:w-[400px] bg-white rounded-2xl shadow-2xl shadow-gray-200/50 z-[150] animate-slideDown border border-gray-100 flex flex-col max-h-[75vh] sm:max-h-[550px] overflow-hidden"
             style={{
               top: `${dropdownPosition.top}px`,
               right: `${dropdownPosition.right}px`,
@@ -228,7 +247,7 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
             onClick={(e) => e.stopPropagation()}
           >
             {/* رأس القائمة */}
-            <div className="flex-shrink-0 rounded-t-2xl overflow-hidden">
+            <div className="flex-shrink-0 overflow-hidden">
               <NotificationDropdownHeader
                 unreadCount={stats.unreadCount}
                 isMarkingAll={isMarkingAll}
@@ -237,8 +256,31 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
               />
             </div>
 
+            {/* شريط الفلاتر */}
+            <div className="flex-shrink-0 px-3 py-3 bg-gradient-to-b from-gray-50 to-white border-b border-gray-100">
+              <div className="flex gap-2 overflow-x-auto no-scrollbar">
+                {categoryButtons.map(({ key, label, Icon }) => (
+                  <button
+                    key={key ?? 'all'}
+                    onClick={() => handleCategoryChange(key)}
+                    className={`
+                      flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl whitespace-nowrap
+                      transition-all duration-300 ease-out
+                      ${categoryFilter === key 
+                        ? 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-200/50 scale-105' 
+                        : 'bg-white text-gray-600 border border-gray-200 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-600 hover:shadow-md'
+                      }
+                    `}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span>{label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* محتوى الإشعارات */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar bg-gradient-to-b from-gray-50 to-white rounded-b-2xl min-h-0">
+            <div className="flex-1 overflow-y-auto custom-scrollbar bg-gradient-to-b from-white via-gray-50/50 to-gray-50 min-h-0">
               <NotificationList
                 notifications={notifications}
                 isLoading={isLoading}

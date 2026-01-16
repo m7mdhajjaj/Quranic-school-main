@@ -11,20 +11,17 @@ const { protect } = require("../../middleware/auth");
 // Get Routes (Protected - Current User)
 // ============================================================================
 
-// Get recent notifications for current user
+// Get recent notifications for current user (Optimized)
 router.get("/recent", protect, async (req, res) => {
   try {
     const userId = req.user._id;
     const { limit = 5 } = req.query;
 
-    const notifications = await Notification.find({ recipient: userId })
-      .sort({ createdAt: -1 })
-      .limit(parseInt(limit))
-      .lean();
+    const result = await Notification.getLightweight(userId, 1, parseInt(limit));
 
     res.json({
       success: true,
-      data: notifications,
+      data: result.notifications, // Ensure array is returned directly for backward compatibility or wrap as needed
     });
   } catch (error) {
     console.error("Error fetching recent notifications:", error);
@@ -41,14 +38,12 @@ router.get("/unread-count", protect, async (req, res) => {
   try {
     const userId = req.user._id;
 
-    const count = await Notification.countDocuments({
-      recipient: userId,
-      isRead: false,
-    });
+    // Use fast count
+    const stats = await Notification.getQuickStats(userId);
 
     res.json({
       success: true,
-      count,
+      count: stats.unreadCount,
     });
   } catch (error) {
     console.error("Error getting unread count:", error);
@@ -64,61 +59,38 @@ router.get("/unread-count", protect, async (req, res) => {
 // Get Routes (By User ID)
 // ============================================================================
 
-// Get notifications for a specific user with pagination
+// Get notifications for a specific user with pagination (Optimized)
 router.get("/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
-    const { page = 1, limit = 20, type, isRead } = req.query;
+    const { page = 1, limit = 20, type, isRead, category } = req.query;
 
-    // Build filter
-    const filter = { recipient: userId };
+    // Build optimized filter
+    const filter = {};
+    if (type) filter.type = type;
+    if (category) filter.category = category;
+    if (isRead !== undefined) filter.isRead = isRead === "true";
 
-    if (type) {
-      filter.type = type;
-    }
-
-    if (isRead !== undefined) {
-      filter.isRead = isRead === "true";
-    }
-
-    // Get notifications with pagination
-    const notifications = await Notification.find(filter)
-      .sort({ createdAt: -1 })
-      .limit(parseInt(limit))
-      .skip((parseInt(page) - 1) * parseInt(limit))
-      .lean();
-
-    // Get total count
-    const totalCount = await Notification.countDocuments(filter);
-
-    // Get unread count
-    const unreadCount = await Notification.countDocuments({
-      recipient: userId,
-      isRead: false,
-    });
-
-    // Get new count (last 5 minutes)
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-    const newCount = await Notification.countDocuments({
-      recipient: userId,
-      createdAt: { $gte: fiveMinutesAgo },
-    });
+    // Use the optimized static method
+    const result = await Notification.getLightweight(
+      userId,
+      parseInt(page),
+      parseInt(limit),
+      filter
+    );
+    
+    // Get quick stats in parallel for better performance
+    const stats = await Notification.getQuickStats(userId);
 
     const response = {
       success: true,
       data: {
-        notifications,
-        pagination: {
-          currentPage: parseInt(page),
-          totalPages: Math.ceil(totalCount / parseInt(limit)),
-          totalCount,
-          hasNextPage: parseInt(page) * parseInt(limit) < totalCount,
-          hasPrevPage: parseInt(page) > 1,
-        },
+        notifications: result.notifications,
+        pagination: result.pagination,
         stats: {
-          unreadCount,
-          newCount,
-          totalCount,
+          unreadCount: stats.unreadCount,
+          newCount: stats.todayCount,
+          totalCount: result.stats.totalCount,
         },
       },
     };
@@ -134,19 +106,42 @@ router.get("/:userId", async (req, res) => {
   }
 });
 
+// Get notification details (Full data)
+router.get("/:id/details", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const notification = await Notification.getWithDetails(id);
+
+    if (!notification) {
+      return res.status(404).json({
+        success: false,
+        message: "الإشعار غير موجود",
+      });
+    }
+
+    res.json({
+      success: true,
+      data: notification,
+    });
+  } catch (error) {
+    console.error("Error fetching notification details:", error);
+    res.status(500).json({
+      success: false,
+      message: "خطأ في جلب تفاصيل الإشعار",
+      error: error.message,
+    });
+  }
+});
+
 // Get unread count for specific user
 router.get("/:userId/unread-count", async (req, res) => {
   try {
     const { userId } = req.params;
-
-    const unreadCount = await Notification.countDocuments({
-      recipient: userId,
-      isRead: false,
-    });
+    const stats = await Notification.getQuickStats(userId);
 
     res.json({
       success: true,
-      unreadCount,
+      unreadCount: stats.unreadCount,
     });
   } catch (error) {
     console.error("Error getting unread count:", error);
@@ -162,124 +157,17 @@ router.get("/:userId/unread-count", async (req, res) => {
 router.get("/:userId/stats", async (req, res) => {
   try {
     const { userId } = req.params;
-    const mongoose = require("mongoose");
-
-    const stats = await Notification.aggregate([
-      { $match: { recipient: new mongoose.Types.ObjectId(userId) } },
-      {
-        $group: {
-          _id: "$type",
-          total: { $sum: 1 },
-          unread: {
-            $sum: { $cond: [{ $eq: ["$isRead", false] }, 1, 0] },
-          },
-          read: {
-            $sum: { $cond: [{ $eq: ["$isRead", true] }, 1, 0] },
-          },
-        },
-      },
-      {
-        $project: {
-          type: "$_id",
-          total: 1,
-          unread: 1,
-          read: 1,
-          _id: 0,
-        },
-      },
-    ]);
-
-    const totalStats = await Notification.aggregate([
-      { $match: { recipient: new mongoose.Types.ObjectId(userId) } },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: 1 },
-          unread: {
-            $sum: { $cond: [{ $eq: ["$isRead", false] }, 1, 0] },
-          },
-          read: {
-            $sum: { $cond: [{ $eq: ["$isRead", true] }, 1, 0] },
-          },
-        },
-      },
-    ]);
+    const stats = await Notification.getQuickStats(userId);
 
     res.json({
       success: true,
-      data: {
-        byType: stats,
-        overall: totalStats[0] || { total: 0, unread: 0, read: 0 },
-        generatedAt: new Date(),
-      },
+      data: stats,
     });
   } catch (error) {
     console.error("Error getting notification stats:", error);
     res.status(500).json({
       success: false,
       message: "خطأ في جلب إحصائيات الإشعارات",
-      error: error.message,
-    });
-  }
-});
-
-// Search notifications for a user
-router.get("/:userId/search", async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const { q, type, dateFrom, dateTo, page = 1, limit = 10 } = req.query;
-
-    const filter = { recipient: userId };
-
-    // Text search
-    if (q) {
-      filter.$or = [
-        { title: { $regex: q, $options: "i" } },
-        { message: { $regex: q, $options: "i" } },
-      ];
-    }
-
-    // Filter by type
-    if (type) {
-      filter.type = type;
-    }
-
-    // Filter by date range
-    if (dateFrom || dateTo) {
-      filter.createdAt = {};
-      if (dateFrom) {
-        filter.createdAt.$gte = new Date(dateFrom);
-      }
-      if (dateTo) {
-        filter.createdAt.$lte = new Date(dateTo);
-      }
-    }
-
-    const notifications = await Notification.find(filter)
-      .sort({ createdAt: -1 })
-      .limit(parseInt(limit))
-      .skip((parseInt(page) - 1) * parseInt(limit))
-      .lean();
-
-    const totalCount = await Notification.countDocuments(filter);
-
-    res.json({
-      success: true,
-      data: {
-        notifications,
-        pagination: {
-          currentPage: parseInt(page),
-          totalPages: Math.ceil(totalCount / parseInt(limit)),
-          totalCount,
-        },
-        searchQuery: q,
-      },
-    });
-  } catch (error) {
-    console.error("Error searching notifications:", error);
-    res.status(500).json({
-      success: false,
-      message: "خطأ في البحث عن الإشعارات",
       error: error.message,
     });
   }

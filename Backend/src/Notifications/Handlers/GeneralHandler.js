@@ -17,10 +17,16 @@ exports.notifySystemMessage = async (createNotification, userId, userModel, titl
       recipient: userId,
       recipientModel: userModel,
       type: 'system',
+      category: 'general',
       title: title,
       message: message,
+      messageSummary: message.length > 100 ? message.substring(0, 97) + '...' : message,
       priority: 'medium',
-      data: data
+      data: {
+        ...data,
+        action: data.action || 'system_message',
+        entityType: 'system'
+      }
     });
 
     console.log(`✅ [GeneralHandler] System notification sent to ${userModel} ${userId}`);
@@ -46,10 +52,16 @@ exports.notifyWarning = async (createNotification, userId, userModel, title, mes
       recipient: userId,
       recipientModel: userModel,
       type: 'warning',
+      category: 'academic',
       title: title,
       message: message,
+      messageSummary: message.length > 100 ? message.substring(0, 97) + '...' : message,
       priority: 'high',
-      data: data
+      data: {
+        ...data,
+        action: data.action || 'warning_issued',
+        entityType: 'warning'
+      }
     });
 
     console.log(`✅ [GeneralHandler] Warning notification sent to ${userModel} ${userId}`);

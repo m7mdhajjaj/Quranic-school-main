@@ -26,6 +26,11 @@ export {
   getNotificationColor,
   formatRelativeTime,
   getPriorityBadge,
+  getActionText,
+  getCategoryFromType,
+  getCategoryColor,
+  getCategoryName,
+  NOTIFICATION_TYPES,
 } from './utils';
 
 // Types - Export all types from the types folder
@@ -34,7 +39,12 @@ export type {
   Notification,
   NotificationType,
   NotificationPriority,
+  NotificationCategory,
+  NotificationAction,
   NotificationStats,
+  NotificationSummary,
+  NotificationDetails,
+  NotificationWithDetails,
   PrayerData,
   
   // Component Props Types

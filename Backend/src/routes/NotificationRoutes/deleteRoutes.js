@@ -4,8 +4,12 @@
 
 const express = require("express");
 const router = express.Router();
+const mongoose = require("mongoose");
 const Notification = require("../../schema/Notification");
 const { protect } = require("../../middleware/auth");
+
+// Helper: Validate ObjectId
+const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
 // ============================================================================
 // Delete Routes
@@ -15,6 +19,15 @@ const { protect } = require("../../middleware/auth");
 router.delete("/:notificationId", protect, async (req, res) => {
   try {
     const { notificationId } = req.params;
+
+    // التحقق من صحة الـ ID
+    if (!isValidObjectId(notificationId)) {
+      return res.status(400).json({
+        success: false,
+        message: "معرّف الإشعار غير صالح",
+      });
+    }
+
     const userId = req.user._id;
 
     // Ensure notification belongs to current user before deleting
@@ -48,6 +61,14 @@ router.delete("/:notificationId", protect, async (req, res) => {
 router.delete("/:userId/read", async (req, res) => {
   try {
     const { userId } = req.params;
+
+    // التحقق من صحة الـ ID
+    if (!isValidObjectId(userId)) {
+      return res.status(400).json({
+        success: false,
+        message: "معرّف المستخدم غير صالح",
+      });
+    }
 
     const result = await Notification.deleteMany({
       recipient: userId,

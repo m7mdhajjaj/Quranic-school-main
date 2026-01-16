@@ -4,8 +4,12 @@
 
 const express = require("express");
 const router = express.Router();
+const mongoose = require("mongoose");
 const Notification = require("../../schema/Notification");
 const { protect } = require("../../middleware/auth");
+
+// Helper: Validate ObjectId
+const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
 // ============================================================================
 // Mark as Read Routes
@@ -15,6 +19,23 @@ const { protect } = require("../../middleware/auth");
 router.put("/:notificationId/read", protect, async (req, res) => {
   try {
     const { notificationId } = req.params;
+    
+    // التحقق من صحة الـ ID
+    if (!isValidObjectId(notificationId)) {
+      return res.status(400).json({
+        success: false,
+        message: "معرّف الإشعار غير صالح",
+      });
+    }
+
+    // التحقق من وجود المستخدم
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({
+        success: false,
+        message: "المستخدم غير مصادق عليه",
+      });
+    }
+
     const userId = req.user._id;
 
     // Ensure notification belongs to current user
@@ -40,7 +61,7 @@ router.put("/:notificationId/read", protect, async (req, res) => {
       data: notification,
     });
   } catch (error) {
-    console.error("Error marking notification as read:", error);
+    console.error("Error marking notification as read:", error.message, error.stack);
     res.status(500).json({
       success: false,
       message: "خطأ في تحديد الإشعار كمقروء",
@@ -53,6 +74,14 @@ router.put("/:notificationId/read", protect, async (req, res) => {
 router.patch("/:notificationId/read", async (req, res) => {
   try {
     const { notificationId } = req.params;
+
+    // التحقق من صحة الـ ID
+    if (!isValidObjectId(notificationId)) {
+      return res.status(400).json({
+        success: false,
+        message: "معرّف الإشعار غير صالح",
+      });
+    }
 
     const notification = await Notification.findByIdAndUpdate(
       notificationId,
@@ -119,6 +148,14 @@ router.put("/read-all", protect, async (req, res) => {
 router.patch("/:userId/read-all", async (req, res) => {
   try {
     const { userId } = req.params;
+
+    // التحقق من صحة الـ ID
+    if (!isValidObjectId(userId)) {
+      return res.status(400).json({
+        success: false,
+        message: "معرّف المستخدم غير صالح",
+      });
+    }
 
     const result = await Notification.updateMany(
       { recipient: userId, isRead: false },

@@ -4,6 +4,7 @@
 // Hook لجلب حلقات المعلم - مخصص لصفحة ExamSchedule
 
 import { useState, useEffect, useMemo } from 'react';
+import { getGroupsByTeacherIdWithFilters } from '@/Api/groupApi';
 
 // ============================================================================
 // Types
@@ -16,54 +17,6 @@ interface User {
   lastName?: string;
   role?: 'student' | 'teacher' | 'admin' | 'secretary';
 }
-
-interface Group {
-  _id: string;
-  name: string;
-  teacher?: string;
-}
-
-// ============================================================================
-// Helper Functions
-// ============================================================================
-
-/**
- * الحصول على جميع الأسماء المحتملة للمعلم
- */
-const getTeacherPossibleNames = (user: User): string[] => {
-  const { firstName = '', fatherName = '', lastName = '' } = user;
-  
-  const firstLast = `${firstName} ${lastName}`.trim();
-  const firstFatherLast = `${firstName} ${fatherName} ${lastName}`
-    .trim()
-    .replace(/\s+/g, ' ');
-  
-  return [firstLast, firstFatherLast, firstName].filter(
-    (name): name is string => !!name && name.length > 0
-  );
-};
-
-/**
- * التحقق من تطابق اسم المعلم
- */
-const isTeacherMatch = (
-  studentTeacher: string,
-  possibleNames: string[]
-): boolean => {
-  const studentTeacherNormalized = studentTeacher
-    .trim()
-    .replace(/\s+/g, ' ')
-    .toLowerCase();
-  
-  return possibleNames.some((possibleName) => {
-    const normalizedPossible = possibleName.toLowerCase();
-    return (
-      studentTeacherNormalized === normalizedPossible ||
-      studentTeacherNormalized.includes(normalizedPossible) ||
-      normalizedPossible.includes(studentTeacherNormalized)
-    );
-  });
-};
 
 // ============================================================================
 // Hook
@@ -79,7 +32,7 @@ export function useTeacherGroups(role: 'student' | 'teacher' | 'admin' | 'secret
   const [loadingTeacherGroups, setLoadingTeacherGroups] = useState(false);
 
   // الحصول على المستخدم من localStorage
-  const currentUser = useMemo(() => {
+  const currentUser = useMemo<User | null>(() => {
     try {
       const userStr = localStorage.getItem('user');
       if (!userStr) return null;
@@ -92,7 +45,7 @@ export function useTeacherGroups(role: 'student' | 'teacher' | 'admin' | 'secret
   useEffect(() => {
     const fetchTeacherGroups = async () => {
       // إذا المستخدم مش معلم، لا نجلب شي
-      if (role !== 'teacher' || !currentUser || currentUser.role !== 'teacher') {
+      if (role !== 'teacher' || !currentUser || currentUser.role !== 'teacher' || !currentUser._id) {
         setTeacherGroups([]);
         setLoadingTeacherGroups(false);
         return;
@@ -101,41 +54,24 @@ export function useTeacherGroups(role: 'student' | 'teacher' | 'admin' | 'secret
       setLoadingTeacherGroups(true);
 
       try {
-        console.log('🔍 [useTeacherGroups] جلب حلقات المعلم...');
+        console.log('🔍 [useTeacherGroups] جلب حلقات المعلم بواسطة ID:', currentUser._id);
 
-        // Dynamic import للـ API
-        const { getAllGroups } = await import('@/Api/groupApi');
-        const groupsRes = await getAllGroups();
+        // استخدام API المخصص للمعلم (لا يحتاج صلاحيات Admin/Secretary)
+        const result = await getGroupsByTeacherIdWithFilters(
+          currentUser._id,
+          'all', // جلب كل الحلقات
+          false  // لا نحتاج تفاصيل الطلاب
+        );
 
-        if (!groupsRes.success || !Array.isArray(groupsRes.data)) {
+        if (!result.success || !Array.isArray(result.data)) {
           console.error('❌ [useTeacherGroups] فشل في جلب الحلقات');
           setTeacherGroups([]);
           return;
         }
 
-        // الحصول على الأسماء المحتملة للمعلم
-        const possibleNames = getTeacherPossibleNames(currentUser);
-        console.log('📋 [useTeacherGroups] أسماء المعلم المحتملة:', possibleNames);
-        console.log('📊 [useTeacherGroups] إجمالي الحلقات:', groupsRes.data.length);
-
-        // فلترة الحلقات التي تخص هذا المعلم
-        const teacherGroupsData = groupsRes.data.filter((group: Group) => {
-          if (!group.teacher) return false;
-          
-          const isMatch = isTeacherMatch(group.teacher, possibleNames);
-          
-          if (isMatch) {
-            console.log(
-              `✅ [useTeacherGroups] حلقة مطابقة: ${group.name} - معلمها: ${group.teacher}`
-            );
-          }
-          
-          return isMatch;
-        });
-
         // ترتيب الحلقات أبجدياً
-        const groupNames = teacherGroupsData
-          .map((g: Group) => g.name)
+        const groupNames = result.data
+          .map((g) => g.name)
           .sort((a: string, b: string) => a.localeCompare(b, 'ar'));
         
         console.log(`✅ [useTeacherGroups] تم جلب ${groupNames.length} حلقة:`, groupNames);

@@ -2,6 +2,12 @@
  * AdminHandler.js
  * معالجة الإشعارات الناتجة عن إجراءات الأدمن
  * (مثل تعيين الحلقات، تحديث البيانات، إلخ)
+ * 
+ * أنواع الإشعارات الإدارية:
+ * - admin_action: إجراء إداري عام
+ * - user_approval: اعتماد مستخدم
+ * - role_change: تغيير دور
+ * - system_update: تحديث النظام
  */
 
 /**
@@ -15,12 +21,16 @@ exports.notifyGroupAssigned = async (createNotification, teacherId, groupName, a
   return createNotification({
     recipient: teacherId,
     recipientModel: 'Teacher',
-    title: 'تم تعيين حلقة جديدة لك',
-    message: `قام ${adminName} بتعيين حلقة "${groupName}" لك.`,
-    type: 'success',
+    title: 'حلقة جديدة',
+    message: `تم تعيينك على حلقة ${groupName}`,
+    messageSummary: `حلقة ${groupName}`,
+    type: 'admin_action',
+    category: 'admin',
     data: { 
       groupName,
-      action: 'group_assigned'
+      action: 'group_assigned',
+      entityType: 'group',
+      performedBy: adminName
     },
     link: '/teacher/groups'
   });
@@ -37,12 +47,16 @@ exports.notifyGroupUpdated = async (createNotification, teacherId, groupName, ad
   return createNotification({
     recipient: teacherId,
     recipientModel: 'Teacher',
-    title: 'تحديث بيانات الحلقة',
-    message: `قام ${adminName} بتحديث بيانات حلقة "${groupName}".`,
-    type: 'system',
+    title: 'تحديث الحلقة',
+    message: `تم تحديث بيانات حلقة ${groupName}`,
+    messageSummary: `تحديث ${groupName}`,
+    type: 'system_update',
+    category: 'admin',
     data: { 
       groupName,
-      action: 'group_updated'
+      action: 'group_updated',
+      entityType: 'group',
+      performedBy: adminName
     },
     link: '/teacher/groups'
   });
@@ -59,12 +73,17 @@ exports.notifyGroupTransferredFrom = async (createNotification, teacherId, group
   return createNotification({
     recipient: teacherId,
     recipientModel: 'Teacher',
-    title: 'تم نقل الحلقة منك',
-    message: `قام ${adminName} بنقل حلقة "${groupName}" إلى معلم آخر.`,
-    type: 'warning',
+    title: 'نقل الحلقة',
+    message: `تم نقل حلقة ${groupName} لمعلم آخر`,
+    messageSummary: `نقل ${groupName}`,
+    type: 'admin_action',
+    category: 'admin',
+    priority: 'high',
     data: { 
       groupName,
-      action: 'group_transferred_from'
+      action: 'group_transferred_from',
+      entityType: 'group',
+      performedBy: adminName
     },
     link: '/teacher/groups'
   });
@@ -81,12 +100,16 @@ exports.notifyGroupTransferredTo = async (createNotification, teacherId, groupNa
   return createNotification({
     recipient: teacherId,
     recipientModel: 'Teacher',
-    title: 'تم نقل حلقة إليك',
-    message: `قام ${adminName} بنقل حلقة "${groupName}" لتصبح تحت إشرافك.`,
-    type: 'success',
+    title: 'حلقة جديدة',
+    message: `تم نقل حلقة ${groupName} إلى إشرافك`,
+    messageSummary: `استلام ${groupName}`,
+    type: 'admin_action',
+    category: 'admin',
     data: { 
       groupName,
-      action: 'group_transferred_to'
+      action: 'group_transferred_to',
+      entityType: 'group',
+      performedBy: adminName
     },
     link: '/teacher/groups'
   });
@@ -103,8 +126,8 @@ exports.notifyGroupDeleted = async (createNotification, teacherId, groupName, ad
   return createNotification({
     recipient: teacherId,
     recipientModel: 'Teacher',
-    title: 'تم حذف الحلقة',
-    message: `قام ${adminName} بحذف حلقة "${groupName}".`,
+    title: 'حذف الحلقة',
+    message: `تم حذف حلقة ${groupName}`,
     type: 'alert',
     data: { 
       groupName,
@@ -124,8 +147,8 @@ exports.notifyTeacherInfoUpdated = async (createNotification, teacherId, adminNa
   return createNotification({
     recipient: teacherId,
     recipientModel: 'Teacher',
-    title: 'تحديث بياناتك الشخصية',
-    message: `قام ${adminName} بتحديث بيانات ملفك الشخصي.`,
+    title: 'تحديث الملف',
+    message: 'تم تحديث بياناتك الشخصية',
     type: 'system',
     data: { 
       action: 'teacher_info_updated'
@@ -143,10 +166,10 @@ exports.notifyTeacherInfoUpdated = async (createNotification, teacherId, adminNa
  * @param {string} actionType - نوع العملية ('assigned' | 'removed')
  */
 exports.notifyGroupStudentsTeacherChanged = async (createNotification, studentIds, groupName, teacherName, actionType) => {
-  const title = actionType === 'assigned' ? 'معلم جديد للحلقة' : 'تغيير في كادر الحلقة';
+  const title = actionType === 'assigned' ? 'معلم جديد' : 'تغيير المعلم';
   const message = actionType === 'assigned' 
-    ? `تم تعيين الأستاذ ${teacherName} معلماً لحلقتكم "${groupName}".`
-    : `تم إلغاء تعيين الأستاذ ${teacherName} من حلقة "${groupName}".`;
+    ? `الأستاذ ${teacherName} معلم حلقتكم`
+    : `تم تغيير معلم الحلقة`;
   
   const type = actionType === 'assigned' ? 'success' : 'alert';
 
@@ -179,8 +202,8 @@ exports.notifyGroupDeletedForStudents = async (createNotification, studentIds, g
   const notifications = studentIds.map(studentId => ({
     recipient: studentId,
     recipientModel: 'Student',
-    title: 'تم حذف الحلقة',
-    message: `قام ${adminName} بحذف حلقة "${groupName}".`,
+    title: 'حذف الحلقة',
+    message: `تم حذف حلقة ${groupName}`,
     type: 'alert',
     data: { 
       groupName,
@@ -209,8 +232,8 @@ exports.notifyGroupRenamed = async (createNotification, teacherId, studentIds, o
     promises.push(createNotification({
       recipient: teacherId,
       recipientModel: 'Teacher',
-      title: 'تغيير اسم الحلقة',
-      message: `تم تغيير اسم حلقتك من "${oldName}" إلى "${newName}".`,
+      title: 'تغيير الاسم',
+      message: `تم تغيير اسم الحلقة إلى ${newName}`,
       type: 'system',
       data: { 
         oldName,
@@ -227,8 +250,8 @@ exports.notifyGroupRenamed = async (createNotification, teacherId, studentIds, o
       promises.push(createNotification({
         recipient: studentId,
         recipientModel: 'Student',
-        title: 'تغيير اسم الحلقة',
-        message: `تم تغيير اسم حلقتك من "${oldName}" إلى "${newName}".`,
+        title: 'تغيير الاسم',
+        message: `تم تغيير اسم الحلقة إلى ${newName}`,
         type: 'system',
         data: { 
           oldName,
@@ -265,8 +288,8 @@ exports.notifyAdminAddedStudent = async (createNotification, teacherId, student,
     promises.push(createNotification({
       recipient: teacherId,
       recipientModel: 'Teacher',
-      title: 'إضافة طالب جديد',
-      message: `تم إضافة الطالب ${student.firstName} ${student.lastName} إلى حلقتك ${groupName} بواسطة ${adminName}`,
+      title: 'طالب جديد',
+      message: `${student.firstName} ${student.lastName} - ${groupName}`,
       type: 'success',
       data: { 
         action: 'student_added_by_admin',
@@ -284,8 +307,8 @@ exports.notifyAdminAddedStudent = async (createNotification, teacherId, student,
     promises.push(createNotification({
       recipient: student._id,
       recipientModel: 'Student',
-      title: 'تم اضافتك للحلقة',
-      message: `تم اضافتك للحلقة ${groupName}`,
+      title: 'إضافة للحلقة',
+      message: `تم إضافتك لحلقة ${groupName}`,
       type: 'success',
       data: { 
         action: 'student_added_to_group',
@@ -313,8 +336,8 @@ exports.notifyAdminRemovedStudent = async (createNotification, teacherId, studen
   return createNotification({
     recipient: teacherId,
     recipientModel: 'Teacher',
-    title: 'حذف طالب من الحلقة',
-    message: `تم ازالة الطالب ${student.firstName} ${student.lastName} من حلقتك ${groupName} بواسطة ${adminName}`,
+    title: 'حذف طالب',
+    message: `${student.firstName} ${student.lastName} - ${groupName}`,
     type: 'warning',
     data: { 
       action: 'student_removed_by_admin',
@@ -345,8 +368,8 @@ exports.notifyAdminMovedStudent = async (createNotification, oldTeacherId, newTe
     promises.push(createNotification({
       recipient: oldTeacherId,
       recipientModel: 'Teacher',
-      title: 'نقل طالب من الحلقة',
-      message: `تم نقل الطالب ${student.firstName} ${student.lastName} من حلقتك ${oldGroupName} إلى حلقة ${newGroupName} بواسطة ${adminName}`,
+      title: 'نقل طالب',
+      message: `${student.firstName} ${student.lastName} إلى ${newGroupName}`,
       type: 'warning',
       data: { 
         action: 'student_moved_out_by_admin',
@@ -365,8 +388,8 @@ exports.notifyAdminMovedStudent = async (createNotification, oldTeacherId, newTe
     promises.push(createNotification({
       recipient: newTeacherId,
       recipientModel: 'Teacher',
-      title: 'نقل طالب إلى الحلقة',
-      message: `تم نقل الطالب ${student.firstName} ${student.lastName} إلى حلقتك ${newGroupName} من حلقة ${oldGroupName} بواسطة ${adminName}`,
+      title: 'طالب جديد',
+      message: `${student.firstName} ${student.lastName} - ${newGroupName}`,
       type: 'success',
       data: { 
         action: 'student_moved_in_by_admin',
@@ -386,7 +409,7 @@ exports.notifyAdminMovedStudent = async (createNotification, oldTeacherId, newTe
       recipient: student._id,
       recipientModel: 'Student',
       title: 'تغيير الحلقة',
-      message: `تم نقل حلقتك من ${oldGroupName} إلى ${newGroupName} بواسطة ${adminName}`,
+      message: `تم نقلك إلى حلقة ${newGroupName}`,
       type: 'system',
       data: { 
         action: 'student_group_changed_by_admin',

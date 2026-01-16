@@ -1,9 +1,35 @@
 // ============================================================================
 // Notification Utilities
 // ============================================================================
-// Helper functions للإشعارات
+// Helper functions للإشعارات - محدث ليدعم جميع أنواع الإشعارات
 
-import type { DailyMarkAction, DailyMarkNotificationData } from '../types';
+import type { DailyMarkAction, NotificationType, NotificationAction, NotificationCategory } from '../types';
+
+/**
+ * أنواع الإشعارات المدعومة - متطابقة مع Backend
+ */
+export const NOTIFICATION_TYPES = {
+  GENERAL: ['general', 'system', 'success', 'alert', 'warning', 'message', 'mention', 'news', 'chat', 'reminder'],
+  ACADEMIC: ['grade', 'daily_marks', 'exam', 'attendance', 'quran_progress', 'memorization', 'review', 'test_result', 'student_update', 'timetable'],
+  ADMIN: [
+    'teacher_added', 'teacher_updated', 'teacher_deleted',
+    'student_added', 'student_updated', 'student_deleted',
+    'group_assigned', 'group_updated', 'group_deleted', 'group_transferred',
+    'secretary_added', 'secretary_updated', 'secretary_deleted',
+    'admin_action', 'user_approval', 'role_change', 'system_update',
+  ],
+  OTHER: ['prayer_time', 'goal', 'achievement', 'points', 'ranking', 'other'],
+} as const;
+
+/**
+ * تحديد الفئة من النوع
+ */
+export const getCategoryFromType = (type: NotificationType): NotificationCategory => {
+  if (NOTIFICATION_TYPES.ACADEMIC.includes(type as any)) return 'academic';
+  if (NOTIFICATION_TYPES.ADMIN.includes(type as any)) return 'admin';
+  if (NOTIFICATION_TYPES.OTHER.includes(type as any)) return 'other';
+  return 'general';
+};
 
 /**
  * الحصول على أيقونة أكثر تفصيلاً للعلامات اليومية
@@ -36,6 +62,49 @@ export const getDailyMarkActionText = (action: DailyMarkAction): string => {
 };
 
 /**
+ * الحصول على نص وصفي لأي عملية (action)
+ */
+export const getActionText = (action: NotificationAction | string): string => {
+  const actionTexts: Record<string, string> = {
+    // Section actions
+    section_added: 'إضافة مقطع جديد',
+    section_updated: 'تعديل مقطع',
+    section_deleted: 'حذف مقطع',
+    // Mark actions
+    mark_added: 'إضافة علامة جديدة',
+    mark_updated: 'تحديث علامة',
+    mark_deleted: 'حذف علامة',
+    // Group actions
+    group_assigned: 'تعيين حلقة',
+    group_updated: 'تحديث حلقة',
+    group_deleted: 'حذف حلقة',
+    group_transferred: 'نقل حلقة',
+    group_transferred_from: 'نقل حلقة منك',
+    group_transferred_to: 'نقل حلقة إليك',
+    group_renamed: 'تغيير اسم الحلقة',
+    // Student actions
+    student_added: 'إضافة طالب',
+    student_added_by_admin: 'إضافة طالب بواسطة الإدارة',
+    student_added_to_group: 'إضافة للحلقة',
+    student_removed: 'إزالة طالب',
+    student_removed_by_admin: 'إزالة طالب بواسطة الإدارة',
+    student_moved: 'نقل طالب',
+    student_moved_out_by_admin: 'نقل طالب من الحلقة',
+    student_moved_in_by_admin: 'نقل طالب إلى الحلقة',
+    student_group_changed_by_admin: 'تغيير حلقة الطالب',
+    // Teacher actions
+    teacher_assigned_to_group: 'تعيين معلم للحلقة',
+    teacher_removed_from_group: 'إزالة معلم من الحلقة',
+    teacher_info_updated: 'تحديث بيانات المعلم',
+    // General actions
+    created: 'إنشاء',
+    updated: 'تحديث',
+    deleted: 'حذف',
+  };
+  return actionTexts[action] || action || 'عملية غير محددة';
+};
+
+/**
  * الحصول على أيقونة الإشعار حسب النوع
  */
 export const getNotificationIcon = (type: string, data?: any): string => {
@@ -45,12 +114,12 @@ export const getNotificationIcon = (type: string, data?: any): string => {
   }
   
   const icons: Record<string, string> = {
+    // General
     grade: '🎯',
     message: '💬',
     prayer_time: '🕌',
     attendance: '⚡',
     exam: '📝',
-    assignment: '📚',
     news: '📰',
     general: '🔔',
     daily_marks: '📊',
@@ -58,6 +127,44 @@ export const getNotificationIcon = (type: string, data?: any): string => {
     system: '⚙️',
     success: '✅',
     alert: '🚨',
+    chat: '💬',
+    timetable: '📅',
+    mention: '💬',
+    reminder: '⏰',
+    // Academic
+    quran_progress: '📖',
+    memorization: '📗',
+    review: '📘',
+    test_result: '📋',
+    student_update: '👨‍🎓',
+    // Admin - Teacher
+    teacher_added: '👨‍🏫',
+    teacher_updated: '✏️',
+    teacher_deleted: '🗑️',
+    // Admin - Student
+    student_added: '👨‍🎓',
+    student_updated: '✏️',
+    student_deleted: '🗑️',
+    // Admin - Group
+    group_assigned: '📚',
+    group_updated: '✏️',
+    group_deleted: '🗑️',
+    group_transferred: '🔄',
+    // Admin - Secretary
+    secretary_added: '👤',
+    secretary_updated: '✏️',
+    secretary_deleted: '🗑️',
+    // Admin - New types
+    admin_action: '🔧',
+    user_approval: '✅',
+    role_change: '👥',
+    system_update: '🔄',
+    // Other
+    goal: '🎯',
+    achievement: '🏆',
+    points: '⭐',
+    ranking: '🏅',
+    other: '🔔',
   };
   return icons[type] || '🔔';
 };
@@ -67,12 +174,12 @@ export const getNotificationIcon = (type: string, data?: any): string => {
  */
 export const getNotificationColor = (type: string): string => {
   const colors: Record<string, string> = {
+    // General
     attendance: 'from-yellow-400 to-orange-500',
     grade: 'from-green-400 to-green-600',
     message: 'from-blue-400 to-blue-600',
     prayer_time: 'from-purple-400 to-purple-600',
     exam: 'from-pink-400 to-pink-600',
-    assignment: 'from-indigo-400 to-indigo-600',
     news: 'from-cyan-400 to-cyan-600',
     general: 'from-gray-400 to-gray-600',
     daily_marks: 'from-emerald-400 to-emerald-600',
@@ -80,8 +187,72 @@ export const getNotificationColor = (type: string): string => {
     system: 'from-slate-400 to-slate-600',
     success: 'from-teal-400 to-teal-600',
     alert: 'from-rose-400 to-rose-600',
+    chat: 'from-blue-400 to-blue-600',
+    timetable: 'from-indigo-400 to-indigo-600',
+    mention: 'from-violet-400 to-violet-600',
+    reminder: 'from-amber-400 to-amber-600',
+    // Academic
+    quran_progress: 'from-green-400 to-green-600',
+    memorization: 'from-emerald-400 to-emerald-600',
+    review: 'from-teal-400 to-teal-600',
+    test_result: 'from-blue-400 to-blue-600',
+    student_update: 'from-cyan-400 to-cyan-600',
+    // Admin - Teacher
+    teacher_added: 'from-green-400 to-green-600',
+    teacher_updated: 'from-blue-400 to-blue-600',
+    teacher_deleted: 'from-red-400 to-red-600',
+    // Admin - Student
+    student_added: 'from-green-400 to-green-600',
+    student_updated: 'from-blue-400 to-blue-600',
+    student_deleted: 'from-red-400 to-red-600',
+    // Admin - Group
+    group_assigned: 'from-emerald-400 to-emerald-600',
+    group_updated: 'from-blue-400 to-blue-600',
+    group_deleted: 'from-red-400 to-red-600',
+    group_transferred: 'from-amber-400 to-amber-600',
+    // Admin - Secretary
+    secretary_added: 'from-green-400 to-green-600',
+    secretary_updated: 'from-blue-400 to-blue-600',
+    secretary_deleted: 'from-red-400 to-red-600',
+    // Admin - New types
+    admin_action: 'from-slate-400 to-slate-600',
+    user_approval: 'from-green-400 to-green-600',
+    role_change: 'from-purple-400 to-purple-600',
+    system_update: 'from-blue-400 to-blue-600',
+    // Other
+    goal: 'from-amber-400 to-amber-600',
+    achievement: 'from-yellow-400 to-yellow-600',
+    points: 'from-orange-400 to-orange-600',
+    ranking: 'from-rose-400 to-rose-600',
+    other: 'from-gray-400 to-gray-600',
   };
   return colors[type] || 'from-gray-400 to-gray-600';
+};
+
+/**
+ * الحصول على لون الفئة
+ */
+export const getCategoryColor = (category: NotificationCategory): string => {
+  const colors: Record<NotificationCategory, string> = {
+    general: 'from-gray-400 to-gray-600',
+    academic: 'from-emerald-400 to-emerald-600',
+    admin: 'from-blue-400 to-blue-600',
+    other: 'from-purple-400 to-purple-600',
+  };
+  return colors[category] || 'from-gray-400 to-gray-600';
+};
+
+/**
+ * الحصول على اسم الفئة بالعربية
+ */
+export const getCategoryName = (category: NotificationCategory): string => {
+  const names: Record<NotificationCategory, string> = {
+    general: 'عامة',
+    academic: 'أكاديمية',
+    admin: 'إدارية',
+    other: 'أخرى',
+  };
+  return names[category] || 'عامة';
 };
 
 /**

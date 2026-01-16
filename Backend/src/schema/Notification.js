@@ -1,91 +1,148 @@
 const mongoose = require("mongoose");
 
+// ============================================================================
+// أنواع الإشعارات المدعومة - مُصنّفة حسب الفئة
+// ============================================================================
+
+const NOTIFICATION_TYPES = {
+  // إشعارات عامة
+  GENERAL: ["general", "system", "success", "alert", "warning", "message", "mention", "news", "chat", "reminder"],
+  
+  // إشعارات الطلاب والمعلمين
+  ACADEMIC: ["grade", "daily_marks", "exam", "attendance", "quran_progress", "memorization", "review", "test_result", "student_update", "timetable"],
+  
+  // إشعارات الإدارة
+  ADMIN: [
+    "teacher_added", "teacher_updated", "teacher_deleted",
+    "student_added", "student_updated", "student_deleted",
+    "group_assigned", "group_updated", "group_deleted", "group_transferred",
+    "secretary_added", "secretary_updated", "secretary_deleted",
+    "admin_action", "user_approval", "role_change", "system_update",
+  ],
+  
+  // إشعارات أخرى
+  OTHER: ["prayer_time", "goal", "achievement", "points", "ranking", "other"],
+};
+
+// جمع كل الأنواع في مصفوفة واحدة
+const ALL_NOTIFICATION_TYPES = [
+  ...NOTIFICATION_TYPES.GENERAL,
+  ...NOTIFICATION_TYPES.ACADEMIC,
+  ...NOTIFICATION_TYPES.ADMIN,
+  ...NOTIFICATION_TYPES.OTHER,
+];
+
+// ============================================================================
+// Sub-Schema للبيانات المختصرة (تُعرض في القائمة)
+// ============================================================================
+const notificationSummarySchema = new mongoose.Schema(
+  {
+    action: {
+      type: String,
+      trim: true,
+    },
+    entityType: {
+      type: String,
+      enum: ["student", "teacher", "group", "section", "mark", "exam", "news", "timetable", "other"],
+    },
+    entityId: mongoose.Schema.Types.ObjectId,
+    entityName: String,
+  },
+  { _id: false }
+);
+
+// ============================================================================
+// Main Notification Schema - البيانات الأساسية فقط
+// ============================================================================
 const notificationSchema = new mongoose.Schema(
   {
+    // المستلم
     recipient: {
       type: mongoose.Schema.Types.ObjectId,
       required: [true, "المستلم مطلوب"],
       refPath: "recipientModel",
+      index: true,
     },
     recipientModel: {
       type: String,
       required: [true, "نوع المستلم مطلوب"],
       enum: ["Student", "Teacher", "Admin", "Secretary"],
     },
+
+    // نوع الإشعار
     type: {
       type: String,
       required: [true, "نوع الإشعار مطلوب"],
-      enum: [
-        "grade",
-        "message",
-        "prayer_time",
-        "attendance",
-        "exam",
-        "news",
-        "general",
-        "daily_marks",
-        "warning",
-        "system",
-        "success",
-        "alert",
-      ],
+      enum: ALL_NOTIFICATION_TYPES,
+      index: true,
     },
+
+    // الفئة (للتصفية السريعة)
+    category: {
+      type: String,
+      enum: ["general", "academic", "admin", "other"],
+      default: "general",
+      index: true,
+    },
+
+    // العنوان (قصير للعرض السريع)
     title: {
       type: String,
       required: [true, "عنوان الإشعار مطلوب"],
       trim: true,
       maxlength: [100, "عنوان الإشعار لا يمكن أن يزيد عن 100 حرف"],
     },
+
+    // ملخص الرسالة (قصير للعرض في القائمة)
+    messageSummary: {
+      type: String,
+      trim: true,
+      maxlength: [150, "ملخص الرسالة لا يمكن أن يزيد عن 150 حرف"],
+    },
+
+    // الرسالة الكاملة (للإشعارات البسيطة)
     message: {
       type: String,
-      required: [true, "نص الإشعار مطلوب"],
       trim: true,
       maxlength: [500, "نص الإشعار لا يمكن أن يزيد عن 500 حرف"],
     },
-    link: {
-      type: String,
-      trim: true,
-    },
+
+    // الأولوية
     priority: {
       type: String,
       enum: ["low", "medium", "high", "urgent"],
       default: "medium",
     },
-    data: {
-      type: Object,
-      default: {},
-      /**
-       * استخدم data.action للتمييز بين العمليات المختلفة:
-       * 
-       * للمقاطع: 
-       * - { action: "section_added", sectionId: "...", memorizationSection: "البقرة 1-10" }
-       * - { action: "section_updated", sectionId: "...", oldSection: {...}, newSection: {...} }
-       * - { action: "section_deleted", sectionId: "...", deletedSection: {...} }
-       * 
-       * للعلامات:
-       * - { action: "mark_added", studentId: "...", totalMark: 95, reviewMark: 45 }
-       * - { action: "mark_updated", studentId: "...", oldMark: 85, newMark: 95 }
-       * - { action: "mark_deleted", studentId: "...", deletedMark: 85 }
-       * 
-       * مثال كامل:
-       * {
-       *   type: "daily_marks",
-       *   title: "📚 مقطع جديد", 
-       *   message: "تم إضافة مقطع جديد: البقرة 1-10",
-       *   data: {
-       *     action: "section_added",
-       *     sectionId: "648a1b2c3d4e5f6789012345",
-       *     memorizationSection: "البقرة 1-10",
-       *     reviewSection: "البقرة 11-20",
-       *     group: "الحلقة الأولى"
-       *   }
-       * }
-       */
+
+    // بيانات مختصرة للعرض السريع
+    summary: notificationSummarySchema,
+
+    // مرجع للتفاصيل الكاملة (Sub-Schema)
+    details: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "NotificationDetails",
     },
+
+    // بيانات سريعة (للتوافقية مع الكود الحالي)
+    data: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
+    },
+
+    // رابط سريع
+    link: {
+      type: String,
+      trim: true,
+    },
+
+    // حالة القراءة
     isRead: {
       type: Boolean,
       default: false,
+      index: true,
     },
+
+    // التواريخ
     sentAt: {
       type: Date,
       default: Date.now,
@@ -94,26 +151,45 @@ const notificationSchema = new mongoose.Schema(
     readAt: {
       type: Date,
     },
+
+    // TTL - حذف تلقائي بعد 90 يوم
+    expiresAt: {
+      type: Date,
+      default: () => new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
+      index: { expireAfterSeconds: 0 },
+    },
   },
   {
     timestamps: { createdAt: true, updatedAt: false },
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
-  },
+  }
 );
 
-// إنشاء فهارس للاستعلامات السريعة
-notificationSchema.index({ recipient: 1, createdAt: -1 });
-notificationSchema.index({ recipient: 1, isRead: 1 });
-notificationSchema.index({ type: 1 });
+// ============================================================================
+// الفهارس المُحسّنة للأداء العالي
+// ============================================================================
+
+// فهرس مركب للاستعلامات الأكثر شيوعاً
+notificationSchema.index({ recipient: 1, isRead: 1, sentAt: -1 });
+notificationSchema.index({ recipient: 1, category: 1, sentAt: -1 });
+notificationSchema.index({ recipient: 1, type: 1, sentAt: -1 });
+
+// فهرس للتصفح (Pagination)
+notificationSchema.index({ recipient: 1, sentAt: -1 });
+
+// فهرس للبحث النصي
+notificationSchema.index({ title: "text", messageSummary: "text" });
 
 // Virtual للحصول على عمر الإشعار
 notificationSchema.virtual("age").get(function () {
+  if (!this.createdAt) return 0;
   return Date.now() - this.createdAt.getTime();
 });
 
 // Virtual لمعرفة إذا كان الإشعار جديد (أقل من 5 دقائق)
 notificationSchema.virtual("isNew").get(function () {
+  if (!this.createdAt) return false;
   const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
   return this.createdAt > fiveMinutesAgo;
 });
@@ -135,14 +211,115 @@ notificationSchema.statics.createQuick = async function (
   message,
   data = {},
 ) {
+  // تحديد الفئة تلقائياً
+  let category = "general";
+  if (NOTIFICATION_TYPES.ACADEMIC.includes(type)) category = "academic";
+  else if (NOTIFICATION_TYPES.ADMIN.includes(type)) category = "admin";
+  else if (NOTIFICATION_TYPES.OTHER.includes(type)) category = "other";
+
   return this.create({
     recipient: recipientId,
     recipientModel: recipientModel,
     type: type,
+    category: category,
     title: title,
     message: message,
+    messageSummary: message.length > 150 ? message.substring(0, 147) + "..." : message,
     data: data,
   });
+};
+
+// Static method لإنشاء إشعار مع تفاصيل منفصلة
+notificationSchema.statics.createWithDetails = async function (
+  recipientId,
+  recipientModel,
+  type,
+  title,
+  message,
+  detailedData = {},
+  summaryData = {}
+) {
+  const NotificationDetails = require("./NotificationDetails");
+  
+  // تحديد الفئة تلقائياً
+  let category = "general";
+  if (NOTIFICATION_TYPES.ACADEMIC.includes(type)) category = "academic";
+  else if (NOTIFICATION_TYPES.ADMIN.includes(type)) category = "admin";
+  else if (NOTIFICATION_TYPES.OTHER.includes(type)) category = "other";
+
+  // إنشاء التفاصيل أولاً
+  const details = await NotificationDetails.create({
+    message: message,
+    data: detailedData,
+    link: detailedData.link,
+    displayData: detailedData.displayData || {},
+  });
+
+  // إنشاء الإشعار الرئيسي
+  return this.create({
+    recipient: recipientId,
+    recipientModel: recipientModel,
+    type: type,
+    category: category,
+    title: title,
+    messageSummary: message.length > 150 ? message.substring(0, 147) + "..." : message,
+    details: details._id,
+    summary: summaryData,
+    data: { action: detailedData.action }, // فقط الـ action للتوافقية
+  });
+};
+
+// Static method للحصول على إشعارات خفيفة (للقائمة) - محسّن للأعداد الكبيرة
+notificationSchema.statics.getLightweight = async function (
+  recipientId,
+  page = 1,
+  limit = 20,
+  filters = {}
+) {
+  const skip = (page - 1) * limit;
+  const query = { recipient: recipientId, ...filters };
+
+  // استخدام Promise.all للاستعلامات المتوازية
+  const [notifications, totalCount, unreadCount] = await Promise.all([
+    // جلب البيانات الأساسية فقط مع hint للفهرس
+    this.find(query)
+      .select("_id type category title messageSummary message priority isRead sentAt data.action summary link")
+      .sort({ sentAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .hint({ recipient: 1, sentAt: -1 }) // استخدام الفهرس المحدد
+      .lean(),
+    
+    // العدد الكلي - استخدام estimatedDocumentCount للأداء إذا لم يكن هناك فلاتر
+    Object.keys(filters).length === 0
+      ? this.countDocuments({ recipient: recipientId })
+      : this.countDocuments(query),
+    
+    // عدد غير المقروءة
+    this.countDocuments({ recipient: recipientId, isRead: false }),
+  ]);
+
+  return {
+    notifications,
+    pagination: {
+      currentPage: page,
+      totalPages: Math.ceil(totalCount / limit),
+      totalCount,
+      hasNextPage: page * limit < totalCount,
+    },
+    stats: {
+      unreadCount,
+      totalCount,
+    },
+    hasMore: page * limit < totalCount,
+  };
+};
+
+// Static method للحصول على إشعار مع التفاصيل الكاملة
+notificationSchema.statics.getWithDetails = async function (notificationId) {
+  return this.findById(notificationId)
+    .populate("details")
+    .lean();
 };
 
 // Static method للحصول على عدد الإشعارات غير المقروءة
@@ -151,6 +328,27 @@ notificationSchema.statics.getUnreadCount = async function (recipientId) {
     recipient: recipientId,
     isRead: false,
   });
+};
+
+// Static method للحصول على إحصائيات سريعة
+notificationSchema.statics.getQuickStats = async function (recipientId) {
+  const [unreadCount, todayCount] = await Promise.all([
+    this.countDocuments({ recipient: recipientId, isRead: false }),
+    this.countDocuments({
+      recipient: recipientId,
+      sentAt: { $gte: new Date(new Date().setHours(0, 0, 0, 0)) },
+    }),
+  ]);
+
+  return { unreadCount, todayCount };
+};
+
+// Static method لتحديد جميع الإشعارات كمقروءة
+notificationSchema.statics.markAllAsRead = async function (recipientId) {
+  return this.updateMany(
+    { recipient: recipientId, isRead: false },
+    { $set: { isRead: true, readAt: new Date() } }
+  );
 };
 
 // Instance method لتحديد الإشعار كمقروء
@@ -162,4 +360,7 @@ notificationSchema.methods.markAsRead = function () {
 
 const Notification = mongoose.model("Notification", notificationSchema);
 
+// تصدير الأنواع أيضاً للاستخدام في أماكن أخرى
 module.exports = Notification;
+module.exports.NOTIFICATION_TYPES = NOTIFICATION_TYPES;
+module.exports.ALL_NOTIFICATION_TYPES = ALL_NOTIFICATION_TYPES;

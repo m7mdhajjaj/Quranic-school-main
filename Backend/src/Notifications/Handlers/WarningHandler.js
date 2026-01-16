@@ -12,49 +12,59 @@ exports.notifyStudentWarning = async (student, warning, io) => {
   try {
     console.log(`🔔 notifyStudentWarning called for student: ${student.firstName} ${student.lastName}`);
 
-    let title = "تنبيه جديد";
-    let message = `لقد تلقيت تنبيهاً جديداً`;
+    let title = "تنبيه";
+    let message = warning.reason;
+    let messageSummary = "تنبيه جديد";
     let priority = "high";
 
     // تخصيص الرسالة حسب نوع الإنذار
     switch (warning.type) {
       case "warning":
-        title = "تنبيه سلوكي";
-        message = `لقد تلقيت تنبيهاً من المعلم بسبب: ${warning.reason}`;
+        title = "تنبيه";
+        message = warning.reason;
+        messageSummary = "تنبيه سلوكي";
         priority = "medium";
         break;
       case "first":
         title = "إنذار أول";
-        message = `لقد تلقيت إنذاراً أولاً. يرجى مراجعة المعلم. السبب: ${warning.reason}`;
+        message = warning.reason;
+        messageSummary = "إنذار أول";
         break;
       case "second":
         title = "إنذار ثاني";
-        message = `لقد تلقيت إنذاراً ثانياً. هذا أمر جدي يتطلب الانتباه. السبب: ${warning.reason}`;
+        message = warning.reason;
+        messageSummary = "إنذار ثاني";
         break;
       case "third":
-        title = "إنذار نهائي (فصل)";
-        message = `لقد تلقيت إنذاراً نهائياً (فصل). السبب: ${warning.reason}`;
+        title = "إنذار نهائي";
+        message = warning.reason;
+        messageSummary = "إنذار نهائي";
         priority = "urgent";
         break;
       case "expulsion":
         title = "قرار فصل";
-        message = `تم إصدار قرار فصل بحقك. السبب: ${warning.reason}`;
+        message = warning.reason;
+        messageSummary = "قرار فصل";
         priority = "urgent";
         break;
       default:
-        title = "تنبيه إداري";
-        message = `لقد تلقيت ملاحظة إدارية: ${warning.reason}`;
+        title = "ملاحظة";
+        message = warning.reason;
+        messageSummary = "ملاحظة إدارية";
     }
 
     const notificationData = {
       recipient: student._id,
       recipientModel: "Student",
       type: "warning",
+      category: "academic",
       title: title,
       message: message,
+      messageSummary: messageSummary,
       priority: priority,
       data: {
         action: "warning_received",
+        entityType: "warning",
         warningId: warning._id,
         warningType: warning.type,
         reason: warning.reason,
