@@ -44,7 +44,7 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" dir="rtl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto" dir="rtl">
       {/* Backdrop with blur */}
       <div
         className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
@@ -53,7 +53,7 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
 
       {/* Modal - centered - stop propagation to prevent closing when clicking inside */}
       <div 
-        className="relative w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-2xl transform transition-all animate-in fade-in zoom-in duration-200 flex flex-col overflow-hidden"
+        className="relative w-full max-w-4xl my-8 bg-white rounded-2xl shadow-2xl transform transition-all animate-in fade-in zoom-in duration-200 flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header with Gradient */}
@@ -142,31 +142,47 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
               {/* Father Name */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  اسم الأب
+                  اسم الأب *
                 </label>
                 <input
                   type="text"
                   name="fatherName"
                   value={formData.fatherName || ""}
                   onChange={handleChange}
-                  className="w-full px-4 py-2.5 border-2 border-gray-200 hover:border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                  className={`w-full px-4 py-2.5 border-2 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all ${
+                    errors.fatherName ? "border-red-400 bg-red-50" : "border-gray-200 hover:border-gray-300"
+                  }`}
                   placeholder="أدخل اسم الأب"
                 />
+                {errors.fatherName && (
+                  <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    {errors.fatherName}
+                  </p>
+                )}
               </div>
 
               {/* Grandfather Name */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  اسم الجد
+                  اسم الجد *
                 </label>
                 <input
                   type="text"
                   name="grandFatherName"
                   value={formData.grandFatherName || ""}
                   onChange={handleChange}
-                  className="w-full px-4 py-2.5 border-2 border-gray-200 hover:border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                  className={`w-full px-4 py-2.5 border-2 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all ${
+                    errors.grandFatherName ? "border-red-400 bg-red-50" : "border-gray-200 hover:border-gray-300"
+                  }`}
                   placeholder="أدخل اسم الجد"
                 />
+                {errors.grandFatherName && (
+                  <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    {errors.grandFatherName}
+                  </p>
+                )}
               </div>
 
               {/* Last Name */}
@@ -195,16 +211,24 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
               {/* Mother Name */}
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  اسم الأم
+                  اسم الأم *
                 </label>
                 <input
                   type="text"
                   name="motherName"
                   value={formData.motherName || ""}
                   onChange={handleChange}
-                  className="w-full px-4 py-2.5 border-2 border-gray-200 hover:border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                  className={`w-full px-4 py-2.5 border-2 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all ${
+                    errors.motherName ? "border-red-400 bg-red-50" : "border-gray-200 hover:border-gray-300"
+                  }`}
                   placeholder="أدخل اسم الأم"
                 />
+                {errors.motherName && (
+                  <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    {errors.motherName}
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -333,21 +357,22 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
                     } as React.ChangeEvent<HTMLInputElement>)
                   }
                   error={errors.birthDate}
+                  success={!errors.birthDate && formData.birthDate ? "مقبول" : undefined}
                   required
                   minYear={1950}
-                  maxYear={new Date().getFullYear() - 21}
+                  maxYear={new Date().getFullYear()}
                 />
               </div>
 
-              {/* Gender */}
-              <div className="flex flex-col">
+              {/* Gender - Full Width */}
+              <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   <Users className="w-4 h-4 inline ml-1" />
                   الجنس *
                 </label>
-                <div className="flex gap-3 flex-1 items-center">
+                <div className="flex gap-4">
                   <label
-                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 border-2 rounded-xl cursor-pointer transition-all ${
+                    className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 border-2 rounded-xl cursor-pointer transition-all ${
                       formData.gender === "ذكر"
                         ? "border-emerald-500 bg-emerald-50 text-emerald-700"
                         : "border-gray-200 hover:border-gray-300 text-gray-600"
@@ -367,11 +392,11 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
                       tabIndex={-1}
                       readOnly
                     />
-                    <FaMale className="w-4 h-4" />
-                    <span className="font-medium text-sm">ذكر</span>
+                    <FaMale className="w-5 h-5" />
+                    <span className="font-medium">ذكر</span>
                   </label>
                   <label
-                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 border-2 rounded-xl cursor-pointer transition-all ${
+                    className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 border-2 rounded-xl cursor-pointer transition-all ${
                       formData.gender === "أنثى"
                         ? "border-teal-500 bg-teal-50 text-teal-700"
                         : "border-gray-200 hover:border-gray-300 text-gray-600"
@@ -391,8 +416,8 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
                       tabIndex={-1}
                       readOnly
                     />
-                    <FaFemale className="w-4 h-4" />
-                    <span className="font-medium text-sm">أنثى</span>
+                    <FaFemale className="w-5 h-5" />
+                    <span className="font-medium">أنثى</span>
                   </label>
                 </div>
               </div>

@@ -215,6 +215,27 @@ export const useSecretaryForm = ({
       newErrors.lastName = "اسم العائلة يجب أن يكون حرفين على الأقل";
     }
 
+    // اسم الأب مطلوب
+    if (!formData.fatherName || !formData.fatherName.trim()) {
+      newErrors.fatherName = "اسم الأب مطلوب";
+    } else if (formData.fatherName.trim().length < 2) {
+      newErrors.fatherName = "اسم الأب يجب أن يكون حرفين على الأقل";
+    }
+
+    // اسم الجد مطلوب
+    if (!formData.grandFatherName || !formData.grandFatherName.trim()) {
+      newErrors.grandFatherName = "اسم الجد مطلوب";
+    } else if (formData.grandFatherName.trim().length < 2) {
+      newErrors.grandFatherName = "اسم الجد يجب أن يكون حرفين على الأقل";
+    }
+
+    // اسم الأم مطلوب
+    if (!formData.motherName || !formData.motherName.trim()) {
+      newErrors.motherName = "اسم الأم مطلوب";
+    } else if (formData.motherName.trim().length < 2) {
+      newErrors.motherName = "اسم الأم يجب أن يكون حرفين على الأقل";
+    }
+
     // =================== الهوية والتواصل ===================
     if (!formData.idNumber.trim()) {
       newErrors.idNumber = "رقم الهوية مطلوب";
@@ -245,18 +266,28 @@ export const useSecretaryForm = ({
     } else {
       const birthDate = new Date(formData.birthDate);
       const today = new Date();
-      let age = today.getFullYear() - birthDate.getFullYear();
-      const monthDiff = today.getMonth() - birthDate.getMonth();
-      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-        age--;
-      }
-      if (age < 21) {
-        newErrors.birthDate = "يجب أن يكون عمر السكرتير 21 عام على الأقل";
+      
+      // التحقق من صحة التاريخ
+      if (isNaN(birthDate.getTime())) {
+        newErrors.birthDate = "تاريخ الميلاد غير صحيح";
+      } else {
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+          age--;
+        }
+        
+        if (age < 21) {
+          newErrors.birthDate = "غير مقبول - يجب أن يكون العمر 21 سنة على الأقل";
+        }
+        // إذا كان العمر 21+ لا نضيف error (سيظهر "مقبول" في الواجهة)
       }
     }
 
     if (!formData.residence.trim()) {
       newErrors.residence = "مكان السكن مطلوب";
+    } else if (formData.residence.trim().length < 2) {
+      newErrors.residence = "مكان السكن يجب أن يكون حرفين على الأقل";
     }
 
     setErrors(newErrors);

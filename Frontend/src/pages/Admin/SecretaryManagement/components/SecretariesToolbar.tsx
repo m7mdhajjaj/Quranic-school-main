@@ -24,6 +24,7 @@ export interface SecretariesToolbarProps {
   ageRange: [number, number];
   setAgeRange: (range: [number, number]) => void;
   onResetFilters: () => void;
+  isSearching?: boolean;
 }
 
 export const SecretariesToolbar: React.FC<SecretariesToolbarProps> = memo(({
@@ -41,6 +42,7 @@ export const SecretariesToolbar: React.FC<SecretariesToolbarProps> = memo(({
   ageRange,
   setAgeRange,
   onResetFilters,
+  isSearching = false,
 }) => {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
@@ -48,7 +50,13 @@ export const SecretariesToolbar: React.FC<SecretariesToolbarProps> = memo(({
         {/* Search */}
         <div className="flex-1">
           <div className="relative">
-            <FaSearch className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            {isSearching ? (
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            ) : (
+              <FaSearch className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            )}
             <input
               type="text"
               placeholder="بحث عن سكرتير (الاسم، البريد، رقم الهاتف، رقم الهوية...)"

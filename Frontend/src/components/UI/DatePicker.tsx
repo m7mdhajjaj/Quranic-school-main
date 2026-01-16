@@ -1,11 +1,12 @@
 import React from 'react';
-import { Calendar } from 'lucide-react';
+import { Calendar, CheckCircle2, AlertCircle } from 'lucide-react';
 
 interface DatePickerProps {
   label?: string;
   value: string; // ISO date string (YYYY-MM-DD)
   onChange: (date: string) => void;
   error?: string;
+  success?: string;
   required?: boolean;
   disabled?: boolean;
   className?: string;
@@ -20,6 +21,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   value,
   onChange,
   error,
+  success,
   required = false,
   disabled = false,
   className = '',
@@ -178,19 +180,16 @@ export const DatePicker: React.FC<DatePickerProps> = ({
       </div>
 
       {(error || currentDateError) && (
-        <p className="mt-2 text-sm text-red-600 flex items-center gap-1 text-right">
-          <svg
-            className="w-4 h-4"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-          >
-            <path
-              fillRule="evenodd"
-              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-              clipRule="evenodd"
-            />
-          </svg>
+        <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
+          <AlertCircle className="w-3.5 h-3.5" />
           {error || currentDateError}
+        </p>
+      )}
+      
+      {!error && !currentDateError && success && value && (
+        <p className="mt-1.5 text-sm text-emerald-600 flex items-center gap-1">
+          <CheckCircle2 className="w-3.5 h-3.5" />
+          {success}
         </p>
       )}
     </div>

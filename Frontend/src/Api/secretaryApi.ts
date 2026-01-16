@@ -31,12 +31,20 @@ export interface SecretaryStatsResponse {
 export type { Secretary, SecretaryFormData, SecretaryPermissions };
 
 /**
- * Get all secretaries
+ * Get all secretaries with search support
+ * @param search - نص البحث (اختياري) - يدعم: ID، الهوية، الأسماء، الهاتف، البريد
  */
-export const getAllSecretaries = async (): Promise<SecretaryApiResponse> => {
+export const getAllSecretaries = async (search?: string): Promise<SecretaryApiResponse> => {
   try {
-    console.log('📊 جلب قائمة السكرتيرين...');
-    const response = await api.get<SecretaryApiResponse>('/secretaries');
+    console.log('📊 جلب قائمة السكرتيرين...', search ? `(البحث: ${search})` : '');
+    
+    // إعداد معاملات البحث
+    const params: { search?: string } = {};
+    if (search && search.trim()) {
+      params.search = search.trim();
+    }
+    
+    const response = await api.get<SecretaryApiResponse>('/secretaries', { params });
     
     if (response.data.success) {
       console.log('✅ تم جلب قائمة السكرتيرين بنجاح:', (response.data.data as Secretary[])?.length || 0);

@@ -101,6 +101,24 @@ const validatePhone = (phone) => {
 };
 
 /**
+ * Validate search query
+ */
+const validateSearchQuery = (search) => {
+  if (!search || typeof search !== 'string') {
+    return { isValid: true, value: '' };
+  }
+  
+  const searchStr = search.trim();
+  
+  // Maximum search length
+  if (searchStr.length > 100) {
+    return { isValid: false, message: 'نص البحث يجب أن يكون 100 حرف أو أقل' };
+  }
+  
+  return { isValid: true, value: searchStr };
+};
+
+/**
  * Validate password strength
  */
 const validatePassword = (password, isUpdate = false) => {
@@ -469,5 +487,6 @@ module.exports = {
   validateResidence,
   validateGender,
   validatePermissions,
+  validateSearchQuery,
   hashPassword
 };

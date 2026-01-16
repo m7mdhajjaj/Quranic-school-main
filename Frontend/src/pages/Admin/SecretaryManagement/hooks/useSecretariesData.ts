@@ -3,7 +3,7 @@ import { getAllSecretaries } from "@/Api/secretaryApi";
 import { socketManager } from "@/Socket/SocketManager";
 import type { Secretary } from "../types";
 
-export const useSecretariesData = () => {
+export const useSecretariesData = (searchQuery?: string) => {
   const [secretaries, setSecretaries] = useState<Secretary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -27,12 +27,12 @@ export const useSecretariesData = () => {
     };
   }, []);
 
-  const fetchSecretaries = useCallback(async () => {
+  const fetchSecretaries = useCallback(async (search?: string) => {
     try {
       setIsLoading(true);
       setError(null);
 
-      const response = await getAllSecretaries();
+      const response = await getAllSecretaries(search);
 
       if (response.success && Array.isArray(response.data)) {
         setSecretaries(response.data);
@@ -48,12 +48,17 @@ export const useSecretariesData = () => {
   }, []);
 
   useEffect(() => {
-    fetchSecretaries();
-  }, [fetchSecretaries]);
+    // Debounce search - تأخير البحث 500ms بعد التوقف عن الكتابة
+    const timeoutId = setTimeout(() => {
+      fetchSecretaries(searchQuery);
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [fetchSecretaries, searchQuery]);
 
   const refetch = useCallback(() => {
-    fetchSecretaries();
-  }, [fetchSecretaries]);
+    fetchSecretaries(searchQuery);
+  }, [fetchSecretaries, searchQuery]);
 
   return {
     secretaries,

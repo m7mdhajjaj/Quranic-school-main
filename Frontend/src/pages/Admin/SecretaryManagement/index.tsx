@@ -202,14 +202,15 @@ const SecretaryManagement: React.FC = () => {
   }>({ isOpen: false, secretary: null });
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleteConfirmation, setBulkDeleteConfirmation] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // Hooks
-  const { secretaries, isLoading, error, refetch } = useSecretariesData();
+  // Hooks - البحث من الباك إند
+  const { secretaries, isLoading, error, refetch } = useSecretariesData(searchQuery);
   const { createSecretary, updateSecretary, deleteSecretary, bulkDeleteSecretaries, isSubmitting } = useSecretariesActions();
-  const { refetch: refetchStats, ...stats } = useSecretariesStats(); // إحصائيات من الباك إند مباشرة
+  const { refetch: refetchStats, ...stats } = useSecretariesStats();
+  
+  // الفلاتر المحلية (الجنس، العمر، الترتيب)
   const {
-    searchQuery,
-    setSearchQuery,
     genderFilter,
     setGenderFilter,
     sortField,
@@ -433,6 +434,7 @@ const SecretaryManagement: React.FC = () => {
         ageRange={ageRange}
         setAgeRange={setAgeRange}
         onResetFilters={resetFilters}
+        isSearching={isLoading && searchQuery.length > 0}
       />
 
       {/* Content */}

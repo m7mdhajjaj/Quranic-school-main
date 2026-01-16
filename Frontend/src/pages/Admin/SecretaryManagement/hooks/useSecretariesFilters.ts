@@ -39,25 +39,11 @@ export const useSecretariesFilters = (secretaries: Secretary[]) => {
     return count;
   }, [genderFilter, ageRange]);
 
-  // Filtered and sorted secretaries
+  // Filtered and sorted secretaries (البحث يتم الآن في الباك إند)
   const filteredSecretaries = useMemo(() => {
     let result = [...secretaries];
 
-    // Filter by search term
-    if (searchQuery) {
-      const search = searchQuery.toLowerCase();
-      result = result.filter(
-        (s) =>
-          s.firstName?.toLowerCase().includes(search) ||
-          s.lastName?.toLowerCase().includes(search) ||
-          s.email?.toLowerCase().includes(search) ||
-          s.phoneNumber?.includes(search) ||
-          s.idNumber?.includes(search) ||
-          s.secretaryId?.toString().includes(search)
-      );
-    }
-
-    // Filter by gender
+    // Filter by gender (محلي)
     if (genderFilter !== "all") {
       result = result.filter(
         (s) =>
@@ -67,7 +53,7 @@ export const useSecretariesFilters = (secretaries: Secretary[]) => {
       );
     }
 
-    // Filter by age range
+    // Filter by age range (محلي)
     if (ageRange[0] !== 0 || ageRange[1] !== 100) {
       result = result.filter((s) => {
         const age = s.age || 0;
@@ -114,7 +100,7 @@ export const useSecretariesFilters = (secretaries: Secretary[]) => {
     });
 
     return result;
-  }, [secretaries, searchQuery, genderFilter, ageRange, sortField, sortOrder]);
+  }, [secretaries, genderFilter, ageRange, sortField, sortOrder]);
 
   return {
     searchQuery,
