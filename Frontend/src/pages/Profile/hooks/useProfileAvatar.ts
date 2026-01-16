@@ -1,8 +1,8 @@
 // hooks/useProfileAvatar.ts
 import { useState, useMemo, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { showConfirmDialog } from "@/utils/sweetalertUtils";
-import { showSuccessToast, showErrorToast } from "@/utils/toastUtils";
+import { showConfirmDialog, showErrorMessage } from "@/utils/sweetalertUtils";
+import { showSuccessToast } from "@/utils/toastUtils";
 import {
   uploadUserAvatar,
   deleteUserAvatar,
@@ -89,7 +89,7 @@ export const useProfileAvatar = (
         response?: { data?: { message?: string } };
       };
       const msg = axiosError?.response?.data?.message || "تعذّر حذف الصورة";
-      showErrorToast(msg);
+      showErrorMessage("خطأ", msg);
     }
   };
 
@@ -134,7 +134,7 @@ export const useProfileAvatar = (
       };
       const msg =
         axiosError?.response?.data?.message || "تعذّر رفع الصورة";
-      showErrorToast(msg);
+      showErrorMessage("خطأ", msg);
       throw error;
     }
   };

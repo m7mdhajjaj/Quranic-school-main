@@ -4,7 +4,8 @@
 
 import { useCallback } from 'react';
 import api from '../../../Api/api';
-import { showSuccessMessage, showErrorMessage } from '../../../utils/sweetalertUtils';
+import { showErrorMessage } from '../../../utils/sweetalertUtils';
+import { showSuccessToast } from '../../../utils/toastUtils';
 
 interface DropdownItem {
   label: string;
@@ -20,9 +21,8 @@ export const useChatHeader = (chatType: 'DM' | 'GROUP', targetId: string): { get
         targetId,
         duration
       });
-      showSuccessMessage(
-        "تم", 
-        duration === 0 ? "تم إلغاء كتم الإشعارات" : "تم كتم الإشعارات بنجاح"
+      showSuccessToast(
+        duration === 0 ? "✅ تم إلغاء كتم الإشعارات" : "✅ تم كتم الإشعارات بنجاح"
       );
     } catch (error) {
       showErrorMessage("خطأ", "فشل تحديث إعدادات الإشعارات");

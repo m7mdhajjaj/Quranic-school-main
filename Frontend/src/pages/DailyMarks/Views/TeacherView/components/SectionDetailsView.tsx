@@ -46,6 +46,7 @@ export const SectionDetailsView = ({
               <div>
                 <h2 className="text-xl font-bold text-gray-800">
                   {new Date(section.date).toLocaleDateString('ar-SA', {
+                    timeZone: 'Asia/Jerusalem',
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric',

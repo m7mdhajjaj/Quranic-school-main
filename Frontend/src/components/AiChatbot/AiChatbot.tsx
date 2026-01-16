@@ -6,7 +6,6 @@ import { showSuccessToast } from '../../utils/toastUtils';
 import { showErrorMessage } from '../../utils/sweetalertUtils';
 
 // Remove static defined QUICK_SUGGESTIONS if it exists in the file, we will use smartSuggestions
-const QUICK_SUGGESTIONS = [];
 
 // Component to handle the formatted Quranic response
 const FormattedMessage = ({ content }: { content: string }) => {
@@ -473,7 +472,7 @@ export const AiChatbot: React.FC = () => {
                                            </div>
                                        </div>
                                        <div className="mt-3 pt-2 border-t border-gray-50 flex justify-between items-center text-xs text-gray-400">
-                                          <span>{new Date(fav.createdAt || Date.now()).toLocaleDateString('ar-EG')}</span>
+                                          <span>{new Date(fav.createdAt || Date.now()).toLocaleDateString('ar-EG', { timeZone: 'Asia/Jerusalem' })}</span>
                                           <button 
                                             onClick={() => {
                                                 setInput(fav.question);
@@ -574,7 +573,13 @@ export const AiChatbot: React.FC = () => {
                         <FormattedMessage content={msg.content} />
                         
                         {/* أزرار الإجراءات للرسائل من AI */}
-                        {msg.role === 'assistant' && (
+                        {msg.role === 'assistant' && (() => {
+                          // حساب البيانات مرة واحدة فقط لتحسين الأداء
+                          const msgIndex = messages.findIndex(m => m.id === msg.id);
+                          const userMsg = msgIndex > 0 ? messages[msgIndex - 1] : null;
+                          const isCurrentlyFavorited = userMsg && isFavorited(userMsg.content);
+                          
+                          return (
                           <div className="flex items-center gap-2 mt-3 pt-2 border-t border-gray-100">
                             {/* زر المفضلة - إخفاء للرسالة الترحيبية */}
                             {msg.id !== '1' && (
@@ -582,35 +587,20 @@ export const AiChatbot: React.FC = () => {
                                 whileHover={{ scale: 1.1 }}
                                 whileTap={{ scale: 0.9 }}
                                 onClick={() => {
-                                  // Find the previous user message (question)
-                                  const msgIndex = messages.findIndex(m => m.id === msg.id);
-                                  const userMsg = msgIndex > 0 ? messages[msgIndex - 1] : null;
                                   if (userMsg && userMsg.role === 'user') {
                                     onToggleFavorite(msg.id, userMsg.content, msg.content);
                                   }
                                 }}
                                 className={`p-1.5 rounded-lg transition-colors ${
-                                  (() => {
-                                    const msgIndex = messages.findIndex(m => m.id === msg.id);
-                                    const userMsg = msgIndex > 0 ? messages[msgIndex - 1] : null;
-                                    return userMsg && isFavorited(userMsg.content)
-                                      ? 'bg-yellow-50 text-yellow-600 hover:bg-yellow-100'
-                                      : 'hover:bg-gray-100 text-gray-600 hover:text-yellow-600';
-                                  })()
+                                  isCurrentlyFavorited
+                                    ? 'bg-yellow-50 text-yellow-600 hover:bg-yellow-100'
+                                    : 'hover:bg-gray-100 text-gray-600 hover:text-yellow-600'
                                 }`}
-                                title={(() => {
-                                  const msgIndex = messages.findIndex(m => m.id === msg.id);
-                                  const userMsg = msgIndex > 0 ? messages[msgIndex - 1] : null;
-                                  return userMsg && isFavorited(userMsg.content) ? 'إزالة من المفضلة' : 'إضافة للمفضلة';
-                                })()}
+                                title={isCurrentlyFavorited ? 'إزالة من المفضلة' : 'إضافة للمفضلة'}
                               >
                                 <Star 
                                   size={14} 
-                                  fill={(() => {
-                                    const msgIndex = messages.findIndex(m => m.id === msg.id);
-                                    const userMsg = msgIndex > 0 ? messages[msgIndex - 1] : null;
-                                    return userMsg && isFavorited(userMsg.content) ? 'currentColor' : 'none';
-                                  })()} 
+                                  fill={isCurrentlyFavorited ? 'currentColor' : 'none'} 
                                 />
                               </motion.button>
                             )}
@@ -645,7 +635,8 @@ export const AiChatbot: React.FC = () => {
                               )}
                             </motion.button>
                           </div>
-                        )}
+                          );
+                        })()}
                         
                         <motion.span 
                           initial={{ opacity: 0 }}
@@ -655,7 +646,7 @@ export const AiChatbot: React.FC = () => {
                             msg.role === 'user' ? 'text-emerald-100' : 'text-gray-400'
                           }`}
                         >
-                          {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jerusalem' })}
                         </motion.span>
                       </motion.div>
                     </motion.div>

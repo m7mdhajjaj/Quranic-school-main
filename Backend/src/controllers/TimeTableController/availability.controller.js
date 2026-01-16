@@ -104,9 +104,12 @@ exports.getTeacherAvailableHours = async (req, res) => {
       sessionDate: { $gte: targetDate, $lt: nextDay }
     };
 
-    // استثناء موعد معين (للتعديل)
-    if (excludeId) {
-      query._id = { $ne: excludeId };
+    // استثناء موعد معين (للتعديل) - فقط إذا كان ObjectId صالح
+    if (excludeId && !excludeId.startsWith('temp_')) {
+      const mongoose = require('mongoose');
+      if (mongoose.Types.ObjectId.isValid(excludeId)) {
+        query._id = { $ne: excludeId };
+      }
     }
 
     // ✅ 3. جلب المواعيد المحجوزة مع تفاصيل المقطع والحلقة

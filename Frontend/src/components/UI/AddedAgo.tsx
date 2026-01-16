@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { TIMEZONE } from "@/utils/timezone";
 
 interface AddedAgoProps {
   date: string | Date;
@@ -31,6 +32,7 @@ const getTimeAgo = (dateInput: string | Date): string => {
     year: "numeric",
     month: "long",
     day: "numeric",
+    timeZone: TIMEZONE
   });
 };
 

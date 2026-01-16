@@ -13,10 +13,10 @@ export interface HeroImage {
   createdAt?: string;
 }
 import {
-  showSuccessMessage,
   showErrorMessage,
   showConfirmMessage,
 } from '@/utils/sweetalertUtils';
+import { showSuccessToast } from '@/utils/toastUtils';
 import { HeroSection, VisionSection, ValuesSection } from './components';
 
 const Home = () => {
@@ -115,7 +115,7 @@ const Home = () => {
       if (data.success && data.url) {
         // Refresh the images list
         await fetchHeroImages();
-        showSuccessMessage('تم الرفع بنجاح', 'تم إضافة الصورة للكاروسيل بنجاح');
+        showSuccessToast('✅ تم إضافة الصورة للكاروسيل بنجاح');
       } else {
         showErrorMessage(
           'فشل في الرفع',
@@ -152,7 +152,7 @@ const Home = () => {
       if (response.success) {
         // Remove from local state
         setHeroImages((prev) => prev.filter((img) => img.publicId !== publicId));
-        showSuccessMessage('تم الحذف', 'تم حذف الصورة بنجاح');
+        showSuccessToast('✅ تم حذف الصورة بنجاح');
       } else {
         showErrorMessage('فشل في الحذف', response.message || 'حدث خطأ أثناء الحذف');
       }

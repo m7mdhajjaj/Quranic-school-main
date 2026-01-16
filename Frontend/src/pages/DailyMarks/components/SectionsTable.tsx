@@ -263,6 +263,7 @@ const SectionsTableComponent = ({
               const hasMarks = sectionMark !== undefined;
               const date = new Date(section.date);
               const formattedDate = date.toLocaleDateString("ar-SA", {
+                timeZone: 'Asia/Jerusalem',
                 month: "short",
                 day: "numeric",
               });

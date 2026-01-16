@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { setMarksForSection } from '@/Api/DailyMark/dailyMarksApi';
 import { getStudentsByGroup } from '@/Api/studentApi';
-import { showSuccessToast, showErrorToast } from '@/utils/toastUtils';
+import { showSuccessToast } from '@/utils/toastUtils';
+import { showErrorMessage } from '@/utils/sweetalertUtils';
 import type { Section, Student, Mark } from '../../types/types';
 
 interface StudentMark {
@@ -82,7 +83,7 @@ export const useBulkMarksModal = (
     );
 
     if (!hasMarks) {
-      showErrorToast('يجب إدخال علامة واحدة على الأقل');
+      showErrorMessage('خطأ', 'يجب إدخال علامة واحدة على الأقل');
       return false;
     }
 
@@ -95,7 +96,7 @@ export const useBulkMarksModal = (
     );
 
     if (invalidMarks.length > 0) {
-      showErrorToast('العلامات يجب أن تكون بين 6 و 10');
+      showErrorMessage('خطأ', 'العلامات يجب أن تكون بين 6 و 10');
       return false;
     }
 
@@ -105,7 +106,7 @@ export const useBulkMarksModal = (
   const handleSubmit = useCallback(
     async (onSuccess?: () => void) => {
       if (!section) {
-        showErrorToast('المقطع غير محدد');
+        showErrorMessage('خطأ', 'المقطع غير محدد');
         return false;
       }
 
@@ -130,12 +131,12 @@ export const useBulkMarksModal = (
           onSuccess?.();
           return true;
         } else {
-          showErrorToast(response.message || 'فشل في حفظ العلامات');
+          showErrorMessage('خطأ', response.message || 'فشل في حفظ العلامات');
           return false;
         }
       } catch (err) {
         console.error('Error submitting marks:', err);
-        showErrorToast('حدث خطأ أثناء حفظ العلامات');
+        showErrorMessage('خطأ', 'حدث خطأ أثناء حفظ العلامات');
         return false;
       } finally {
         setSubmitting(false);

@@ -4,7 +4,7 @@
 // 
 // المسؤوليات:
 // ✅ إرسال event عند منتصف الليل (00:00:00) لتحديث قائمة الطلاب الغائبين
-// ✅ استخدام timezone محدد (Asia/Hebron) لضمان التوقيت الصحيح - توقيت فلسطين
+// ✅ استخدام timezone محدد (Asia/Jerusalem) لضمان التوقيت الصحيح - توقيت فلسطين
 //
 // ============================================================================
 
@@ -298,7 +298,7 @@ class AttendanceService {
       async () => {
         console.log("🤖 [AutoPresence] بدء عملية الحضور التلقائي لليوم الحالي...");
         try {
-          // 1. تحديد تاريخ اليوم (بداية ونهاية) - ✅ Use UTC dates
+          // 1. تحديد تاريخ اليوم - ✅ Use dateKey like controllers
           const now = new Date();
           const todayKey = now.toISOString().split('T')[0]; // YYYY-MM-DD in UTC
           const today = new Date(todayKey + 'T00:00:00.000Z');
@@ -306,13 +306,13 @@ class AttendanceService {
           const endOfToday = new Date(todayKey + 'T00:00:00.000Z');
           endOfToday.setUTCDate(endOfToday.getUTCDate() + 1);
 
-          console.log(`📅 [AutoPresence] معالجة تاريخ: ${today.toLocaleDateString('en-GB')}`);
+          console.log(`📅 [AutoPresence] معالجة تاريخ: ${todayKey}`);
 
-          // 2. جلب المقاطع (Sections) التي كانت اليوم
+          // 2. جلب المقاطع (Sections) التي كانت اليوم باستخدام dateKey
           // هذا يحدد الحلقات التي كان يجب أخذ الحضور فيها
           const sections = await Section.find({
-            date: { $gte: today, $lte: endOfToday }
-          }).select('group date');
+            dateKey: todayKey // ✅ استخدام dateKey بدل date range
+          }).select('group dateKey');
 
           if (sections.length === 0) {
             console.log("ℹ️ [AutoPresence] لم يتم العثور على مقاطع (Sections) لهذا اليوم. تجاوز فحص الحضور.");
@@ -321,18 +321,16 @@ class AttendanceService {
 
           // 3. استخراج أسماء الحلقات المعنية
           const groupsWithSections = [...new Set(sections.map(s => s.group))];
-          console.log(`ℹ️ [AutoPresence] تم العثور على مقاطع للحلقات: ${groupsWithSections.join(', ')}`);
+          console.log(`ℹ️ [AutoPresence] تم العثور على مقاطع لـ ${groupsWithSections.length} حلقة: ${groupsWithSections.join(', ')}`);
 
           let totalAdded = 0;
+          let groupsProcessed = 0;
 
           // 4. لكل حلقة، تحقق من حضور طلابها
           for (const groupName of groupsWithSections) {
             if (!groupName) continue;
 
             // جلب طلاب الحلقة (Active Only - Exclude Expelled)
-            // We need to fetch students who do NOT have an active "third" or "expulsion" warning
-            // Since we can't easily join in find(), we'll fetch then filter, or use aggregate.
-            // Aggregate is better for performance.
             const activeStudents = await Student.aggregate([
               { $match: { group: groupName } },
               {
@@ -346,7 +344,7 @@ class AttendanceService {
                           $and: [
                             { $eq: ["$studentId", "$$studentId"] },
                             { $eq: ["$status", "active"] },
-                            { $in: ["$type", ["third", "expulsion"]] } // Strict filter
+                            { $in: ["$type", ["third", "expulsion"]] }
                           ]
                         }
                       }
@@ -390,18 +388,31 @@ class AttendanceService {
                
                await Attendance.insertMany(newRecords, { ordered: false });
                totalAdded += newRecords.length;
+               groupsProcessed++;
                console.log(`✅ [AutoPresence] حلقة "${groupName}": تم تسجيل ${newRecords.length} طالب كحضور تلقائي.`);
+            } else {
+               console.log(`ℹ️ [AutoPresence] حلقة "${groupName}": جميع الطلاب لديهم سجلات حضور.`);
             }
           }
 
           if (totalAdded > 0) {
-            console.log(`✅ [AutoPresence] الإجمالي: تم تسجيل ${totalAdded} طالب كحاضرين تلقائياً.`);
+            console.log(`✅ [AutoPresence] الإجمالي: تم تسجيل ${totalAdded} طالب كحاضرين تلقائياً في ${groupsProcessed} حلقة.`);
             
             // إشعار عبر السوكيت
             if (this.io) {
               this.io.to("attendance").emit("attendanceAutoFilled", {
-                date: today,
-                count: totalAdded
+                date: todayKey,
+                count: totalAdded,
+                groupsCount: groupsProcessed,
+                message: `تم تسجيل ${totalAdded} طالب كحضور تلقائي`
+              });
+              
+              // إشعار للأدمن
+              this.io.to("admin-room").emit("absentStudentsUpdated", {
+                date: new Date(),
+                timestamp: Date.now(),
+                message: `الحضور التلقائي: تم تسجيل ${totalAdded} طالب كحاضرين`,
+                reason: "auto_presence"
               });
             }
           } else {

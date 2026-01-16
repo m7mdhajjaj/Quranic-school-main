@@ -23,7 +23,8 @@ import {
   type Exam as ExamType,
 } from "@/Api/ExamShedule";
 import { getExamMarks } from "@/Api/ExamShedule";
-import { showSuccessToast, showErrorToast } from "@/utils/toastUtils";
+import { showSuccessToast } from "@/utils/toastUtils";
+import { showErrorMessage } from "@/utils/sweetalertUtils";
 import api from "@/Api/api";
 
 // استخدام نوع Student من ExamSchedule API
@@ -115,7 +116,7 @@ const MarksManagement: React.FC<MarksManagementProps> = () => {
       }
     } catch (error) {
       console.error("❌ Error fetching groups data:", error);
-      showErrorToast("حدث خطأ أثناء جلب بيانات الحلقات");
+      showErrorMessage("خطأ", "حدث خطأ أثناء جلب بيانات الحلقات");
       setGroupsData([]);
     } finally {
       setLoading(false);
@@ -129,7 +130,7 @@ const MarksManagement: React.FC<MarksManagementProps> = () => {
       setExams(allExams.filter((exam) => exam.group === group));
     } catch (error) {
       console.error("Error fetching exams:", error);
-      showErrorToast("حدث خطأ أثناء جلب الامتحانات");
+      showErrorMessage("خطأ", "حدث خطأ أثناء جلب الامتحانات");
       setExams([]);
     } finally {
       setLoading(false);
@@ -152,7 +153,7 @@ const MarksManagement: React.FC<MarksManagementProps> = () => {
       console.log("📚 Selected exam group:", selectedExam.group);
 
       if (!selectedGroupData) {
-        showErrorToast("لم يتم العثور على الحلقة");
+        showErrorMessage("خطأ", "لم يتم العثور على الحلقة");
         setLoading(false);
         return;
       }
@@ -192,7 +193,7 @@ const MarksManagement: React.FC<MarksManagementProps> = () => {
       setMarks(formattedMarks);
     } catch (error) {
       console.error("Error fetching students and marks:", error);
-      showErrorToast("حدث خطأ أثناء جلب البيانات");
+      showErrorMessage("خطأ", "حدث خطأ أثناء جلب البيانات");
       setStudents([]);
       setMarks([]);
     } finally {
@@ -224,7 +225,8 @@ const MarksManagement: React.FC<MarksManagementProps> = () => {
       newMark < 0 ||
       newMark > (selectedExam.totalMarks || 100)
     ) {
-      showErrorToast(
+      showErrorMessage(
+        "خطأ",
         `العلامة يجب أن تكون بين 0 و ${selectedExam?.totalMarks || 100}`
       );
       return;
@@ -264,7 +266,7 @@ const MarksManagement: React.FC<MarksManagementProps> = () => {
         // حذف العلامة المؤقتة في حالة الخطأ
         setMarks((prevMarks) => prevMarks.filter((m) => m._id !== markId));
         setEditingMarkId(null);
-        showErrorToast("حدث خطأ أثناء إضافة العلامة");
+        showErrorMessage("خطأ", "حدث خطأ أثناء إضافة العلامة");
       }
     } else {
       // تحديث علامة موجودة
@@ -281,7 +283,7 @@ const MarksManagement: React.FC<MarksManagementProps> = () => {
         console.error("Error updating mark:", error);
         // إرجاع التغيير في حالة الخطأ
         setMarks(previousMarks);
-        showErrorToast("حدث خطأ أثناء تحديث العلامة");
+        showErrorMessage("خطأ", "حدث خطأ أثناء تحديث العلامة");
       }
     }
   };
@@ -300,13 +302,13 @@ const MarksManagement: React.FC<MarksManagementProps> = () => {
       console.error("Error deleting mark:", error);
       // إرجاع التغيير في حالة الخطأ
       setMarks(previousMarks);
-      showErrorToast("حدث خطأ أثناء حذف العلامة");
+      showErrorMessage("خطأ", "حدث خطأ أثناء حذف العلامة");
     }
   };
 
   const handleBulkDelete = async () => {
     if (selectedStudents.size === 0) {
-      showErrorToast("الرجاء اختيار علامات للحذف");
+      showErrorMessage("خطأ", "الرجاء اختيار علامات للحذف");
       return;
     }
 
@@ -331,7 +333,7 @@ const MarksManagement: React.FC<MarksManagementProps> = () => {
     } catch (error) {
       console.error("Error bulk deleting marks:", error);
       setMarks(previousMarks);
-      showErrorToast("حدث خطأ أثناء حذف العلامات");
+      showErrorMessage("خطأ", "حدث خطأ أثناء حذف العلامات");
     } finally {
       setIsDeleting(false);
     }
@@ -535,6 +537,7 @@ const MarksManagement: React.FC<MarksManagementProps> = () => {
                           year: "numeric",
                           month: "long",
                           day: "numeric",
+                          timeZone: "Asia/Jerusalem"
                         })}
                       </p>
                       <div className="flex items-center gap-4 mt-3">

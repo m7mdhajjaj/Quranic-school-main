@@ -9,7 +9,8 @@ import {
   deleteExam,
   type Exam,
 } from "@/Api/ExamShedule";
-import { showSuccessMessage, showErrorMessage } from "@/utils/sweetalertUtils";
+import { showErrorMessage } from "@/utils/sweetalertUtils";
+import { showSuccessToast } from "@/utils/toastUtils";
 import Swal from 'sweetalert2';
 
 // Helper function: Check if time is within allowed range (12:00 - 21:00)
@@ -68,7 +69,7 @@ export const useExamActions = ({ onExamsChange }: UseExamActionsProps) => {
       };
 
       await createExam(payload);
-      showSuccessMessage('نجاح', 'تم إضافة الامتحان بنجاح');
+      showSuccessToast('✅ تم إضافة الامتحان بنجاح');
       onExamsChange();
       return true;
     } catch (error: unknown) {
@@ -137,7 +138,7 @@ export const useExamActions = ({ onExamsChange }: UseExamActionsProps) => {
       };
       await updateExam(examId, payload);
       
-      showSuccessMessage('نجاح', 'تم تعديل الامتحان بنجاح');
+      showSuccessToast('✅ تم تعديل الامتحان بنجاح');
       onExamsChange();
       return true;
     } catch (error: unknown) {
@@ -194,7 +195,7 @@ export const useExamActions = ({ onExamsChange }: UseExamActionsProps) => {
     setIsSubmitting(true);
     try {
       await deleteExam(examId);
-      showSuccessMessage('نجاح', 'تم حذف الامتحان بنجاح');
+      showSuccessToast('✅ تم حذف الامتحان بنجاح');
       onExamsChange();
       return true;
     } catch (error: unknown) {

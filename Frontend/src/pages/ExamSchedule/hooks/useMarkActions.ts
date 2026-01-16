@@ -1,5 +1,6 @@
 import { bulkSaveMarks, deleteStudentMark, updateStudentMark } from "@/Api/ExamShedule";
-import { showSuccessToast, showErrorToast } from "@/utils/toastUtils";
+import { showSuccessToast } from "@/utils/toastUtils";
+import { showErrorMessage } from "@/utils/sweetalertUtils";
 import Swal from 'sweetalert2';
 
 export function useMarkActions(options: { refreshAverageForExam: (examId: string) => Promise<void>; setMarks: React.Dispatch<React.SetStateAction<Record<string, { mark: string; detail: string }>>>; }) {
@@ -19,7 +20,7 @@ export function useMarkActions(options: { refreshAverageForExam: (examId: string
       await refreshAverageForExam(selectedExamId);
     } catch (error) {
       console.error('Error saving marks:', error);
-      showErrorToast('❌ حدث خطأ أثناء حفظ العلامات');
+      showErrorMessage('خطأ', 'حدث خطأ أثناء حفظ العلامات');
     }
   };
 
@@ -36,7 +37,7 @@ export function useMarkActions(options: { refreshAverageForExam: (examId: string
       });
     } catch (error) {
       console.error('Error updating student mark:', error);
-      showErrorToast('❌ حدث خطأ أثناء حفظ العلامة');
+      showErrorMessage('خطأ', 'حدث خطأ أثناء حفظ العلامة');
     }
   };
 
@@ -65,7 +66,7 @@ export function useMarkActions(options: { refreshAverageForExam: (examId: string
       });
     } catch (error) {
       console.error('Error deleting mark:', error);
-      showErrorToast('❌ حدث خطأ أثناء حذف العلامة');
+      showErrorMessage('خطأ', 'حدث خطأ أثناء حذف العلامة');
     }
   };
 

@@ -201,7 +201,7 @@ export const useSecretaryManagement = () => {
         "البريد الإلكتروني": sec.email || "-",
         "السكن": sec.residence || "-",
         "اسم الأم": sec.motherName || "-",
-        "تاريخ الاضافة": sec.createdAt ? new Date(sec.createdAt).toLocaleDateString('ar-EG') : "-",
+        "تاريخ الاضافة": sec.createdAt ? new Date(sec.createdAt).toLocaleDateString('ar-EG', { timeZone: 'Asia/Jerusalem' }) : "-",
       }));
 
       const workbook = utils.book_new();
@@ -218,7 +218,7 @@ export const useSecretaryManagement = () => {
       worksheet["!views"][0] = { rightToLeft: true };
 
       utils.book_append_sheet(workbook, worksheet, "السكرتيرين");
-      writeFile(workbook, `Secretaries_List_${new Date().toLocaleDateString("en-GB").replace(/\//g, "-")}.xlsx`);
+      writeFile(workbook, `Secretaries_List_${new Date().toLocaleDateString("en-GB", { timeZone: 'Asia/Jerusalem' }).replace(/\//g, "-")}.xlsx`);
       
       showSuccessToast("تم تصدير ملف Excel بنجاح ✅");
     } catch (error) {

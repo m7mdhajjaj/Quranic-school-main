@@ -1,8 +1,10 @@
 // ============================================================================
 // Warning Utils - دوال مساعدة للإنذارات
 // ============================================================================
+// ✅ يستخدم توقيت فلسطين (Asia/Jerusalem) الموحد
 
 import type { WarningType } from "./warnings";
+import { TIMEZONE } from "@/utils/timezone";
 
 /**
  * الحصول على عنوان الإنذار
@@ -276,5 +278,6 @@ export const formatEventDate = (date: string): string => {
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+    timeZone: TIMEZONE
   });
 };

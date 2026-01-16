@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import api from '@/Api/api';
 import * as warningApi from '@/Api/warningApi';
 import type { Group, Warning, UseWarningsDataReturn } from '../types/warnings';
-import { showErrorToast } from '@/utils/toastUtils';
+import { showErrorMessage } from '@/utils/sweetalertUtils';
 
 export const useWarningsData = (): UseWarningsDataReturn => {
   const { user } = useAuth();
@@ -51,7 +51,7 @@ export const useWarningsData = (): UseWarningsDataReturn => {
       }
     } catch (error) {
       console.error('Error fetching data:', error);
-      showErrorToast('حدث خطأ أثناء تحميل البيانات');
+      showErrorMessage('خطأ', 'حدث خطأ أثناء تحميل البيانات');
     } finally {
       setLoading(false);
     }

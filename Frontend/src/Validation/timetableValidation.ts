@@ -3,8 +3,14 @@
 // ============================================
 // Validation للجدول الزمني (TimeTable) بنفس منطق Backend
 // ⚠️ التعارض يعتمد على التاريخ المحدد (sessionDate) وليس اليوم
+// ✅ يستخدم توقيت فلسطين (Asia/Jerusalem) الموحد
 
 import * as yup from 'yup';
+import { 
+  isSummerTime as isSummerTimeFromTimezone,
+  getArabicDayFromDate,
+  TIMEZONE
+} from '@/utils/timezone';
 
 // ============================================================================
 // TYPES
@@ -85,14 +91,9 @@ const DATE_FORMAT_REGEX = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d{3})?Z)?$/;
 
 /**
  * تحديد إذا كان التوقيت صيفي أو شتوي (تلقائي)
- * الصيفي: من مايو (5) إلى سبتمبر (9)
- * الشتوي: من أكتوبر (10) إلى أبريل (4)
+ * ✅ يستخدم timezone.ts الموحد
  */
-export const isSummerTime = (): boolean => {
-  const now = new Date();
-  const month = now.getMonth() + 1; // 1-12
-  return month >= 5 && month <= 9;
-};
+export const isSummerTime = isSummerTimeFromTimezone;
 
 /**
  * التحقق من أن الوقت ضمن أوقات العمل حسب التوقيت الحالي (تلقائي)
@@ -159,21 +160,23 @@ export const isEndTimeAfterStartTime = (startHour: string, endHour: string): boo
 
 /**
  * اشتقاق اليوم بالعربية من تاريخ
+ * ✅ يستخدم timezone.ts الموحد
  */
 export const getDayFromDate = (dateStr: string): string => {
-  const date = new Date(dateStr);
-  return VALID_DAYS[date.getDay() === 0 ? 0 : date.getDay()];
+  return getArabicDayFromDate(dateStr);
 };
 
 /**
  * تنسيق التاريخ للعرض
+ * ✅ يستخدم timezone.ts
  */
 export const formatDateArabic = (dateStr: string): string => {
   const date = new Date(dateStr);
   return date.toLocaleDateString('ar-SA', {
     day: 'numeric',
     month: 'long',
-    year: 'numeric'
+    year: 'numeric',
+    timeZone: TIMEZONE
   });
 };
 

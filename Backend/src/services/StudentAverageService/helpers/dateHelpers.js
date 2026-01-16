@@ -2,6 +2,8 @@
 // helpers/dateHelpers.js - Date Helper Functions
 // ============================================================================
 
+const { TIMEZONE } = require('../../../config/timezone');
+
 /**
  * Get the date range for a specific month
  * @param {Number} month - Month number (1-12)
@@ -13,7 +15,7 @@ exports.getMonthDateRange = (month, year) => {
     const startDate = new Date(year, month - 1, 1); // First day of month
     const endDate = new Date(year, month, 0); // Last day of month
 
-    console.log(`📅 Date Range: ${startDate.toLocaleDateString('ar-SA')} - ${endDate.toLocaleDateString('ar-SA')}`);
+    console.log(`📅 Date Range: ${startDate.toLocaleDateString('ar-SA', { timeZone: TIMEZONE })} - ${endDate.toLocaleDateString('ar-SA', { timeZone: TIMEZONE })}`);
 
     return { startDate, endDate };
   } catch (error) {
@@ -30,7 +32,7 @@ exports.getMonthDateRange = (month, year) => {
 exports.formatDate = (date) => {
   try {
     if (!date) return null;
-    return new Date(date).toLocaleDateString('ar-SA');
+    return new Date(date).toLocaleDateString('ar-SA', { timeZone: TIMEZONE });
   } catch (error) {
     console.error("❌ Error in formatDate:", error);
     return null;

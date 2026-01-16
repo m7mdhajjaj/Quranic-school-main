@@ -6,10 +6,10 @@ import {
 } from "@/Api/studentApi";
 import {
   showCenteredSwal,
-  showSuccessMessage,
   showWarningMessage,
   showErrorMessage,
 } from "@/utils/sweetalertUtils";
+import { showSuccessToast } from "@/utils/toastUtils";
 
 type Student = ApiStudent;
 type SortField = "studentId" | "firstName" | "age" | "group";
@@ -240,7 +240,7 @@ export const useStudentsManagement = ({
       try {
         const deleteResult = await deleteStudent(student._id);
         if (deleteResult.success) {
-          showSuccessMessage("تم حذف الطالب بنجاح", "نجاح");
+          showSuccessToast("✅ تم حذف الطالب بنجاح");
           fetchStudents();
         } else {
           throw new Error(deleteResult.message);

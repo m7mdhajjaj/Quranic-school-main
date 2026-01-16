@@ -63,7 +63,7 @@ export const getAllGroups = async (params?: GroupsQueryParams): Promise<{
   message?: string;
 }> => {
   try {
-    console.log('📡 API: جلب الحلقات مع فلاتر:', params);
+    console.log('📡 API: جلب الحلقات', params ? `مع فلاتر: ${JSON.stringify(params)}` : '(بدون فلاتر)');
     
     // Build query string
     const queryParams = new URLSearchParams();

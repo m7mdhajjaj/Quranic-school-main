@@ -340,7 +340,7 @@ export const SecretaryTableView: React.FC<SecretaryTableViewProps> = memo(({
                               <div className="flex items-center justify-between">
                                 <span className="text-sm font-semibold text-gray-600">تاريخ الميلاد:</span>
                                 <span className="text-sm text-gray-900">
-                                  {secretary.birthDate ? new Date(secretary.birthDate).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' }) : <span className="text-gray-400">-</span>}
+                                  {secretary.birthDate ? new Date(secretary.birthDate).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Jerusalem' }) : <span className="text-gray-400">-</span>}
                                 </span>
                               </div>
                             </div>
@@ -400,7 +400,7 @@ export const SecretaryTableView: React.FC<SecretaryTableViewProps> = memo(({
                                 <span className="text-sm font-semibold text-gray-600">آخر ظهور:</span>
                                 <span className="text-sm text-gray-900">
                                   {secretary.lastSeen 
-                                    ? new Date(secretary.lastSeen).toLocaleString('ar-EG', { dateStyle: 'short', timeStyle: 'short' })
+                                    ? new Date(secretary.lastSeen).toLocaleString('ar-EG', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Asia/Jerusalem' })
                                     : <span className="text-gray-400">-</span>
                                   }
                                 </span>

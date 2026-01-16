@@ -5,7 +5,7 @@
 import { useState, useCallback } from "react";
 import type { SessionFormData, Session } from "../../types/timetable.types";
 import { validateTimetableData } from "@/Validation/timetableValidation";
-import { showErrorToast } from "@/utils/toastUtils";
+import { showErrorMessage } from "@/utils/sweetalertUtils";
 import { isTimeInArray } from "../../utils";
 
 interface UseSessionModalLogicProps {
@@ -69,7 +69,7 @@ export const useSessionModalLogic = ({
     // التحقق من صحة البيانات
     const validation = await validateForm();
     if (!validation.isValid) {
-      showErrorToast(validation.errorMessage || 'يرجى تصحيح الأخطاء');
+      showErrorMessage("خطأ", validation.errorMessage || 'يرجى تصحيح الأخطاء');
       return;
     }
 

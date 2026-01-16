@@ -10,8 +10,8 @@ import {
   getWarningLabel,
   getWarningDescription,
 } from "../types/Constans";
-import { showConfirmMessage, showCenteredSwal } from "@/utils/sweetalertUtils";
-import { showSuccessToast, showErrorToast } from "@/utils/toastUtils";
+import { showConfirmMessage, showCenteredSwal, showErrorMessage } from "@/utils/sweetalertUtils";
+import { showSuccessToast } from "@/utils/toastUtils";
 
 interface UseWarningsModalsProps {
   giveWarning: (
@@ -107,10 +107,8 @@ export const useWarningsModals = ({
 
         onSuccess?.();
       } catch (error: any) {
-        // عرض رسالة الخطأ باستخدام Toastify
-        showErrorToast(
-          error.message || "❌ حدث خطأ أثناء إعطاء الإنذار"
-        );
+        // عرض رسالة الخطأ باستخدام SweetAlert
+        showErrorMessage("خطأ", error.message || "حدث خطأ أثناء إعطاء الإنذار");
       }
     }
   }, [giveWarning, selectedGroupName, teacherId, onSuccess]);
@@ -157,7 +155,7 @@ export const useWarningsModals = ({
     const warning = student.allWarnings?.find((w) => w._id === warningId);
 
     if (!warning) {
-      showErrorToast("❌ لم يتم العثور على التنبيه");
+      showErrorMessage("خطأ", "لم يتم العثور على التنبيه");
       return;
     }
 
@@ -170,7 +168,7 @@ export const useWarningsModals = ({
          </div>
          <div class="bg-amber-50 p-3 rounded-lg border-r-4 border-amber-400 space-y-1">
            <p class="text-sm text-gray-700"><strong>السبب:</strong> ${warning.reason}</p>
-           <p class="text-xs text-gray-500">التاريخ: ${new Date(warning.createdAt).toLocaleDateString("ar-EG")}</p>
+           <p class="text-xs text-gray-500">التاريخ: ${new Date(warning.createdAt).toLocaleDateString("ar-EG", { timeZone: "Asia/Jerusalem" })}</p>
          </div>
        </div>`,
       "نعم، احذف",

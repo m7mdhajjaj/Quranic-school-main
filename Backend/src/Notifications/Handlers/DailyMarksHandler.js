@@ -4,6 +4,7 @@ const Group = require("../../schema/Group");
 const mongoose = require("mongoose");
 const { sendRealTimeNotification } = require("../Core/SocketSender");
 const { sendPushNotification } = require("../Core/PushSender");
+const { TIMEZONE } = require('../../config/timezone');
 
 /**
  * Notify all students in a group about a new section
@@ -55,7 +56,7 @@ exports.notifySectionAdded = async (section, io) => {
 
     if (!students.length) return;
 
-    const dateStr = new Date(section.date).toLocaleDateString("ar-EG");
+    const dateStr = new Date(section.date).toLocaleDateString("ar-EG", { timeZone: TIMEZONE });
 
     const notifications = students.map((student) => ({
       recipient: student._id,
@@ -148,7 +149,7 @@ exports.notifySectionUpdated = async (section, oldSection, io) => {
 
     if (!students.length) return;
 
-    const dateStr = new Date(section.date).toLocaleDateString("ar-EG");
+    const dateStr = new Date(section.date).toLocaleDateString("ar-EG", { timeZone: TIMEZONE });
 
     const notifications = students.map((student) => ({
       recipient: student._id,
@@ -228,7 +229,7 @@ exports.notifySectionDeleted = async (section, io) => {
 
     if (!students.length) return;
 
-    const dateStr = new Date(section.date).toLocaleDateString("ar-EG");
+    const dateStr = new Date(section.date).toLocaleDateString("ar-EG", { timeZone: TIMEZONE });
 
     const notifications = students.map((student) => ({
       recipient: student._id,
@@ -280,7 +281,7 @@ exports.notifyMarkAdded = async (mark, io) => {
     let sectionInfo = "";
     
     if (mark.sectionId && mark.sectionId.date) {
-        dateStr = new Date(mark.sectionId.date).toLocaleDateString("ar-EG");
+        dateStr = new Date(mark.sectionId.date).toLocaleDateString("ar-EG", { timeZone: TIMEZONE });
         sectionInfo = ` (مقطع: ${mark.sectionId.memorizationSection} / ${mark.sectionId.reviewSection})`;
     }
 
@@ -346,7 +347,7 @@ exports.notifyMarkUpdated = async (mark, io) => {
     let dateStr = "";
     
     if (mark.sectionId && mark.sectionId.date) {
-        dateStr = new Date(mark.sectionId.date).toLocaleDateString("ar-EG");
+        dateStr = new Date(mark.sectionId.date).toLocaleDateString("ar-EG", { timeZone: TIMEZONE });
     }
 
     const notification = new Notification({
@@ -388,7 +389,7 @@ exports.notifyMarkDeleted = async (mark, io) => {
     let sectionInfo = "";
     
     if (mark.sectionId && mark.sectionId.date) {
-        dateStr = new Date(mark.sectionId.date).toLocaleDateString("ar-EG");
+        dateStr = new Date(mark.sectionId.date).toLocaleDateString("ar-EG", { timeZone: TIMEZONE });
         sectionInfo = ` (مقطع: ${mark.sectionId.memorizationSection} / ${mark.sectionId.reviewSection})`;
     }
 

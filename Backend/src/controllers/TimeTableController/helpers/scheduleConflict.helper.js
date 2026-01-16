@@ -8,6 +8,7 @@
 const TimeTable = require("../../../schema/TimeTable");
 const mongoose = require("mongoose");
 const { timeToMinutes, hasTimeOverlap } = require("./dateTime.helper");
+const { TIMEZONE } = require('../../../config/timezone');
 
 /**
  * تطبيع التاريخ (بدون الوقت) للمقارنة
@@ -157,7 +158,7 @@ const checkTimeConflict = async (options) => {
     for (const session of existingSessions) {
       if (hasTimeOverlap(startHour, endHour, session.startHour, session.endHour)) {
         const groupName = session.groupId?.name || session.note || 'غير محدد';
-        const dateStr = targetDate.toLocaleDateString('ar-SA');
+        const dateStr = targetDate.toLocaleDateString('ar-SA', { timeZone: TIMEZONE });
         return {
           hasConflict: true,
           message: `يوجد تعارض في ${dateStr} مع حلقة "${groupName}" من ${session.startHour} إلى ${session.endHour}`,
@@ -223,7 +224,7 @@ const checkGroupConflict = async (options) => {
 
     for (const session of existing) {
       if (hasTimeOverlap(startHour, endHour, session.startHour, session.endHour)) {
-        const dateStr = targetDate.toLocaleDateString('ar-SA');
+        const dateStr = targetDate.toLocaleDateString('ar-SA', { timeZone: TIMEZONE });
         return {
           hasConflict: true,
           message: `الحلقة لديها موعد آخر في ${dateStr} من ${session.startHour} إلى ${session.endHour}`,

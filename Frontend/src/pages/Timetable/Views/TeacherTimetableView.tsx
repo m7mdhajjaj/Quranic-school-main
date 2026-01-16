@@ -14,7 +14,7 @@ import PageHeader from "@/components/UI/PageHeader";
 import { Button } from "@/components/UI/Button";
 import { Alert } from "@/components/UI/Alert";
 import { Calendar, Grid3x3, List, AlertCircle } from "lucide-react";
-import { showErrorToast } from "@/utils/toastUtils";
+import { showErrorMessage } from "@/utils/sweetalertUtils";
 import { getTimetableById } from "@/Api/TimeTable.Api";
 import { getDayNameFromDate } from "../utils";
 
@@ -97,13 +97,13 @@ export const TeacherTimetableView: React.FC<TeacherTimetableViewProps> = ({
             } else {
               console.warn("⚠️ Session not found in API");
               setSearchParams({}, { replace: true });
-              showErrorToast("الجلسة غير موجودة أو تم حذفها");
+              showErrorMessage("خطأ", "الجلسة غير موجودة أو تم حذفها");
             }
           })
           .catch(error => {
             console.error("❌ Error fetching session:", error);
             setSearchParams({}, { replace: true });
-            showErrorToast("الجلسة غير موجودة أو تم حذفها");
+            showErrorMessage("خطأ", "الجلسة غير موجودة أو تم حذفها");
           });
       }
       return;

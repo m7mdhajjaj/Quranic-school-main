@@ -1,6 +1,6 @@
 const Section = require("../../schema/DailyMark/Section");
 const { getSurahByNumber } = require("../../utils/Quran/dailyMarkQuranMetadata");
-const { toDateKey } = require("../../config/timezone");
+const { toDateKey, TIMEZONE } = require("../../config/timezone");
 
 /**
  * ============================================================================
@@ -259,7 +259,8 @@ class SectionSequenceService {
               const dateStr = new Date(conflictingSection.date).toLocaleDateString('ar-EG', {
                 year: 'numeric',
                 month: 'long',
-                day: 'numeric'
+                day: 'numeric',
+                timeZone: TIMEZONE
               });
               
               // رسالة مفصلة للمستخدم - تكرار حفظ
@@ -560,7 +561,7 @@ class SectionSequenceService {
       if (count >= 3) {
           // تنسيق التاريخ للعرض في الرسالة بشكل مقروء
           const formatDate = (dateObj) => {
-             return dateObj.toLocaleDateString('ar-EG', { day: 'numeric', month: 'numeric' });
+             return dateObj.toLocaleDateString('ar-EG', { day: 'numeric', month: 'numeric', timeZone: TIMEZONE });
           };
 
           return {
@@ -765,7 +766,7 @@ class SectionSequenceService {
         const expectedStart = previousNeighbor.ayahEnd + 1;
         if (newSegment.ayahStart !== expectedStart) {
           const prevDate = previousNeighbor.dateKey ? 
-            new Date(previousNeighbor.date).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' }) 
+            new Date(previousNeighbor.date).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric', timeZone: TIMEZONE }) 
             : 'غير معروف';
           
           return {
@@ -799,7 +800,7 @@ class SectionSequenceService {
         const expectedEnd = nextNeighbor.ayahStart - 1;
         if (newSegment.ayahEnd !== expectedEnd) {
           const nextDate = nextNeighbor.dateKey ? 
-            new Date(nextNeighbor.date).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' }) 
+            new Date(nextNeighbor.date).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric', timeZone: TIMEZONE }) 
             : 'غير معروف';
           
           return {
@@ -816,7 +817,7 @@ class SectionSequenceService {
       // 2. Overlap check: المقطع الجديد لا يجب أن يتداخل مع اللاحق
       if (newSegment.ayahEnd >= nextNeighbor.ayahStart) {
         const nextDate = nextNeighbor.dateKey ? 
-          new Date(nextNeighbor.date).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' }) 
+          new Date(nextNeighbor.date).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric', timeZone: TIMEZONE }) 
           : 'غير معروف';
         
         return {

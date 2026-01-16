@@ -1,7 +1,8 @@
 import PageHeader from "@/components/UI/PageHeader";
 import { Button, Badge } from "@/components/UI";
 import type { AzkarHeaderProps } from "../Types/types";
-import { showConfirmMessage, showSuccessMessage } from "@/utils/sweetalertUtils";
+import { showConfirmMessage } from "@/utils/sweetalertUtils";
+import { showSuccessToast } from "@/utils/toastUtils";
 
 const AzkarHeader = ({
   title,
@@ -21,10 +22,7 @@ const AzkarHeader = ({
 
     if (result.isConfirmed) {
       onReset();
-      await showSuccessMessage(
-        "تم إعادة التعيين!",
-        "تم إعادة تعيين الأذكار بنجاح"
-      );
+      showSuccessToast("✅ تم إعادة تعيين الأذكار بنجاح");
     }
   };
   return (

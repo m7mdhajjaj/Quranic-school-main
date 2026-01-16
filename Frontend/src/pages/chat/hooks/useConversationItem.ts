@@ -72,6 +72,7 @@ export const useConversationItem = ({
     if (!conversation.lastMessage?.createdAt) return null;
     
     return new Date(conversation.lastMessage.createdAt).toLocaleTimeString('ar-EG', {
+      timeZone: 'Asia/Jerusalem',
       hour: '2-digit',
       minute: '2-digit'
     });

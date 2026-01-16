@@ -15,24 +15,30 @@ import { showErrorMessage } from "@/utils/sweetalertUtils";
 // ============================================================================
 const sanitizeSession = (t: any): Session | null => {
   try {
-    // التحقق من وجود البيانات الأساسية
-    if (!t._id || !t.sessionDate || !t.startHour || !t.endHour) {
-      console.warn('⚠️ Session missing required fields:', t._id);
+    // التحقق من وجود البيانات الأساسية (sessionDate أو day مطلوب)
+    if (!t._id || !t.startHour || !t.endHour) {
       return null;
     }
 
-    // التحقق من صحة التاريخ
-    const sessionDate = new Date(t.sessionDate);
-    if (isNaN(sessionDate.getTime())) {
-      console.warn('⚠️ Invalid sessionDate:', t.sessionDate);
+    // ✅ التحقق: إما sessionDate أو day يجب أن يكون موجود
+    if (!t.sessionDate && !t.day) {
       return null;
+    }
+
+    // التحقق من صحة التاريخ (إذا موجود)
+    let sessionDateStr = t.sessionDate;
+    if (sessionDateStr) {
+      const sessionDate = new Date(sessionDateStr);
+      if (isNaN(sessionDate.getTime())) {
+        sessionDateStr = null; // سيتم استخدام day بدلاً منه
+      }
     }
 
     // تنظيف وتنسيق البيانات
     return {
       _id: t._id,
-      sessionDate: t.sessionDate,
-      day: t.day || getDayNameFromDate(t.sessionDate),
+      sessionDate: sessionDateStr || '', // قد يكون فارغ للمواعيد المتكررة
+      day: t.day || (sessionDateStr ? getDayNameFromDate(sessionDateStr) : ''),
       startHour: t.startHour?.trim() || '',
       endHour: t.endHour?.trim() || '',
       note: t.note?.trim() || '',
@@ -50,7 +56,6 @@ const sanitizeSession = (t: any): Session | null => {
       } : undefined,
     };
   } catch (error) {
-    console.error('❌ Error sanitizing session:', error);
     return null;
   }
 };
@@ -62,9 +67,9 @@ export const useTimetableData = () => {
   const [teacherGroups, setTeacherGroups] = useState<string[]>([]);
   const [lastFetch, setLastFetch] = useState<Date | null>(null);
   
-  // ✅ Ref لتتبع حالة الـ fetch الجاري ومنع race conditions
+  // ✅ Ref لتتبع حالة الـ mount
+  const isMountedRef = useRef<boolean>(true);
   const fetchInProgressRef = useRef<boolean>(false);
-  const abortControllerRef = useRef<AbortController | null>(null);
 
   // ✅ Memoize user & role لمنع إعادة حسابهم
   const user = useMemo(() => getCurrentUser(), []);
@@ -74,19 +79,12 @@ export const useTimetableData = () => {
   // 📡 جلب الحصص من الـ Backend API
   // ============================================
   const fetchSessions = useCallback(async () => {
-    // ✅ إلغاء أي fetch سابق
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    
     // ✅ منع الـ fetch المتزامن
     if (fetchInProgressRef.current) {
-      console.log('⏳ Fetch already in progress, skipping...');
       return;
     }
     
     fetchInProgressRef.current = true;
-    abortControllerRef.current = new AbortController();
     
     try {
       setLoading(true);
@@ -95,9 +93,8 @@ export const useTimetableData = () => {
       // جلب المواعيد
       const response = await getTimetables();
       
-      // ✅ تحقق من إلغاء الـ request
-      if (abortControllerRef.current?.signal.aborted) {
-        console.log('🚫 Fetch was aborted');
+      // ✅ تحقق إذا كان الـ component لا يزال mounted
+      if (!isMountedRef.current) {
         return;
       }
       
@@ -106,12 +103,6 @@ export const useTimetableData = () => {
         const sessionsData = response.data
           .map(sanitizeSession)
           .filter((s): s is Session => s !== null);
-        
-        // ⚠️ تحذير إذا تم تجاهل بعض البيانات
-        const skippedCount = response.data.length - sessionsData.length;
-        if (skippedCount > 0) {
-          console.warn(`⚠️ Skipped ${skippedCount} invalid sessions`);
-        }
         
         setSessions(sessionsData);
         setLastFetch(new Date());
@@ -123,9 +114,8 @@ export const useTimetableData = () => {
         setSessions([]);
       }
     } catch (error: any) {
-      // ✅ تجاهل أخطاء الإلغاء
-      if (error?.name === 'AbortError' || abortControllerRef.current?.signal.aborted) {
-        console.log('🚫 Fetch was aborted');
+      // ✅ تجاهل إذا كان الـ component unmounted
+      if (!isMountedRef.current) {
         return;
       }
       
@@ -134,20 +124,21 @@ export const useTimetableData = () => {
       await showErrorMessage("❌ خطأ في تحميل البيانات", errorMsg);
       setSessions([]);
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
       fetchInProgressRef.current = false;
     }
   }, []);
 
   // جلب البيانات عند التحميل الأول
   useEffect(() => {
+    isMountedRef.current = true;
     fetchSessions();
     
-    // ✅ Cleanup: إلغاء الـ fetch عند الـ unmount
+    // ✅ Cleanup: تحديث حالة الـ mount
     return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
+      isMountedRef.current = false;
     };
   }, [fetchSessions]);
 

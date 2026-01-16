@@ -4,6 +4,7 @@ const Student = require('../../schema/Student');
 const Teacher = require('../../schema/Teacher');
 const Attendance = require('../../schema/Attendance');
 const Section = require("../../schema/DailyMark/Section");
+const { TIMEZONE } = require('../../config/timezone');
 
 /**
  * Get all active groups for admin with full attendance data
@@ -249,7 +250,7 @@ exports.getAllGroupsForAdmin = async (req, res) => {
           formattedAbsenceDates = row.absenceStats.absenceDates
             .map(d => {
               const dateObj = new Date(d);
-              return dateObj.toLocaleDateString('en-GB');
+              return dateObj.toLocaleDateString('en-GB', { timeZone: TIMEZONE });
             })
             .sort((a, b) => {
                const [da, ma, ya] = a.split('/').map(Number);
@@ -424,7 +425,7 @@ exports.getGroupStudentsForAdmin = async (req, res) => {
       const totalAbsences = studentAbsences.length;
 
       const formattedAbsenceDates = studentAbsences
-        .map(d => new Date(d).toLocaleDateString('en-GB'))
+        .map(d => new Date(d).toLocaleDateString('en-GB', { timeZone: TIMEZONE }))
         .sort((a, b) => {
           const [da, ma, ya] = a.split('/').map(Number);
           const [db, mb, yb] = b.split('/').map(Number);

@@ -2,6 +2,8 @@
 // Validation Helpers - دوال التحقق المشتركة
 // ============================================================================
 
+const { TIMEZONE } = require('../../../config/timezone');
+
 /**
  * Validate marks array
  * @param {Array} marks - Array of marks
@@ -164,7 +166,7 @@ function checkMarkEditWindow(sectionDate, operation = 'update') {
     const operationText = operation === 'add' ? 'إضافة' : operation === 'delete' ? 'حذف' : 'تعديل';
     return {
       isAllowed: false,
-      reason: `انتهت فترة ${operationText} العلامة. كان متاحاً حتى ${editWindowEnd.toLocaleDateString('ar-EG')} (قبل ${daysOverdue} يوم)`,
+      reason: `انتهت فترة ${operationText} العلامة. كان متاحاً حتى ${editWindowEnd.toLocaleDateString('ar-EG', { timeZone: TIMEZONE })} (قبل ${daysOverdue} يوم)`,
       daysOverdue,
       sectionDate: sectionDayStart,
       editWindowEnd,

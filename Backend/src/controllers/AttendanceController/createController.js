@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const Attendance = require("../../schema/Attendance");
 const Section = require("../../schema/DailyMark/Section");
 const Student = require("../../schema/Student/Student");
+const { TIMEZONE } = require('../../config/timezone');
 
 // Create or update attendance records for a specific date
 exports.createAttendance = async (req, res) => {
@@ -141,7 +142,7 @@ exports.createAttendance = async (req, res) => {
           const teacherName = req.user?.firstName
             ? `${req.user.firstName} ${req.user.lastName || ""}`.trim()
             : "المعلم";
-          const dateStr = formattedDate.toLocaleDateString("ar-SA");
+          const dateStr = formattedDate.toLocaleDateString("ar-SA", { timeZone: TIMEZONE });
 
           // Notify Absents
           const absentRecords = attendanceRecords.filter(r => !r.isPresent);

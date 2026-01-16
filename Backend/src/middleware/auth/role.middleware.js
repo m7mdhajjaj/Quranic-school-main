@@ -422,13 +422,16 @@ exports.secretaryTeachersAccess = (requiredLevel = 'view') => {
 
 /**
  * Secretary Students Access Middleware
- * التحقق من صلاحية السكرتير للوصول للطلاب
+ * التحقق من صلاحية الوصول للطلاب
  * 
  * @middleware
  * @param {'view' | 'manage'} requiredLevel - مستوى الصلاحية المطلوب
- * @description يسمح للأدمن أو السكرتير الذي لديه صلاحية الطلاب
- *              كما يسمح للطالب بالوصول لبياناته الخاصة فقط
- * @access Protected (Admin, Secretary with studentsAccess, Student for self-access)
+ * @description يسمح للأدمن أو المعلم أو السكرتير الذي لديه صلاحية الطلاب
+ *              - الأدمن: وصول كامل
+ *              - المعلم: عرض طلاب حلقاته فقط
+ *              - الطالب: وصول لبياناته فقط
+ *              - السكرتير: حسب صلاحياته
+ * @access Protected (Admin, Teacher for own groups, Secretary with studentsAccess, Student for self-access)
  */
 exports.secretaryStudentsAccess = (requiredLevel = 'view') => {
   return async (req, res, next) => {
@@ -441,6 +444,20 @@ exports.secretaryStudentsAccess = (requiredLevel = 'view') => {
         if (req.user.role === "admin") {
           console.log('✅ [secretaryStudentsAccess] Admin - Full Access Granted');
           return next();
+        }
+        
+        // ✅ المعلم يستطيع عرض طلاب حلقاته فقط (view)
+        if (req.user.role === "teacher") {
+          console.log('🏫 [secretaryStudentsAccess] Teacher - View Access for Own Groups');
+          if (requiredLevel === 'view') {
+            req.isTeacherAccess = true;
+            return next();
+          }
+          // المعلم لا يستطيع إدارة الطلاب (إضافة/حذف)
+          return res.status(403).json({
+            success: false,
+            message: "ليس لديك صلاحية لإدارة الطلاب",
+          });
         }
         
         // السماح للطالب بالوصول لبياناته الخاصة فقط (للعرض)
@@ -519,26 +536,63 @@ exports.secretaryStudentsAccess = (requiredLevel = 'view') => {
 
 /**
  * Secretary Timetable Access Middleware
- * التحقق من صلاحية السكرتير للوصول للجدول (الأسبوعي والشهري)
+ * التحقق من صلاحية الوصول للجدول (الأسبوعي والشهري)
  * 
  * @middleware
- * @description يسمح للأدمن أو المعلم أو السكرتير الذي لديه صلاحية الجدول
- *              ملاحظة: الجدول عرض فقط للسكرتير (بدون إدارة)
- * @access Protected (Admin with full access, Teacher with view only, Secretary with view based on permission)
+ * @description يسمح للأدمن أو المعلم أو الطالب أو السكرتير الذي لديه صلاحية الجدول
+ *              - الأدمن: وصول كامل مع إدارة
+ *              - المعلم: عرض جدوله فقط
+ *              - الطالب: عرض جدول حلقته فقط
+ *              - السكرتير: عرض فقط حسب صلاحياته
+ * @access Protected (Admin with full access, Teacher/Student with view only, Secretary with view based on permission)
  */
-exports.secretaryTimetableAccess = () => {
+/**
+ * Timetable Access Middleware
+ * التحقق من صلاحية الوصول للجدول
+ * 
+ * @middleware
+ * @param {'view' | 'manage'} requiredLevel - مستوى الصلاحية المطلوب
+ * @description يسمح للأدمن أو المعلم أو الطالب أو السكرتير
+ *              - الأدمن: وصول كامل (إدارة جميع المواعيد)
+ *              - المعلم: إدارة مواعيد حلقاته فقط
+ *              - الطالب: عرض جدول حلقته فقط
+ *              - السكرتير: حسب صلاحياته
+ * @access Protected
+ */
+exports.secretaryTimetableAccess = (requiredLevel = 'view') => {
   return async (req, res, next) => {
     try {
       await protect(req, res, async () => {
+        console.log('🔑 [secretaryTimetableAccess] Required Level:', requiredLevel);
+        console.log('📊 [secretaryTimetableAccess] User:', { id: req.user.id, role: req.user.role });
+        
         // الأدمن لديه وصول كامل
         if (req.user.role === "admin") {
+          console.log('✅ [secretaryTimetableAccess] Admin - Full Access Granted');
           req.canManage = true; // الأدمن يستطيع الإدارة
           return next();
         }
         
-        // المعلم لديه وصول للعرض فقط (لجدوله الخاص)
+        // ✅ المعلم يستطيع إدارة مواعيد حلقاته فقط
         if (req.user.role === "teacher") {
-          req.canManage = false; // المعلم عرض فقط
+          console.log('🏫 [secretaryTimetableAccess] Teacher - Access for Own Groups');
+          // المعلم يستطيع العرض والإدارة (التحقق من الحلقة يتم في الـ controller)
+          req.canManage = true; // يستطيع الإدارة لحلقاته
+          req.isTeacherAccess = true; // علامة للتحقق في الـ controller
+          req.teacherId = req.user.id; // معرف المعلم للتحقق
+          return next();
+        }
+        
+        // ✅ الطالب لديه وصول للعرض فقط (لجدول حلقته)
+        if (req.user.role === "student") {
+          console.log('👨‍🎓 [secretaryTimetableAccess] Student - View Only');
+          if (requiredLevel === 'manage') {
+            return res.status(403).json({
+              success: false,
+              message: "ليس لديك صلاحية لإدارة الجدول",
+            });
+          }
+          req.canManage = false; // الطالب عرض فقط
           return next();
         }
         
@@ -556,7 +610,9 @@ exports.secretaryTimetableAccess = () => {
           
           const accessLevel = secretary.permissions?.timetableAccess || 'none';
           
-          // التحقق من مستوى الصلاحية (عرض فقط)
+          console.log('🔐 [secretaryTimetableAccess] Secretary Permission:', accessLevel);
+          
+          // التحقق من مستوى الصلاحية
           if (accessLevel === 'none') {
             return res.status(403).json({
               success: false,
@@ -564,13 +620,20 @@ exports.secretaryTimetableAccess = () => {
             });
           }
           
-          // السكرتير عرض فقط (بدون إدارة)
-          req.canManage = false;
-          req.secretaryAccessLevel = 'view';
+          // إذا كان المطلوب إدارة، يجب أن يكون manage
+          if (requiredLevel === 'manage' && accessLevel !== 'manage') {
+            return res.status(403).json({
+              success: false,
+              message: "ليس لديك صلاحية لإدارة الجدول (عرض فقط)",
+            });
+          }
+          
+          req.canManage = accessLevel === 'manage';
+          req.secretaryAccessLevel = accessLevel;
           return next();
         }
         
-        // غير مصرح لأي دور آخر (الطلاب مثلاً)
+        // غير مصرح لأي دور آخر
         return res.status(403).json({
           success: false,
           message: "غير مصرح لك بالوصول إلى الجدول",

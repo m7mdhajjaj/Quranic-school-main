@@ -2,11 +2,11 @@ import { useState } from "react";
 import { deleteTeacher, bulkDeleteTeachers, exportTeachersToCSV } from "@/Api/teacherApi";
 import {
   showCenteredSwal,
+  showErrorMessage,
 } from "@/utils/sweetalertUtils";
 import { useSounds } from "@/components/Hooks/useSounds";
 import {
   showSuccessToast,
-  showErrorToast,
 } from "@/utils/toastUtils";
 import type { Teacher, TeacherFiltersParams } from "../types";
 
@@ -115,8 +115,9 @@ export const useTeachersActions = (
             },
           });
         } else {
-          showErrorToast(
-            error.response?.data?.message || "❌ حدث خطأ أثناء حذف المعلم"
+          showErrorMessage(
+            "خطأ",
+            error.response?.data?.message || "حدث خطأ أثناء حذف المعلم"
           );
         }
       }
@@ -210,7 +211,7 @@ export const useTeachersActions = (
         }
       }
 
-      showErrorToast(`${errorTitle} ${errorMessage}`);
+      showErrorMessage("خطأ", `${errorTitle} ${errorMessage}`);
     }
   };
 
@@ -227,7 +228,7 @@ export const useTeachersActions = (
         ? error.message 
         : "حدث خطأ أثناء تصدير البيانات";
       
-      showErrorToast(`⚠️ فشل التصدير! ${errorMessage}`);
+      showErrorMessage("خطأ", `فشل التصدير! ${errorMessage}`);
     }
   };
 
@@ -279,8 +280,9 @@ export const useTeachersActions = (
 
         playError();
 
-        showErrorToast(
-          "⚠️ فشل في الحذف! حدث خطأ أثناء حذف المعلمين المحددين"
+        showErrorMessage(
+          "خطأ",
+          "فشل في الحذف! حدث خطأ أثناء حذف المعلمين المحددين"
         );
       }
     }

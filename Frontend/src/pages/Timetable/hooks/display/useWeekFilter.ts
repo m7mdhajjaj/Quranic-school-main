@@ -1,56 +1,22 @@
 // ============================================================================
-// useWeekFilter - هوك لفلترة المواعيد حسب الأسبوع
+// useWeekFilter - هوك لحساب نطاق الأسبوع فقط
 // ============================================================================
-// ⚠️ النظام الجديد: يعتمد على sessionDate (التاريخ المحدد)
+// ✅ يستخدم توقيت فلسطين (Asia/Jerusalem) الموحد
 
 import { useMemo, useState, useCallback } from "react";
 import type { Session } from "../../types/timetable.types";
+import { 
+  getWeekRange, 
+  formatWeekRange,
+  type WeekRange 
+} from "@/utils/timezone";
 
-export interface WeekRange {
-  startOfWeek: Date;
-  endOfWeek: Date;
-}
-
-/**
- * حساب بداية ونهاية الأسبوع (السبت - الجمعة)
- */
-export const getWeekRange = (referenceDate: Date = new Date()): WeekRange => {
-  const today = new Date(referenceDate);
-  const currentDay = today.getDay(); // 0 = الأحد، 6 = السبت
-  
-  // حساب بداية الأسبوع (السبت)
-  const daysToSaturday = currentDay === 6 ? 0 : currentDay + 1;
-  const startOfWeek = new Date(today);
-  startOfWeek.setDate(today.getDate() - daysToSaturday);
-  startOfWeek.setHours(0, 0, 0, 0);
-  
-  // نهاية الأسبوع (الجمعة)
-  const endOfWeek = new Date(startOfWeek);
-  endOfWeek.setDate(startOfWeek.getDate() + 6);
-  endOfWeek.setHours(23, 59, 59, 999);
-  
-  return { startOfWeek, endOfWeek };
-};
-
-/**
- * تنسيق نطاق الأسبوع للعرض
- */
-export const formatWeekRange = (weekRange: WeekRange): string => {
-  const startStr = weekRange.startOfWeek.toLocaleDateString('ar-SA', { 
-    day: 'numeric', 
-    month: 'short' 
-  });
-  const endStr = weekRange.endOfWeek.toLocaleDateString('ar-SA', { 
-    day: 'numeric', 
-    month: 'short', 
-    year: 'numeric' 
-  });
-  return `${startStr} - ${endStr}`;
-};
+// Re-export للتوافق مع الاستخدامات الحالية
+export { getWeekRange, formatWeekRange };
+export type { WeekRange };
 
 interface UseWeekFilterOptions {
   sessions: Session[];
-  enableClientFilter?: boolean;
 }
 
 interface UseWeekFilterReturn {
@@ -65,8 +31,7 @@ interface UseWeekFilterReturn {
 }
 
 export const useWeekFilter = ({ 
-  sessions, 
-  enableClientFilter = false 
+  sessions
 }: UseWeekFilterOptions): UseWeekFilterReturn => {
   const [referenceDate, setReferenceDate] = useState<Date>(new Date());
 
@@ -82,23 +47,8 @@ export const useWeekFilter = ({
     return weekRange.startOfWeek.getTime() === todayWeek.startOfWeek.getTime();
   }, [weekRange]);
 
-  // ⚠️ الفلترة بناءً على sessionDate
-  const filteredSessions = useMemo(() => {
-    if (!enableClientFilter) {
-      return sessions;
-    }
-
-    return sessions.filter(session => {
-      // ⚠️ sessionDate مطلوب في النظام الجديد
-      if (!session.sessionDate) {
-        console.warn('⚠️ Session without sessionDate:', session._id);
-        return false;
-      }
-      
-      const sessionDate = new Date(session.sessionDate);
-      return sessionDate >= weekRange.startOfWeek && sessionDate <= weekRange.endOfWeek;
-    });
-  }, [sessions, weekRange, enableClientFilter]);
+  // ✅ البيانات جاهزة من الـ Backend - لا فلترة هنا
+  const filteredSessions = sessions;
 
   const goToNextWeek = useCallback(() => {
     setReferenceDate(prev => {

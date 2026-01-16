@@ -36,7 +36,7 @@ export const BulkDeleteModal = ({
                   className="ml-3 w-4 h-4 accent-red-600"
                 />
                 <span className="text-sm text-gray-700">
-                  {new Date(section.date).toLocaleDateString('en-GB')} - مراجعة:{' '}
+                  {new Date(section.date).toLocaleDateString('en-GB', { timeZone: 'Asia/Jerusalem' })} - مراجعة:{' '}
                   {section.reviewSection} - حفظ: {section.memorizationSection}
                 </span>
               </label>

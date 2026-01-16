@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { showSuccessToast } from "@/utils/toastUtils";
-import { showErrorToast } from "@/utils/toastUtils";
+import { showErrorMessage } from "@/utils/sweetalertUtils";
 import { updateUserById } from "@/Api/profileApi";
 import { validateProfileData, type FieldErrors } from "@/Validation/profileValidation";
 import { canEditFieldLocal } from "../utils/editLimits";
@@ -74,7 +74,7 @@ export const useProfileEdit = (
 
     if (!validation.isValid) {
       setFieldErrors(validation.errors);
-      showErrorToast("يرجى تصحيح الأخطاء في النموذج");
+      showErrorMessage("خطأ", "يرجى تصحيح الأخطاء في النموذج");
       return;
     }
 
@@ -116,7 +116,7 @@ export const useProfileEdit = (
     if (changingBirth) {
       const b = await canEditFieldLocal();
       if (!b.allowed) {
-        showErrorToast("لا يمكنك تعديل تاريخ الميلاد أكثر من مرتين خلال شهر كامل من آخر تعديلاتك");
+        showErrorMessage("خطأ", "لا يمكنك تعديل تاريخ الميلاد أكثر من مرتين خلال شهر كامل من آخر تعديلاتك");
         setIsSaving(false);
         return;
       }
@@ -158,14 +158,15 @@ export const useProfileEdit = (
       ) {
         const limits = axiosError.response.data.editLimit;
         setRemainingBirth(limits.remaining);
-        showErrorToast(
+        showErrorMessage(
+          "خطأ",
           axiosError.response.data.message ||
             "لا يمكنك تعديل تاريخ الميلاد أكثر من مرتين خلال شهر كامل من آخر تعديلاتك"
         );
       } else {
         const msg =
           axiosError?.response?.data?.message || "تعذّر حفظ التعديلات";
-        showErrorToast(msg);
+        showErrorMessage("خطأ", msg);
       }
     } finally {
       setIsSaving(false);

@@ -1,9 +1,11 @@
 // ============================================================================
 // useDateDividers.ts - Date Dividers Logic Hook
 // ============================================================================
+// ✅ يستخدم توقيت فلسطين (Asia/Jerusalem) الموحد
 
 import { useCallback } from 'react';
 import type { Message } from '../types';
+import { TIMEZONE } from '@/utils/timezone';
 
 export const useDateDividers = () => {
   const shouldShowDateDivider = useCallback((currentMsg: Message, prevMsg: Message | null) => {
@@ -25,7 +27,8 @@ export const useDateDividers = () => {
       weekday: 'long', 
       year: 'numeric', 
       month: 'long', 
-      day: 'numeric' 
+      day: 'numeric',
+      timeZone: TIMEZONE
     });
   }, []);
 

@@ -124,7 +124,7 @@ const MessageItem: React.FC<MessageItemProps> = React.memo(({
               <div className="max-h-40 overflow-y-auto custom-scrollbar p-1">
                 {message.seenBy.map((seen: SeenByItem) => (
                   <div key={seen.userId} className="py-1 border-b border-gray-700/50 last:border-0 text-xs whitespace-nowrap">
-                    تمت المشاهدة بواسطة {seen.user?.firstName} في {new Date(seen.seenAt).toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' })}
+                    تمت المشاهدة بواسطة {seen.user?.firstName} في {new Date(seen.seenAt).toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jerusalem' })}
                   </div>
                 ))}
               </div>
@@ -331,7 +331,7 @@ const MessageItem: React.FC<MessageItemProps> = React.memo(({
                   )}
                   
                   <span className="text-[10px] font-medium opacity-80">
-                    {new Date(message.createdAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}
+                    {new Date(message.createdAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jerusalem' })}
                   </span>
 
                   {!message.deletedForAll && isOwn && (
@@ -359,7 +359,7 @@ const MessageItem: React.FC<MessageItemProps> = React.memo(({
               >
                 <Tooltip 
                   width="w-auto whitespace-nowrap"
-                  content={`تمت المشاهدة بواسطة ${seen.user?.firstName || 'مستخدم'} في ${new Date(seen.seenAt).toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' })}`}
+                  content={`تمت المشاهدة بواسطة ${seen.user?.firstName || 'مستخدم'} في ${new Date(seen.seenAt).toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jerusalem' })}`}
                 >
                   <div className="cursor-pointer">
                     <Avatar 

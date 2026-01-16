@@ -2,9 +2,15 @@
 // DATE TIME HELPER - OPTIMIZED VERSION
 // ============================================
 // دوال مساعدة للتاريخ والوقت - نسخة محسّنة
+// ✅ يستخدم توقيت Asia/Jerusalem (القدس، فلسطين)
+
+const { TIMEZONE, toDateKey } = require('../../../config/timezone');
 
 // ========== CONSTANTS ==========
-const ARABIC_DAYS = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+// ⚠️ ترتيب الأيام: السبت = 0 (بداية الأسبوع) إلى الجمعة = 6
+const ARABIC_DAYS_SATURDAY_START = ['السبت', 'الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة'];
+// ترتيب JavaScript: الأحد = 0 إلى السبت = 6 (لـ getDay())
+const ARABIC_DAYS_JS = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
 const DAYS_MAP = {
   'السبت': 0, 'الأحد': 1, 'الاثنين': 2,
   'الثلاثاء': 3, 'الأربعاء': 4, 'الخميس': 5, 'الجمعة': 6
@@ -282,33 +288,57 @@ const validateWorkingHours = (startHour, endHour, date = new Date()) => {
 
 // ========== DATE HELPERS ==========
 /**
- * ✅ اشتقاق اليوم بالعربية
+ * ✅ اشتقاق اليوم بالعربية من التاريخ
+ * @param {Date} date - التاريخ
+ * @returns {String} - اسم اليوم بالعربية
  */
 const getArabicDayFromDate = (date) => {
-  return ARABIC_DAYS[new Date(date).getDay()];
+  // getDay() يعطي: 0=الأحد, 6=السبت
+  return ARABIC_DAYS_JS[new Date(date).getDay()];
 };
 
 /**
- * ✅ حساب نطاق الأسبوع (السبت - الجمعة)
+ * ✅ الحصول على يوم الأسبوع بتوقيت فلسطين (0=الأحد, 6=السبت)
+ */
+const getDayInTimezone = (date = new Date()) => {
+  const options = { timeZone: TIMEZONE, weekday: 'short' };
+  const dayStr = new Intl.DateTimeFormat('en-US', options).format(date);
+  const dayMap = { 'Sun': 0, 'Mon': 1, 'Tue': 2, 'Wed': 3, 'Thu': 4, 'Fri': 5, 'Sat': 6 };
+  return dayMap[dayStr] ?? new Date(date).getDay();
+};
+
+/**
+ * ✅ حساب نطاق الأسبوع (السبت - الجمعة) - بتوقيت فلسطين (Asia/Jerusalem)
  */
 const getWeekRange = (date = new Date()) => {
-  const d = new Date(date);
-  const currentDay = d.getUTCDay();
+  // ✅ الحصول على التاريخ الحالي بتوقيت فلسطين
+  const dateKey = toDateKey(date); // YYYY-MM-DD بتوقيت فلسطين
+  const localDate = new Date(dateKey + 'T12:00:00'); // منتصف النهار لتجنب مشاكل الـ timezone
+  
+  const currentDay = getDayInTimezone(date); // يوم الأسبوع بتوقيت فلسطين
   const daysToSaturday = currentDay === 6 ? 0 : currentDay + 1;
   
-  const startOfWeek = new Date(d);
-  startOfWeek.setUTCDate(d.getUTCDate() - daysToSaturday);
-  startOfWeek.setUTCHours(0, 0, 0, 0);
+  const startOfWeek = new Date(localDate);
+  startOfWeek.setDate(localDate.getDate() - daysToSaturday);
+  startOfWeek.setHours(0, 0, 0, 0);
   
   const endOfWeek = new Date(startOfWeek);
-  endOfWeek.setUTCDate(startOfWeek.getUTCDate() + 6);
-  endOfWeek.setUTCHours(23, 59, 59, 999);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+  endOfWeek.setHours(23, 59, 59, 999);
+  
+  console.log('📅 [getWeekRange] Calculated:', {
+    inputDate: date.toISOString(),
+    dateKeyPalestine: dateKey,
+    dayInPalestine: currentDay,
+    startOfWeek: toDateKey(startOfWeek),
+    endOfWeek: toDateKey(endOfWeek),
+  });
   
   return { startOfWeek, endOfWeek };
 };
 
 /**
- * ✅ الحصول على تاريخ يوم معين في الأسبوع
+ * ✅ الحصول على تاريخ يوم معين في الأسبوع - بتوقيت فلسطين
  */
 const getDateForDayInWeek = (dayName, weekStart = null) => {
   const dayIndex = DAYS_MAP[dayName];
@@ -317,7 +347,7 @@ const getDateForDayInWeek = (dayName, weekStart = null) => {
   const { startOfWeek } = weekStart ? { startOfWeek: new Date(weekStart) } : getWeekRange();
   
   const targetDate = new Date(startOfWeek);
-  targetDate.setUTCDate(startOfWeek.getUTCDate() + dayIndex);
+  targetDate.setDate(startOfWeek.getDate() + dayIndex);
   
   return targetDate;
 };
@@ -327,12 +357,12 @@ const getDateForDayInWeek = (dayName, weekStart = null) => {
  */
 const formatDateArabic = (date) => {
   return new Date(date).toLocaleDateString('ar-SA', {
-    day: 'numeric', month: 'long', year: 'numeric'
+    day: 'numeric', month: 'long', year: 'numeric', timeZone: TIMEZONE
   });
 };
 
 const formatDateShort = (date) => {
-  return new Date(date).toLocaleDateString('ar-SA');
+  return new Date(date).toLocaleDateString('ar-SA', { timeZone: TIMEZONE });
 };
 
 /**
@@ -340,9 +370,10 @@ const formatDateShort = (date) => {
  */
 const extractDayInfo = (date) => {
   const d = new Date(date);
+  const jsDay = d.getDay(); // 0=الأحد, 6=السبت
   return {
-    dayName: ARABIC_DAYS[d.getDay()],
-    dayIndex: d.getDay(),
+    dayName: ARABIC_DAYS_JS[jsDay],
+    dayIndex: jsDay,
     dateFormatted: formatDateArabic(d),
     dateShort: formatDateShort(d)
   };
@@ -351,7 +382,8 @@ const extractDayInfo = (date) => {
 // ========== EXPORTS ==========
 module.exports = {
   // Constants
-  ARABIC_DAYS,
+  ARABIC_DAYS: ARABIC_DAYS_SATURDAY_START, // السبت = 0 (لترتيب الأسبوع)
+  ARABIC_DAYS_JS, // الأحد = 0 (لـ getDay())
   DAYS_MAP,
   
   // Season

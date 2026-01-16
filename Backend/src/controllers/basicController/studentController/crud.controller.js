@@ -8,7 +8,8 @@ const { invalidateCache } = require("../../../middleware");
 const {
   updateGroupActiveStatus,
   updateGroupsActiveStatusOnStudentMove,
-} = require("../groupController");
+} = require("../groupController/helpers");
+const { TIMEZONE } = require('../../../config/timezone');
 const {
   notifyStudentAddedToGroup,
   notifyStudentRemovedFromGroup,
@@ -896,7 +897,7 @@ exports.exportStudentsToCSV = async (req, res) => {
     const formatDate = (date) => {
       if (!date) return "";
       const d = new Date(date);
-      return d.toLocaleDateString("ar-EG");
+      return d.toLocaleDateString("ar-EG", { timeZone: TIMEZONE });
     };
 
     // إضافة اسم المعلم الثلاثي للطلاب

@@ -5,10 +5,10 @@ import { bulkDeleteExams } from "@/Api/ExamShedule";
 import { ExamToolbar } from "../ExamToolbar";
 import { GroupedExamTable } from "../GroupedExamTable";
 import {
-  showSuccessMessage,
   showErrorMessage,
   showConfirmDialog,
 } from "@/utils/sweetalertUtils";
+import { showSuccessToast } from "@/utils/toastUtils";
 
 interface TeacherViewProps {
   exams: Exam[];
@@ -90,7 +90,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
       const examIds = Array.from(selectedExams);
       const response = await bulkDeleteExams(examIds);
 
-      showSuccessMessage("نجاح", response.message);
+      showSuccessToast(`✅ ${response.message}`);
       setSelectedExams(new Set());
       window.location.reload(); // Reload to refresh data
     } catch (error: any) {

@@ -1,11 +1,18 @@
 // ============================================================================
 // useWeeklyGrid - منطق عرض الشبكة الأسبوعية
 // ============================================================================
+// ✅ يستخدم توقيت فلسطين (Asia/Jerusalem) الموحد
 
 import { useMemo, useCallback } from "react";
 import type { Session } from "../../types/timetable.types";
-import { generateHours, isSummerTime, getWeekDates, formatDateForAPI } from "../../utils";
+import { generateHours, findTimeIndex } from "../../utils";
 import { useWeekFilter } from "./useWeekFilter";
+import { 
+  isSummerTime, 
+  getWeekDates, 
+  formatDateForAPI, 
+  toDateKey 
+} from "@/utils/timezone";
 
 interface UseWeeklyGridProps {
   sessions: Session[];
@@ -19,9 +26,9 @@ export const useWeeklyGrid = ({ sessions }: UseWeeklyGridProps) => {
   const hours = useMemo(() => generateHours(isSummer), [isSummer]);
 
   // فلترة الحصص حسب الأسبوع
+  // ✅ البيانات جاهزة من الـ Backend
   const { weekRange, weekRangeFormatted, filteredSessions } = useWeekFilter({ 
-    sessions, 
-    enableClientFilter: true 
+    sessions
   });
 
   // تواريخ الأسبوع الحالي
@@ -32,8 +39,10 @@ export const useWeeklyGrid = ({ sessions }: UseWeeklyGridProps) => {
     const grid: Record<string, Record<string, { session: Session; rowSpan: number }[]>> = {};
     
     // تهيئة الشبكة
+    const gridKeys: string[] = [];
     weekDates.forEach((date) => {
       const dateKey = formatDateForAPI(date);
+      gridKeys.push(dateKey);
       grid[dateKey] = {};
       hours.forEach(hour => {
         grid[dateKey][hour] = [];
@@ -42,24 +51,32 @@ export const useWeeklyGrid = ({ sessions }: UseWeeklyGridProps) => {
 
     // ترتيب الحصص
     const sortedSessions = [...filteredSessions].sort((a, b) => {
-      const aIndex = hours.indexOf(a.startHour);
-      const bIndex = hours.indexOf(b.startHour);
+      const aIndex = findTimeIndex(hours, a.startHour);
+      const bIndex = findTimeIndex(hours, b.startHour);
       if (aIndex !== bIndex) return aIndex - bIndex;
-      return hours.indexOf(a.endHour) - hours.indexOf(b.endHour);
+      return findTimeIndex(hours, a.endHour) - findTimeIndex(hours, b.endHour);
     });
 
     // ملء الشبكة
     sortedSessions.forEach(session => {
-      if (!session.sessionDate) return;
+      if (!session.sessionDate) {
+        return;
+      }
       
       const sessionDateKey = session.sessionDate.split('T')[0];
-      if (!grid[sessionDateKey]) return;
       
-      const startIndex = hours.indexOf(session.startHour);
-      const endIndex = hours.indexOf(session.endHour);
+      if (!grid[sessionDateKey]) {
+        return;
+      }
       
-      if (startIndex !== -1 && endIndex !== -1 && startIndex <= endIndex && grid[sessionDateKey][session.startHour]) {
-        grid[sessionDateKey][session.startHour].push({ 
+      const startIndex = findTimeIndex(hours, session.startHour);
+      const endIndex = findTimeIndex(hours, session.endHour);
+      
+      // ✅ استخدام findTimeIndex للحصول على الـ key الصحيح
+      const gridHourKey = startIndex !== -1 ? hours[startIndex] : null;
+      
+      if (startIndex !== -1 && endIndex !== -1 && startIndex <= endIndex && gridHourKey && grid[sessionDateKey][gridHourKey]) {
+        grid[sessionDateKey][gridHourKey].push({ 
           session, 
           rowSpan: endIndex - startIndex 
         });
@@ -71,7 +88,7 @@ export const useWeeklyGrid = ({ sessions }: UseWeeklyGridProps) => {
 
   // التحقق إذا كان السلوت مشغول بحصة ممتدة - memoized
   const isSlotOccupied = useCallback((dateKey: string, currentHour: string): boolean => {
-    const currentIndex = hours.indexOf(currentHour);
+    const currentIndex = findTimeIndex(hours, currentHour);
     if (currentIndex === -1) return false;
 
     for (let i = 0; i < currentIndex; i++) {
@@ -79,8 +96,8 @@ export const useWeeklyGrid = ({ sessions }: UseWeeklyGridProps) => {
       const sessionsInPrevSlot = sessionGrid[dateKey]?.[prevHour] || [];
       
       for (const { session } of sessionsInPrevSlot) {
-        const sessionStartIndex = hours.indexOf(session.startHour);
-        const sessionEndIndex = hours.indexOf(session.endHour);
+        const sessionStartIndex = findTimeIndex(hours, session.startHour);
+        const sessionEndIndex = findTimeIndex(hours, session.endHour);
         
         if (sessionStartIndex !== -1 && sessionEndIndex !== -1) {
           if (currentIndex > sessionStartIndex && currentIndex < sessionEndIndex) {

@@ -1,9 +1,11 @@
 /**
  * Mark utilities for Daily Marks
  * Contains helper functions for mark display, colors, and formatting
+ * ✅ يستخدم توقيت فلسطين (Asia/Jerusalem) الموحد
  */
 
 import { MARK_THRESHOLDS, MONTH_NAMES } from "../constants";
+import { TIMEZONE } from "@/utils/timezone";
 
 /**
  * Get appropriate color classes for a mark based on its value and type
@@ -43,7 +45,7 @@ export const formatDate = (
   options?: Intl.DateTimeFormatOptions
 ): string => {
   const dateObj = typeof date === "string" ? new Date(date) : date;
-  return dateObj.toLocaleDateString(locale, options);
+  return dateObj.toLocaleDateString(locale, { ...options, timeZone: TIMEZONE });
 };
 
 /**
@@ -66,7 +68,8 @@ export const formatDateWithDay = (date: Date | string) => {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
+    timeZone: TIMEZONE
   });
-  const dayName = dateObj.toLocaleDateString("ar-SA", { weekday: "long" });
+  const dayName = dateObj.toLocaleDateString("ar-SA", { weekday: "long", timeZone: TIMEZONE });
   return { formattedDate, dayName };
 };

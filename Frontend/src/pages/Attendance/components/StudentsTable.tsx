@@ -295,7 +295,7 @@ export const StudentsTable = ({
                   // تحويل التاريخ من DD/MM/YYYY إلى كائن Date
                   const [day, month, year] = date.split('/').map(Number);
                   const dateObj = new Date(year, month - 1, day);
-                  const dayName = dateObj.toLocaleDateString('ar-SA', { weekday: 'long' });
+                  const dayName = dateObj.toLocaleDateString('ar-SA', { weekday: 'long', timeZone: 'Asia/Jerusalem' });
                   
                   return (
                     <div

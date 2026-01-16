@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { ChangeEvent } from 'react';
-import { showCenteredSwal } from '@/utils/sweetalertUtils';
+import { showCenteredSwal, showErrorMessage } from '@/utils/sweetalertUtils';
 import {
   getAllNews,
   createNews,
@@ -11,7 +11,6 @@ import {
 import { validateField, validateNewsForm } from '@/Validation/NewsValidation';
 import {
   showSuccessToast,
-  showErrorToast,
 } from '@/utils/toastUtils';
 import { useAuth } from '@/hooks/useAuth';
 import { scheduleIdleTask, scheduleAnimationTask, getLocalDate, formatDate } from '../utils/performanceHelpers';
@@ -157,7 +156,7 @@ export const useNewsData = () => {
       // التحقق فقط في حالة الإدخال المباشر (ليس من MultiImageUpload)
       const invalidFiles = filesArray.filter(file => !file.type.startsWith('image/'));
       if (invalidFiles.length > 0) {
-        showErrorToast('يجب اختيار صور فقط');
+        showErrorMessage('خطأ', 'يجب اختيار صور فقط');
         return;
       }
     }
@@ -277,21 +276,22 @@ export const useNewsData = () => {
           } else if (errorMsg.includes('الصورة')) {
             serverErrors.image = errorMsg;
           } else {
-            // خطأ عام يظهر كـ toast
-            showErrorToast(errorMsg);
+            // خطأ عام يظهر كـ SweetAlert
+            showErrorMessage('خطأ', errorMsg);
           }
         });
 
         if (Object.keys(serverErrors).length > 0) {
           setFieldErrors(serverErrors);
-          // عرض Toast مع صوت الفشل
-          showErrorToast('يرجى تصحيح الأخطاء في النموذج ❌');
+          // عرض SweetAlert للأخطاء
+          showErrorMessage('خطأ', 'يرجى تصحيح الأخطاء في النموذج');
           return; // لا تغلق النموذج
         }
       }
 
-      // خطأ عام من الخادم - عرض Toast مع صوت الفشل
-      showErrorToast(
+      // خطأ عام من الخادم - عرض SweetAlert
+      showErrorMessage(
+        'خطأ',
         error.response?.data?.message ||
           'حدث خطأ أثناء حفظ الخبر، يرجى المحاولة مرة أخرى'
       );
@@ -342,8 +342,8 @@ export const useNewsData = () => {
       showSuccessToast('تم حذف الخبر بنجاح ✅');
     } catch (err) {
       console.error('Failed to delete news:', err);
-      // عرض Toast مع صوت الفشل
-      showErrorToast('حدث خطأ أثناء حذف الخبر، يرجى المحاولة مرة أخرى ❌');
+      // عرض SweetAlert للخطأ
+      showErrorMessage('خطأ', 'حدث خطأ أثناء حذف الخبر، يرجى المحاولة مرة أخرى');
     } finally {
       setIsLoading(false);
     }

@@ -398,7 +398,7 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
                                   <span className="text-sm font-semibold text-gray-600">تاريخ الميلاد:</span>
                                   <span className="text-sm text-gray-900">
                                     {student.birthDate
-                                      ? new Date(student.birthDate).toLocaleDateString('ar-SA')
+                                      ? new Date(student.birthDate).toLocaleDateString('ar-SA', { timeZone: 'Asia/Jerusalem' })
                                       : '-'}
                                   </span>
                                 </div>
@@ -472,7 +472,7 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
                                   <div className="flex items-center justify-between py-2">
                                     <span className="text-sm font-semibold text-gray-600">آخر ظهور:</span>
                                     <span className="text-sm text-gray-900">
-                                      {new Date(student.lastSeen).toLocaleString('ar-SA')}
+                                      {new Date(student.lastSeen).toLocaleString('ar-SA', { timeZone: 'Asia/Jerusalem' })}
                                     </span>
                                   </div>
                                 )}

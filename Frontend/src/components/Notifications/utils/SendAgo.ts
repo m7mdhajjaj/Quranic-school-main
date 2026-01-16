@@ -2,8 +2,10 @@
 // Notification Utilities
 // ============================================================================
 // Helper functions للإشعارات - محدث ليدعم جميع أنواع الإشعارات
+// ✅ يستخدم توقيت فلسطين (Asia/Jerusalem) الموحد
 
 import type { DailyMarkAction, NotificationType, NotificationAction, NotificationCategory } from '../types';
+import { TIMEZONE } from '@/utils/timezone';
 
 /**
  * أنواع الإشعارات المدعومة - متطابقة مع Backend
@@ -324,6 +326,7 @@ export const formatRelativeTime = (dateString: string): string => {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
+      timeZone: TIMEZONE
     });
   } catch (error) {
     console.error('❌ Error formatting date:', dateString, error);

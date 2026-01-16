@@ -2,34 +2,32 @@
 // Timetable Helpers - دوال مساعدة لجدول الحصص
 // ============================================================================
 // ⚠️ النظام الجديد: يعتمد على sessionDate (التاريخ المحدد) وليس day (اسم اليوم)
+// ✅ يستخدم توقيت فلسطين (Asia/Jerusalem) الموحد
 
 import type { User } from "../types/timetable.types";
+import {
+  WEEK_DAYS,
+  type ArabicDay,
+  isSummerTime as isSummerTimeFromTimezone,
+  getWeekDates as getWeekDatesFromTimezone,
+  formatDateForAPI as formatDateForAPIFromTimezone,
+  getTodayDate as getTodayDateFromTimezone,
+  isSameDay as isSameDayFromTimezone,
+  getArabicDayFromDate,
+  TIMEZONE,
+  formatDateArabic as formatDateArabicFromTimezone,
+  formatDateShort as formatDateShortFromTimezone
+} from "@/utils/timezone";
 
-/**
- * أيام الأسبوع بالعربية
- */
-export const WEEK_DAYS = [
-  "السبت",
-  "الأحد",
-  "الاثنين",
-  "الثلاثاء",
-  "الأربعاء",
-  "الخميس",
-  "الجمعة",
-] as const;
-
-export type ArabicDay = typeof WEEK_DAYS[number];
+// Re-export من timezone.ts للتوافق مع الاستخدامات الحالية
+export { WEEK_DAYS, TIMEZONE };
+export type { ArabicDay };
 
 /**
  * تحديد إذا كان التوقيت صيفي أو شتوي
- * الصيفي: من مايو (5) إلى سبتمبر (9)
- * الشتوي: من أكتوبر (10) إلى أبريل (4)
+ * ✅ يستخدم timezone.ts
  */
-export const isSummerTime = (): boolean => {
-  const now = new Date();
-  const month = now.getMonth() + 1; // 1-12
-  return month >= 5 && month <= 9;
-};
+export const isSummerTime = isSummerTimeFromTimezone;
 
 /**
  * توليد جميع الأوقات المتاحة حسب الموسم
@@ -145,96 +143,54 @@ export const isTimeInArray = (hoursArray: string[], targetTime: string): boolean
 
 /**
  * الحصول على اسم اليوم العربي من التاريخ
+ * ✅ يستخدم timezone.ts
  * @param dateStr - التاريخ (ISO أو YYYY-MM-DD)
  */
-export const getDayNameFromDate = (dateStr: string): ArabicDay => {
-  const date = new Date(dateStr);
-  const jsDay = date.getDay(); // 0 = Sunday, 6 = Saturday
-  // تحويل: Sunday(0) -> الأحد(1), Saturday(6) -> السبت(0)
-  const arabicIndex = (jsDay + 1) % 7;
-  return WEEK_DAYS[arabicIndex];
-};
+export const getDayNameFromDate = getArabicDayFromDate;
 
 /**
  * تنسيق التاريخ للإرسال للـ API
+ * ✅ يستخدم timezone.ts
  * @param date - كائن Date أو string (ISO/YYYY-MM-DD)
  * @returns YYYY-MM-DD
  */
-export const formatDateForAPI = (date: Date | string): string => {
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
-  const year = dateObj.getFullYear();
-  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-  const day = String(dateObj.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
+export const formatDateForAPI = formatDateForAPIFromTimezone;
 
 /**
  * تنسيق التاريخ للعرض بالعربية
+ * ✅ يستخدم timezone.ts
  * @param dateStr - التاريخ (ISO أو YYYY-MM-DD)
  */
 export const formatDateForDisplay = (dateStr: string): string => {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('ar-SA', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+  return formatDateArabicFromTimezone(dateStr);
 };
 
 /**
  * تنسيق التاريخ المختصر للعرض
+ * ✅ يستخدم timezone.ts
  * @param dateStr - التاريخ (ISO أو YYYY-MM-DD)
  */
 export const formatDateShort = (dateStr: string): string => {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('ar-SA', {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-  });
+  return formatDateShortFromTimezone(dateStr);
 };
 
 /**
  * الحصول على تاريخ اليوم بصيغة YYYY-MM-DD
+ * ✅ يستخدم timezone.ts
  */
-export const getTodayDate = (): string => {
-  return formatDateForAPI(new Date());
-};
+export const getTodayDate = getTodayDateFromTimezone;
 
 /**
  * التحقق إذا كان تاريخان في نفس اليوم
+ * ✅ يستخدم timezone.ts
  */
-export const isSameDay = (date1: string, date2: string): boolean => {
-  const d1 = new Date(date1);
-  const d2 = new Date(date2);
-  return (
-    d1.getFullYear() === d2.getFullYear() &&
-    d1.getMonth() === d2.getMonth() &&
-    d1.getDate() === d2.getDate()
-  );
-};
+export const isSameDay = isSameDayFromTimezone;
 
 /**
  * إنشاء تواريخ أسبوع من تاريخ معين (السبت - الجمعة)
+ * ✅ يستخدم timezone.ts
  */
-export const getWeekDates = (referenceDate: Date = new Date()): Date[] => {
-  const dates: Date[] = [];
-  const currentDay = referenceDate.getDay();
-  // حساب بداية الأسبوع (السبت)
-  const daysToSaturday = currentDay === 6 ? 0 : currentDay + 1;
-  const saturday = new Date(referenceDate);
-  saturday.setDate(referenceDate.getDate() - daysToSaturday);
-  saturday.setHours(0, 0, 0, 0);
-  
-  for (let i = 0; i < 7; i++) {
-    const day = new Date(saturday);
-    day.setDate(saturday.getDate() + i);
-    dates.push(day);
-  }
-  
-  return dates;
-};
+export const getWeekDates = getWeekDatesFromTimezone;
 
 // ============================================================================
 // دوال المستخدم والمعلم

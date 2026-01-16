@@ -10,7 +10,8 @@ import Avatar from '@/components/Avatar/Avatar';
 import { Badge } from '@/components/UI/Badge';
 import type { StudentHistoryEvent } from '@/pages/Warnings/types/studentHistory';
 import { restoreStudentToGroup } from '@/Api/studentApi';
-import { showSuccessToast, showErrorToast } from '@/utils/toastUtils';
+import { showSuccessToast } from '@/utils/toastUtils';
+import { showErrorMessage } from '@/utils/sweetalertUtils';
 
 interface StudentFullHistorySidebarProps {
   isOpen: boolean;
@@ -236,7 +237,7 @@ export const StudentFullHistorySidebar: React.FC<StudentFullHistorySidebarProps>
   const handleRestoreSubmit = async () => {
     const previousGroup = getPreviousGroup();
     if (!previousGroup?.groupId) {
-      showErrorToast('لم يتم العثور على الحلقة السابقة في التاريخ');
+      showErrorMessage('خطأ', 'لم يتم العثور على الحلقة السابقة في التاريخ');
       return;
     }
 
@@ -262,7 +263,7 @@ export const StudentFullHistorySidebar: React.FC<StudentFullHistorySidebarProps>
         onClose();
       }, 1000);
     } catch (error: any) {
-      showErrorToast(error.message || 'فشل إرجاع الطالب');
+      showErrorMessage('خطأ', error.message || 'فشل إرجاع الطالب');
     } finally {
       setRestoring(false);
     }

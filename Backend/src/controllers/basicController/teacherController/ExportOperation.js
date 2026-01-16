@@ -1,4 +1,5 @@
 const Teacher = require("../../../schema/Teacher");
+const { TIMEZONE } = require('../../../config/timezone');
 
 /**
  * تصدير بيانات المعلمين إلى CSV
@@ -97,7 +98,7 @@ exports.exportTeachersToCSV = async (req, res) => {
     const formatDate = (date) => {
       if (!date) return "";
       const d = new Date(date);
-      return d.toLocaleDateString("ar-EG");
+      return d.toLocaleDateString("ar-EG", { timeZone: TIMEZONE });
     };
 
     // Build CSV rows

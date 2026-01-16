@@ -8,6 +8,7 @@ const Student = require("../../schema/Student");
 const Group = require("../../schema/Group");
 const mongoose = require("mongoose");
 const { sendRealTimeNotification } = require("../Core/NotificationManager");
+const { TIMEZONE } = require('../../config/timezone');
 const { sendPushNotification } = require("../Core/PushSender");
 
 /**
@@ -72,7 +73,8 @@ exports.notifyTimetableCreated = async (timetable, io) => {
           weekday: 'long', 
           year: 'numeric', 
           month: 'long', 
-          day: 'numeric' 
+          day: 'numeric',
+          timeZone: TIMEZONE
         })
       : timetable.day;
 
@@ -140,7 +142,7 @@ exports.notifyTimetableUpdated = async (timetable, changes, io) => {
       changeDetails.push(`الوقت: ${timetable.startHour} - ${timetable.endHour}`);
     }
     if (changes.sessionDate) {
-      const newDate = new Date(timetable.sessionDate).toLocaleDateString("ar-EG");
+      const newDate = new Date(timetable.sessionDate).toLocaleDateString("ar-EG", { timeZone: TIMEZONE });
       changeDetails.push(`التاريخ: ${newDate}`);
     }
     if (changes.day) {
@@ -148,7 +150,7 @@ exports.notifyTimetableUpdated = async (timetable, changes, io) => {
     }
 
     const dateStr = timetable.sessionDate 
-      ? new Date(timetable.sessionDate).toLocaleDateString("ar-EG")
+      ? new Date(timetable.sessionDate).toLocaleDateString("ar-EG", { timeZone: TIMEZONE })
       : timetable.day;
 
     const notifications = students.map((student) => ({
@@ -200,7 +202,7 @@ exports.notifyTimetableDeleted = async (timetable, io) => {
     if (!students.length) return;
 
     const dateStr = timetable.sessionDate 
-      ? new Date(timetable.sessionDate).toLocaleDateString("ar-EG")
+      ? new Date(timetable.sessionDate).toLocaleDateString("ar-EG", { timeZone: TIMEZONE })
       : timetable.day;
 
     const notifications = students.map((student) => ({

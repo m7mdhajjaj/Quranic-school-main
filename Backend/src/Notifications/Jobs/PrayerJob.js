@@ -58,7 +58,7 @@ class PrayerJob {
         { name: "العشاء", time: prayerTimes.isha, emoji: "🌙" },
       ];
 
-      console.log(`\n🕌 أوقات الصلاة لتاريخ ${today.toLocaleDateString('ar-EG')}:`);
+      console.log(`\n🕌 أوقات الصلاة لتاريخ ${today.toLocaleDateString('ar-EG', { timeZone: TIMEZONE })}:`);
       console.log(`⏰ الوقت الحالي: ${now.format('HH:mm:ss')}`);
       
       prayers.forEach((prayer) => {

@@ -4,6 +4,7 @@ import { Avatar } from '../../../components/Avatar';
 import { DropdownMenu } from '../../../components/UI/DropdownMenu';
 import { MessageSkeleton } from './MessageSkeleton';
 import { useChatWindow, useOnlineStatus, useChatHeader, useDateDividers } from '../hooks';
+import { TIMEZONE } from '@/utils/timezone';
 import type { Message } from '../types';
 
 // Lazy load heavy components for better LCP
@@ -29,7 +30,7 @@ const formatLastSeen = (dateString: string): string => {
   if (diffInSeconds < 60) return 'منذ لحظات';
   if (diffInSeconds < 3600) return `منذ ${Math.floor(diffInSeconds / 60)} دقيقة`;
   if (diffInSeconds < 86400) return `منذ ${Math.floor(diffInSeconds / 3600)} ساعة`;
-  return date.toLocaleDateString('ar-EG');
+  return date.toLocaleDateString('ar-EG', { timeZone: TIMEZONE });
 };
 
 // Memoized Last Seen Display

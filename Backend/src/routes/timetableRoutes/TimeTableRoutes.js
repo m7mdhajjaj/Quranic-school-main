@@ -52,32 +52,32 @@ router.get("/section/:sectionId", secretaryTimetableAccess(), timetableControlle
 // مواعيد معلم معين
 router.get("/teacher/:teacherId", secretaryTimetableAccess(), timetableController.getTeacherTimetables);
 
-// ============ CREATE (Admin Only) ============
+// ============ CREATE (Admin + Teacher for own groups) ============
 
-// إنشاء موعد جديد (يحتاج sessionDate) - Admin فقط
+// إنشاء موعد جديد (يحتاج sessionDate) - Admin أو المعلم لحلقاته
 // POST /api/timetable
-router.post("/", adminProtect, validateTimetableData, timetableController.createTimetable);
+router.post("/", secretaryTimetableAccess('manage'), validateTimetableData, timetableController.createTimetable);
 
-// إنشاء موعد لمقطع محدد (التاريخ من المقطع تلقائياً) - Admin فقط
+// إنشاء موعد لمقطع محدد (التاريخ من المقطع تلقائياً) - Admin أو المعلم لحلقاته
 // POST /api/timetable/section/:sectionId
-router.post("/section/:sectionId", adminProtect, validateSessionDate, timetableController.createTimetableForSection);
+router.post("/section/:sectionId", secretaryTimetableAccess('manage'), validateSessionDate, timetableController.createTimetableForSection);
 
-// ============ UPDATE (Admin Only) ============
+// ============ UPDATE (Admin + Teacher for own groups) ============
 
-// تحديث موعد كامل - Admin فقط
-router.put("/:id", adminProtect, validateTimetableData, timetableController.updateTimetable);
+// تحديث موعد كامل - Admin أو المعلم لحلقاته
+router.put("/:id", secretaryTimetableAccess('manage'), validateTimetableData, timetableController.updateTimetable);
 
-// تحديث الوقت فقط (startHour, endHour) - Admin فقط
-router.patch("/:id/time", adminProtect, validateSessionDate, timetableController.updateTimetableTime);
+// تحديث الوقت فقط (startHour, endHour) - Admin أو المعلم لحلقاته
+router.patch("/:id/time", secretaryTimetableAccess('manage'), validateSessionDate, timetableController.updateTimetableTime);
 
-// ربط موعد بمقطع - Admin فقط
+// ربط موعد بمقطع - Admin أو المعلم لحلقاته
 // POST /api/timetable/:id/link/:sectionId
-router.post("/:id/link/:sectionId", adminProtect, timetableController.linkTimetableToSection);
+router.post("/:id/link/:sectionId", secretaryTimetableAccess('manage'), timetableController.linkTimetableToSection);
 
-// ============ DELETE (Admin Only) ============
+// ============ DELETE (Admin + Teacher for own groups) ============
 
-// حذف موعد - Admin فقط
-router.delete("/:id", adminProtect, timetableController.deleteTimetable);
+// حذف موعد - Admin أو المعلم لحلقاته
+router.delete("/:id", secretaryTimetableAccess('manage'), timetableController.deleteTimetable);
 
 // فك ربط موعد من مقطع (بدون حذف الموعد) - Admin فقط
 router.delete("/:id/unlink", adminProtect, timetableController.unlinkTimetableFromSection);

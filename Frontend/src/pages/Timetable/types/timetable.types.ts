@@ -14,12 +14,12 @@ export interface Teacher {
 
 /**
  * واجهة الموعد (TimeTable)
- * ⚠️ sessionDate مطلوب للمواعيد الجديدة
+ * ⚠️ sessionDate مطلوب للمواعيد الجديدة أو day للمتكررة
  */
 export interface Session {
   _id?: string;
-  sessionDate: string;      // ⚠️ التاريخ المحدد - مطلوب! (YYYY-MM-DD أو ISO)
-  day?: string;             // 🔄 يُشتق تلقائياً من sessionDate
+  sessionDate?: string;     // التاريخ المحدد (YYYY-MM-DD أو ISO) - قد يكون فارغ للمتكررة
+  day?: string;             // اسم اليوم - مطلوب للمواعيد المتكررة
   startHour: string;        // وقت البداية (HH:MM AM/PM)
   endHour: string;          // وقت النهاية (HH:MM AM/PM)
   note?: string;            // اسم الحلقة (اختياري)
@@ -29,6 +29,7 @@ export interface Session {
   groupId?: string;         // معرف الحلقة
   teacherId?: string | Teacher; // معرف المعلم أو بياناته الكاملة
   sectionId?: string;       // معرف المقطع المرتبط
+  isRecurring?: boolean;    // ✅ هل الموعد متكرر أسبوعياً
   sectionInfo?: {           // معلومات المقطع (من API)
     memorizationSection?: string;
     reviewSection?: string;

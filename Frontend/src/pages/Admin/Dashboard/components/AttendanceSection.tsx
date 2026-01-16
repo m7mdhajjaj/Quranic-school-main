@@ -9,6 +9,7 @@ export const AttendanceSection: React.FC = memo(() => {
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString("ar-SA", {
+      timeZone: 'Asia/Jerusalem',
       hour: "2-digit",
       minute: "2-digit",
     });

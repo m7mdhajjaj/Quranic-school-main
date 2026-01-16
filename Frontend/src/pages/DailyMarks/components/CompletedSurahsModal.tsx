@@ -124,7 +124,7 @@ export const CompletedSurahsModal: React.FC<CompletedSurahsModalProps> = ({
               <div className="mt-5 flex items-center justify-between text-xs border-t border-gray-100 pt-3 relative z-10">
                   <div className="flex items-center gap-1.5 text-gray-500">
                     <CheckCircle size={14} className={activeTab === 'memorization' ? 'text-emerald-500' : 'text-blue-500'} />
-                    <span>تم في {new Date(surah.completedAt).toLocaleDateString('ar-EG')}</span>
+                    <span>تم في {new Date(surah.completedAt).toLocaleDateString('ar-EG', { timeZone: 'Asia/Jerusalem' })}</span>
                   </div>
                   <ArrowRight size={16} className={`text-gray-300 transform rotate-180 transition-all duration-300 group-hover:translate-x-[-4px] ${activeTab === 'memorization' ? 'group-hover:text-emerald-500' : 'group-hover:text-blue-500'}`} />
               </div>
@@ -198,7 +198,7 @@ export const CompletedSurahsModal: React.FC<CompletedSurahsModalProps> = ({
                         {/* Date Column (Desktop) */}
                         <div className="w-full sm:w-[120px] text-right sm:text-left flex items-center sm:justify-end gap-2 pb-1 sm:pb-0">
                            <span className="text-xs sm:text-sm font-semibold text-gray-500 font-mono bg-gray-50 px-2 py-1 rounded inline-block">
-                              {new Date(item.date).toLocaleDateString('ar-EG', { day: 'numeric', month: 'short', year: 'numeric' })}
+                              {new Date(item.date).toLocaleDateString('ar-EG', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Jerusalem' })}
                            </span>
                         </div>
 

@@ -59,6 +59,7 @@ export const BulkMarksModal = ({
             <p className="text-gray-700">
               <span className="font-semibold">التاريخ:</span>{' '}
               {new Date(section.date).toLocaleDateString('ar-SA', {
+                timeZone: 'Asia/Jerusalem',
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric',

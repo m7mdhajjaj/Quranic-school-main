@@ -62,6 +62,13 @@ exports.getTimetables = async (req, res) => {
       endDate
     } = req.query;
 
+    console.log('📅 [Timetable] getTimetables called', {
+      userId: user?._id,
+      role: user?.role,
+      weekFilter,
+      weekStart,
+    });
+
     // ✅ 1. بناء Query الأساسي حسب الدور
     let query = {};
 
@@ -111,10 +118,23 @@ exports.getTimetables = async (req, res) => {
       })
       .sort({ sessionDate: 1, startHour: 1 });
 
-    // ✅ 5. إضافة معلومات المقطع المُحسّنة
+    // ✅ 5. حساب weekStart للمواعيد المتكررة
+    const refDate = weekStart ? new Date(weekStart) : new Date();
+    const { startOfWeek } = getWeekRange(refDate);
+
+    // ✅ 6. إضافة معلومات المقطع المُحسّنة + حساب sessionDate للمتكررة
     const enrichedTimetables = timetables.map(tt => {
       const obj = tt.toObject();
       obj.sectionDetails = extractSectionInfo(tt.sectionId);
+      
+      // ✅ حساب sessionDate للمواعيد المتكررة (التي ليس لها sessionDate)
+      if (!obj.sessionDate && obj.day) {
+        const calculatedDate = getDateForDayInWeek(obj.day, startOfWeek);
+        if (calculatedDate) {
+          obj.sessionDate = calculatedDate.toISOString().split('T')[0]; // YYYY-MM-DD
+        }
+      }
+      
       return obj;
     });
 
@@ -265,7 +285,8 @@ exports.getGroupTimetable = async (req, res) => {
           sessionDateInWeek: sessionDate ? sessionDate.toISOString() : null,
           sessionDateFormatted: sessionDate ? sessionDate.toLocaleDateString('ar-SA', {
             day: 'numeric',
-            month: 'short'
+            month: 'short',
+            timeZone: 'Asia/Jerusalem'
           }) : null
         };
       })
@@ -283,8 +304,8 @@ exports.getGroupTimetable = async (req, res) => {
         weekInfo: {
           startOfWeek: startOfWeek.toISOString(),
           endOfWeek: endOfWeek.toISOString(),
-          startFormatted: startOfWeek.toLocaleDateString('ar-SA', { day: 'numeric', month: 'short', year: 'numeric' }),
-          endFormatted: endOfWeek.toLocaleDateString('ar-SA', { day: 'numeric', month: 'short', year: 'numeric' })
+          startFormatted: startOfWeek.toLocaleDateString('ar-SA', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Jerusalem' }),
+          endFormatted: endOfWeek.toLocaleDateString('ar-SA', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Jerusalem' })
         }
       }
     });

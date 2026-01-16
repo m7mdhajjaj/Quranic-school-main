@@ -6,6 +6,7 @@ const Group = require("../../../schema/Group");
 const TimeTable = require("../../../schema/TimeTable");
 const { getStudentCountsForAllGroups } = require("./cache");
 const { getTeacherInfo } = require("./helpers");
+const { TIMEZONE } = require('../../../config/timezone');
 
 /**
  * تصدير بيانات الحلقات إلى CSV
@@ -167,12 +168,14 @@ exports.exportGroupsToCSV = async (req, res) => {
     const dateStr = now.toLocaleDateString('ar-EG', { 
       year: 'numeric', 
       month: '2-digit', 
-      day: '2-digit' 
+      day: '2-digit',
+      timeZone: TIMEZONE
     }).replace(/\//g, '-');
     const timeStr = now.toLocaleTimeString('ar-EG', { 
       hour: '2-digit', 
       minute: '2-digit',
-      hour12: false 
+      hour12: false,
+      timeZone: TIMEZONE
     }).replace(/:/g, '-');
     const filename = `الحلقات_${dateStr}_${timeStr}.csv`;
     

@@ -1,10 +1,12 @@
 // ============================================================================
 // WeeklyGridView - عرض شبكة أسبوعية للجدول (مثل Google Calendar)
 // ============================================================================
+// ✅ يستخدم توقيت فلسطين (Asia/Jerusalem) الموحد
 
 import React from "react";
 import type { Session, UserRole } from "../types/timetable.types";
 import { WEEK_DAYS, formatDateForAPI } from "../utils";
+import { formatDateShort } from "@/utils/timezone";
 import { useWeeklyGrid } from "../hooks";
 import { Edit, Trash2 } from "lucide-react";
 
@@ -258,7 +260,7 @@ export const WeeklyGridView: React.FC<WeeklyGridViewProps> = ({
                 </th>
                 {weekDates.map((date, index) => {
                   const dayName = WEEK_DAYS[index];
-                  const dateStr = date.toLocaleDateString('ar-SA', { day: 'numeric', month: 'short' });
+                  const dateStr = formatDateShort(date);
                   const dateKey = formatDateForAPI(date);
                   
                   return (

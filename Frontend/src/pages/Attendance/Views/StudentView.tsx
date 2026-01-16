@@ -180,10 +180,10 @@ export const StudentView = ({
                         </div>
                         <div className="flex flex-col">
                           <span className="font-bold text-gray-800">
-                            {new Date(date).toLocaleDateString('ar-EG', { weekday: 'long' })}
+                            {new Date(date).toLocaleDateString('ar-EG', { weekday: 'long', timeZone: 'Asia/Jerusalem' })}
                           </span>
                           <span className="text-xs text-gray-500 font-medium">
-                            {new Date(date).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' })}
+                            {new Date(date).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Jerusalem' })}
                           </span>
                         </div>
                       </div>
@@ -238,7 +238,7 @@ export const StudentView = ({
                                   <div key={i} className="flex items-center gap-3 px-4 py-3 bg-white rounded-xl border border-gray-200">
                                      <div className="w-2 h-2 rounded-full bg-red-500"></div>
                                      <span className="font-bold text-gray-700">
-                                       {new Date(date).toLocaleDateString('ar-EG', { weekday: 'short', day: 'numeric' })}
+                                       {new Date(date).toLocaleDateString('ar-EG', { weekday: 'short', day: 'numeric', timeZone: 'Asia/Jerusalem' })}
                                      </span>
                                   </div>
                                 ))}
