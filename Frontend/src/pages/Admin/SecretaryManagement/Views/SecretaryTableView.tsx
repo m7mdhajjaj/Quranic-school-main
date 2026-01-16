@@ -1,6 +1,5 @@
 import React, { memo, useState } from "react";
-import { Edit2, Trash2, ChevronDown, ChevronUp, Mail, Phone, MapPin, Calendar, Shield, CreditCard } from "lucide-react";
-import Avatar from "@/components/Avatar/Avatar";
+import { Edit2, Trash2, ChevronDown, ChevronUp, Shield } from "lucide-react";
 import type { Secretary, SortField, SortOrder } from "../types";
 
 interface SecretaryTableViewProps {
@@ -116,6 +115,8 @@ export const SecretaryTableView: React.FC<SecretaryTableViewProps> = memo(({
                   checked={allSelected}
                   onChange={onToggleSelectAll}
                   className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                  aria-label="تحديد الكل"
+                  title="تحديد الكل"
                 />
               </th>
               <th className="px-2 sm:px-3 py-3 sm:py-4 text-center font-bold text-xs sm:text-sm whitespace-nowrap w-10 sm:w-12">
@@ -165,6 +166,8 @@ export const SecretaryTableView: React.FC<SecretaryTableViewProps> = memo(({
                         checked={selectedIds.has(secretary._id)}
                         onChange={() => onToggleSelection?.(secretary._id)}
                         className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                        aria-label={`تحديد ${secretary.firstName} ${secretary.lastName}`}
+                        title={`تحديد ${secretary.firstName} ${secretary.lastName}`}
                       />
                     </td>
                     
