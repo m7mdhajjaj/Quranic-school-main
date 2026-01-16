@@ -84,18 +84,24 @@ const secretarySchema = new mongoose.Schema(
 
     // صلاحيات السكرتير
     permissions: {
-      // إدارة الطلاب
-      canManageStudents: { type: Boolean, default: true },
-      // إدارة الحضور
-      canManageAttendance: { type: Boolean, default: true },
-      // إدارة الأخبار
-      canManageNews: { type: Boolean, default: true },
-      // عرض التقارير
-      canViewReports: { type: Boolean, default: true },
-      // إدارة الجداول
-      canManageTimetable: { type: Boolean, default: false },
-      // إدارة الرسائل
-      canManageMessages: { type: Boolean, default: true },
+      // صلاحية الحلقات (المجموعات): none = بدون وصول, view = عرض فقط, manage = إدارة كاملة
+      groupsAccess: { 
+        type: String, 
+        enum: ['none', 'view', 'manage'], 
+        default: 'none' 
+      },
+      // صلاحية المعلمين: none = بدون وصول, view = عرض فقط, manage = إدارة كاملة
+      teachersAccess: { 
+        type: String, 
+        enum: ['none', 'view', 'manage'], 
+        default: 'none' 
+      },
+      // صلاحية الطلاب: none = بدون وصول, view = عرض فقط, manage = إدارة كاملة
+      studentsAccess: { 
+        type: String, 
+        enum: ['none', 'view', 'manage'], 
+        default: 'none' 
+      },
     },
 
     // تاريخ تعديلات birthDate (للتحكم بعدد التعديلات)
@@ -140,9 +146,35 @@ secretarySchema.virtual('fullName').get(function () {
 });
 
 /* ------------------- Instance Methods ------------------- */
-// التحقق من صلاحية معينة
-secretarySchema.methods.hasPermission = function (permission) {
-  return this.permissions && this.permissions[permission] === true;
+// التحقق من صلاحية معينة (الحلقات أو المعلمين)
+// permission: 'groupsAccess' أو 'teachersAccess'
+// level: 'view' أو 'manage'
+secretarySchema.methods.hasPermission = function (permission, level = 'view') {
+  if (!this.permissions || !this.permissions[permission]) return false;
+  
+  const accessLevel = this.permissions[permission];
+  
+  // إذا كان المطلوب عرض فقط، يكفي أن يكون view أو manage
+  if (level === 'view') {
+    return accessLevel === 'view' || accessLevel === 'manage';
+  }
+  
+  // إذا كان المطلوب إدارة، يجب أن يكون manage
+  if (level === 'manage') {
+    return accessLevel === 'manage';
+  }
+  
+  return false;
+};
+
+// التحقق من صلاحية الحلقات
+secretarySchema.methods.canAccessGroups = function (level = 'view') {
+  return this.hasPermission('groupsAccess', level);
+};
+
+// التحقق من صلاحية المعلمين
+secretarySchema.methods.canAccessTeachers = function (level = 'view') {
+  return this.hasPermission('teachersAccess', level);
 };
 
 /* ------------------- Pre-save Hooks ------------------- */

@@ -6,6 +6,9 @@ import { showInfoToast } from "@/utils/toastUtils";
 
 
 // =================== Types ===================
+// Access Level Type
+export type AccessLevel = 'none' | 'view' | 'manage';
+
 export interface SecretaryFormData {
   // الأسماء
   firstName: string;
@@ -22,14 +25,11 @@ export interface SecretaryFormData {
   birthDate: string;
   gender: "ذكر" | "أنثى";
   residence: string;
-  // الصلاحيات (6 صلاحيات حسب الـ Schema)
+  // الصلاحيات الجديدة
   permissions: {
-    canManageStudents: boolean;
-    canManageAttendance: boolean;
-    canManageNews: boolean;
-    canViewReports: boolean;
-    canManageTimetable: boolean;
-    canManageMessages: boolean;
+    groupsAccess: AccessLevel;   // صلاحية الحلقات
+    teachersAccess: AccessLevel; // صلاحية المعلمين
+    studentsAccess: AccessLevel; // صلاحية الطلاب
   };
 }
 
@@ -68,14 +68,11 @@ const initialFormData: SecretaryFormData = {
   birthDate: "",
   gender: "ذكر",
   residence: "",
-  // الصلاحيات - الافتراضي true حسب الـ Schema
+  // الصلاحيات - الافتراضي none (بدون وصول)
   permissions: {
-    canManageStudents: true,
-    canManageAttendance: true,
-    canManageNews: true,
-    canViewReports: true,
-    canManageTimetable: false,
-    canManageMessages: true,
+    groupsAccess: 'none',
+    teachersAccess: 'none',
+    studentsAccess: 'none',
   },
 };
 
@@ -180,12 +177,9 @@ export const useSecretaryForm = ({
         residence: secretary.residence || "",
         // الصلاحيات
         permissions: {
-          canManageStudents: secretary.permissions?.canManageStudents ?? true,
-          canManageAttendance: secretary.permissions?.canManageAttendance ?? true,
-          canManageNews: secretary.permissions?.canManageNews ?? true,
-          canViewReports: secretary.permissions?.canViewReports ?? true,
-          canManageTimetable: secretary.permissions?.canManageTimetable ?? false,
-          canManageMessages: secretary.permissions?.canManageMessages ?? true,
+          groupsAccess: (secretary.permissions?.groupsAccess as AccessLevel) ?? 'none',
+          teachersAccess: (secretary.permissions?.teachersAccess as AccessLevel) ?? 'none',
+          studentsAccess: (secretary.permissions?.studentsAccess as AccessLevel) ?? 'none',
         },
       };
 
@@ -302,12 +296,12 @@ export const useSecretaryForm = ({
     const checked = (e.target as HTMLInputElement).checked;
 
     if (name.startsWith("permissions.")) {
-      const permissionKey = name.split(".")[1];
+      const permissionKey = name.split(".")[1] as 'groupsAccess' | 'teachersAccess';
       setFormData((prev) => ({
         ...prev,
         permissions: {
           ...prev.permissions,
-          [permissionKey]: checked,
+          [permissionKey]: value as AccessLevel,
         },
       }));
     } else {

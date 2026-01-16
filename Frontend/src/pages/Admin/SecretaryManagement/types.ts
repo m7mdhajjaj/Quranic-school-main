@@ -1,11 +1,14 @@
+// Access Level Type
+export type AccessLevel = 'none' | 'view' | 'manage';
+
 // Secretary Permissions Interface
 export interface SecretaryPermissions {
-  canManageStudents?: boolean;
-  canManageAttendance?: boolean;
-  canManageNews?: boolean;
-  canViewReports?: boolean;
-  canManageTimetable?: boolean;
-  canManageMessages?: boolean;
+  // صلاحية الحلقات: none = بدون وصول, view = عرض فقط, manage = إدارة كاملة
+  groupsAccess?: AccessLevel;
+  // صلاحية المعلمين: none = بدون وصول, view = عرض فقط, manage = إدارة كاملة
+  teachersAccess?: AccessLevel;
+  // صلاحية الطلاب: none = بدون وصول, view = عرض فقط, manage = إدارة كاملة
+  studentsAccess?: AccessLevel;
 }
 
 // Secretary Interface - متطابق مع الـ Backend Schema

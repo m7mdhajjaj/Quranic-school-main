@@ -78,6 +78,9 @@ export const useHeader = ({ isGuest = false }: UseHeaderOptions = {}): UseHeader
   const isStudent = currentUser?.role === 'student';
   const isSecretary = currentUser?.role === 'secretary';
   const isTeacherOrAdmin = isTeacher || isAdmin;
+  
+  // صلاحيات السكرتير
+  const secretaryPermissions = isSecretary ? currentUser?.permissions : undefined;
 
   // ==================== Navigation ====================
   const { primaryNavItems, secondaryNavItems } = useNavigation({
@@ -86,6 +89,7 @@ export const useHeader = ({ isGuest = false }: UseHeaderOptions = {}): UseHeader
     isStudent,
     isSecretary,
     isTeacherOrAdmin,
+    secretaryPermissions,
   });
 
   const combinedItems: NavigationItem[] = primaryNavItems;

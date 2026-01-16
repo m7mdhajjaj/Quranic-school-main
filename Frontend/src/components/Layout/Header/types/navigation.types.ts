@@ -71,12 +71,23 @@ export interface LogoHookReturn {
   logoLoading: boolean;
 }
 
+// Secretary Access Levels
+export type AccessLevel = 'none' | 'view' | 'manage';
+
+export interface SecretaryPermissions {
+  groupsAccess?: AccessLevel;
+  teachersAccess?: AccessLevel;
+  studentsAccess?: AccessLevel;
+}
+
 export interface RolePermissions {
   isStudent: boolean;
   isTeacher: boolean;
   isAdmin: boolean;
   isSecretary: boolean;
   isTeacherOrAdmin: boolean;
+  // صلاحيات السكرتير
+  secretaryPermissions?: SecretaryPermissions;
 }
 
 export interface NavigationHookReturn {

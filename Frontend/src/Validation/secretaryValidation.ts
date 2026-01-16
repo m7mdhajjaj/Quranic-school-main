@@ -5,14 +5,17 @@ const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const phoneRegex = /^05\d{8}$/;     // 10 أرقام يبدأ بـ 05
 const idNumberRegex = /^\d{9}$/;    // 9 أرقام بالضبط
 
+// Access Level Type
+export type AccessLevel = 'none' | 'view' | 'manage';
+
 // Secretary Permissions Interface
 export interface SecretaryPermissions {
-  canManageStudents?: boolean;
-  canManageAttendance?: boolean;
-  canManageNews?: boolean;
-  canViewReports?: boolean;
-  canManageTimetable?: boolean;
-  canManageMessages?: boolean;
+  // صلاحية الحلقات: none = بدون وصول, view = عرض فقط, manage = إدارة كاملة
+  groupsAccess?: AccessLevel;
+  // صلاحية المعلمين: none = بدون وصول, view = عرض فقط, manage = إدارة كاملة
+  teachersAccess?: AccessLevel;
+  // صلاحية الطلاب: none = بدون وصول, view = عرض فقط, manage = إدارة كاملة
+  studentsAccess?: AccessLevel;
 }
 
 // Secretary Form Data Interface
@@ -210,12 +213,8 @@ export const secretaryValidationSchema = yup.object().shape({
     .nullable(),
 
   permissions: yup.object().shape({
-    canManageStudents: yup.boolean().nullable(),
-    canManageAttendance: yup.boolean().nullable(),
-    canManageNews: yup.boolean().nullable(),
-    canViewReports: yup.boolean().nullable(),
-    canManageTimetable: yup.boolean().nullable(),
-    canManageMessages: yup.boolean().nullable(),
+    groupsAccess: yup.string().oneOf(['none', 'view', 'manage'], 'قيمة غير صالحة لصلاحية الحلقات').nullable(),
+    teachersAccess: yup.string().oneOf(['none', 'view', 'manage'], 'قيمة غير صالحة لصلاحية المعلمين').nullable(),
   }).nullable(),
 });
 
@@ -265,14 +264,27 @@ export const sanitizeSecretaryData = (data: SecretaryFormData): SecretaryFormDat
 
 // دالة التحقق من الصلاحيات
 export const validateSecretaryPermissions = (permissions: SecretaryPermissions): boolean => {
-  const validKeys = [
-    'canManageStudents',
-    'canManageAttendance',
-    'canManageNews',
-    'canViewReports',
-    'canManageTimetable',
-    'canManageMessages'
-  ];
+  const validKeys = ['groupsAccess', 'teachersAccess'];
+  const validValues = ['none', 'view', 'manage'];
   
-  return Object.keys(permissions).every(key => validKeys.includes(key));
+  return Object.entries(permissions).every(([key, value]) => 
+    validKeys.includes(key) && (value === undefined || validValues.includes(value as string))
+  );
+};
+
+// دالة التحقق من صلاحية معينة
+export const hasPermission = (permissions: SecretaryPermissions | undefined, permission: 'groupsAccess' | 'teachersAccess', level: 'view' | 'manage' = 'view'): boolean => {
+  if (!permissions || !permissions[permission]) return false;
+  
+  const accessLevel = permissions[permission];
+  
+  if (level === 'view') {
+    return accessLevel === 'view' || accessLevel === 'manage';
+  }
+  
+  if (level === 'manage') {
+    return accessLevel === 'manage';
+  }
+  
+  return false;
 };

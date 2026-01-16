@@ -2,13 +2,13 @@ import React, { memo, useCallback } from "react";
 import { 
   X, Shield, User, Mail, Phone, MapPin, Calendar,
   Lock, Users, AlertCircle, CheckCircle2,
-  CreditCard, ClipboardList, MessageSquare 
+  CreditCard, GraduationCap
 } from "lucide-react";
 import { FaMale, FaFemale } from "react-icons/fa";
 import Avatar from "@/components/Avatar/Avatar";
 import { DatePicker } from "@/components/UI/DatePicker";
 import type { Secretary } from "../types";
-import { useSecretaryForm, type SecretaryFormData } from "../hooks/useSecretaryForm";
+import { useSecretaryForm, type SecretaryFormData, type AccessLevel } from "../hooks/useSecretaryForm";
 
 // =================== Props ===================
 interface SecretaryFormProps {
@@ -454,180 +454,89 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
               <Shield className="w-5 h-5" />
               <h3 className="font-semibold">الصلاحيات</h3>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {/* إدارة الطلاب */}
-              <label 
-                className={`flex flex-col items-center gap-2 p-3 border-2 rounded-xl cursor-pointer transition-all ${
-                  formData.permissions.canManageStudents
-                    ? "border-emerald-500 bg-emerald-50"
-                    : "border-gray-200 hover:border-emerald-200 hover:bg-gray-50"
-                }`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleChange({ target: { name: 'permissions.canManageStudents', checked: !formData.permissions.canManageStudents, type: 'checkbox' } } as any);
-                }}
-              >
-                <input
-                  type="checkbox"
-                  name="permissions.canManageStudents"
-                  checked={formData.permissions.canManageStudents}
-                  onChange={() => {}}
-                  className="sr-only"
-                  tabIndex={-1}
-                  readOnly
-                />
-                <div className={`p-2 rounded-lg ${formData.permissions.canManageStudents ? "bg-emerald-500 text-white" : "bg-gray-100 text-gray-500"}`}>
-                  <Users className="w-4 h-4" />
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* صلاحية الحلقات */}
+              <div className="p-4 border-2 rounded-xl border-gray-200 hover:border-emerald-200 transition-all">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2 bg-emerald-100 text-emerald-600 rounded-lg">
+                    <Users className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-gray-800">إدارة الحلقات</h4>
+                    <p className="text-xs text-gray-500">التحكم في صفحة إدارة الحلقات</p>
+                  </div>
                 </div>
-                <span className={`text-xs font-medium ${formData.permissions.canManageStudents ? "text-emerald-700" : "text-gray-600"}`}>
-                  إدارة الطلاب
-                </span>
-              </label>
+                <select
+                  name="permissions.groupsAccess"
+                  value={formData.permissions.groupsAccess}
+                  onChange={(e) => handleChange(e)}
+                  className="w-full px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all border-gray-200 hover:border-gray-300 text-sm"
+                >
+                  <option value="none">🚫 بدون وصول</option>
+                  <option value="view">👁️ عرض فقط (قراءة)</option>
+                  <option value="manage">✏️ إدارة كاملة (قراءة وكتابة)</option>
+                </select>
+              </div>
               
-              {/* إدارة الحضور */}
-              <label 
-                className={`flex flex-col items-center gap-2 p-3 border-2 rounded-xl cursor-pointer transition-all ${
-                  formData.permissions.canManageAttendance
-                    ? "border-teal-500 bg-teal-50"
-                    : "border-gray-200 hover:border-teal-200 hover:bg-gray-50"
-                }`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleChange({ target: { name: 'permissions.canManageAttendance', checked: !formData.permissions.canManageAttendance, type: 'checkbox' } } as any);
-                }}
-              >
-                <input
-                  type="checkbox"
-                  name="permissions.canManageAttendance"
-                  checked={formData.permissions.canManageAttendance}
-                  onChange={() => {}}
-                  className="sr-only"
-                  tabIndex={-1}
-                  readOnly
-                />
-                <div className={`p-2 rounded-lg ${formData.permissions.canManageAttendance ? "bg-teal-500 text-white" : "bg-gray-100 text-gray-500"}`}>
-                  <Calendar className="w-4 h-4" />
+              {/* صلاحية المعلمين */}
+              <div className="p-4 border-2 rounded-xl border-gray-200 hover:border-teal-200 transition-all">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2 bg-teal-100 text-teal-600 rounded-lg">
+                    <GraduationCap className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-gray-800">إدارة المعلمين</h4>
+                    <p className="text-xs text-gray-500">التحكم في صفحة إدارة المعلمين</p>
+                  </div>
                 </div>
-                <span className={`text-xs font-medium ${formData.permissions.canManageAttendance ? "text-teal-700" : "text-gray-600"}`}>
-                  إدارة الحضور
-                </span>
-              </label>
+                <select
+                  name="permissions.teachersAccess"
+                  value={formData.permissions.teachersAccess}
+                  onChange={(e) => handleChange(e)}
+                  className="w-full px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all border-gray-200 hover:border-gray-300 text-sm"
+                >
+                  <option value="none">🚫 بدون وصول</option>
+                  <option value="view">👁️ عرض فقط (قراءة)</option>
+                  <option value="manage">✏️ إدارة كاملة (قراءة وكتابة)</option>
+                </select>
+              </div>
               
-              {/* إدارة الأخبار */}
-              <label 
-                className={`flex flex-col items-center gap-2 p-3 border-2 rounded-xl cursor-pointer transition-all ${
-                  formData.permissions.canManageNews
-                    ? "border-cyan-500 bg-cyan-50"
-                    : "border-gray-200 hover:border-cyan-200 hover:bg-gray-50"
-                }`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleChange({ target: { name: 'permissions.canManageNews', checked: !formData.permissions.canManageNews, type: 'checkbox' } } as any);
-                }}
-              >
-                <input
-                  type="checkbox"
-                  name="permissions.canManageNews"
-                  checked={formData.permissions.canManageNews}
-                  onChange={() => {}}
-                  className="sr-only"
-                  tabIndex={-1}
-                  readOnly
-                />
-                <div className={`p-2 rounded-lg ${formData.permissions.canManageNews ? "bg-cyan-500 text-white" : "bg-gray-100 text-gray-500"}`}>
-                  <Mail className="w-4 h-4" />
+              {/* صلاحية الطلاب */}
+              <div className="p-4 border-2 rounded-xl border-gray-200 hover:border-blue-200 transition-all">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
+                    <Users className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-gray-800">إدارة الطلاب</h4>
+                    <p className="text-xs text-gray-500">التحكم في صفحة إدارة الطلاب</p>
+                  </div>
                 </div>
-                <span className={`text-xs font-medium ${formData.permissions.canManageNews ? "text-cyan-700" : "text-gray-600"}`}>
-                  إدارة الأخبار
+                <select
+                  name="permissions.studentsAccess"
+                  value={formData.permissions.studentsAccess}
+                  onChange={(e) => handleChange(e)}
+                  className="w-full px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all border-gray-200 hover:border-gray-300 text-sm"
+                >
+                  <option value="none">🚫 بدون وصول</option>
+                  <option value="view">👁️ عرض فقط (قراءة)</option>
+                  <option value="manage">✏️ إدارة كاملة (قراءة وكتابة)</option>
+                </select>
+              </div>
+            </div>
+            
+            {/* ملخص الصلاحيات */}
+            <div className="mt-4 p-3 bg-gray-50 rounded-xl">
+              <p className="text-xs text-gray-600 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-gray-400" />
+                <span>
+                  <strong>ملاحظة:</strong> 
+                  {' '}"بدون وصول" = لن يظهر الرابط في القائمة الجانبية | 
+                  {' '}"عرض فقط" = يمكن المشاهدة فقط | 
+                  {' '}"إدارة كاملة" = يمكن الإضافة والتعديل والحذف
                 </span>
-              </label>
-              
-              {/* عرض التقارير */}
-              <label 
-                className={`flex flex-col items-center gap-2 p-3 border-2 rounded-xl cursor-pointer transition-all ${
-                  formData.permissions.canViewReports
-                    ? "border-green-500 bg-green-50"
-                    : "border-gray-200 hover:border-green-200 hover:bg-gray-50"
-                }`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleChange({ target: { name: 'permissions.canViewReports', checked: !formData.permissions.canViewReports, type: 'checkbox' } } as any);
-                }}
-              >
-                <input
-                  type="checkbox"
-                  name="permissions.canViewReports"
-                  checked={formData.permissions.canViewReports}
-                  onChange={() => {}}
-                  className="sr-only"
-                  tabIndex={-1}
-                  readOnly
-                />
-                <div className={`p-2 rounded-lg ${formData.permissions.canViewReports ? "bg-green-500 text-white" : "bg-gray-100 text-gray-500"}`}>
-                  <Shield className="w-4 h-4" />
-                </div>
-                <span className={`text-xs font-medium ${formData.permissions.canViewReports ? "text-green-700" : "text-gray-600"}`}>
-                  عرض التقارير
-                </span>
-              </label>
-
-              {/* إدارة الجداول */}
-              <label 
-                className={`flex flex-col items-center gap-2 p-3 border-2 rounded-xl cursor-pointer transition-all ${
-                  formData.permissions.canManageTimetable
-                    ? "border-lime-500 bg-lime-50"
-                    : "border-gray-200 hover:border-lime-200 hover:bg-gray-50"
-                }`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleChange({ target: { name: 'permissions.canManageTimetable', checked: !formData.permissions.canManageTimetable, type: 'checkbox' } } as any);
-                }}
-              >
-                <input
-                  type="checkbox"
-                  name="permissions.canManageTimetable"
-                  checked={formData.permissions.canManageTimetable}
-                  onChange={() => {}}
-                  className="sr-only"
-                  tabIndex={-1}
-                  readOnly
-                />
-                <div className={`p-2 rounded-lg ${formData.permissions.canManageTimetable ? "bg-lime-500 text-white" : "bg-gray-100 text-gray-500"}`}>
-                  <ClipboardList className="w-4 h-4" />
-                </div>
-                <span className={`text-xs font-medium ${formData.permissions.canManageTimetable ? "text-lime-700" : "text-gray-600"}`}>
-                  إدارة الجداول
-                </span>
-              </label>
-
-              {/* إدارة الرسائل */}
-              <label 
-                className={`flex flex-col items-center gap-2 p-3 border-2 rounded-xl cursor-pointer transition-all ${
-                  formData.permissions.canManageMessages
-                    ? "border-sky-500 bg-sky-50"
-                    : "border-gray-200 hover:border-sky-200 hover:bg-gray-50"
-                }`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleChange({ target: { name: 'permissions.canManageMessages', checked: !formData.permissions.canManageMessages, type: 'checkbox' } } as any);
-                }}
-              >
-                <input
-                  type="checkbox"
-                  name="permissions.canManageMessages"
-                  checked={formData.permissions.canManageMessages}
-                  onChange={() => {}}
-                  className="sr-only"
-                  tabIndex={-1}
-                  readOnly
-                />
-                <div className={`p-2 rounded-lg ${formData.permissions.canManageMessages ? "bg-sky-500 text-white" : "bg-gray-100 text-gray-500"}`}>
-                  <MessageSquare className="w-4 h-4" />
-                </div>
-                <span className={`text-xs font-medium ${formData.permissions.canManageMessages ? "text-sky-700" : "text-gray-600"}`}>
-                  إدارة الرسائل
-                </span>
-              </label>
+              </p>
             </div>
           </div>
 

@@ -16,7 +16,10 @@ const {
   restrictAdmin,
   secretaryProtect,
   secretaryOrAdminProtect,
-  staffProtect
+  staffProtect,
+  secretaryGroupsAccess,
+  secretaryTeachersAccess,
+  secretaryStudentsAccess,
 } = require("./role.middleware");
 
 module.exports = {
@@ -30,4 +33,9 @@ module.exports = {
   secretaryProtect,
   secretaryOrAdminProtect,
   staffProtect,
+  
+  // Secretary permissions - صلاحيات السكرتير
+  secretaryGroupsAccess,
+  secretaryTeachersAccess,
+  secretaryStudentsAccess,
 };

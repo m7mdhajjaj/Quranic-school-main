@@ -251,20 +251,20 @@ const validatePermissions = (permissions) => {
     return { isValid: true, value: {} }; // Default empty permissions
   }
   
-  const validPermissionKeys = [
-    'canManageStudents',
-    'canManageAttendance',
-    'canManageNews',
-    'canViewReports',
-    'canManageTimetable',
-    'canManageMessages'
-  ];
+  const validAccessLevels = ['none', 'view', 'manage'];
+  const validPermissionKeys = ['groupsAccess', 'teachersAccess'];
   
   const validatedPermissions = {};
   
   for (const key of validPermissionKeys) {
     if (permissions[key] !== undefined) {
-      validatedPermissions[key] = Boolean(permissions[key]);
+      // التحقق من أن القيمة صالحة
+      if (validAccessLevels.includes(permissions[key])) {
+        validatedPermissions[key] = permissions[key];
+      } else {
+        // إذا كانت القيمة غير صالحة، استخدم القيمة الافتراضية
+        validatedPermissions[key] = 'none';
+      }
     }
   }
   

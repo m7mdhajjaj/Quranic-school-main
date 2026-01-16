@@ -4,6 +4,15 @@ import { API_URL } from '../config/config';
 import { verifyToken } from '../Api/authApi';
 import { socketManager } from '../Socket/SocketManager';
 
+// Access Level Type for Secretary
+export type AccessLevel = 'none' | 'view' | 'manage';
+
+// Secretary Permissions Interface
+export interface SecretaryPermissions {
+  groupsAccess?: AccessLevel;
+  teachersAccess?: AccessLevel;
+}
+
 // تعريف أنواع البيانات
 export interface User {
   _id: string;
@@ -23,6 +32,8 @@ export interface User {
     publicId?: string;
   };
   isActive?: boolean;
+  // صلاحيات السكرتير
+  permissions?: SecretaryPermissions;
   // يمكن إضافة المزيد من الخصائص حسب الحاجة
 }
 

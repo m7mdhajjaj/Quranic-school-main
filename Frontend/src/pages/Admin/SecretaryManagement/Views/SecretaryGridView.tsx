@@ -175,34 +175,42 @@ export const SecretaryGridView: React.FC<SecretaryGridViewProps> = memo(({
               <div className="pt-3 border-t border-gray-100">
                 <p className="text-xs text-gray-500 mb-2 font-medium">الصلاحيات:</p>
                 <div className="flex flex-wrap gap-1">
-                  {secretary.permissions.canManageStudents && (
-                    <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] border border-emerald-100 rounded-md">
-                      الطلاب
+                  {/* صلاحية الطلاب */}
+                  {secretary.permissions.studentsAccess && secretary.permissions.studentsAccess !== 'none' && (
+                    <span className={`px-2 py-0.5 text-[10px] border rounded-md ${
+                      secretary.permissions.studentsAccess === 'manage' 
+                        ? 'bg-blue-50 text-blue-700 border-blue-100' 
+                        : 'bg-sky-50 text-sky-700 border-sky-100'
+                    }`}>
+                      الطلاب ({secretary.permissions.studentsAccess === 'manage' ? 'إدارة' : 'عرض'})
                     </span>
                   )}
-                  {secretary.permissions.canManageAttendance && (
-                    <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] border border-emerald-100 rounded-md">
-                      الحضور
+                  {/* صلاحية الحلقات */}
+                  {secretary.permissions.groupsAccess && secretary.permissions.groupsAccess !== 'none' && (
+                    <span className={`px-2 py-0.5 text-[10px] border rounded-md ${
+                      secretary.permissions.groupsAccess === 'manage' 
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-100' 
+                        : 'bg-green-50 text-green-700 border-green-100'
+                    }`}>
+                      الحلقات ({secretary.permissions.groupsAccess === 'manage' ? 'إدارة' : 'عرض'})
                     </span>
                   )}
-                  {secretary.permissions.canManageNews && (
-                    <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] border border-emerald-100 rounded-md">
-                      الأخبار
+                  {/* صلاحية المعلمين */}
+                  {secretary.permissions.teachersAccess && secretary.permissions.teachersAccess !== 'none' && (
+                    <span className={`px-2 py-0.5 text-[10px] border rounded-md ${
+                      secretary.permissions.teachersAccess === 'manage' 
+                        ? 'bg-teal-50 text-teal-700 border-teal-100' 
+                        : 'bg-cyan-50 text-cyan-700 border-cyan-100'
+                    }`}>
+                      المعلمين ({secretary.permissions.teachersAccess === 'manage' ? 'إدارة' : 'عرض'})
                     </span>
                   )}
-                  {secretary.permissions.canViewReports && (
-                    <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] border border-emerald-100 rounded-md">
-                      التقارير
-                    </span>
-                  )}
-                  {secretary.permissions.canManageTimetable && (
-                    <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] border border-emerald-100 rounded-md">
-                      الجداول
-                    </span>
-                  )}
-                  {secretary.permissions.canManageMessages && (
-                    <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] border border-emerald-100 rounded-md">
-                      الرسائل
+                  {/* إذا لم يكن له أي صلاحيات */}
+                  {(!secretary.permissions.groupsAccess || secretary.permissions.groupsAccess === 'none') && 
+                   (!secretary.permissions.teachersAccess || secretary.permissions.teachersAccess === 'none') &&
+                   (!secretary.permissions.studentsAccess || secretary.permissions.studentsAccess === 'none') && (
+                    <span className="px-2 py-0.5 bg-gray-50 text-gray-400 text-[10px] border border-gray-100 rounded-md">
+                      بدون صلاحيات
                     </span>
                   )}
                 </div>

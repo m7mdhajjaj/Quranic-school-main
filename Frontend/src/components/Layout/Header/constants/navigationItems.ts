@@ -222,33 +222,50 @@ export const getPrimaryNavItems = (
 
   // ==================== Secretary Navigation ====================
   if (rolePermissions.isSecretary) {
-    return [
-      homeItem,
-      {
+    const items: NavigationItem[] = [homeItem];
+    
+    // صلاحية الطلاب - تظهر إذا كان view أو manage
+    const studentsAccess = rolePermissions.secretaryPermissions?.studentsAccess;
+    if (studentsAccess && studentsAccess !== 'none') {
+      items.push({
         to: '/students',
-        label: 'الطلاب',
+        label: studentsAccess === 'manage' ? 'إدارة الطلاب' : 'عرض الطلاب',
         icon: Users,
-        color: 'from-blue-500 to-indigo-500',
-      },
-      {
+        color: 'from-blue-500 to-cyan-500',
+      });
+    }
+    
+    // صلاحية الحلقات - تظهر إذا كان view أو manage
+    const groupsAccess = rolePermissions.secretaryPermissions?.groupsAccess;
+    if (groupsAccess && groupsAccess !== 'none') {
+      items.push({
+        to: '/groups',
+        label: groupsAccess === 'manage' ? 'إدارة الحلقات' : 'عرض الحلقات',
+        icon: BookOpen,
+        color: 'from-teal-500 to-cyan-500',
+      });
+    }
+    
+    // صلاحية المعلمين - تظهر إذا كان view أو manage
+    const teachersAccess = rolePermissions.secretaryPermissions?.teachersAccess;
+    if (teachersAccess && teachersAccess !== 'none') {
+      items.push({
         to: '/teachers',
-        label: 'المعلمين',
+        label: teachersAccess === 'manage' ? 'إدارة المعلمين' : 'عرض المعلمين',
         icon: GraduationCap,
         color: 'from-purple-500 to-violet-500',
-      },
-      {
-        to: '/goals',
-        label: 'الأهداف',
-        icon: Target,
-        color: 'from-green-500 to-emerald-500',
-      },
-      {
-        to: '/chat',
-        label: 'المحادثة',
-        icon: MessageSquare,
-        color: 'from-blue-500 to-cyan-500',
-      },
-    ];
+      });
+    }
+    
+    // المحادثة - متاحة دائماً
+    items.push({
+      to: '/chat',
+      label: 'المحادثة',
+      icon: MessageSquare,
+      color: 'from-blue-500 to-cyan-500',
+    });
+    
+    return items;
   }
 
   // ==================== Student Navigation ====================
@@ -356,7 +373,7 @@ export const getPrimaryNavItems = (
   return [homeItem];
 };
 
-export const getSecondaryNavItems = (): NavigationItem[] => {
+export const getSecondaryNavItems = (_rolePermissions: RolePermissions): NavigationItem[] => {
   // تم نقل جميع العناصر إلى القائمة الرئيسية (getPrimaryNavItems)
   // لتقديم هيكلية مبنية على الأقسام والقوائم المنسدلة
   return [];

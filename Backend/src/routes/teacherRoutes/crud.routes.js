@@ -2,7 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const controller = require("../../controllers/basicController/teacherController");
-const { protect } = require("../../middleware/auth");
+const { protect, secretaryTeachersAccess } = require("../../middleware/auth");
 const {
   validateTeacherData,
   validateTeacherGroups,
@@ -12,53 +12,54 @@ const {
 /**
  * CRUD Routes for Teachers
  * All routes use TeacherValidation middleware
+ * السكرتير يمكنه الوصول بناءً على صلاحية teachersAccess
  */
 
-// Get all teachers
-router.get("/", protect, controller.getAllTeachers);
+// Get all teachers - إداري أو سكرتير لديه صلاحية عرض على الأقل
+router.get("/", secretaryTeachersAccess('view'), controller.getAllTeachers);
 
-// Get available groups for teacher (must be before /:id)
-router.get("/available-groups/:teacherId", protect, controller.getAvailableGroupsForTeacher);
+// Get available groups for teacher (must be before /:id) - إداري أو سكرتير لديه صلاحية عرض
+router.get("/available-groups/:teacherId", secretaryTeachersAccess('view'), controller.getAvailableGroupsForTeacher);
 
-// Check duplicate field (no cache - real-time check needed)
-router.get("/check-duplicate", protect, controller.checkDuplicate);
+// Check duplicate field (no cache - real-time check needed) - إداري أو سكرتير لديه صلاحية إدارة
+router.get("/check-duplicate", secretaryTeachersAccess('manage'), controller.checkDuplicate);
 
-// Export teachers to CSV (no cache - always fresh data)
-router.get("/export", protect, controller.exportTeachersToCSV);
+// Export teachers to CSV (no cache - always fresh data) - إداري أو سكرتير لديه صلاحية إدارة
+router.get("/export", secretaryTeachersAccess('manage'), controller.exportTeachersToCSV);
 
-// Get teacher with groups and students (for attendance page)
-router.get("/:id/with-groups-and-students", protect, controller.getTeacherWithGroupsAndStudents);
+// Get teacher with groups and students (for attendance page) - إداري أو سكرتير لديه صلاحية عرض
+router.get("/:id/with-groups-and-students", secretaryTeachersAccess('view'), controller.getTeacherWithGroupsAndStudents);
 
 // ❌ تم حذف route مكرر: /:id/students
 // استخدم بدلاً منه: GET /api/students/teacher/:teacher
 
-// Get teacher by ID
-router.get("/:id", protect, controller.getTeacherById);
+// Get teacher by ID - إداري أو سكرتير لديه صلاحية عرض
+router.get("/:id", secretaryTeachersAccess('view'), controller.getTeacherById);
 
-// Create new teacher (with validation)
+// Create new teacher (with validation) - إداري أو سكرتير لديه صلاحية إدارة
 router.post(
   "/",
-  protect,
+  secretaryTeachersAccess('manage'),
   sanitizeTeacherData,
   validateTeacherData,
   validateTeacherGroups,
   controller.createTeacher
 );
 
-// Update teacher (with validation)
+// Update teacher (with validation) - إداري أو سكرتير لديه صلاحية إدارة
 router.put(
   "/:id",
-  protect,
+  secretaryTeachersAccess('manage'),
   sanitizeTeacherData,
   validateTeacherData,
   validateTeacherGroups,
   controller.updateTeacher
 );
 
-// Bulk delete teachers (must be before /:id)
-router.delete("/bulk", protect, controller.bulkDeleteTeachers);
+// Bulk delete teachers (must be before /:id) - إداري أو سكرتير لديه صلاحية إدارة
+router.delete("/bulk", secretaryTeachersAccess('manage'), controller.bulkDeleteTeachers);
 
-// Delete teacher
-router.delete("/:id", protect, controller.deleteTeacher);
+// Delete teacher - إداري أو سكرتير لديه صلاحية إدارة
+router.delete("/:id", secretaryTeachersAccess('manage'), controller.deleteTeacher);
 
 module.exports = router;

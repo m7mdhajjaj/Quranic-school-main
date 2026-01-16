@@ -96,7 +96,11 @@ export const SecretaryTableView: React.FC<SecretaryTableViewProps> = memo(({
   // Count active permissions
   const countPermissions = (permissions: Secretary['permissions']) => {
     if (!permissions) return 0;
-    return Object.values(permissions).filter(Boolean).length;
+    let count = 0;
+    if (permissions.groupsAccess && permissions.groupsAccess !== 'none') count++;
+    if (permissions.teachersAccess && permissions.teachersAccess !== 'none') count++;
+    if (permissions.studentsAccess && permissions.studentsAccess !== 'none') count++;
+    return count;
   };
 
   return (
@@ -421,53 +425,80 @@ export const SecretaryTableView: React.FC<SecretaryTableViewProps> = memo(({
                               الصلاحيات
                             </h4>
 
-                            <div className="grid grid-cols-3 gap-2">
-                              {/* canManageStudents */}
-                              <div className={`flex items-center gap-1.5 p-1.5 rounded-lg text-xs ${
-                                secretary.permissions?.canManageStudents ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-50 text-gray-400'
+                            <div className="grid grid-cols-3 gap-3">
+                              {/* studentsAccess - صلاحية الطلاب */}
+                              <div className={`flex items-center gap-2 p-2 rounded-lg text-xs ${
+                                secretary.permissions?.studentsAccess === 'manage' 
+                                  ? 'bg-blue-50 text-blue-700' 
+                                  : secretary.permissions?.studentsAccess === 'view'
+                                    ? 'bg-sky-50 text-sky-700'
+                                    : 'bg-gray-50 text-gray-400'
                               }`}>
-                                <div className={`w-1.5 h-1.5 rounded-full ${secretary.permissions?.canManageStudents ? 'bg-emerald-500' : 'bg-gray-300'}`}></div>
-                                <span className="font-medium">إدارة الطلاب</span>
+                                <div className={`w-2 h-2 rounded-full ${
+                                  secretary.permissions?.studentsAccess === 'manage' 
+                                    ? 'bg-blue-500' 
+                                    : secretary.permissions?.studentsAccess === 'view'
+                                      ? 'bg-sky-500'
+                                      : 'bg-gray-300'
+                                }`}></div>
+                                <span className="font-medium">الطلاب: </span>
+                                <span className="font-bold">
+                                  {secretary.permissions?.studentsAccess === 'manage' 
+                                    ? 'إدارة كاملة' 
+                                    : secretary.permissions?.studentsAccess === 'view'
+                                      ? 'عرض فقط'
+                                      : 'بدون وصول'}
+                                </span>
                               </div>
 
-                              {/* canManageAttendance */}
-                              <div className={`flex items-center gap-1.5 p-1.5 rounded-lg text-xs ${
-                                secretary.permissions?.canManageAttendance ? 'bg-teal-50 text-teal-700' : 'bg-gray-50 text-gray-400'
+                              {/* groupsAccess - صلاحية الحلقات */}
+                              <div className={`flex items-center gap-2 p-2 rounded-lg text-xs ${
+                                secretary.permissions?.groupsAccess === 'manage' 
+                                  ? 'bg-emerald-50 text-emerald-700' 
+                                  : secretary.permissions?.groupsAccess === 'view'
+                                    ? 'bg-green-50 text-green-700'
+                                    : 'bg-gray-50 text-gray-400'
                               }`}>
-                                <div className={`w-1.5 h-1.5 rounded-full ${secretary.permissions?.canManageAttendance ? 'bg-teal-500' : 'bg-gray-300'}`}></div>
-                                <span className="font-medium">إدارة الحضور</span>
+                                <div className={`w-2 h-2 rounded-full ${
+                                  secretary.permissions?.groupsAccess === 'manage' 
+                                    ? 'bg-emerald-500' 
+                                    : secretary.permissions?.groupsAccess === 'view'
+                                      ? 'bg-green-500'
+                                      : 'bg-gray-300'
+                                }`}></div>
+                                <span className="font-medium">الحلقات: </span>
+                                <span className="font-bold">
+                                  {secretary.permissions?.groupsAccess === 'manage' 
+                                    ? 'إدارة كاملة' 
+                                    : secretary.permissions?.groupsAccess === 'view'
+                                      ? 'عرض فقط'
+                                      : 'بدون وصول'}
+                                </span>
                               </div>
 
-                              {/* canManageNews */}
-                              <div className={`flex items-center gap-1.5 p-1.5 rounded-lg text-xs ${
-                                secretary.permissions?.canManageNews ? 'bg-cyan-50 text-cyan-700' : 'bg-gray-50 text-gray-400'
+                              {/* teachersAccess - صلاحية المعلمين */}
+                              <div className={`flex items-center gap-2 p-2 rounded-lg text-xs ${
+                                secretary.permissions?.teachersAccess === 'manage' 
+                                  ? 'bg-teal-50 text-teal-700' 
+                                  : secretary.permissions?.teachersAccess === 'view'
+                                    ? 'bg-cyan-50 text-cyan-700'
+                                    : 'bg-gray-50 text-gray-400'
                               }`}>
-                                <div className={`w-1.5 h-1.5 rounded-full ${secretary.permissions?.canManageNews ? 'bg-cyan-500' : 'bg-gray-300'}`}></div>
-                                <span className="font-medium">إدارة الأخبار</span>
-                              </div>
-
-                              {/* canViewReports */}
-                              <div className={`flex items-center gap-1.5 p-1.5 rounded-lg text-xs ${
-                                secretary.permissions?.canViewReports ? 'bg-green-50 text-green-700' : 'bg-gray-50 text-gray-400'
-                              }`}>
-                                <div className={`w-1.5 h-1.5 rounded-full ${secretary.permissions?.canViewReports ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                                <span className="font-medium">عرض التقارير</span>
-                              </div>
-
-                              {/* canManageTimetable */}
-                              <div className={`flex items-center gap-1.5 p-1.5 rounded-lg text-xs ${
-                                secretary.permissions?.canManageTimetable ? 'bg-lime-50 text-lime-700' : 'bg-gray-50 text-gray-400'
-                              }`}>
-                                <div className={`w-1.5 h-1.5 rounded-full ${secretary.permissions?.canManageTimetable ? 'bg-lime-500' : 'bg-gray-300'}`}></div>
-                                <span className="font-medium">إدارة الجداول</span>
-                              </div>
-
-                              {/* canManageMessages */}
-                              <div className={`flex items-center gap-1.5 p-1.5 rounded-lg text-xs ${
-                                secretary.permissions?.canManageMessages ? 'bg-sky-50 text-sky-700' : 'bg-gray-50 text-gray-400'
-                              }`}>
-                                <div className={`w-1.5 h-1.5 rounded-full ${secretary.permissions?.canManageMessages ? 'bg-sky-500' : 'bg-gray-300'}`}></div>
-                                <span className="font-medium">إدارة الرسائل</span>
+                                <div className={`w-2 h-2 rounded-full ${
+                                  secretary.permissions?.teachersAccess === 'manage' 
+                                    ? 'bg-teal-500' 
+                                    : secretary.permissions?.teachersAccess === 'view'
+                                      ? 'bg-cyan-500'
+                                      : 'bg-gray-300'
+                                }`}></div>
+                                <span className="font-medium">المعلمين: </span>
+                                <span className="font-bold">
+                                  {secretary.permissions?.teachersAccess === 'manage' 
+                                    ? 'إدارة كاملة' 
+                                    : secretary.permissions?.teachersAccess === 'view'
+                                      ? 'عرض فقط'
+                                      : 'بدون وصول'}
+                                </span>
                               </div>
                             </div>
                           </div>
