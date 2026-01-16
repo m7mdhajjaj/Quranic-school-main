@@ -19,6 +19,9 @@ export const useAbsenceData = () => {
   
   // 🆕 هل تم أخذ الحضور لهذا التاريخ؟
   const [isAttendanceTaken, setIsAttendanceTaken] = useState<boolean>(false);
+  
+  // 🆕 هل لا يوجد مقطع في التاريخ المحدد؟
+  const [noSectionInfo, setNoSectionInfo] = useState<{ noSection: boolean; message: string } | null>(null);
 
   const setDateRange = (start: string | null, end: string | null) => {
     setStartDate(start);
@@ -103,6 +106,16 @@ export const useAbsenceData = () => {
       // 🆕 حفظ حالة الحضور لهذا التاريخ
       setIsAttendanceTaken(attendanceInfo?.isAttendanceTaken ?? false);
       console.log(`📋 [useAbsenceData] isAttendanceTaken: ${attendanceInfo?.isAttendanceTaken}`);
+      
+      // 🆕 التحقق من وجود مقطع
+      if (attendanceInfo?.noSection) {
+        setNoSectionInfo({
+          noSection: true,
+          message: attendanceInfo.noSectionMessage || 'لا يوجد مقطع في هذا التاريخ'
+        });
+      } else {
+        setNoSectionInfo(null);
+      }
       
       // حفظ الحلقات
       setTeacherGroups(groups.map(g => ({ 
@@ -252,6 +265,7 @@ export const useAbsenceData = () => {
     availableDates,
     isAttendanceTaken,
     setIsAttendanceTaken,
+    noSectionInfo, // 🆕 معلومات عدم وجود مقطع
     fetchStudentsForTeacher,
     fetchStudentAbsenceStats,
     fetchAvailableDates,

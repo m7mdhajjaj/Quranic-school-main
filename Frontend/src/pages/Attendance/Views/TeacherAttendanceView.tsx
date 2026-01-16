@@ -26,6 +26,7 @@ interface TeacherAttendanceViewProps {
   hasUnsavedChanges: boolean;
   isSaveDisabled: boolean; // 🆕
   isAttendanceTaken: boolean; // 🆕
+  noSectionInfo?: { noSection: boolean; message: string } | null; // 🆕
 }
 
 export const TeacherAttendanceView = ({
@@ -50,6 +51,7 @@ export const TeacherAttendanceView = ({
   hasUnsavedChanges,
   isSaveDisabled, // 🆕
   isAttendanceTaken, // 🆕
+  noSectionInfo, // 🆕
 }: TeacherAttendanceViewProps) => {
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -85,6 +87,7 @@ export const TeacherAttendanceView = ({
           selectedAll={selectedAll}
           onToggleAll={toggleAllStudents}
           onTogglePresence={toggleStudentPresence}
+          noSectionInfo={noSectionInfo}
         />
       )}
 

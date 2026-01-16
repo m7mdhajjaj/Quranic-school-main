@@ -107,6 +107,16 @@ export const useAttendanceSave = ({
         return;
       }
       
+      // التعامل مع خطأ عدم وجود مقطع (403 + details about section)
+      if (error.response?.data?.details?.includes('المقاطع') || error.response?.data?.details?.includes('الحصة')) {
+        showErrorMessage(
+          "لا يمكن تسجيل الحضور",
+          `📋 ${error.response.data.message}\n\n` +
+          `💡 ${error.response.data.details}`
+        );
+        return;
+      }
+      
       const errorMsg =
         error.response?.data?.message ||
         error.response?.data?.details ||

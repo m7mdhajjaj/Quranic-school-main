@@ -129,6 +129,7 @@ export interface StudentsTableProps {
   onToggleAll: () => void;
   onTogglePresence: (studentId: string) => void;
   readOnly?: boolean; // 🆕 للأدمن - وضع المشاهدة فقط
+  noSectionInfo?: { noSection: boolean; message: string } | null; // 🆕 رسالة عدم وجود مقطع
 }
 
 // StudentView Component

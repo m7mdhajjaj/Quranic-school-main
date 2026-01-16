@@ -43,6 +43,7 @@ const AbsencePage = () => {
     availableDates,
     isAttendanceTaken,
     setIsAttendanceTaken,
+    noSectionInfo, // 🆕
     fetchStudentsForTeacher,
     fetchStudentAbsenceStats,
     fetchAvailableDates,
@@ -247,6 +248,7 @@ const AbsencePage = () => {
                 hasUnsavedChanges={hasUnsavedChanges}
                 isSaveDisabled={isSaveDisabled} // 🆕
                 isAttendanceTaken={isAttendanceTaken} // 🆕
+                noSectionInfo={noSectionInfo} // 🆕
               />
             )}
           </>
