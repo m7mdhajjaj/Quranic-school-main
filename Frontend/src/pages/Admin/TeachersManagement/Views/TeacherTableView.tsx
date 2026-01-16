@@ -156,7 +156,7 @@ export const TeacherTableView: React.FC<TeacherTableViewProps> = ({
                       </span>
                     </td>
 
-                    {/* Teacher ID */}}
+                    {/* Teacher ID */}
                     {showTeacherId && (
                       <td className="px-4 py-4 text-center">
                         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
