@@ -1,4 +1,4 @@
-import api from './api';
+import api from "./api";
 
 // ============================================================================
 // Authentication API
@@ -13,14 +13,21 @@ interface LoginStudentRequest {
 interface LoginTeacherRequest {
   teacherId: string;
   password: string;
-  userType: 'teacher';
+  userType: "teacher";
   rememberMe?: boolean;
 }
 
 interface LoginAdminRequest {
   adminId: string;
   password: string;
-  userType: 'admin';
+  userType: "admin";
+  rememberMe?: boolean;
+}
+
+interface LoginSecretaryRequest {
+  secretaryId: string;
+  password: string;
+  userType: "secretary";
   rememberMe?: boolean;
 }
 
@@ -64,47 +71,61 @@ interface AuthResponse {
 }
 
 // Student Login
-export const loginStudent = async (data: LoginStudentRequest): Promise<AuthResponse> => {
-  const response = await api.post('/auth/login', data, {
+export const loginStudent = async (
+  data: LoginStudentRequest
+): Promise<AuthResponse> => {
+  const response = await api.post("/auth/login", data, {
     timeout: 10000,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { "Content-Type": "application/json" },
   });
   return response.data;
 };
 
 // Teacher Login
-export const loginTeacher = async (data: LoginTeacherRequest): Promise<AuthResponse> => {
-  const response = await api.post('/auth/login', data);
+export const loginTeacher = async (
+  data: LoginTeacherRequest
+): Promise<AuthResponse> => {
+  const response = await api.post("/auth/login", data);
   return response.data;
 };
 
 // Admin Login
-export const loginAdmin = async (data: LoginAdminRequest): Promise<AuthResponse> => {
-  const response = await api.post('/auth/login', data);
+export const loginAdmin = async (
+  data: LoginAdminRequest
+): Promise<AuthResponse> => {
+  const response = await api.post("/auth/login", data);
+  return response.data;
+};
+
+// Secretary Login
+export const loginSecretary = async (
+  data: LoginSecretaryRequest
+): Promise<AuthResponse> => {
+  const response = await api.post("/auth/login", data);
   return response.data;
 };
 
 // Verify Identity (Step 1 of forgot password)
 export const verifyIdentity = async (data: VerifyIdentityRequest) => {
-  const response = await api.post('/auth/verify-identity', data);
+  const response = await api.post("/auth/verify-identity", data);
   return response.data;
 };
 
 // Forgot Password (Deprecated - use verifyIdentity instead)
 export const forgotPassword = async (data: ForgotPasswordRequest) => {
-  const response = await api.post('/auth/verify-identity', data);
+  const response = await api.post("/auth/verify-identity", data);
   return response.data;
 };
 
 // Reset Password (Step 2 - requires all data + new password)
 export const resetPassword = async (data: ResetPasswordRequest) => {
-  const response = await api.post('/auth/reset-password', data);
+  const response = await api.post("/auth/reset-password", data);
   return response.data;
 };
 
 // Verify Token
 export const verifyToken = async () => {
-  const response = await api.get('/auth/verify');
+  const response = await api.get("/auth/verify");
   return response.data;
 };
 
@@ -113,10 +134,12 @@ interface ChangePasswordRequest {
   currentPassword: string;
   newPassword: string;
   userId: string;
-  userType: 'student' | 'teacher' | 'admin';
+  userType: "student" | "teacher" | "admin";
 }
 
-export const changePassword = async (data: ChangePasswordRequest): Promise<{ success: boolean; message: string }> => {
-  const response = await api.post('/auth/change-password', data);
+export const changePassword = async (
+  data: ChangePasswordRequest
+): Promise<{ success: boolean; message: string }> => {
+  const response = await api.post("/auth/change-password", data);
   return response.data;
 };

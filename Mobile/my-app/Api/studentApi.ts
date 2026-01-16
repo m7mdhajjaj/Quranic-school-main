@@ -43,6 +43,39 @@ export interface StudentStats {
   }>;
 }
 
+// Simple group type for student assignment
+export interface GroupForAssignment {
+  _id: string;
+  name: string;
+  teacher: string;
+  teacherName: string;
+  capacity: number;
+  studentsCount: number;
+  isActive: boolean;
+}
+
+// Get groups for student assignment (simplified list for secretary with students manage access)
+export const getGroupsForStudentAssignment = async (): Promise<{
+  success: boolean;
+  data?: GroupForAssignment[];
+  message?: string;
+}> => {
+  try {
+    console.log("📡 API: جلب الحلقات لاختيار حلقة الطالب...");
+    const response = await api.get("/students/groups-for-assignment");
+    console.log("✅ تم جلب الحلقات بنجاح:", response.data?.data?.length || 0);
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error fetching groups for assignment:", error);
+    const axiosError = error as AxiosError<{ message?: string }>;
+    return {
+      success: false,
+      message:
+        axiosError.response?.data?.message || "حدث خطأ أثناء جلب الحلقات",
+    };
+  }
+};
+
 // Get all students with optional filters
 export const getAllStudents = async (filters?: {
   gender?: string;

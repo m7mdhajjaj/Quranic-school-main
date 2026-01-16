@@ -1,13 +1,18 @@
 const Student = require("../../../schema/Student");
 const Group = require("../../../schema/Group");
 const bcrypt = require("bcryptjs");
-const { checkDuplicateFields } = require("../../../Validation/validators/duplicateChecker");
+const {
+  checkDuplicateFields,
+} = require("../../../Validation/validators/duplicateChecker");
 const { invalidateCache } = require("../../../middleware");
-const { updateGroupActiveStatus, updateGroupsActiveStatusOnStudentMove } = require("../groupController");
+const {
+  updateGroupActiveStatus,
+  updateGroupsActiveStatusOnStudentMove,
+} = require("../groupController");
 const {
   notifyStudentAddedToGroup,
   notifyStudentRemovedFromGroup,
-  notifyStudentMovedGroup
+  notifyStudentMovedGroup,
 } = require("../../../Notifications");
 const {
   validateTeacherGroupMatch,
@@ -27,8 +32,12 @@ const { logRestorationEvent } = require("./history/helpers/restorationHistory");
  * المعلم والسكرتير والطالب ممنوعين يشوفون studentId
  */
 const removeStudentIdForRestrictedRoles = (students, userRole) => {
-  if (userRole === 'teacher' || userRole === 'secretary' || userRole === 'student') {
-    return students.map(student => {
+  if (
+    userRole === "teacher" ||
+    userRole === "secretary" ||
+    userRole === "student"
+  ) {
+    return students.map((student) => {
       const { studentId, ...rest } = student;
       return rest;
     });
@@ -71,13 +80,15 @@ exports.restoreStudentToGroup = async (req, res) => {
     const warningUpdate = await Warning.updateMany(
       {
         studentId: studentId,
-        status: "active"
+        status: "active",
       },
       {
-        $set: { status: "inactive" } // استخدام inactive بدلاً من student_removed
+        $set: { status: "inactive" }, // استخدام inactive بدلاً من student_removed
       }
     );
-    console.log(`✅ تم إلغاء ${warningUpdate.modifiedCount} إنذارات للطالب ${studentId}`);
+    console.log(
+      `✅ تم إلغاء ${warningUpdate.modifiedCount} إنذارات للطالب ${studentId}`
+    );
 
     // تسجيل حدث RESTORATION في التاريخ
     await logRestorationEvent(
@@ -93,7 +104,7 @@ exports.restoreStudentToGroup = async (req, res) => {
     );
 
     // تحديث activeStatus للحلقة الجديدة
-    await updateGroupActiveStatus(group.name).catch(err => 
+    await updateGroupActiveStatus(group.name).catch((err) =>
       console.error("⚠️ Error updating group activeStatus:", err)
     );
 
@@ -107,9 +118,12 @@ exports.restoreStudentToGroup = async (req, res) => {
     }
 
     // إرسال حدث Socket للطالب
-    emitStudentEvent('updated', student);
+    emitStudentEvent("updated", student);
 
-    res.json({ success: true, message: "تم إرجاع الطالب للحلقة وتسجيل الحدث في التاريخ" });
+    res.json({
+      success: true,
+      message: "تم إرجاع الطالب للحلقة وتسجيل الحدث في التاريخ",
+    });
   } catch (error) {
     console.error("Error restoring student:", error);
     res.status(500).json({ message: "حدث خطأ أثناء إرجاع الطالب" });
@@ -131,7 +145,7 @@ exports.getStudents = async (req, res) => {
     // Sorting
     const sortOptions = {};
     if (sortBy) {
-      sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
+      sortOptions[sortBy] = sortOrder === "desc" ? -1 : 1;
     } else {
       sortOptions.studentId = 1; // Default: sort by studentId ascending (oldest first)
     }
@@ -153,12 +167,12 @@ exports.getStudents = async (req, res) => {
     if (search && search.trim()) {
       const searchTerm = search.trim().toLowerCase();
       students = students.sort((a, b) => {
-        const aGroup = (a.group || '').toLowerCase();
-        const bGroup = (b.group || '').toLowerCase();
-        const aFirstName = (a.firstName || '').toLowerCase();
-        const bFirstName = (b.firstName || '').toLowerCase();
-        const aLastName = (a.lastName || '').toLowerCase();
-        const bLastName = (b.lastName || '').toLowerCase();
+        const aGroup = (a.group || "").toLowerCase();
+        const bGroup = (b.group || "").toLowerCase();
+        const aFirstName = (a.firstName || "").toLowerCase();
+        const bFirstName = (b.firstName || "").toLowerCase();
+        const aLastName = (a.lastName || "").toLowerCase();
+        const bLastName = (b.lastName || "").toLowerCase();
 
         // Priority 1: Exact match in group
         const aGroupExact = aGroup === searchTerm;
@@ -173,14 +187,18 @@ exports.getStudents = async (req, res) => {
         if (!aGroupStarts && bGroupStarts) return 1;
 
         // Priority 3: Exact match in name fields
-        const aNameExact = aFirstName === searchTerm || aLastName === searchTerm;
-        const bNameExact = bFirstName === searchTerm || bLastName === searchTerm;
+        const aNameExact =
+          aFirstName === searchTerm || aLastName === searchTerm;
+        const bNameExact =
+          bFirstName === searchTerm || bLastName === searchTerm;
         if (aNameExact && !bNameExact) return -1;
         if (!aNameExact && bNameExact) return 1;
 
         // Priority 4: Starts with in name fields
-        const aNameStarts = aFirstName.startsWith(searchTerm) || aLastName.startsWith(searchTerm);
-        const bNameStarts = bFirstName.startsWith(searchTerm) || bLastName.startsWith(searchTerm);
+        const aNameStarts =
+          aFirstName.startsWith(searchTerm) || aLastName.startsWith(searchTerm);
+        const bNameStarts =
+          bFirstName.startsWith(searchTerm) || bLastName.startsWith(searchTerm);
         if (aNameStarts && !bNameStarts) return -1;
         if (!aNameStarts && bNameStarts) return 1;
 
@@ -194,10 +212,13 @@ exports.getStudents = async (req, res) => {
 
     // إضافة اسم المعلم الثلاثي للطلاب
     let studentsWithTeacherName = await populateTeacherFullName(students);
-    
+
     // إزالة studentId للمعلم والسكرتير
     const userRole = req.user?.role;
-    studentsWithTeacherName = removeStudentIdForRestrictedRoles(studentsWithTeacherName, userRole);
+    studentsWithTeacherName = removeStudentIdForRestrictedRoles(
+      studentsWithTeacherName,
+      userRole
+    );
 
     const endTime = Date.now();
     const duration = endTime - startTime;
@@ -209,7 +230,7 @@ exports.getStudents = async (req, res) => {
         total,
         page: pageNum,
         limit: limitNum,
-        pages: Math.ceil(total / limitNum)
+        pages: Math.ceil(total / limitNum),
       },
       message: `تم تحميل ${students.length} طالب بنجاح`,
     });
@@ -235,10 +256,10 @@ exports.getStudentById = async (req, res) => {
       });
     }
     const studentObj = student.toObject();
-    
+
     // إضافة اسم المعلم الثلاثي
     const studentWithTeacherName = await populateTeacherFullName(studentObj);
-    
+
     res.status(200).json({
       success: true,
       data: {
@@ -262,7 +283,10 @@ exports.getStudentById = async (req, res) => {
  */
 exports.createStudent = async (req, res) => {
   try {
-    console.log("Received request to create student:", JSON.stringify(req.body, null, 2));
+    console.log(
+      "Received request to create student:",
+      JSON.stringify(req.body, null, 2)
+    );
 
     // توليد رقم طالب متسلسل
     let studentId;
@@ -295,7 +319,10 @@ exports.createStudent = async (req, res) => {
 
     // التحقق من توافق المعلم مع الحلقة
     const { teacher, group } = req.body;
-    const teacherGroupValidation = await validateTeacherGroupMatch(teacher, group);
+    const teacherGroupValidation = await validateTeacherGroupMatch(
+      teacher,
+      group
+    );
     if (!teacherGroupValidation.valid) {
       return res.status(400).json({
         success: false,
@@ -317,7 +344,7 @@ exports.createStudent = async (req, res) => {
     }
 
     // تشفير كلمة المرور - استخدام رقم الهوية كقيمة افتراضية
-    const rawPassword = req.body.idNumber || '1234';
+    const rawPassword = req.body.idNumber || "1234";
     console.log("🔐 تشفير كلمة المرور - استخدام رقم الهوية كقيمة افتراضية");
     const hashedPassword = await bcrypt.hash(rawPassword, 10);
 
@@ -328,7 +355,10 @@ exports.createStudent = async (req, res) => {
       age: parseInt(req.body.age || 0, 10) || 0,
     };
 
-    console.log("✅ إنشاء طالب بالبيانات:", { ...studentData, password: "***ENCRYPTED***" });
+    console.log("✅ إنشاء طالب بالبيانات:", {
+      ...studentData,
+      password: "***ENCRYPTED***",
+    });
 
     const student = new Student(studentData);
     const newStudent = await student.save();
@@ -342,11 +372,11 @@ exports.createStudent = async (req, res) => {
 
     // Invalidate caches and emit events using helpers
     await invalidateStudentCaches();
-    emitStudentEvent('created', newStudent);
+    emitStudentEvent("created", newStudent);
 
     // تحديث activeStatus للحلقة
     if (group && group !== "غير محدد") {
-      await updateGroupActiveStatus(group).catch(err => 
+      await updateGroupActiveStatus(group).catch((err) =>
         console.error("⚠️ Error updating group activeStatus:", err)
       );
     }
@@ -383,9 +413,9 @@ exports.updateStudent = async (req, res) => {
           ? new Date(currentStudent.birthDate).toISOString().split("T")[0]
           : null;
         const newBirthDateStr = updatedData.birthDate
-          ? (typeof updatedData.birthDate === 'string'
-              ? updatedData.birthDate.split("T")[0]
-              : new Date(updatedData.birthDate).toISOString().split("T")[0])
+          ? typeof updatedData.birthDate === "string"
+            ? updatedData.birthDate.split("T")[0]
+            : new Date(updatedData.birthDate).toISOString().split("T")[0]
           : null;
 
         if (currentBirthDate !== newBirthDateStr && newBirthDateStr) {
@@ -428,7 +458,7 @@ exports.updateStudent = async (req, res) => {
     // معالجة كلمة المرور (if not hashed by validation middleware)
     if (updatedData.password && updatedData.password.trim() !== "") {
       // Check if already hashed (starts with $2)
-      if (!updatedData.password.startsWith('$2')) {
+      if (!updatedData.password.startsWith("$2")) {
         updatedData.password = await bcrypt.hash(updatedData.password, 10);
       }
     } else {
@@ -437,7 +467,7 @@ exports.updateStudent = async (req, res) => {
 
     // التحقق من الحلقة وتحديث المعلم تلقائياً
     const { group } = updatedData;
-    
+
     // إذا تم تعيين الحلقة إلى "غير محدد" أو null، قم بإزالة المعلم أيضاً
     if (group === "غير محدد" || group === null || group === "") {
       updatedData.teacher = "غير محدد";
@@ -445,7 +475,7 @@ exports.updateStudent = async (req, res) => {
     } else if (group) {
       // جلب بيانات الحلقة
       const groupData = await Group.findOne({ name: group });
-      
+
       if (!groupData) {
         return res.status(400).json({
           success: false,
@@ -454,9 +484,10 @@ exports.updateStudent = async (req, res) => {
       }
 
       // تحديث اسم المعلم تلقائياً من الحلقة
-      const { getTeacherInfo } = require('./studentHelpers');
+      const { getTeacherInfo } = require("./studentHelpers");
       const teacherData = await getTeacherInfo(groupData.teacher);
-      updatedData.teacher = teacherData.name || groupData.teacherName || updatedData.teacher;
+      updatedData.teacher =
+        teacherData.name || groupData.teacherName || updatedData.teacher;
 
       // التحقق من سعة الحلقة الجديدة (فقط إذا تم تغيير الحلقة)
       const currentStudent = await Student.findById(req.params.id);
@@ -505,7 +536,9 @@ exports.updateStudent = async (req, res) => {
       );
 
       // Only update if we removed old entries
-      if (cleanedHistory.length !== updatedStudent.birthDateEditHistory.length) {
+      if (
+        cleanedHistory.length !== updatedStudent.birthDateEditHistory.length
+      ) {
         await Student.findByIdAndUpdate(req.params.id, {
           birthDateEditHistory: cleanedHistory,
         });
@@ -515,29 +548,32 @@ exports.updateStudent = async (req, res) => {
 
     // Invalidate caches and emit events using helpers
     await invalidateStudentCaches();
-    emitStudentEvent('updated', updatedStudent);
-    
+    emitStudentEvent("updated", updatedStudent);
+
     // Update activeStatus if group changed
     if (updatedData.group && currentStudent.group !== updatedData.group) {
-      await updateGroupsActiveStatusOnStudentMove(currentStudent.group, updatedData.group);
+      await updateGroupsActiveStatusOnStudentMove(
+        currentStudent.group,
+        updatedData.group
+      );
     }
 
     // Notification Logic
     const io = req.app.get("io");
     const oldGroup = currentStudent.group;
     const newGroup = updatedStudent.group;
-    
+
     const wasInGroup = oldGroup && oldGroup !== "غير محدد";
     const isInGroup = newGroup && newGroup !== "غير محدد";
 
     if (!wasInGroup && isInGroup) {
-       notifyStudentAddedToGroup(updatedStudent, newGroup, io);
+      notifyStudentAddedToGroup(updatedStudent, newGroup, io);
     } else if (wasInGroup && !isInGroup) {
-       notifyStudentRemovedFromGroup(updatedStudent, oldGroup, io);
+      notifyStudentRemovedFromGroup(updatedStudent, oldGroup, io);
     } else if (wasInGroup && isInGroup && oldGroup !== newGroup) {
-       notifyStudentMovedGroup(updatedStudent, oldGroup, newGroup, io);
+      notifyStudentMovedGroup(updatedStudent, oldGroup, newGroup, io);
     }
-    
+
     // Emit profile update event
     if (io) {
       io.to("profile").emit("profileUpdated", {
@@ -548,7 +584,6 @@ exports.updateStudent = async (req, res) => {
       });
       console.log("✅ profileUpdated event emitted to profile room");
     }
-
 
     res.json({ success: true, data: updatedStudent });
   } catch (error) {
@@ -572,7 +607,7 @@ exports.deleteStudent = async (req, res) => {
 
     // Invalidate caches and emit events using helpers
     await invalidateStudentCaches();
-    emitStudentEvent('deleted', {
+    emitStudentEvent("deleted", {
       studentId: req.params.id,
       student: deletedStudent,
     });
@@ -619,34 +654,45 @@ exports.bulkDeleteStudents = async (req, res) => {
     console.log(`🗑️ محاولة حذف ${studentIds.length} طالب...`);
 
     // جلب الطلاب المراد حذفهم للحصول على حلقاتهم
-    const studentsToDelete = await Student.find({ _id: { $in: studentIds } }).select('group');
-    const affectedGroups = [...new Set(studentsToDelete.map(s => s.group).filter(g => g && g !== 'غير محدد'))];
+    const studentsToDelete = await Student.find({
+      _id: { $in: studentIds },
+    }).select("group");
+    const affectedGroups = [
+      ...new Set(
+        studentsToDelete
+          .map((s) => s.group)
+          .filter((g) => g && g !== "غير محدد")
+      ),
+    ];
 
     const result = await Student.deleteMany({
       _id: { $in: studentIds },
     });
 
-    console.log(`✅ تم حذف ${result.deletedCount} طالب من أصل ${studentIds.length}`);
+    console.log(
+      `✅ تم حذف ${result.deletedCount} طالب من أصل ${studentIds.length}`
+    );
 
     // Invalidate caches and emit events using helpers
     await invalidateStudentCaches();
-    
+
     // تحديث activeStatus للحلقات المتأثرة
     if (affectedGroups.length > 0) {
-      console.log(`🔄 تحديث activeStatus لـ ${affectedGroups.length} حلقة متأثرة...`);
-      await Group.recalculateMultipleActiveStatus(affectedGroups).catch(err =>
-        console.error('⚠️ خطأ في تحديث activeStatus:', err)
+      console.log(
+        `🔄 تحديث activeStatus لـ ${affectedGroups.length} حلقة متأثرة...`
+      );
+      await Group.recalculateMultipleActiveStatus(affectedGroups).catch((err) =>
+        console.error("⚠️ خطأ في تحديث activeStatus:", err)
       );
     }
-    
+
     // Emit delete events for each student
     if (global.io) {
       console.log("📡 Broadcasting bulk students deleted event");
       studentIds.forEach((studentId) => {
-        emitStudentEvent('deleted', { studentId });
+        emitStudentEvent("deleted", { studentId });
       });
     }
-    
 
     res.status(200).json({
       success: true,
@@ -682,29 +728,29 @@ exports.getStudentsStatistics = async (req, res) => {
           _id: null,
           total: { $sum: 1 },
           maleCount: {
-            $sum: { $cond: [{ $eq: ['$gender', 'ذكر'] }, 1, 0] }
+            $sum: { $cond: [{ $eq: ["$gender", "ذكر"] }, 1, 0] },
           },
           femaleCount: {
-            $sum: { $cond: [{ $eq: ['$gender', 'أنثى'] }, 1, 0] }
+            $sum: { $cond: [{ $eq: ["$gender", "أنثى"] }, 1, 0] },
           },
-          totalAge: { $sum: '$age' },
+          totalAge: { $sum: "$age" },
           withGroupCount: {
             $sum: {
               $cond: [
                 {
                   $and: [
-                    { $ne: ['$group', null] },
-                    { $ne: ['$group', ''] },
-                    { $ne: ['$group', 'غير محدد'] }
-                  ]
+                    { $ne: ["$group", null] },
+                    { $ne: ["$group", ""] },
+                    { $ne: ["$group", "غير محدد"] },
+                  ],
                 },
                 1,
-                0
-              ]
-            }
-          }
-        }
-      }
+                0,
+              ],
+            },
+          },
+        },
+      },
     ]);
 
     const result = stats[0] || {
@@ -712,10 +758,11 @@ exports.getStudentsStatistics = async (req, res) => {
       maleCount: 0,
       femaleCount: 0,
       totalAge: 0,
-      withGroupCount: 0
+      withGroupCount: 0,
     };
 
-    const avgAge = result.total > 0 ? (result.totalAge / result.total).toFixed(1) : 0;
+    const avgAge =
+      result.total > 0 ? (result.totalAge / result.total).toFixed(1) : 0;
 
     const duration = Date.now() - startTime;
     console.log(`✅ تم حساب الإحصائيات في ${duration}ms`);
@@ -728,8 +775,8 @@ exports.getStudentsStatistics = async (req, res) => {
         female: result.femaleCount,
         active: result.withGroupCount,
         inactive: result.total - result.withGroupCount,
-        avgAge: avgAge
-      }
+        avgAge: avgAge,
+      },
     });
   } catch (error) {
     console.error("❌ خطأ في حساب الإحصائيات:", error);
@@ -755,7 +802,11 @@ exports.checkDuplicate = async (req, res) => {
     }
 
     const data = { [field]: value };
-    const duplicateError = await checkDuplicateFields(data, excludeId, 'student');
+    const duplicateError = await checkDuplicateFields(
+      data,
+      excludeId,
+      "student"
+    );
 
     if (duplicateError) {
       return res.json({
@@ -787,10 +838,10 @@ exports.checkDuplicate = async (req, res) => {
 exports.exportStudentsToCSV = async (req, res) => {
   try {
     console.log("📥 تصدير بيانات الطلاب إلى CSV...");
-    
+
     // Build query from filters
     const query = buildStudentQuery(req.query);
-    
+
     // Fetch all students matching the query
     const students = await Student.find(query)
       .select("-password -avatar -__v")
@@ -878,7 +929,7 @@ exports.exportStudentsToCSV = async (req, res) => {
 
     // Send CSV with UTF-8 BOM for Excel compatibility
     const filename = `students_${new Date().toISOString().split("T")[0]}.csv`;
-    
+
     res.setHeader("Content-Type", "text/csv; charset=utf-8");
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
     res.send("\ufeff" + csvContent);
@@ -889,6 +940,60 @@ exports.exportStudentsToCSV = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "حدث خطأ أثناء تصدير البيانات",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * جلب قائمة الحلقات المبسطة لاختيار حلقة الطالب
+ * يستخدم من قبل السكرتير الذي لديه صلاحية إدارة الطلاب
+ * @route GET /api/students/groups-for-assignment
+ */
+exports.getGroupsForStudentAssignment = async (req, res) => {
+  try {
+    console.log("📚 جلب الحلقات لاختيار حلقة الطالب...");
+
+    const groups = await Group.find()
+      .select("name teacher teacherName capacity studentsCount isActive")
+      .lean()
+      .sort({ name: 1 });
+
+    // تحميل أسماء المعلمين
+    const Teacher = require("../../../schema/Teacher");
+    const teachers = await Teacher.find()
+      .select("_id firstName lastName")
+      .lean();
+
+    const teacherMap = {};
+    teachers.forEach((t) => {
+      teacherMap[t._id.toString()] = `${t.firstName} ${t.lastName}`;
+    });
+
+    const groupsWithTeacherNames = groups.map((group) => ({
+      _id: group._id,
+      name: group.name,
+      teacher: group.teacher,
+      teacherName:
+        group.teacherName ||
+        (group.teacher ? teacherMap[group.teacher.toString()] : null) ||
+        "غير محدد",
+      capacity: group.capacity || 0,
+      studentsCount: group.studentsCount || 0,
+      isActive: group.isActive !== false,
+    }));
+
+    console.log(`✅ تم جلب ${groupsWithTeacherNames.length} حلقة`);
+
+    res.json({
+      success: true,
+      data: groupsWithTeacherNames,
+    });
+  } catch (error) {
+    console.error("❌ خطأ في جلب الحلقات:", error);
+    res.status(500).json({
+      success: false,
+      message: "حدث خطأ أثناء جلب الحلقات",
       error: error.message,
     });
   }

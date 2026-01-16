@@ -11,10 +11,11 @@ interface GroupsListProps {
   groups: Group[];
   selectedGroups: Set<string>;
   onToggleSelection: (groupId: string) => void;
-  onEdit: (group: Group) => void;
-  onDelete: (groupId: string) => void;
+  onEdit?: (group: Group) => void;
+  onDelete?: (groupId: string) => void;
   teachers?: Teacher[];
   ListHeaderComponent?: React.ReactElement;
+  readOnly?: boolean;
 }
 
 export const GroupsList: React.FC<GroupsListProps> = ({
@@ -25,6 +26,7 @@ export const GroupsList: React.FC<GroupsListProps> = ({
   onDelete,
   teachers = [],
   ListHeaderComponent,
+  readOnly = false,
 }) => {
   const getTeacherName = (teacherValue: string): string => {
     // إذا كانت القيمة "غير محدد" أو فارغة
@@ -82,21 +84,23 @@ export const GroupsList: React.FC<GroupsListProps> = ({
             </View>
           </View>
 
-          {/* Actions */}
-          <View className="flex-row gap-2">
-            <TouchableOpacity
-              onPress={() => onEdit(item)}
-              className="bg-blue-500 rounded-full p-3"
-              style={{ elevation: 2 }}>
-              <Text className="text-white text-base">✏️</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => onDelete(item._id || "")}
-              className="bg-red-500 rounded-full p-3"
-              style={{ elevation: 2 }}>
-              <Text className="text-white text-base">🗑️</Text>
-            </TouchableOpacity>
-          </View>
+          {/* Actions - Only show if not readOnly */}
+          {!readOnly && onEdit && onDelete && (
+            <View className="flex-row gap-2">
+              <TouchableOpacity
+                onPress={() => onEdit(item)}
+                className="bg-blue-500 rounded-full p-3"
+                style={{ elevation: 2 }}>
+                <Text className="text-white text-base">✏️</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => onDelete(item._id || "")}
+                className="bg-red-500 rounded-full p-3"
+                style={{ elevation: 2 }}>
+                <Text className="text-white text-base">🗑️</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
 
         {/* Teacher Info */}

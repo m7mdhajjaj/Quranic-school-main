@@ -3,7 +3,12 @@ import { router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { useAuth } from "@/hooks/useAuth";
-import { loginStudent, loginTeacher, loginAdmin } from "@/Api/authApi";
+import {
+  loginStudent,
+  loginTeacher,
+  loginAdmin,
+  loginSecretary,
+} from "@/Api/authApi";
 import type { User } from "@/Context/AuthContext";
 import type { LoginFormData } from "../LoginForm";
 
@@ -133,9 +138,24 @@ export const useLoginLogic = () => {
               : "خطأ في تسجيل دخول الإداري";
             loginErrors.push(`إداري: ${adminMsg}`);
 
-            throw new Error(
-              `فشل تسجيل الدخول. البيانات غير صحيحة أو المستخدم غير موجود.`
-            );
+            // Try secretary login
+            try {
+              response = await loginSecretary({
+                secretaryId: formData.userId,
+                password: formData.password,
+                userType: "secretary",
+                rememberMe: rememberMe,
+              });
+            } catch (secretaryError) {
+              const secretaryMsg = axios.isAxiosError(secretaryError)
+                ? secretaryError.response?.data?.message
+                : "خطأ في تسجيل دخول السكرتير";
+              loginErrors.push(`سكرتير: ${secretaryMsg}`);
+
+              throw new Error(
+                `فشل تسجيل الدخول. البيانات غير صحيحة أو المستخدم غير موجود.`
+              );
+            }
           }
         }
       }

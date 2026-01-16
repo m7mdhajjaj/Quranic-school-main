@@ -142,6 +142,24 @@ export default function TabLayout() {
             href: null,
           }}
         />
+        <Tabs.Screen
+          name="secretary"
+          options={{
+            href: null,
+          }}
+        />
+        <Tabs.Screen
+          name="notifications"
+          options={{
+            href: null,
+          }}
+        />
+        <Tabs.Screen
+          name="profile"
+          options={{
+            href: null,
+          }}
+        />
       </Tabs>
 
       {/* Custom Bottom Tab Bar */}

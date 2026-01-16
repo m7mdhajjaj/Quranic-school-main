@@ -49,7 +49,7 @@ interface DrawerMenuProps {
 }
 
 export const DrawerMenu: React.FC<DrawerMenuProps> = ({ isOpen, onClose }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, getSecretaryPermissions } = useAuth();
   const router = useRouter();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const slideAnim = new Animated.Value(isOpen ? 0 : 300);
@@ -70,10 +70,78 @@ export const DrawerMenu: React.FC<DrawerMenuProps> = ({ isOpen, onClose }) => {
         { to: "/admin/students", label: "إدارة الطلاب", icon: Users },
         { to: "/admin/teachers", label: "إدارة المعلمين", icon: UserPlus },
         { to: "/admin/groups", label: "إدارة الحلقات", icon: BookOpen },
+        {
+          to: "/admin/secretaries",
+          label: "إدارة السكرتارية",
+          icon: UserCheck,
+        },
         { to: "/timetable", label: "مواعيد الحلقات", icon: Clock },
         { to: "/chat", label: "المحادثة", icon: MessageSquare },
         { to: "/(tabs)/ai-chat", label: "المساعد الذكي", icon: Sparkles },
       ];
+    }
+
+    // قائمة السكرتير - حسب الصلاحيات
+    if (user?.role === "secretary") {
+      const permissions = getSecretaryPermissions();
+      const secretaryItems: MenuItem[] = [
+        { to: "/(tabs)", label: "الرئيسية", icon: Home },
+      ];
+
+      // الطلاب - حسب الصلاحية
+      if (
+        permissions?.studentsAccess &&
+        permissions.studentsAccess !== "none"
+      ) {
+        secretaryItems.push({
+          to: "/(tabs)/secretary/students",
+          label:
+            permissions.studentsAccess === "manage"
+              ? "إدارة الطلاب"
+              : "عرض الطلاب",
+          icon: Users,
+        });
+      }
+
+      // الحلقات - حسب الصلاحية
+      if (permissions?.groupsAccess && permissions.groupsAccess !== "none") {
+        secretaryItems.push({
+          to: "/(tabs)/secretary/groups",
+          label:
+            permissions.groupsAccess === "manage"
+              ? "إدارة الحلقات"
+              : "عرض الحلقات",
+          icon: BookOpen,
+        });
+      }
+
+      // المعلمين - حسب الصلاحية (عرض فقط)
+      if (
+        permissions?.teachersAccess &&
+        permissions.teachersAccess !== "none"
+      ) {
+        secretaryItems.push({
+          to: "/(tabs)/secretary/teachers",
+          label: "عرض المعلمين",
+          icon: UserPlus,
+        });
+      }
+
+      // المحادثة - متاحة دائماً
+      secretaryItems.push({
+        to: "/(tabs)/chat",
+        label: "المحادثة",
+        icon: MessageSquare,
+      });
+
+      // الأهداف
+      secretaryItems.push({
+        to: "/(tabs)/goals",
+        label: "الأهداف",
+        icon: Target,
+      });
+
+      return secretaryItems;
     }
 
     const studentTeacherItems: MenuItem[] = [
