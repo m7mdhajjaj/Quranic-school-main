@@ -96,9 +96,6 @@ export const TeacherTableView: React.FC<TeacherTableViewProps> = ({
               <th className="px-3 py-4 text-center font-bold text-sm whitespace-nowrap w-12">
                 #
               </th>
-              <th className="px-4 py-4 text-center font-bold text-sm whitespace-nowrap w-12">
-                {/* Expand Icon */}
-              </th>
               {showTeacherId && (
                 <th className="px-4 py-4 text-center font-bold text-sm whitespace-nowrap">
                   رقم المعلم
@@ -124,6 +121,9 @@ export const TeacherTableView: React.FC<TeacherTableViewProps> = ({
                   الإجراءات
                 </th>
               )}
+              <th className="px-4 py-4 text-center font-bold text-sm whitespace-nowrap w-12">
+                {/* Expand */}
+              </th>
             </tr>
           </thead>
 
@@ -156,22 +156,7 @@ export const TeacherTableView: React.FC<TeacherTableViewProps> = ({
                       </span>
                     </td>
 
-                    {/* Expand Button */}
-                    <td className="px-4 py-4 text-center">
-                      <button
-                        onClick={() => toggleRow(teacher._id)}
-                        className="p-2 hover:bg-emerald-100 rounded-lg transition-colors text-emerald-600"
-                        title={isExpanded ? 'إخفاء التفاصيل' : 'عرض التفاصيل'}
-                      >
-                        {isExpanded ? (
-                          <FaChevronUp className="w-4 h-4" />
-                        ) : (
-                          <FaChevronDown className="w-4 h-4" />
-                        )}
-                      </button>
-                    </td>
-
-                    {/* Teacher ID */}
+                    {/* Teacher ID */}}
                     {showTeacherId && (
                       <td className="px-4 py-4 text-center">
                         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -290,12 +275,27 @@ export const TeacherTableView: React.FC<TeacherTableViewProps> = ({
                         </div>
                       </td>
                     )}
+
+                    {/* Expand Button - Last Column */}
+                    <td className="px-4 py-4 text-center">
+                      <button
+                        onClick={() => toggleRow(teacher._id)}
+                        className="p-2 hover:bg-emerald-100 rounded-lg transition-colors text-emerald-600"
+                        title={isExpanded ? 'إخفاء التفاصيل' : 'عرض التفاصيل'}
+                      >
+                        {isExpanded ? (
+                          <FaChevronUp className="w-4 h-4" />
+                        ) : (
+                          <FaChevronDown className="w-4 h-4" />
+                        )}
+                      </button>
+                    </td>
                   </tr>
 
                   {/* Expanded Details Row */}
                   {isExpanded && (
                     <tr>
-                      <td colSpan={8} className="px-6 py-6 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 border-t-2 border-emerald-300">
+                      <td colSpan={10} className="px-6 py-6 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 border-t-2 border-emerald-300">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                           {/* Personal Information Section */}
                           <div className="bg-white rounded-xl border-2 border-emerald-200 p-5 shadow-md">

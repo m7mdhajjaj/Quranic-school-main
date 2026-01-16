@@ -142,9 +142,6 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
                 <th className="px-3 py-4 text-center font-bold text-sm whitespace-nowrap w-12">
                   #
                 </th>
-                <th className="px-4 py-4 text-center font-bold text-sm whitespace-nowrap w-12">
-                  {/* Expand Icon */}
-                </th>
                 {showStudentId && (
                   <th className="px-4 py-4 text-center font-bold text-sm whitespace-nowrap">
                     رقم الطالب
@@ -167,6 +164,9 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
                 </th>
                 <th className="px-6 py-4 text-center font-bold text-sm whitespace-nowrap w-32">
                   الإجراءات
+                </th>
+                <th className="px-4 py-4 text-center font-bold text-sm whitespace-nowrap w-12">
+                  {/* Expand */}
                 </th>
               </tr>
             </thead>
@@ -197,21 +197,6 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
                         <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gray-100 text-gray-700 text-sm font-semibold">
                           {index + 1}
                         </span>
-                      </td>
-
-                      {/* Expand Button */}
-                      <td className="px-4 py-4 text-center">
-                        <button
-                          onClick={() => toggleRow(student._id || '')}
-                          className="p-2 hover:bg-emerald-100 rounded-lg transition-colors text-emerald-600"
-                          title={isExpanded ? 'إخفاء التفاصيل' : 'عرض التفاصيل'}
-                        >
-                          {isExpanded ? (
-                            <ChevronUp className="w-4 h-4" />
-                          ) : (
-                            <ChevronDown className="w-4 h-4" />
-                          )}
-                        </button>
                       </td>
 
                       {/* Student ID */}
@@ -346,12 +331,27 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
                           </button>
                         </div>
                       </td>
+
+                      {/* Expand Button - Last Column */}
+                      <td className="px-4 py-4 text-center">
+                        <button
+                          onClick={() => toggleRow(student._id || '')}
+                          className="p-2 hover:bg-emerald-100 rounded-lg transition-colors text-emerald-600"
+                          title={isExpanded ? 'إخفاء التفاصيل' : 'عرض التفاصيل'}
+                        >
+                          {isExpanded ? (
+                            <ChevronUp className="w-4 h-4" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4" />
+                          )}
+                        </button>
+                      </td>
                     </tr>
 
                     {/* Expanded Details Row */}
                     {isExpanded && (
                       <tr>
-                        <td colSpan={9} className="px-6 py-6 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 border-t-2 border-emerald-300">
+                        <td colSpan={10} className="px-6 py-6 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 border-t-2 border-emerald-300">
                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             {/* Personal Information Section */}
                             <div className="bg-white rounded-xl border-2 border-emerald-200 p-5 shadow-md">

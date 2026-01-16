@@ -92,12 +92,12 @@ export const GroupsTableView: React.FC<GroupsTableViewProps> = ({
                   />
                 </th>
                 <th className="w-12 px-3 py-4 text-center text-sm font-bold text-white">#</th>
-                <th className="w-12 px-2 py-4"></th>
                 <th className="px-5 py-4 text-right text-sm font-bold text-white w-[220px]">اسم الحلقة</th>
                 <th className="px-4 py-4 text-center text-sm font-bold text-white w-[130px]">حالة النشاط</th>
                 <th className="px-5 py-4 text-center text-sm font-bold text-white w-[220px]">المعلم</th>
                 <th className="px-4 py-4 text-center text-sm font-bold text-white w-[130px]">الطلاب</th>
                 <th className="px-4 py-4 text-center text-sm font-bold text-white w-[140px]">الإجراءات</th>
+                <th className="w-12 px-2 py-4"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -134,14 +134,6 @@ export const GroupsTableView: React.FC<GroupsTableViewProps> = ({
                           <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gray-100 text-gray-700 text-sm font-semibold">
                             {index + 1}
                           </span>
-                        </td>
-                        <td className="px-2 py-3 text-center">
-                          <button
-                            onClick={() => toggleExpand(group._id || "")}
-                            className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
-                            title={isExpanded ? "إخفاء التفاصيل" : "عرض التفاصيل"}>
-                            <ChevronDown className={`w-4 h-4 text-gray-600 transform transition-transform ${isExpanded ? "rotate-180" : ""}`} />
-                          </button>
                         </td>
                         <td className="px-5 py-3">
                           <div className="font-semibold text-gray-900">{group.name}</div>
@@ -187,12 +179,20 @@ export const GroupsTableView: React.FC<GroupsTableViewProps> = ({
                             </button>
                           </div>
                         </td>
+                        <td className="px-2 py-3 text-center">
+                          <button
+                            onClick={() => toggleExpand(group._id || "")}
+                            className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                            title={isExpanded ? "إخفاء التفاصيل" : "عرض التفاصيل"}>
+                            <ChevronDown className={`w-4 h-4 text-gray-600 transform transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                          </button>
+                        </td>
                       </tr>
 
                       {/* Expanded Details Row */}
                       {isExpanded && (
                         <tr>
-                          <td colSpan={7} className="px-6 py-6 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 border-t-2 border-emerald-300">
+                          <td colSpan={8} className="px-6 py-6 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 border-t-2 border-emerald-300">
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                               {/* معلومات الحلقة */}
                               <div className="bg-white rounded-xl border-2 border-emerald-200 p-5 shadow-md">

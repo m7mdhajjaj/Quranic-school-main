@@ -314,6 +314,7 @@ export const useSecretaryForm = ({
     // Clear error when field is changed - استخدام functional update
     setErrors((prev) => {
       if (prev[name]) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { [name]: _, ...rest } = prev;
         return rest;
       }
@@ -332,25 +333,9 @@ export const useSecretaryForm = ({
     // التحقق مما إذا كانت هناك تغييرات عند التعديل
     if (isEditMode && initialData) {
       if (isEqual(formData, initialData)) {
-        // إغلاق المودال بدون إرسال طلب
-        // نحتاج إلى طريقة لإغلاق المودال من هنا أو إرجاع قيمة
-      }
-      
-      // لتجنب تعقيد تمرير onClose، سنقوم بفحص التغييرات وتنبيه المستخدم
-      // ولكن onSubmit يتوقع إتمام العملية.
-      // الحل الأمثل: إضافة فحص isEqual قبل استدعاء onSubmit
-      
-      const formDataToCheck = { ...formData };
-      delete formDataToCheck.password; // كلمة المرور لا تأتي من السيرفر، لذا نتجاهلها في المقارنة المبدئية إلا إذا تم تعيينها
-      
-      const initialDataToCheck = { ...initialData };
-      delete initialDataToCheck.password;
-
-      // إذا كانت كلمة المرور فارغة في التعديل، نتجاهلها
-      if (!formData.password && isEqual(formDataToCheck, initialDataToCheck)) {
         showInfoToast("لم يتم إجراء أي تغييرات");
         if (onClose) onClose();
-        return; 
+        return;
       }
     }
 
@@ -362,7 +347,7 @@ export const useSecretaryForm = ({
     }
 
     await onSubmit(submitData);
-  }, [formData, isEditMode, validateForm, onSubmit, initialData]);
+  }, [formData, isEditMode, validateForm, onSubmit, initialData, onClose]);
 
   return {
     formData,
