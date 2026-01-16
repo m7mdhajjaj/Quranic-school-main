@@ -10,7 +10,7 @@ import {
 import { Alert } from "react-native";
 
 export const useExamData = (filters: ExamFilters) => {
-  const { user } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const role = user?.role || "student";
 
   const [exams, setExams] = useState<
@@ -20,6 +20,14 @@ export const useExamData = (filters: ExamFilters) => {
   const [refreshKey, setRefreshKey] = useState(0);
 
   const fetchExams = useCallback(async () => {
+    // لا تجلب البيانات إذا لم يكن المستخدم مسجل دخوله
+    if (!isAuthenticated || !user || authLoading) {
+      console.log("⏳ Waiting for authentication...");
+      setLoading(false);
+      setExams([]);
+      return;
+    }
+
     try {
       setLoading(true);
       console.log("🔄 Fetching exams for role:", role);
@@ -38,17 +46,20 @@ export const useExamData = (filters: ExamFilters) => {
       setExams(data || []);
     } catch (error: any) {
       console.log("❌ Error fetching exams:", error?.response?.data || error);
-      Alert.alert(
-        "خطأ",
-        error?.response?.data?.message || "حدث خطأ في التحميل"
-      );
+      // لا تظهر رسالة خطأ إذا كان 401 - يعني المستخدم غير مسجل دخوله
+      if (error?.response?.status !== 401) {
+        Alert.alert(
+          "خطأ",
+          error?.response?.data?.message || "حدث خطأ في التحميل"
+        );
+      }
       setExams([]);
     } finally {
       setLoading(false);
     }
-  }, [role]);
+  }, [role, isAuthenticated, user, authLoading]);
 
-  // إعادة التحميل عند تغيير المفتاح
+  // إعادة التحميل عند تغيير المفتاح أو حالة المصادقة
   useEffect(() => {
     fetchExams();
   }, [fetchExams, refreshKey]);
