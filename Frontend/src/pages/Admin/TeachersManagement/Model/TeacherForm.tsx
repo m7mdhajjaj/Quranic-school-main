@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo, useCallback } from "react";
 import {
   AlertCircle,
   X,
@@ -7,6 +7,9 @@ import {
   User,
   School,
   ChevronLeft,
+  ChevronRight,
+  GraduationCap,
+  CheckCircle2,
 } from "lucide-react";
 import { useDisableBodyScroll } from "@/hooks/useDisableBodyScroll";
 import { useTeacherForm } from "../hooks/useTeacherForm";
@@ -21,7 +24,7 @@ interface Props {
   teacher?: Teacher;
 }
 
-const TeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) => {
+const TeacherForm: React.FC<Props> = memo(({ onClose, onSuccess, teacher }) => {
   const {
     currentStep,
     formData,
@@ -46,8 +49,14 @@ const TeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) => {
     handleGroupsChange,
   } = useTeacherForm({ teacher, onSuccess, onClose });
 
+  const isEditMode = !!teacher;
+
   // منع scroll الصفحة عند فتح المودل
   useDisableBodyScroll(true);
+
+  const handleClose = useCallback(() => {
+    onClose();
+  }, [onClose]);
 
   const steps = [
     { number: 1, title: "المعلومات الشخصية", icon: User },
@@ -55,108 +64,114 @@ const TeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) => {
   ];
 
   return (
-    <div
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 will-change-opacity"
-      dir="rtl">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col relative z-[10000] will-change-transform gpu-accelerate">
-        <div className="p-6 border-b bg-gradient-to-r from-emerald-50 to-teal-50">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                <User className="text-emerald-600" size={28} />
-                {teacher ? "تعديل بيانات المعلم" : "إضافة معلم جديد"}
-              </h2>
-              <p className="text-sm text-gray-600 mt-1">
-                {teacher
-                  ? "قم بتحديث معلومات المعلم"
-                  : "أدخل بيانات المعلم الكاملة"}
-              </p>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overflow-y-auto" dir="rtl">
+      {/* Backdrop with blur */}
+      <div
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity z-[9998]"
+        onClick={handleClose}
+      />
+
+      {/* Modal */}
+      <div 
+        className="relative w-full max-w-3xl max-h-[90vh] bg-white rounded-2xl shadow-2xl transform transition-all animate-in fade-in zoom-in duration-200 flex flex-col overflow-hidden z-[9999]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header with Gradient */}
+        <div className="relative bg-gradient-to-l from-emerald-600 via-teal-600 to-cyan-600 rounded-t-2xl p-4 overflow-hidden flex-shrink-0">
+          {/* Decorative circles */}
+          <div className="absolute -top-10 -left-10 w-40 h-40 bg-white/10 rounded-full" />
+          <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-white/10 rounded-full" />
+          
+          <div className="relative flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <div className="p-2 bg-white/20 backdrop-blur-sm rounded-xl">
+                <GraduationCap className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-lg font-bold text-white truncate">
+                  {isEditMode ? "تعديل بيانات المعلم" : "إضافة معلم جديد"}
+                </h2>
+                <p className="text-white/80 text-xs mt-0.5 truncate">
+                  {isEditMode 
+                    ? `${teacher?.firstName} ${teacher?.lastName}` 
+                    : "أدخل بيانات المعلم"}
+                </p>
+              </div>
             </div>
             <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-2 transition-colors"
-              aria-label="إغلاق">
-              <X size={24} />
+              onClick={handleClose}
+              className="p-1.5 bg-white/20 hover:bg-white/30 rounded-lg transition-colors flex-shrink-0"
+              title="إغلاق"
+            >
+              <X className="w-4 h-4 text-white" />
             </button>
           </div>
 
-          <div className="flex items-center justify-center gap-2">
+          {/* Steps indicator */}
+          <div className="relative flex items-center justify-center gap-3">
             {steps.map((step, index) => (
               <React.Fragment key={step.number}>
-                <div className="flex items-center gap-2">
+                <div 
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all ${
+                    currentStep === step.number
+                      ? "bg-white text-emerald-700 shadow-lg"
+                      : currentStep > step.number
+                      ? "bg-white/30 text-white"
+                      : "bg-white/10 text-white/60"
+                  }`}
+                >
                   <div
-                    className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
+                    className={`flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${
                       currentStep === step.number
-                        ? "bg-emerald-600 text-white shadow-lg"
+                        ? "bg-emerald-600 text-white"
                         : currentStep > step.number
-                        ? "bg-green-100 text-green-700"
-                        : "bg-gray-100 text-gray-500"
-                    }`}>
-                    <div
-                      className={`flex items-center justify-center w-8 h-8 rounded-full ${
-                        currentStep === step.number
-                          ? "bg-white text-emerald-600"
-                          : currentStep > step.number
-                          ? "bg-green-600 text-white"
-                          : "bg-gray-300 text-gray-600"
-                      }`}>
-                      {currentStep > step.number ? (
-                        <Check size={18} />
-                      ) : (
-                        <step.icon size={18} />
-                      )}
-                    </div>
-                    <span className="font-semibold text-sm hidden sm:block">
-                      {step.title}
-                    </span>
+                        ? "bg-white text-emerald-600"
+                        : "bg-white/20 text-white/80"
+                    }`}
+                  >
+                    {currentStep > step.number ? (
+                      <Check size={14} />
+                    ) : (
+                      step.number
+                    )}
                   </div>
+                  <span className="font-medium text-xs hidden sm:block">
+                    {step.title}
+                  </span>
                 </div>
                 {index < steps.length - 1 && (
-                  <ChevronLeft
-                    className={`${
-                      currentStep > step.number
-                        ? "text-green-600"
-                        : "text-gray-300"
-                    }`}
-                    size={20}
-                  />
+                  <ChevronLeft className="w-4 h-4 text-white/40" />
                 )}
               </React.Fragment>
             ))}
           </div>
         </div>
 
+        {/* Error/Success Messages */}
         {showSuccess && (
-          <div className="mx-6 mt-4 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg flex items-center gap-2 animate-fadeIn">
-            <Check className="text-green-600" size={20} />
+          <div className="mx-4 mt-3 bg-green-50 border border-green-200 text-green-800 px-3 py-2 rounded-lg flex items-center gap-2 text-sm">
+            <CheckCircle2 className="text-green-600 w-4 h-4" />
             <span className="font-medium">تم حفظ البيانات بنجاح!</span>
           </div>
         )}
 
         {Object.keys(errors).length > 0 && !showSuccess && (
-          <div
-            className={`mx-6 mt-4 px-4 py-3 rounded-lg animate-fadeIn ${
-              hasRetryableError
-                ? "bg-orange-50 border border-orange-200 text-orange-700"
-                : "bg-red-50 border border-red-200 text-red-700"
-            }`}>
-            <div className="flex items-center gap-2 mb-2">
-              <AlertCircle size={20} />
+          <div className={`mx-4 mt-3 px-3 py-2 rounded-lg text-sm ${
+            hasRetryableError
+              ? "bg-orange-50 border border-orange-200 text-orange-700"
+              : "bg-red-50 border border-red-200 text-red-700"
+          }`}>
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4" />
               <span className="font-semibold">
-                {hasRetryableError
-                  ? "يرجى تصحيح البيانات والمحاولة مرة أخرى:"
-                  : "يرجى إصلاح الأخطاء التالية:"}
+                {hasRetryableError ? "يرجى تصحيح البيانات:" : "يرجى إصلاح الأخطاء:"}
               </span>
             </div>
-            <ul className="list-disc list-inside space-y-1 text-sm ml-6">
-              {Object.entries(errors).map(([field, message]) => (
-                <li key={field}>{message}</li>
-              ))}
-            </ul>
           </div>
         )}
 
-        <div className="flex-1 overflow-y-auto p-6">
+        {/* Form Content */}
+        <div className="flex-1 overflow-y-auto p-4">
           {currentStep === 1 && (
             <TeacherFormStep1
               formData={formData}
@@ -185,81 +200,61 @@ const TeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) => {
           )}
         </div>
 
-        {/* Footer - الأزرار */}
-        <div className="p-6 border-t bg-gray-50">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-600">
-              {currentStep === 1 ? (
-                isStep1Valid ? (
-                  <span className="text-green-600 font-medium flex items-center gap-1">
-                    <Check size={16} />
-                    جميع حقول الخطوة الأولى مكتملة
-                  </span>
+        {/* Footer Actions */}
+        <div className="flex items-center justify-between p-4 border-t border-gray-100 bg-white flex-shrink-0">
+          <div className="text-xs text-gray-500">
+            الخطوة {currentStep} من {steps.length}
+          </div>
+
+          <div className="flex gap-2">
+            {currentStep === 2 && (
+              <button
+                type="button"
+                onClick={handlePrevStep}
+                className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors font-medium text-sm flex items-center gap-1"
+              >
+                <ChevronRight className="w-4 h-4" />
+                رجوع
+              </button>
+            )}
+
+            {currentStep === 1 ? (
+              <button
+                type="button"
+                onClick={handleNextStep}
+                disabled={!isStep1Valid}
+                className="px-4 py-2 text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 rounded-lg transition-all disabled:opacity-50 font-medium text-sm flex items-center gap-1 shadow-lg shadow-emerald-500/25"
+              >
+                التالي
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+            ) : (
+              <button
+                type="submit"
+                onClick={handleSubmit}
+                disabled={isSubmitting || !isStep2Valid}
+                className="px-4 py-2 text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 rounded-lg transition-all flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-emerald-500/25 font-medium text-sm"
+              >
+                {isSubmitting ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    جاري الحفظ...
+                  </>
                 ) : (
-                  <span className="text-gray-500">
-                    يرجى ملء جميع الحقول المطلوبة
-                  </span>
-                )
-              ) : isStep2Valid ? (
-                <span className="text-green-600 font-medium flex items-center gap-1">
-                  <Check size={16} />
-                  جميع حقول الخطوة الثانية مكتملة
-                </span>
-              ) : (
-                <span className="text-gray-500">
-                  يرجى ملء جميع الحقول المطلوبة
-                </span>
-              )}
-            </div>
-
-            <div className="flex gap-3">
-              {currentStep === 2 && (
-                <button
-                  type="button"
-                  onClick={handlePrevStep}
-                  className="px-6 py-2.5 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-medium flex items-center gap-2">
-                  رجوع
-                </button>
-              )}
-
-              {currentStep === 1 ? (
-                <button
-                  type="button"
-                  onClick={handleNextStep}
-                  disabled={!isStep1Valid}
-                  className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg hover:from-emerald-700 hover:to-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center gap-2 shadow-lg shadow-emerald-500/30">
-                  التالي
-                </button>
-              ) : (
-                <button
-                  type="submit"
-                  onClick={handleSubmit}
-                  disabled={isSubmitting || !isStep2Valid}
-                  className={`px-6 py-2.5 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center gap-2 shadow-lg ${
-                    hasRetryableError
-                      ? "bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 shadow-orange-500/30"
-                      : "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-green-500/30"
-                  }`}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="animate-spin" size={18} />
-                      جاري الحفظ...
-                    </>
-                  ) : (
-                    <>
-                      <Check size={18} />
-                      {teacher ? "تحديث البيانات" : "حفظ البيانات"}
-                    </>
-                  )}
-                </button>
-              )}
-            </div>
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    {isEditMode ? "حفظ التغييرات" : "إضافة المعلم"}
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </div>
       </div>
     </div>
   );
-};
+});
+
+TeacherForm.displayName = "TeacherForm";
 
 export default TeacherForm;

@@ -12,7 +12,10 @@ import {
   CreditCard,
   Users,
   ChevronLeft,
+  ChevronRight,
+  GraduationCap,
 } from "lucide-react";
+import { FaMale, FaFemale } from "react-icons/fa";
 import { useStudentForm } from "../hooks/useStudentForm";
 import { DatePicker } from "@/components/UI/DatePicker";
 import type { Student } from "@/Api/studentApi";
@@ -85,70 +88,76 @@ const AddStudentForm: React.FC<Props> = ({
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 will-change-opacity"
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4"
       dir="rtl">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col relative z-[10000] will-change-transform gpu-accelerate">
-        <div className="p-6 border-b bg-gradient-to-r from-emerald-50 to-teal-50">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                <User className="text-emerald-600" size={28} />
-                {student ? "تعديل بيانات الطالب" : "إضافة طالب جديد"}
-              </h2>
-              <p className="text-sm text-gray-600 mt-1">
-                {student
-                  ? "قم بتحديث معلومات الطالب"
-                  : "أدخل بيانات الطالب الكاملة"}
-              </p>
+      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+        {/* Modern Gradient Header with Steps */}
+        <div className="relative bg-gradient-to-l from-emerald-600 via-teal-600 to-cyan-600 rounded-t-2xl p-4 overflow-hidden">
+          {/* Decorative circles */}
+          <div className="absolute -top-10 -left-10 w-40 h-40 bg-white/10 rounded-full" />
+          <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-white/10 rounded-full" />
+          
+          <div className="relative z-10">
+            <div className="flex justify-between items-start mb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                  <GraduationCap className="text-white" size={22} />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-white">
+                    {student ? "تعديل بيانات الطالب" : "إضافة طالب جديد"}
+                  </h2>
+                  <p className="text-white/80 text-xs">
+                    {student ? "قم بتحديث معلومات الطالب" : "أدخل بيانات الطالب الكاملة"}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={onClose}
+                className="text-white/80 hover:text-white hover:bg-white/20 rounded-lg p-1.5 transition-colors"
+                aria-label="إغلاق">
+                <X size={20} />
+              </button>
             </div>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-2 transition-colors"
-              aria-label="إغلاق">
-              <X size={24} />
-            </button>
-          </div>
 
-          <div className="flex items-center justify-center gap-2">
-            {steps.map((step, index) => (
-              <React.Fragment key={step.number}>
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${currentStep === step.number
-                        ? "bg-emerald-600 text-white shadow-lg"
+            {/* Steps indicator inside header */}
+            <div className="flex items-center justify-center gap-2 mt-3">
+              {steps.map((step, index) => (
+                <React.Fragment key={step.number}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (step.number < currentStep) handlePrevStep();
+                      else if (step.number > currentStep && isStep1Valid) handleNextStep();
+                    }}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                      currentStep === step.number
+                        ? "bg-white text-emerald-700 shadow-lg"
                         : currentStep > step.number
-                          ? "bg-green-100 text-green-700"
-                          : "bg-gray-100 text-gray-500"
-                      }`}>
-                    <div
-                      className={`flex items-center justify-center w-8 h-8 rounded-full ${currentStep === step.number
-                          ? "bg-white text-emerald-600"
-                          : currentStep > step.number
-                            ? "bg-green-600 text-white"
-                            : "bg-gray-300 text-gray-600"
-                        }`}>
+                          ? "bg-white/30 text-white hover:bg-white/40"
+                          : "bg-white/10 text-white/70"
+                    }`}>
+                    <div className={`flex items-center justify-center w-5 h-5 rounded-full ${
+                      currentStep === step.number
+                        ? "bg-emerald-600 text-white"
+                        : currentStep > step.number
+                          ? "bg-white/30 text-white"
+                          : "bg-white/20 text-white/70"
+                    }`}>
                       {currentStep > step.number ? (
-                        <Check size={18} />
+                        <Check size={12} />
                       ) : (
-                        <step.icon size={18} />
+                        <span className="text-[10px]">{step.number}</span>
                       )}
                     </div>
-                    <span className="font-semibold text-sm hidden sm:block">
-                      {step.title}
-                    </span>
-                  </div>
-                </div>
-                {index < steps.length - 1 && (
-                  <ChevronLeft
-                    className={`${currentStep > step.number
-                        ? "text-green-600"
-                        : "text-gray-300"
-                      }`}
-                    size={20}
-                  />
-                )}
-              </React.Fragment>
-            ))}
+                    <span className="hidden sm:inline">{step.title}</span>
+                  </button>
+                  {index < steps.length - 1 && (
+                    <ChevronLeft className="text-white/50" size={16} />
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -407,25 +416,60 @@ const AddStudentForm: React.FC<Props> = ({
 
                   {/* الجنس */}
                   <div className="space-y-1">
-                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-1 mb-3">
+                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-1 mb-2">
                       <User size={14} className="text-gray-500" />
                       الجنس <span className="text-red-500">*</span>
                     </label>
-                    <select
-                      name="gender"
-                      value={formData.gender}
-                      onChange={handleChange}
-                      onBlur={() => handleBlur("gender")}
-                      title="اختر الجنس"
-                      className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 text-right ${
-                        getFieldError("gender")
-                          ? "border-red-300 focus:ring-red-500 bg-red-50"
-                          : "border-gray-300 focus:ring-emerald-500 focus:border-emerald-500"
-                      }`}>
-                      <option value="">اختر الجنس</option>
-                      <option value="ذكر">ذكر</option>
-                      <option value="أنثى">أنثى</option>
-                    </select>
+                    <div className="flex gap-3">
+                      <label
+                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 border-2 rounded-lg cursor-pointer transition-all text-sm ${
+                          formData.gender === "ذكر"
+                            ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                            : "border-gray-200 hover:border-gray-300 text-gray-600"
+                        }`}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleChange({ target: { name: 'gender', value: 'ذكر' } } as any);
+                        }}
+                      >
+                        <input
+                          type="radio"
+                          name="gender"
+                          value="ذكر"
+                          checked={formData.gender === "ذكر"}
+                          onChange={() => {}}
+                          className="sr-only"
+                          tabIndex={-1}
+                          readOnly
+                        />
+                        <FaMale className="w-4 h-4" />
+                        <span className="font-medium">ذكر</span>
+                      </label>
+                      <label
+                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 border-2 rounded-lg cursor-pointer transition-all text-sm ${
+                          formData.gender === "أنثى"
+                            ? "border-teal-500 bg-teal-50 text-teal-700"
+                            : "border-gray-200 hover:border-gray-300 text-gray-600"
+                        }`}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleChange({ target: { name: 'gender', value: 'أنثى' } } as any);
+                        }}
+                      >
+                        <input
+                          type="radio"
+                          name="gender"
+                          value="أنثى"
+                          checked={formData.gender === "أنثى"}
+                          onChange={() => {}}
+                          className="sr-only"
+                          tabIndex={-1}
+                          readOnly
+                        />
+                        <FaFemale className="w-4 h-4" />
+                        <span className="font-medium">أنثى</span>
+                      </label>
+                    </div>
                     {getFieldError("gender") && (
                       <div className="flex items-center gap-1 text-red-600 text-xs mt-1">
                         <AlertCircle size={12} />
@@ -666,38 +710,33 @@ const AddStudentForm: React.FC<Props> = ({
         </div>
 
         {/* Footer - الأزرار */}
-        <div className="p-6 border-t bg-gray-50">
+        <div className="p-4 border-t bg-gradient-to-r from-gray-50 to-slate-50">
           <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-600">
-              {currentStep === 1 ? (
-                isStep1Valid ? (
-                  <span className="text-green-600 font-medium flex items-center gap-1">
-                    <Check size={16} />
-                    جميع حقول الخطوة الأولى مكتملة
-                  </span>
-                ) : (
-                  <span className="text-gray-500">
-                    يرجى ملء جميع الحقول المطلوبة
-                  </span>
-                )
-              ) : isStep2Valid ? (
-                <span className="text-green-600 font-medium flex items-center gap-1">
-                  <Check size={16} />
-                  جميع حقول الخطوة الثانية مكتملة
+            <div className="flex items-center gap-2">
+              <div className="text-xs text-gray-500 bg-white px-3 py-1.5 rounded-lg border">
+                الخطوة {currentStep} من {steps.length}
+              </div>
+              {currentStep === 1 && isStep1Valid && (
+                <span className="text-green-600 text-xs font-medium flex items-center gap-1">
+                  <Check size={12} />
+                  جاهز للمتابعة
                 </span>
-              ) : (
-                <span className="text-gray-500">
-                  يرجى ملء جميع الحقول المطلوبة
+              )}
+              {currentStep === 2 && isStep2Valid && (
+                <span className="text-green-600 text-xs font-medium flex items-center gap-1">
+                  <Check size={12} />
+                  جاهز للحفظ
                 </span>
               )}
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-2">
               {currentStep === 2 && (
                 <button
                   type="button"
                   onClick={handlePrevStep}
-                  className="px-6 py-2.5 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-medium flex items-center gap-2">
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-sm font-medium flex items-center gap-1.5">
+                  <ChevronRight size={16} />
                   رجوع
                 </button>
               )}
@@ -707,32 +746,34 @@ const AddStudentForm: React.FC<Props> = ({
                   type="button"
                   onClick={handleNextStep}
                   disabled={!isStep1Valid}
-                  className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg hover:from-emerald-700 hover:to-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center gap-2 shadow-lg shadow-emerald-500/30">
+                  className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg hover:from-emerald-700 hover:to-teal-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium flex items-center gap-1.5 shadow-lg shadow-emerald-500/25">
                   التالي
+                  <ChevronLeft size={16} />
                 </button>
               ) : (
                 <button
                   type="submit"
                   onClick={handleSubmit}
                   disabled={isSubmitting || !isStep2Valid}
-                  className={`px-6 py-2.5 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center gap-2 shadow-lg ${hasRetryableError
-                      ? "bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 shadow-orange-500/30"
-                      : "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-green-500/30"
-                    }`}>
+                  className={`px-4 py-2 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium flex items-center gap-1.5 shadow-lg ${
+                    hasRetryableError
+                      ? "bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 shadow-orange-500/25"
+                      : "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-green-500/25"
+                  }`}>
                   {isSubmitting ? (
                     <>
-                      <Loader2 className="animate-spin" size={18} />
+                      <Loader2 className="animate-spin" size={16} />
                       جاري الحفظ...
                     </>
                   ) : hasRetryableError ? (
                     <>
-                      <Check size={18} />
+                      <Check size={16} />
                       المحاولة مرة أخرى
                     </>
                   ) : (
                     <>
-                      <Check size={18} />
-                      {student ? "تحديث البيانات" : "حفظ البيانات"}
+                      <Check size={16} />
+                      {student ? "تحديث" : "حفظ"}
                     </>
                   )}
                 </button>

@@ -52,7 +52,7 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
 
       {/* Modal - centered */}
       <div 
-        className="relative w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-2xl transform transition-all animate-in fade-in zoom-in duration-200 flex flex-col overflow-hidden z-[9999]"
+        className="relative w-full max-w-4xl max-h-[90vh] bg-white rounded-2xl shadow-2xl transform transition-all animate-in fade-in zoom-in duration-200 flex flex-col overflow-hidden z-[9999]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header with Gradient */}
@@ -90,13 +90,15 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
         {/* Form */}
         <form id="secretary-form" onSubmit={handleSubmit} className="p-4 space-y-4 flex-1 overflow-y-auto overscroll-contain">
           {/* =================== Section: الأسماء =================== */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-emerald-700 mb-2">
-              <User className="w-4 h-4" />
-              <h3 className="font-semibold text-sm">الأسماء</h3>
+          <div className="bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 rounded-xl p-5 border border-emerald-200">
+            <div className="flex items-center gap-2 text-emerald-700 mb-4">
+              <div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-lg">
+                <User className="w-5 h-5 text-white" />
+              </div>
+              <h3 className="font-bold text-base">الأسماء</h3>
             </div>
             
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-4">
               {/* First Name */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -215,13 +217,15 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
           </div>
 
           {/* =================== Section: الهوية والتواصل =================== */}
-          <div className="space-y-3 pt-3 border-t border-gray-100">
-            <div className="flex items-center gap-2 text-emerald-700 mb-2">
-              <CreditCard className="w-4 h-4" />
-              <h3 className="font-semibold text-sm">الهوية والتواصل</h3>
+          <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-5 border border-emerald-200">
+            <div className="flex items-center gap-2 text-emerald-700 mb-4">
+              <div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-lg">
+                <CreditCard className="w-5 h-5 text-white" />
+              </div>
+              <h3 className="font-bold text-base">الهوية والتواصل</h3>
             </div>
             
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-4">
               {/* ID Number */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -320,13 +324,15 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
           </div>
 
           {/* =================== Section: البيانات الشخصية =================== */}
-          <div className="space-y-3 pt-3 border-t border-gray-100">
-            <div className="flex items-center gap-2 text-emerald-700 mb-2">
-              <User className="w-4 h-4" />
-              <h3 className="font-semibold text-sm">البيانات الشخصية</h3>
+          <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-5 border border-emerald-200">
+            <div className="flex items-center gap-2 text-emerald-700 mb-4">
+              <div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-lg">
+                <User className="w-5 h-5 text-white" />
+              </div>
+              <h3 className="font-bold text-base">البيانات الشخصية</h3>
             </div>
             
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-4">
               {/* Birth Date - Using DatePicker Component */}
               <div>
                 <DatePicker
@@ -431,20 +437,22 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
           </div>
 
           {/* =================== Section: الصلاحيات =================== */}
-          <div className="space-y-3 pt-3 border-t border-gray-100">
-            <div className="flex items-center gap-2 text-emerald-700 mb-2">
-              <Shield className="w-4 h-4" />
-              <h3 className="font-semibold text-sm">الصلاحيات</h3>
+          <div className="bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 rounded-xl p-5 border border-emerald-200">
+            <div className="flex items-center gap-2 text-emerald-700 mb-4">
+              <div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-lg">
+                <Shield className="w-5 h-5 text-white" />
+              </div>
+              <h3 className="font-bold text-base">الصلاحيات</h3>
             </div>
             
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-4">
               {/* صلاحية الحلقات */}
-              <div className="p-3 border rounded-lg border-gray-200 hover:border-emerald-200 transition-all">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="p-1.5 bg-emerald-100 text-emerald-600 rounded">
-                    <Users className="w-4 h-4" />
+              <div className="p-4 bg-white border-2 rounded-xl border-emerald-200 hover:border-emerald-400 hover:shadow-md transition-all">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="p-2 bg-gradient-to-br from-emerald-400 to-emerald-600 text-white rounded-lg shadow-sm">
+                    <Users className="w-5 h-5" />
                   </div>
-                  <h4 className="font-medium text-gray-800 text-xs">الحلقات</h4>
+                  <h4 className="font-semibold text-gray-800 text-sm">الحلقات</h4>
                 </div>
                 <select
                   name="permissions.groupsAccess"
@@ -452,7 +460,7 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
                   onChange={(e) => handleChange(e)}
                   title="صلاحية إدارة الحلقات"
                   aria-label="صلاحية إدارة الحلقات"
-                  className="w-full px-2 py-1.5 border rounded focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-all border-gray-200 text-xs"
+                  className="w-full px-3 py-2.5 border-2 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all border-emerald-200 text-sm font-medium bg-emerald-50"
                 >
                   <option value="none">🚫 بدون</option>
                   <option value="view">👁️ عرض</option>
@@ -461,12 +469,12 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
               </div>
               
               {/* صلاحية المعلمين */}
-              <div className="p-3 border rounded-lg border-gray-200 hover:border-teal-200 transition-all">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="p-1.5 bg-teal-100 text-teal-600 rounded">
-                    <GraduationCap className="w-4 h-4" />
+              <div className="p-4 bg-white border-2 rounded-xl border-teal-200 hover:border-teal-400 hover:shadow-md transition-all">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="p-2 bg-gradient-to-br from-teal-400 to-teal-600 text-white rounded-lg shadow-sm">
+                    <GraduationCap className="w-5 h-5" />
                   </div>
-                  <h4 className="font-medium text-gray-800 text-xs">المعلمين</h4>
+                  <h4 className="font-semibold text-gray-800 text-sm">المعلمين</h4>
                 </div>
                 <select
                   name="permissions.teachersAccess"
@@ -474,7 +482,7 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
                   onChange={(e) => handleChange(e)}
                   title="صلاحية إدارة المعلمين"
                   aria-label="صلاحية إدارة المعلمين"
-                  className="w-full px-2 py-1.5 border rounded focus:ring-1 focus:ring-teal-500 focus:border-teal-500 transition-all border-gray-200 text-xs"
+                  className="w-full px-3 py-2.5 border-2 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all border-teal-200 text-sm font-medium bg-teal-50"
                 >
                   <option value="none">🚫 بدون</option>
                   <option value="view">👁️ عرض</option>
@@ -483,12 +491,12 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
               </div>
               
               {/* صلاحية الطلاب */}
-              <div className="p-3 border rounded-lg border-gray-200 hover:border-blue-200 transition-all">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="p-1.5 bg-blue-100 text-blue-600 rounded">
-                    <Users className="w-4 h-4" />
+              <div className="p-4 bg-white border-2 rounded-xl border-cyan-200 hover:border-cyan-400 hover:shadow-md transition-all">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="p-2 bg-gradient-to-br from-cyan-400 to-cyan-600 text-white rounded-lg shadow-sm">
+                    <Users className="w-5 h-5" />
                   </div>
-                  <h4 className="font-medium text-gray-800 text-xs">الطلاب</h4>
+                  <h4 className="font-semibold text-gray-800 text-sm">الطلاب</h4>
                 </div>
                 <select
                   name="permissions.studentsAccess"
@@ -496,7 +504,7 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
                   onChange={(e) => handleChange(e)}
                   title="صلاحية إدارة الطلاب"
                   aria-label="صلاحية إدارة الطلاب"
-                  className="w-full px-2 py-1.5 border rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all border-gray-200 text-xs"
+                  className="w-full px-3 py-2.5 border-2 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all border-cyan-200 text-sm font-medium bg-cyan-50"
                 >
                   <option value="none">🚫 بدون</option>
                   <option value="view">👁️ عرض</option>

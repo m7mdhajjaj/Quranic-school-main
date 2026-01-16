@@ -227,7 +227,7 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
                       {/* Email */}
                       <td className="px-6 py-4 text-center">
                         {student.email ? (
-                          <span className="text-sm text-gray-700 truncate block max-w-[150px]">
+                          <span className="text-sm text-gray-700" dir="ltr">
                             {student.email}
                           </span>
                         ) : (

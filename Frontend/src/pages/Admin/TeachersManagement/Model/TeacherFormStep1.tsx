@@ -1,5 +1,6 @@
 import React from "react";
 import { User, Calendar, MapPin, CreditCard, Loader2, Check, AlertCircle } from "lucide-react";
+import { FaMale, FaFemale } from "react-icons/fa";
 import { DatePicker } from "@/components/UI/DatePicker";
 
 interface TeacherFormStep1Props {
@@ -202,24 +203,59 @@ const TeacherFormStep1: React.FC<TeacherFormStep1Props> = ({
 
           {/* Gender */}
           <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700 mb-3">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               الجنس <span className="text-red-500">*</span>
             </label>
-            <select
-              name="gender"
-              value={formData.gender}
-              onChange={handleChange}
-              onBlur={() => handleBlur("gender")}
-              title="اختر الجنس"
-              className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 text-right bg-white ${
-                getFieldError("gender")
-                  ? "border-red-300 focus:ring-red-500 bg-red-50"
-                  : "border-gray-300 focus:ring-emerald-500 focus:border-emerald-500"
-              }`}>
-              <option value="">اختر الجنس</option>
-              <option value="ذكر">ذكر</option>
-              <option value="أنثى">أنثى</option>
-            </select>
+            <div className="flex gap-3">
+              <label
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 border-2 rounded-lg cursor-pointer transition-all text-sm ${
+                  formData.gender === "ذكر"
+                    ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                    : "border-gray-200 hover:border-gray-300 text-gray-600"
+                }`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleChange({ target: { name: 'gender', value: 'ذكر' } } as any);
+                }}
+              >
+                <input
+                  type="radio"
+                  name="gender"
+                  value="ذكر"
+                  checked={formData.gender === "ذكر"}
+                  onChange={() => {}}
+                  className="sr-only"
+                  tabIndex={-1}
+                  readOnly
+                />
+                <FaMale className="w-4 h-4" />
+                <span className="font-medium">ذكر</span>
+              </label>
+              <label
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 border-2 rounded-lg cursor-pointer transition-all text-sm ${
+                  formData.gender === "أنثى"
+                    ? "border-teal-500 bg-teal-50 text-teal-700"
+                    : "border-gray-200 hover:border-gray-300 text-gray-600"
+                }`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleChange({ target: { name: 'gender', value: 'أنثى' } } as any);
+                }}
+              >
+                <input
+                  type="radio"
+                  name="gender"
+                  value="أنثى"
+                  checked={formData.gender === "أنثى"}
+                  onChange={() => {}}
+                  className="sr-only"
+                  tabIndex={-1}
+                  readOnly
+                />
+                <FaFemale className="w-4 h-4" />
+                <span className="font-medium">أنثى</span>
+              </label>
+            </div>
             {getFieldError("gender") && (
               <p className="text-red-500 text-sm mt-1">
                 {getFieldError("gender")}

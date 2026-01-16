@@ -192,7 +192,7 @@ export const SecretaryTableView: React.FC<SecretaryTableViewProps> = memo(({
 
                     {/* Email - Hidden on mobile */}
                     <td className="px-3 sm:px-6 py-3 sm:py-4 text-center hidden md:table-cell">
-                      <span className="text-xs sm:text-sm text-gray-900 truncate block max-w-[150px]" dir="ltr">
+                      <span className="text-xs sm:text-sm text-gray-900" dir="ltr">
                         {secretary.email || <span className="text-gray-400">-</span>}
                       </span>
                     </td>

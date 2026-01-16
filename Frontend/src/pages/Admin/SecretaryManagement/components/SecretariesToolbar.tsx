@@ -46,9 +46,10 @@ export const SecretariesToolbar: React.FC<SecretariesToolbarProps> = memo(({
 }) => {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4 mb-4 sm:mb-6">
-      <div className="flex flex-col gap-3">
-        {/* Search */}
-        <div className="w-full">
+      {/* Search + Actions in same row */}
+      <div className="flex items-center gap-3">
+        {/* Search - takes remaining space */}
+        <div className="flex-1">
           <div className="relative">
             {isSearching ? (
               <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
@@ -67,57 +68,53 @@ export const SecretariesToolbar: React.FC<SecretariesToolbarProps> = memo(({
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex gap-2 flex-wrap sm:flex-nowrap">
-          {/* Filter Toggle */}
+        {/* View Mode Toggle */}
+        <div className="flex bg-gray-100 rounded-lg p-0.5 sm:p-1" title="تبديل طريقة العرض">
           <button
-            onClick={onToggleFilters}
-            className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-medium flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-none justify-center ${
-              showFilters || activeFiltersCount > 0
-                ? "bg-emerald-600 text-white shadow-sm"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            onClick={() => onViewModeChange("table")}
+            className={`px-2 sm:px-3 py-1.5 rounded-md flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-medium transition-colors ${
+              viewMode === 'table'
+                ? 'bg-white text-emerald-600 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
             }`}
-            aria-label="تبديل الفلاتر"
-            title="تبديل الفلاتر">
-            <FaFilter className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            {activeFiltersCount > 0 && (
-              <span className="bg-white text-emerald-600 rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-[10px] sm:text-xs font-bold">
-                {activeFiltersCount}
-              </span>
-            )}
-            <span className="hidden xs:inline">فلاتر</span>
+            title="التبديل إلى عرض الجدول"
+            aria-label="التبديل إلى عرض الجدول"
+          >
+            <FaList className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span className="hidden sm:inline">جدول</span>
           </button>
-
-          {/* View Mode Toggle */}
-          <div className="flex bg-gray-100 rounded-lg p-0.5 sm:p-1" title="تبديل طريقة العرض">
-            <button
-              onClick={() => onViewModeChange("table")}
-              className={`px-2 sm:px-3 py-1.5 rounded-md flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-medium transition-colors ${
-                viewMode === 'table'
-                  ? 'bg-white text-emerald-600 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-              title="التبديل إلى عرض الجدول"
-              aria-label="التبديل إلى عرض الجدول"
-            >
-              <FaList className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">جدول</span>
-            </button>
-            <button
-              onClick={() => onViewModeChange("grid")}
-              className={`px-2 sm:px-3 py-1.5 rounded-md flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-medium transition-colors ${
-                viewMode === 'grid'
-                  ? 'bg-white text-emerald-600 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-              title="التبديل إلى عرض الكاردات"
-              aria-label="التبديل إلى عرض الكاردات"
-            >
-              <FaTh className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">كاردات</span>
-            </button>
-          </div>
+          <button
+            onClick={() => onViewModeChange("grid")}
+            className={`px-2 sm:px-3 py-1.5 rounded-md flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-medium transition-colors ${
+              viewMode === 'grid'
+                ? 'bg-white text-emerald-600 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+            title="التبديل إلى عرض الكاردات"
+            aria-label="التبديل إلى عرض الكاردات"
+          >
+            <FaTh className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span className="hidden sm:inline">كاردات</span>
+          </button>
         </div>
+
+        {/* Filter Toggle */}
+        <button
+          onClick={onToggleFilters}
+          className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-medium flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm ${
+            showFilters || activeFiltersCount > 0
+              ? "bg-emerald-600 text-white shadow-sm"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+          }`}
+          aria-label="تبديل الفلاتر"
+          title="تبديل الفلاتر">
+          <FaFilter className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          {activeFiltersCount > 0 && (
+            <span className="bg-white text-emerald-600 rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-[10px] sm:text-xs font-bold">
+              {activeFiltersCount}
+            </span>
+          )}
+        </button>
       </div>
 
       {/* Filters Panel */}
@@ -131,11 +128,6 @@ export const SecretariesToolbar: React.FC<SecretariesToolbarProps> = memo(({
         activeFiltersCount={activeFiltersCount}
         onResetFilters={onResetFilters}
       />
-
-      {/* Results Count */}
-      <div className="mt-2 sm:mt-3 text-xs sm:text-sm text-gray-500">
-        عرض {totalCount} سكرتير
-      </div>
     </div>
   );
 });
