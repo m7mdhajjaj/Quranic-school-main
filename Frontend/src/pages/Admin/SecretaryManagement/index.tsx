@@ -1,5 +1,6 @@
 import React, { memo } from "react";
 import { Shield } from "lucide-react";
+import { EmptyState } from "@/components/UI/EmptyState";
 
 // Components
 import {
@@ -257,7 +258,15 @@ const SecretaryManagement: React.FC = () => {
 
       {/* Content */}
       {secretaries.length === 0 ? (
-        <p className="text-center text-gray-500 py-8">لا يوجد سكرتيرين</p>
+        <EmptyState
+          icon={<Shield className="w-12 h-12 text-gray-400" />}
+          title="لا يوجد سكرتيرين"
+          description="ابدأ بإضافة سكرتير جديد للنظام"
+          action={{
+            label: "إضافة سكرتير",
+            onClick: handleAddSecretary,
+          }}
+        />
       ) : viewMode === "grid" ? (
         <SecretaryGridView
           secretaries={secretaries}
