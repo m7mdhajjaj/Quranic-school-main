@@ -1,0 +1,48 @@
+# Render.com Deployment Configuration
+# مدرسة القرآن الكريم - Quranic School Management System
+
+services:
+  # ========================================
+  # Backend Service (Node.js + Express)
+  # ========================================
+  - type: web
+    name: quranic-school-backend
+    env: node
+    region: frankfurt
+    plan: free
+    buildCommand: cd Backend && npm install
+    startCommand: cd Backend && npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5005
+      - key: MONGO_URI
+        sync: false # يجب إضافته يدوياً من Dashboard
+      - key: JWT_SECRET
+        generateValue: true # سيتم توليده تلقائياً
+      - key: CLIENT_URL
+        value: https://quranic-school-frontend.onrender.com
+      - key: CORS_ORIGINS
+        value: https://quranic-school-frontend.onrender.com
+      - key: REDIS_HOST
+        value: localhost
+      - key: REDIS_PORT
+        value: 6379
+
+  # ========================================
+  # Frontend Service (React + Vite)
+  # ========================================
+  - type: web
+    name: quranic-school-frontend
+    env: static
+    region: frankfurt
+    plan: free
+    buildCommand: cd Frontend && npm install && npm run build
+    staticPublishPath: Frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://quranic-school-backend.onrender.com
+      - key: VITE_SOCKET_URL
+        value: https://quranic-school-backend.onrender.com

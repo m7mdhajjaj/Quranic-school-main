@@ -11,9 +11,12 @@ const Chat = require('./schema/Chat/Chat');
 const Student = require('./schema/Student');
 const { NotificationService, FCMService } = require('./Notifications');
 const MonthlyChampionService = require('./services/ChampionService');
-const AttendanceService = require('./services/DashboardService/GetStudentAbsence');
+const DashboardAttendanceService = require('./services/DashboardService/GetStudentAbsence');
+const AttendanceService = require('./services/Attendance/AttendanceService');
 const WarningJob = require('./Notifications/Jobs/WarningJob');
 const TokenCleanupJob = require('./Notifications/Jobs/TokenCleanupJob');
+const PrayerJob = require('./Notifications/Jobs/PrayerJob');
+const ScheduleReminderJob = require('./Notifications/Jobs/ScheduleReminderJob');
 
 // Connect to MongoDB
 connectDB();
@@ -129,6 +132,7 @@ app.get('/test-upload', (req, res) => {
 });
 
 // Routes
+app.use('/api', require('./routes/health')); // Health check endpoint
 app.use('/api/students', require('./routes/studentRoutes'));
 app.use('/api/teachers', require('./routes/teacherRoutes'));
 app.use('/api/admins', require('./routes/adminRoutes'));
@@ -290,17 +294,33 @@ global.fcmService = FCMService;
 MonthlyChampionService.start();
 console.log('🏆 خدمة تتويج الأبطال الشهرية تم تفعيلها');
 
-// تشغيل Cron Job لتحديث قائمة الطلاب الغائبين عند منتصف الليل
-AttendanceService.setIO(io); // ربط Socket.IO بخدمة الحضور
+// تشغيل Cron Job لتحديث قائمة الطلاب الغائبين عند منتصف الليل (Dashboard)
+DashboardAttendanceService.setIO(io);
+DashboardAttendanceService.start();
+console.log('📊 خدمة Dashboard للطلاب الغائبين تم تفعيلها');
+
+// تشغيل Cron Job للحضور التلقائي (Auto Attendance at 23:59)
+AttendanceService.setIO(io);
 AttendanceService.start();
-console.log('📋 خدمة تحديث قائمة الطلاب الغائبين اليومية تم تفعيلها');
+console.log('✅ خدمة الحضور التلقائي تم تفعيلها (23:59 يومياً)');
 
 // تشغيل Cron Job لإنفاذ قرارات الفصل
 WarningJob.setupWarningJobs();
+console.log('⚠️ خدمة إنفاذ قرارات الفصل تم تفعيلها');
 
 // تشغيل Cron Job لتنظيف FCM tokens القديمة
 TokenCleanupJob.start();
 console.log('🧹 خدمة تنظيف FCM tokens القديمة تم تفعيلها');
+
+// تشغيل Cron Job لإشعارات الصلاة
+const prayerJob = new PrayerJob(io);
+prayerJob.setupPrayerNotifications();
+console.log('🕌 خدمة إشعارات الصلاة تم تفعيلها');
+
+// تشغيل Cron Job لتذكير بالمواعيد
+const scheduleReminderJob = new ScheduleReminderJob(global.notificationService);
+scheduleReminderJob.setupScheduleReminders();
+console.log('🔔 خدمة تذكير بالمواعيد تم تفعيلها');
 
 // Socket.IO error handling
 io.engine.on('connection_error', (err) => {
