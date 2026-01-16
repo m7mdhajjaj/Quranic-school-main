@@ -70,6 +70,11 @@ export const DrawerMenu: React.FC<DrawerMenuProps> = ({ isOpen, onClose }) => {
         { to: "/admin/students", label: "إدارة الطلاب", icon: Users },
         { to: "/admin/teachers", label: "إدارة المعلمين", icon: UserPlus },
         { to: "/admin/groups", label: "إدارة الحلقات", icon: BookOpen },
+        {
+          to: "/admin/secretaries",
+          label: "إدارة السكرتارية",
+          icon: UserCheck,
+        },
         { to: "/timetable", label: "مواعيد الحلقات", icon: Clock },
         { to: "/chat", label: "المحادثة", icon: MessageSquare },
         { to: "/(tabs)/ai-chat", label: "المساعد الذكي", icon: Sparkles },
