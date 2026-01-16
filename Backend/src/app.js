@@ -1,6 +1,6 @@
 // ⚠️ CRITICAL: Load environment variables FIRST before any other modules
 require('dotenv').config();
-
+require('dns').setServers(['8.8.8.8']); // تحسين حل أسماء النطاقات
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
