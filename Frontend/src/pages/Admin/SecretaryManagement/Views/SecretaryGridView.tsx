@@ -19,11 +19,11 @@ export const SecretaryGridView: React.FC<SecretaryGridViewProps> = memo(({
   onToggleSelection,
 }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" dir="rtl">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6" dir="rtl">
       {secretaries.map((secretary) => (
         <div
           key={secretary._id}
-          className={`bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all group relative ${selectedIds.has(secretary._id) ? 'ring-2 ring-emerald-500 shadow-md transform scale-[1.02]' : ''}`}
+          className={`bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all group relative ${selectedIds.has(secretary._id) ? 'ring-2 ring-emerald-500 shadow-md transform scale-[1.01] sm:scale-[1.02]' : ''}`}
         >
           {/* Checkbox Selection Overlay */}
           <div className="absolute top-2 right-2 z-20">

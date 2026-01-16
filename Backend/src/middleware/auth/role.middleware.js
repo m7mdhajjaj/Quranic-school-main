@@ -273,7 +273,8 @@ exports.secretaryGroupsAccess = (requiredLevel = 'view') => {
  * @middleware
  * @param {'view' | 'manage'} requiredLevel - مستوى الصلاحية المطلوب
  * @description يسمح للأدمن أو السكرتير الذي لديه صلاحية المعلمين
- * @access Protected (Admin, Secretary with teachersAccess)
+ *              كما يسمح للمعلم بالوصول لبياناته الخاصة فقط
+ * @access Protected (Admin, Secretary with teachersAccess, Teacher for self-access)
  */
 exports.secretaryTeachersAccess = (requiredLevel = 'view') => {
   return async (req, res, next) => {
@@ -282,6 +283,21 @@ exports.secretaryTeachersAccess = (requiredLevel = 'view') => {
         // الأدمن لديه وصول كامل
         if (req.user.role === "admin") {
           return next();
+        }
+        
+        // السماح للمعلم بالوصول لبياناته الخاصة فقط (للعرض)
+        if (req.user.role === "teacher") {
+          const requestedId = req.params.id || req.params.teacherId;
+          // المعلم يمكنه فقط عرض بياناته الخاصة
+          if (requestedId && requestedId === req.user.id && requiredLevel === 'view') {
+            req.isSelfAccess = true;
+            return next();
+          }
+          // لا يمكن للمعلم الوصول لبيانات معلمين آخرين أو إدارة البيانات
+          return res.status(403).json({
+            success: false,
+            message: "غير مصرح لك بالوصول إلى بيانات معلمين آخرين",
+          });
         }
         
         // التحقق من صلاحيات السكرتير
@@ -342,7 +358,8 @@ exports.secretaryTeachersAccess = (requiredLevel = 'view') => {
  * @middleware
  * @param {'view' | 'manage'} requiredLevel - مستوى الصلاحية المطلوب
  * @description يسمح للأدمن أو السكرتير الذي لديه صلاحية الطلاب
- * @access Protected (Admin, Secretary with studentsAccess)
+ *              كما يسمح للطالب بالوصول لبياناته الخاصة فقط
+ * @access Protected (Admin, Secretary with studentsAccess, Student for self-access)
  */
 exports.secretaryStudentsAccess = (requiredLevel = 'view') => {
   return async (req, res, next) => {
@@ -351,6 +368,21 @@ exports.secretaryStudentsAccess = (requiredLevel = 'view') => {
         // الأدمن لديه وصول كامل
         if (req.user.role === "admin") {
           return next();
+        }
+        
+        // السماح للطالب بالوصول لبياناته الخاصة فقط (للعرض)
+        if (req.user.role === "student") {
+          const requestedId = req.params.id || req.params.studentId;
+          // الطالب يمكنه فقط عرض بياناته الخاصة
+          if (requestedId && requestedId === req.user.id && requiredLevel === 'view') {
+            req.isSelfAccess = true;
+            return next();
+          }
+          // لا يمكن للطالب الوصول لبيانات طلاب آخرين أو إدارة البيانات
+          return res.status(403).json({
+            success: false,
+            message: "غير مصرح لك بالوصول إلى بيانات طلاب آخرين",
+          });
         }
         
         // التحقق من صلاحيات السكرتير

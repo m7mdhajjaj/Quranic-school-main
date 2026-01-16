@@ -104,45 +104,45 @@ export const SecretaryTableView: React.FC<SecretaryTableViewProps> = memo(({
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl overflow-hidden" dir="rtl">
+    <div className="bg-white rounded-lg sm:rounded-2xl shadow-lg sm:shadow-xl overflow-hidden" dir="rtl">
       <div className="overflow-x-auto">
-        <table className="w-full">
+        <table className="w-full min-w-[800px]">
           {/* Table Header */}
           <thead className="bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-white shadow-lg">
             <tr>
-              <th className="px-3 py-4 text-center font-bold text-sm whitespace-nowrap w-12">
+              <th className="px-2 sm:px-3 py-3 sm:py-4 text-center font-bold text-xs sm:text-sm whitespace-nowrap w-10 sm:w-12">
                 <input
                   type="checkbox"
                   checked={allSelected}
                   onChange={onToggleSelectAll}
-                  className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                  className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
                 />
               </th>
-              <th className="px-3 py-4 text-center font-bold text-sm whitespace-nowrap w-12">
+              <th className="px-2 sm:px-3 py-3 sm:py-4 text-center font-bold text-xs sm:text-sm whitespace-nowrap w-10 sm:w-12">
                 #
               </th>
               <SortableHeader field="firstName" className="text-right" justify="start">
                 الاسم الكامل
               </SortableHeader>
-              <th className="px-6 py-4 text-center font-bold text-sm whitespace-nowrap">
+              <th className="px-3 sm:px-6 py-3 sm:py-4 text-center font-bold text-xs sm:text-sm whitespace-nowrap hidden md:table-cell">
                 البريد الإلكتروني
               </th>
-              <th className="px-6 py-4 text-center font-bold text-sm whitespace-nowrap">
+              <th className="px-3 sm:px-6 py-3 sm:py-4 text-center font-bold text-xs sm:text-sm whitespace-nowrap">
                 رقم الهاتف
               </th>
-              <th className="px-6 py-4 text-center font-bold text-sm whitespace-nowrap">
+              <th className="px-3 sm:px-6 py-3 sm:py-4 text-center font-bold text-xs sm:text-sm whitespace-nowrap hidden sm:table-cell">
                 الجنس
               </th>
               <SortableHeader field="age" className="text-center">
                 العمر
               </SortableHeader>
-              <th className="px-6 py-4 text-center font-bold text-sm whitespace-nowrap">
+              <th className="px-3 sm:px-6 py-3 sm:py-4 text-center font-bold text-xs sm:text-sm whitespace-nowrap hidden lg:table-cell">
                 الصلاحيات
               </th>
-              <th className="px-6 py-4 text-center font-bold text-sm whitespace-nowrap w-28">
+              <th className="px-3 sm:px-6 py-3 sm:py-4 text-center font-bold text-xs sm:text-sm whitespace-nowrap w-20 sm:w-28">
                 الإجراءات
               </th>
-              <th className="px-3 py-4 text-center font-bold text-sm whitespace-nowrap w-12">
+              <th className="px-2 sm:px-3 py-3 sm:py-4 text-center font-bold text-xs sm:text-sm whitespace-nowrap w-10 sm:w-12">
                 {/* Expand */}
               </th>
             </tr>
@@ -159,53 +159,53 @@ export const SecretaryTableView: React.FC<SecretaryTableViewProps> = memo(({
                   {/* Main Row */}
                   <tr className={`hover:bg-gradient-to-r hover:from-emerald-50 hover:to-teal-50 transition-all duration-300 ${selectedIds.has(secretary._id) ? 'bg-emerald-50' : ''}`}>
                     {/* Checkbox */}
-                    <td className="px-3 py-4 text-center">
+                    <td className="px-2 sm:px-3 py-3 sm:py-4 text-center">
                       <input
                         type="checkbox"
                         checked={selectedIds.has(secretary._id)}
                         onChange={() => onToggleSelection?.(secretary._id)}
-                        className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                        className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
                       />
                     </td>
                     
                     {/* Row Number */}
-                    <td className="px-3 py-4 text-center">
-                      <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gray-100 text-gray-700 text-sm font-semibold">
+                    <td className="px-2 sm:px-3 py-3 sm:py-4 text-center">
+                      <span className="inline-flex items-center justify-center w-5 h-5 sm:w-7 sm:h-7 rounded-full bg-gray-100 text-gray-700 text-xs sm:text-sm font-semibold">
                         {index + 1}
                       </span>
                     </td>
 
                     {/* Name with Avatar */}
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4">
+                      <div className="flex items-center gap-2 sm:gap-3">
                         {/* Avatar removed as requested */}
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-bold text-gray-900">
+                          <div className="text-xs sm:text-sm font-bold text-gray-900 truncate">
                             {[secretary.firstName, secretary.fatherName, secretary.lastName].filter(Boolean).join(' ')}
                           </div>
                         </div>
                       </div>
                     </td>
 
-                    {/* Email */}
-                    <td className="px-6 py-4 text-center">
-                      <span className="text-sm text-gray-900" dir="ltr">
+                    {/* Email - Hidden on mobile */}
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-center hidden md:table-cell">
+                      <span className="text-xs sm:text-sm text-gray-900 truncate block max-w-[150px]" dir="ltr">
                         {secretary.email || <span className="text-gray-400">-</span>}
                       </span>
                     </td>
 
                     {/* Phone */}
-                    <td className="px-6 py-4 text-center">
-                      <span className="text-sm text-gray-900 font-mono" dir="ltr">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-center">
+                      <span className="text-xs sm:text-sm text-gray-900 font-mono" dir="ltr">
                         {secretary.phoneNumber || <span className="text-gray-400">-</span>}
                       </span>
                     </td>
 
-                    {/* Gender */}
-                    <td className="px-6 py-4 text-center">
+                    {/* Gender - Hidden on mobile */}
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-center hidden sm:table-cell">
                       {secretary.gender ? (
                         <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium ${
                             secretary.gender === 'ذكر' || secretary.gender === 'male'
                               ? 'bg-emerald-100 text-emerald-800'
                               : 'bg-teal-100 text-teal-800'
@@ -219,18 +219,18 @@ export const SecretaryTableView: React.FC<SecretaryTableViewProps> = memo(({
                     </td>
 
                     {/* Age */}
-                    <td className="px-6 py-4 text-center">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-center">
                       {secretary.age ? (
-                        <span className="inline-flex items-center px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-semibold">
-                          {secretary.age} سنة
+                        <span className="inline-flex items-center px-2 py-0.5 sm:px-3 sm:py-1 rounded-full bg-amber-100 text-amber-800 text-[10px] sm:text-xs font-semibold">
+                          {secretary.age}
                         </span>
                       ) : (
                         <span className="text-gray-400">-</span>
                       )}
                     </td>
 
-                    {/* Permissions Count */}
-                    <td className="px-6 py-4 text-center">
+                    {/* Permissions Count - Hidden on mobile/tablet */}
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-center hidden lg:table-cell">
                       <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border ${
                         permissionCount >= 4 
                           ? 'bg-green-50 text-green-700 border-green-200' 
@@ -239,35 +239,35 @@ export const SecretaryTableView: React.FC<SecretaryTableViewProps> = memo(({
                             : 'bg-red-50 text-red-700 border-red-200'
                       }`}>
                         <Shield className="w-3 h-3" />
-                        <span>{permissionCount} صلاحيات</span>
+                        <span>{permissionCount}</span>
                       </span>
                     </td>
 
                     {/* Actions */}
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-center gap-1">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4">
+                      <div className="flex items-center justify-center gap-0.5 sm:gap-1">
                         <button
                           onClick={() => onEdit(secretary)}
-                          className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                          className="p-1.5 sm:p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
                           title="تعديل"
                         >
-                          <Edit2 className="w-4 h-4" />
+                          <Edit2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         </button>
                         <button
                           onClick={() => onDelete(secretary)}
-                          className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                          className="p-1.5 sm:p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
                           title="حذف"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         </button>
                       </div>
                     </td>
 
                     {/* Expand Button */}
-                    <td className="px-3 py-4 text-center">
+                    <td className="px-2 sm:px-3 py-3 sm:py-4 text-center">
                       <button
                         onClick={() => toggleRow(secretary._id)}
-                        className={`p-2 rounded-lg transition-colors ${
+                        className={`p-1.5 sm:p-2 rounded-lg transition-colors ${
                           isExpanded 
                             ? 'bg-emerald-100 text-emerald-600' 
                             : 'hover:bg-gray-100 text-gray-400'
@@ -275,9 +275,9 @@ export const SecretaryTableView: React.FC<SecretaryTableViewProps> = memo(({
                         title={isExpanded ? 'إخفاء التفاصيل' : 'عرض التفاصيل'}
                       >
                         {isExpanded ? (
-                          <ChevronUp className="w-4 h-4" />
+                          <ChevronUp className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         ) : (
-                          <ChevronDown className="w-4 h-4" />
+                          <ChevronDown className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         )}
                       </button>
                     </td>
@@ -286,30 +286,98 @@ export const SecretaryTableView: React.FC<SecretaryTableViewProps> = memo(({
                   {/* Expanded Details Row */}
                   {isExpanded && (
                     <tr>
-                      <td colSpan={9} className="px-4 py-4 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 border-t-2 border-emerald-300">
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                          {/* Personal Information Section */}
-                          <div className="bg-white rounded-xl border border-emerald-200 p-4 shadow-sm">
-                            <h4 className="text-sm font-bold text-emerald-700 mb-3 pb-2 border-b border-emerald-200 flex items-center gap-2">
-                              <div className="w-1 h-5 bg-emerald-500 rounded-full"></div>
+                      <td colSpan={10} className="px-2 sm:px-4 py-3 sm:py-4 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 border-t-2 border-emerald-300">
+                        {/* Two columns layout like the image */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 mb-3 sm:mb-4">
+                          {/* Right Side - المعلومات الشخصية */}
+                          <div className="bg-white rounded-lg sm:rounded-xl border border-emerald-200 p-3 sm:p-4 shadow-sm">
+                            <h4 className="text-xs sm:text-sm font-bold text-emerald-700 mb-2 sm:mb-3 pb-2 border-b border-emerald-200 flex items-center gap-2">
+                              <div className="w-1 h-4 sm:h-5 bg-emerald-500 rounded-full"></div>
                               المعلومات الشخصية
                             </h4>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                              {/* رقم السكرتير */}
-                              <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                                <span className="text-sm font-semibold text-gray-600 flex items-center gap-1">
-                                  <Shield className="w-4 h-4" />
-                                  رقم السكرتير:
-                                </span>
-                                <span className="text-sm font-bold text-emerald-700">
-                                  {secretary.secretaryId}
+                            <div className="space-y-2 sm:space-y-3">
+                              {/* الاسم الكامل */}
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-gray-600">الاسم الكامل:</span>
+                                <span className="text-sm font-bold text-gray-900">
+                                  {[secretary.firstName, secretary.fatherName, secretary.grandFatherName, secretary.lastName].filter(Boolean).join(' ')}
                                 </span>
                               </div>
 
-                              {/* حالة الاتصال */}
-                              <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                                <span className="text-sm font-semibold text-gray-600">حالة الاتصال:</span>
+                              {/* اسم الأم */}
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-gray-600">اسم الأم:</span>
+                                <span className="text-sm text-gray-900">
+                                  {secretary.motherName || <span className="text-gray-400">-</span>}
+                                </span>
+                              </div>
+
+                              {/* رقم الهوية */}
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-gray-600">رقم الهوية:</span>
+                                <span className="text-sm text-gray-900 font-mono" dir="ltr">
+                                  {secretary.idNumber || <span className="text-gray-400">-</span>}
+                                </span>
+                              </div>
+
+                              {/* العمر */}
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-gray-600">العمر:</span>
+                                {secretary.age ? (
+                                  <span className="inline-flex items-center px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-semibold">
+                                    {secretary.age} سنة
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-400">-</span>
+                                )}
+                              </div>
+
+                              {/* تاريخ الميلاد */}
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-gray-600">تاريخ الميلاد:</span>
+                                <span className="text-sm text-gray-900">
+                                  {secretary.birthDate ? new Date(secretary.birthDate).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' }) : <span className="text-gray-400">-</span>}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Left Side - معلومات التواصل */}
+                          <div className="bg-white rounded-xl border border-teal-200 p-4 shadow-sm">
+                            <h4 className="text-sm font-bold text-teal-700 mb-3 pb-2 border-b border-teal-200 flex items-center gap-2">
+                              <div className="w-1 h-5 bg-teal-500 rounded-full"></div>
+                              معلومات التواصل
+                            </h4>
+
+                            <div className="space-y-3">
+                              {/* البريد الإلكتروني */}
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-gray-600">البريد الإلكتروني:</span>
+                                <span className="text-sm text-gray-900" dir="ltr">
+                                  {secretary.email || <span className="text-gray-400">-</span>}
+                                </span>
+                              </div>
+
+                              {/* رقم الهاتف */}
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-gray-600">رقم الهاتف:</span>
+                                <span className="text-sm text-gray-900 font-mono" dir="ltr">
+                                  {secretary.phoneNumber || <span className="text-gray-400">-</span>}
+                                </span>
+                              </div>
+
+                              {/* مكان السكن */}
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-gray-600">مكان السكن:</span>
+                                <span className="text-sm text-gray-900">
+                                  {secretary.residence || <span className="text-gray-400">-</span>}
+                                </span>
+                              </div>
+
+                              {/* حالة النشاط */}
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-gray-600">حالة النشاط:</span>
                                 <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                                   secretary.lastSeen && new Date(secretary.lastSeen).getTime() > Date.now() - 5 * 60 * 1000 
                                   ? 'bg-green-100 text-green-800' 
@@ -324,182 +392,82 @@ export const SecretaryTableView: React.FC<SecretaryTableViewProps> = memo(({
                                 </span>
                               </div>
 
-                              {/* الاسم الكامل */}
-                              <div className="flex items-center justify-start gap-4 py-2 border-b border-gray-100 col-span-1 md:col-span-2">
-                                <span className="text-sm font-semibold text-gray-600">الاسم الكامل:</span>
-                                <span className="text-sm font-bold text-gray-900">
-                                  {[secretary.firstName, secretary.fatherName, secretary.grandFatherName, secretary.lastName].filter(Boolean).join(' ')}
-                                </span>
-                              </div>
-
-                              {/* اسم الجد */}
-                              {secretary.grandFatherName && (
-                                <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                                  <span className="text-sm font-semibold text-gray-600">اسم الجد:</span>
-                                  <span className="text-sm text-gray-900 text-right">{secretary.grandFatherName}</span>
-                                </div>
-                              )}
-
-                              {/* اسم الأم */}
-                              {secretary.motherName && (
-                                <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                                  <span className="text-sm font-semibold text-gray-600">اسم الأم:</span>
-                                  <span className="text-sm text-gray-900 text-right">{secretary.motherName}</span>
-                                </div>
-                              )}
-
-                              {/* رقم الهوية */}
-                              <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                                <span className="text-sm font-semibold text-gray-600 flex items-center gap-1">
-                                  <CreditCard className="w-4 h-4" />
-                                  رقم الهوية:
-                                </span>
-                                <span className="text-sm text-gray-900 font-mono" dir="ltr">
-                                  {secretary.idNumber || <span className="text-gray-400">غير محدد</span>}
-                                </span>
-                              </div>
-
-                              {/* البريد الإلكتروني */}
-                              <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                                <span className="text-sm font-semibold text-gray-600 flex items-center gap-1">
-                                  <Mail className="w-4 h-4" />
-                                  البريد الإلكتروني:
-                                </span>
-                                <span className="text-sm text-gray-900" dir="ltr">
-                                  {secretary.email || <span className="text-gray-400">غير محدد</span>}
-                                </span>
-                              </div>
-
-                              {/* رقم الهاتف */}
-                              <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                                <span className="text-sm font-semibold text-gray-600 flex items-center gap-1">
-                                  <Phone className="w-4 h-4" />
-                                  رقم الهاتف:
-                                </span>
-                                <span className="text-sm text-gray-900 font-mono" dir="ltr">
-                                  {secretary.phoneNumber || <span className="text-gray-400">غير محدد</span>}
-                                </span>
-                              </div>
-
-                              {/* تاريخ الميلاد */}
-                              <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                                <span className="text-sm font-semibold text-gray-600 flex items-center gap-1">
-                                  <Calendar className="w-4 h-4" />
-                                  تاريخ الميلاد:
-                                </span>
+                              {/* آخر ظهور */}
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-gray-600">آخر ظهور:</span>
                                 <span className="text-sm text-gray-900">
-                                  {secretary.birthDate || <span className="text-gray-400">غير محدد</span>}
-                                  {secretary.age && <span className="text-gray-500 mr-2">({secretary.age} سنة)</span>}
-                                </span>
-                              </div>
-
-                              {/* الجنس */}
-                              <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                                <span className="text-sm font-semibold text-gray-600">الجنس:</span>
-                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                  secretary.gender === 'ذكر' || secretary.gender === 'male'
-                                    ? 'bg-blue-100 text-blue-800'
-                                    : 'bg-pink-100 text-pink-800'
-                                }`}>
-                                  {secretary.gender === "male" ? "ذكر" : secretary.gender === "female" ? "أنثى" : secretary.gender}
-                                </span>
-                              </div>
-
-                              {/* مكان الإقامة */}
-                              <div className="flex items-center justify-between py-2">
-                                <span className="text-sm font-semibold text-gray-600 flex items-center gap-1">
-                                  <MapPin className="w-4 h-4" />
-                                  مكان الإقامة:
-                                </span>
-                                <span className="text-sm text-gray-900 text-right">
-                                  {secretary.residence || <span className="text-gray-400">غير محدد</span>}
+                                  {secretary.lastSeen 
+                                    ? new Date(secretary.lastSeen).toLocaleString('ar-EG', { dateStyle: 'short', timeStyle: 'short' })
+                                    : <span className="text-gray-400">-</span>
+                                  }
                                 </span>
                               </div>
                             </div>
                           </div>
+                        </div>
 
-                          {/* Permissions Section */}
-                          <div className="bg-white rounded-xl border border-teal-200 p-4 shadow-sm">
-                            <h4 className="text-sm font-bold text-teal-700 mb-3 pb-2 border-b border-teal-200 flex items-center gap-2">
-                              <div className="w-1 h-5 bg-teal-500 rounded-full"></div>
-                              الصلاحيات
+                        {/* Permissions Section - Compact */}
+                        <div className="bg-white rounded-xl border border-purple-200 p-3 shadow-sm">
+                          <div className="flex items-center gap-4">
+                            <h4 className="text-sm font-bold text-purple-700 flex items-center gap-2 whitespace-nowrap">
+                              <Shield className="w-4 h-4" />
+                              الصلاحيات:
                             </h4>
-
-                            <div className="grid grid-cols-3 gap-3">
-                              {/* studentsAccess - صلاحية الطلاب */}
-                              <div className={`flex items-center gap-2 p-2 rounded-lg text-xs ${
+                            
+                            <div className="flex items-center gap-3 flex-wrap">
+                              {/* الطلاب */}
+                              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
                                 secretary.permissions?.studentsAccess === 'manage' 
-                                  ? 'bg-blue-50 text-blue-700' 
+                                  ? 'bg-blue-100 text-blue-700' 
                                   : secretary.permissions?.studentsAccess === 'view'
-                                    ? 'bg-sky-50 text-sky-700'
-                                    : 'bg-gray-50 text-gray-400'
+                                    ? 'bg-sky-100 text-sky-700'
+                                    : 'bg-gray-100 text-gray-400'
                               }`}>
-                                <div className={`w-2 h-2 rounded-full ${
+                                <span className={`w-1.5 h-1.5 rounded-full ${
                                   secretary.permissions?.studentsAccess === 'manage' 
                                     ? 'bg-blue-500' 
                                     : secretary.permissions?.studentsAccess === 'view'
                                       ? 'bg-sky-500'
                                       : 'bg-gray-300'
-                                }`}></div>
-                                <span className="font-medium">الطلاب: </span>
-                                <span className="font-bold">
-                                  {secretary.permissions?.studentsAccess === 'manage' 
-                                    ? 'إدارة كاملة' 
-                                    : secretary.permissions?.studentsAccess === 'view'
-                                      ? 'عرض فقط'
-                                      : 'بدون وصول'}
-                                </span>
-                              </div>
+                                }`}></span>
+                                الطلاب: {secretary.permissions?.studentsAccess === 'manage' ? 'إدارة' : secretary.permissions?.studentsAccess === 'view' ? 'عرض' : 'لا'}
+                              </span>
 
-                              {/* groupsAccess - صلاحية الحلقات */}
-                              <div className={`flex items-center gap-2 p-2 rounded-lg text-xs ${
+                              {/* الحلقات */}
+                              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
                                 secretary.permissions?.groupsAccess === 'manage' 
-                                  ? 'bg-emerald-50 text-emerald-700' 
+                                  ? 'bg-emerald-100 text-emerald-700' 
                                   : secretary.permissions?.groupsAccess === 'view'
-                                    ? 'bg-green-50 text-green-700'
-                                    : 'bg-gray-50 text-gray-400'
+                                    ? 'bg-green-100 text-green-700'
+                                    : 'bg-gray-100 text-gray-400'
                               }`}>
-                                <div className={`w-2 h-2 rounded-full ${
+                                <span className={`w-1.5 h-1.5 rounded-full ${
                                   secretary.permissions?.groupsAccess === 'manage' 
                                     ? 'bg-emerald-500' 
                                     : secretary.permissions?.groupsAccess === 'view'
                                       ? 'bg-green-500'
                                       : 'bg-gray-300'
-                                }`}></div>
-                                <span className="font-medium">الحلقات: </span>
-                                <span className="font-bold">
-                                  {secretary.permissions?.groupsAccess === 'manage' 
-                                    ? 'إدارة كاملة' 
-                                    : secretary.permissions?.groupsAccess === 'view'
-                                      ? 'عرض فقط'
-                                      : 'بدون وصول'}
-                                </span>
-                              </div>
+                                }`}></span>
+                                الحلقات: {secretary.permissions?.groupsAccess === 'manage' ? 'إدارة' : secretary.permissions?.groupsAccess === 'view' ? 'عرض' : 'لا'}
+                              </span>
 
-                              {/* teachersAccess - صلاحية المعلمين */}
-                              <div className={`flex items-center gap-2 p-2 rounded-lg text-xs ${
+                              {/* المعلمين */}
+                              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
                                 secretary.permissions?.teachersAccess === 'manage' 
-                                  ? 'bg-teal-50 text-teal-700' 
+                                  ? 'bg-teal-100 text-teal-700' 
                                   : secretary.permissions?.teachersAccess === 'view'
-                                    ? 'bg-cyan-50 text-cyan-700'
-                                    : 'bg-gray-50 text-gray-400'
+                                    ? 'bg-cyan-100 text-cyan-700'
+                                    : 'bg-gray-100 text-gray-400'
                               }`}>
-                                <div className={`w-2 h-2 rounded-full ${
+                                <span className={`w-1.5 h-1.5 rounded-full ${
                                   secretary.permissions?.teachersAccess === 'manage' 
                                     ? 'bg-teal-500' 
                                     : secretary.permissions?.teachersAccess === 'view'
                                       ? 'bg-cyan-500'
                                       : 'bg-gray-300'
-                                }`}></div>
-                                <span className="font-medium">المعلمين: </span>
-                                <span className="font-bold">
-                                  {secretary.permissions?.teachersAccess === 'manage' 
-                                    ? 'إدارة كاملة' 
-                                    : secretary.permissions?.teachersAccess === 'view'
-                                      ? 'عرض فقط'
-                                      : 'بدون وصول'}
-                                </span>
-                              </div>
+                                }`}></span>
+                                المعلمين: {secretary.permissions?.teachersAccess === 'manage' ? 'إدارة' : secretary.permissions?.teachersAccess === 'view' ? 'عرض' : 'لا'}
+                              </span>
                             </div>
                           </div>
                         </div>

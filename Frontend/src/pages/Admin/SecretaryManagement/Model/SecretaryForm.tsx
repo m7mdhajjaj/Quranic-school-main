@@ -44,7 +44,7 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto" dir="rtl">
+    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-0 sm:p-4 overflow-y-auto" dir="rtl">
       {/* Backdrop with blur */}
       <div
         className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
@@ -53,43 +53,45 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
 
       {/* Modal - centered - stop propagation to prevent closing when clicking inside */}
       <div 
-        className="relative w-full max-w-4xl my-8 bg-white rounded-2xl shadow-2xl transform transition-all animate-in fade-in zoom-in duration-200 flex flex-col overflow-hidden"
+        className="relative w-full max-w-4xl min-h-screen sm:min-h-0 sm:my-8 bg-white sm:rounded-2xl shadow-2xl transform transition-all animate-in fade-in zoom-in duration-200 flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header with Gradient */}
-        <div className="relative bg-gradient-to-l from-emerald-600 via-teal-600 to-cyan-600 rounded-t-2xl p-6 overflow-hidden">
+        <div className="relative bg-gradient-to-l from-emerald-600 via-teal-600 to-cyan-600 sm:rounded-t-2xl p-4 sm:p-6 overflow-hidden">
           {/* Decorative circles */}
-          <div className="absolute -top-10 -left-10 w-40 h-40 bg-white/10 rounded-full" />
-          <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-white/10 rounded-full" />
+          <div className="absolute -top-10 -left-10 w-40 h-40 bg-white/10 rounded-full hidden sm:block" />
+          <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-white/10 rounded-full hidden sm:block" />
           
           <div className="relative flex items-center justify-between">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
               {/* Avatar Preview in Header */}
               {isEditMode && secretary ? (
-                <Avatar
-                  user={{
-                    _id: secretary._id,
-                    firstName: formData.firstName,
-                    lastName: formData.lastName,
-                    gender: formData.gender,
-                    role: "secretary",
-                    avatar: secretary.avatar,
-                  }}
-                  userName={[formData.firstName, formData.fatherName, formData.grandFatherName, formData.lastName].filter(Boolean).join(" ")}
-                  gender={formData.gender as "ذكر" | "أنثى"}
-                  size="lg"
-                  border="ring"
-                />
+                <div className="hidden sm:block">
+                  <Avatar
+                    user={{
+                      _id: secretary._id,
+                      firstName: formData.firstName,
+                      lastName: formData.lastName,
+                      gender: formData.gender,
+                      role: "secretary",
+                      avatar: secretary.avatar,
+                    }}
+                    userName={[formData.firstName, formData.fatherName, formData.grandFatherName, formData.lastName].filter(Boolean).join(" ")}
+                    gender={formData.gender as "ذكر" | "أنثى"}
+                    size="lg"
+                    border="ring"
+                  />
+                </div>
               ) : (
-                <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
-                  <Shield className="w-8 h-8 text-white" />
+                <div className="p-2 sm:p-3 bg-white/20 backdrop-blur-sm rounded-lg sm:rounded-xl">
+                  <Shield className="w-5 h-5 sm:w-8 sm:h-8 text-white" />
                 </div>
               )}
-              <div>
-                <h2 className="text-xl font-bold text-white">
+              <div className="flex-1 min-w-0">
+                <h2 className="text-base sm:text-xl font-bold text-white truncate">
                   {isEditMode ? "تعديل بيانات السكرتير" : "إضافة سكرتير جديد"}
                 </h2>
-                <p className="text-white/80 text-sm mt-0.5">
+                <p className="text-white/80 text-xs sm:text-sm mt-0.5 truncate hidden sm:block">
                   {isEditMode
                     ? `تعديل بيانات: ${[secretary?.firstName, secretary?.fatherName, secretary?.grandFatherName, secretary?.lastName].filter(Boolean).join(" ")}`
                     : "قم بإدخال بيانات السكرتير الجديد"}
@@ -98,24 +100,24 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
             </div>
             <button
               onClick={handleClose}
-              className="p-2 bg-white/20 hover:bg-white/30 rounded-xl transition-colors"
+              className="p-1.5 sm:p-2 bg-white/20 hover:bg-white/30 rounded-lg sm:rounded-xl transition-colors flex-shrink-0"
               title="إغلاق"
             >
-              <X className="w-5 h-5 text-white" />
+              <X className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </button>
           </div>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[70vh] overflow-y-auto overscroll-contain">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 sm:space-y-6 flex-1 overflow-y-auto overscroll-contain">
           {/* =================== Section: الأسماء =================== */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 text-emerald-700 mb-3">
-              <User className="w-5 h-5" />
-              <h3 className="font-semibold">الأسماء</h3>
+          <div className="space-y-3 sm:space-y-4">
+            <div className="flex items-center gap-2 text-emerald-700 mb-2 sm:mb-3">
+              <User className="w-4 h-4 sm:w-5 sm:h-5" />
+              <h3 className="font-semibold text-sm sm:text-base">الأسماء</h3>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               {/* First Name */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -535,28 +537,33 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
             
             {/* ملخص الصلاحيات */}
             <div className="mt-4 p-3 bg-gray-50 rounded-xl">
-              <p className="text-xs text-gray-600 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-gray-400" />
-                <span>
+              <p className="text-[10px] sm:text-xs text-gray-600 flex items-start sm:items-center gap-2">
+                <AlertCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 flex-shrink-0 mt-0.5 sm:mt-0" />
+                <span className="leading-relaxed">
                   <strong>ملاحظة:</strong> 
-                  {' '}"بدون وصول" = لن يظهر الرابط في القائمة الجانبية | 
-                  {' '}"عرض فقط" = يمكن المشاهدة فقط | 
-                  {' '}"إدارة كاملة" = يمكن الإضافة والتعديل والحذف
+                  <span className="hidden sm:inline">
+                    {' '}"بدون وصول" = لن يظهر الرابط في القائمة الجانبية | 
+                    {' '}"عرض فقط" = يمكن المشاهدة فقط | 
+                    {' '}"إدارة كاملة" = يمكن الإضافة والتعديل والحذف
+                  </span>
+                  <span className="sm:hidden">
+                    {' '}الصلاحيات تتحكم في ظهور الصفحات
+                  </span>
                 </span>
               </p>
             </div>
           </div>
 
           {/* Actions */}
-          <div className="flex items-center justify-between gap-3 pt-6 border-t border-gray-100">
-            <p className="text-xs text-gray-400">
+          <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-3 pt-4 sm:pt-6 border-t border-gray-100 sticky bottom-0 bg-white pb-2 sm:pb-0">
+            <p className="text-[10px] sm:text-xs text-gray-400 hidden sm:block">
               * الحقول المطلوبة
             </p>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
               <button
                 type="button"
                 onClick={handleClose}
-                className="px-6 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors font-medium"
+                className="flex-1 sm:flex-none px-4 sm:px-6 py-2 sm:py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg sm:rounded-xl transition-colors font-medium text-sm"
                 disabled={isLoading}
               >
                 إلغاء
@@ -564,17 +571,18 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
               <button
                 type="submit"
                 disabled={isLoading}
-                className="px-6 py-2.5 text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 rounded-xl transition-all flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-emerald-500/25 font-medium"
+                className="flex-1 sm:flex-none px-4 sm:px-6 py-2 sm:py-2.5 text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 rounded-lg sm:rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg shadow-emerald-500/25 font-medium text-sm"
               >
                 {isLoading ? (
                   <>
-                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    جاري الحفظ...
+                    <span className="w-3.5 h-3.5 sm:w-4 sm:h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span className="hidden xs:inline">جاري الحفظ...</span>
                   </>
                 ) : (
                   <>
-                    <CheckCircle2 className="w-4 h-4" />
-                    {isEditMode ? "حفظ التغييرات" : "إضافة السكرتير"}
+                    <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    <span className="hidden xs:inline">{isEditMode ? "حفظ التغييرات" : "إضافة السكرتير"}</span>
+                    <span className="xs:hidden">{isEditMode ? "حفظ" : "إضافة"}</span>
                   </>
                 )}
               </button>

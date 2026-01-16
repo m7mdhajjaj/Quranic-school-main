@@ -54,7 +54,7 @@ export const SecurityTips: React.FC<SecurityTipsProps> = ({
     <div
       className={`
         bg-gradient-to-br from-blue-50/90 to-indigo-50/90 
-        backdrop-blur-sm border border-blue-200/60 rounded-xl 
+        backdrop-blur-sm border border-blue-200/60 rounded-lg sm:rounded-xl 
         shadow-sm transition-all duration-300 overflow-hidden
         ${className}
       `}
@@ -65,7 +65,7 @@ export const SecurityTips: React.FC<SecurityTipsProps> = ({
         type="button"
         onClick={() => collapsible && setIsOpen(!isOpen)}
         className={`
-          w-full flex items-center justify-between gap-3 p-4
+          w-full flex items-center justify-between gap-2 sm:gap-3 p-3 sm:p-4
           transition-colors duration-200
           ${collapsible 
             ? 'hover:bg-blue-100/50 cursor-pointer' 
@@ -74,11 +74,11 @@ export const SecurityTips: React.FC<SecurityTipsProps> = ({
         `}
         {...buttonProps}
       >
-        <div className="flex items-center gap-3 flex-1">
-          <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0">
-            <Shield className="w-5 h-5 text-blue-600" />
+        <div className="flex items-center gap-2 sm:gap-3 flex-1">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+            <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
           </div>
-          <h3 className="text-sm font-semibold text-blue-900 text-right">
+          <h3 className="text-xs sm:text-sm font-semibold text-blue-900 text-right">
             نصائح الأمان
           </h3>
         </div>
@@ -86,9 +86,9 @@ export const SecurityTips: React.FC<SecurityTipsProps> = ({
         {collapsible && (
           <div className="flex-shrink-0 transition-transform duration-300">
             {isOpen ? (
-              <ChevronUp className="w-5 h-5 text-blue-600" />
+              <ChevronUp className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
             ) : (
-              <ChevronDown className="w-5 h-5 text-blue-600" />
+              <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
             )}
           </div>
         )}
@@ -101,15 +101,15 @@ export const SecurityTips: React.FC<SecurityTipsProps> = ({
           ${isOpen || !collapsible ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}
         `}
       >
-        <div className="px-4 pb-4">
-          <ul className="space-y-2.5 text-right">
+        <div className="px-3 sm:px-4 pb-3 sm:pb-4">
+          <ul className="space-y-1.5 sm:space-y-2.5 text-right">
             {tips.map((tip, index) => (
               <li
                 key={index}
-                className="flex items-start gap-3 text-sm text-blue-800 animate-in fade-in slide-in-from-right-2 duration-300"
+                className="flex items-start gap-2 sm:gap-3 text-[11px] sm:text-sm text-blue-800 animate-in fade-in slide-in-from-right-2 duration-300"
                 style={{ animationDelay: `${index * 50}ms` }}
               >
-                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2 flex-shrink-0" />
+                <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-blue-500 mt-1.5 sm:mt-2 flex-shrink-0" />
                 <span className="leading-relaxed">{tip}</span>
               </li>
             ))}

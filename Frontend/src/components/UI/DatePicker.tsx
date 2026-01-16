@@ -142,26 +142,18 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     // السماح فقط بالأرقام
     newYear = newYear.replace(/\D/g, '');
     
-    // الحد الأقصى 4 أرقام
-    if (newYear.length > 4) {
-      newYear = newYear.slice(0, 4);
-    }
+    // تحديث القيمة
+    const yearNum = parseInt(newYear);
     
-    // تحديث القيمة حتى لو كانت أقل من 4 أرقام (للسماح بالكتابة)
-    const newDate = `${newYear || ''}-${month || '01'}-${day || '01'}`;
-    
-    // التحقق من صحة التاريخ فقط إذا كانت السنة 4 أرقام
-    if (newYear.length === 4) {
-      const yearNum = parseInt(newYear);
-      if (yearNum >= minYear && yearNum <= maxYear && isDateValid(newDate)) {
+    // التحقق من النطاق
+    if (yearNum >= minYear && yearNum <= maxYear) {
+      const newDate = `${newYear}-${month || '01'}-${day || '01'}`;
+      if (isDateValid(newDate)) {
         onChange(newDate);
-      } else if (yearNum < minYear || yearNum > maxYear) {
-        // لا تحدث إذا خارج النطاق
-        return;
       }
-    } else {
-      // تحديث مؤقت أثناء الكتابة
-      onChange(newDate);
+    } else if (!newYear) {
+      // السماح بمسح الحقل
+      onChange(`-${month || '01'}-${day || '01'}`);
     }
   };
 
@@ -209,17 +201,18 @@ export const DatePicker: React.FC<DatePickerProps> = ({
           />
         </div>
 
-        {/* Year - text input للتحكم الكامل */}
+        {/* Year - number input with step 1 like day and month */}
         <div>
           <input
-            type="text"
-            inputMode="numeric"
-            value={year || ''}
+            type="number"
+            value={year ? parseInt(year) : ''}
             onChange={handleYearChange}
             placeholder="السنة"
             disabled={disabled}
             required={required}
-            maxLength={4}
+            min={minYear}
+            max={maxYear}
+            step={1}
             className={`w-full px-4 py-2.5 text-center text-base border ${
               currentDateError ? 'border-red-400 bg-red-50' : 'border-gray-300'
             } rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors ${className}`}
