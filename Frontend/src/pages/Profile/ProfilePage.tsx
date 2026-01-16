@@ -262,12 +262,12 @@ const ProfilePage = () => {
       </motion.div>
 
       {/* Content Section */}
-      <div className="container mx-auto px-4 py-8 -mt-8" dir="rtl">
+      <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 -mt-8" dir="rtl">
         <motion.div
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="grid md:grid-cols-2 lg:grid-cols-3 gap-5"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-5"
         >
           {/* الاسم الكامل */}
           {shouldShow(Boolean(fullName)) && (

@@ -149,44 +149,35 @@ export const fetchAvatarBlobUrl = async (endpoint: Endpoint, userId: string): Pr
   }
 };
 
-// Get user with multiple endpoint fallback
+// Get current user profile using unified /profile endpoint
 export const getUserWithFallback = async (userId: string, userRole?: string): Promise<{
   user: UserProfile;
   endpoint: Endpoint;
 }> => {
-  const endpoints: Endpoint[] = [];
-  
-  // Try primary endpoint based on role first
-  if (userRole === 'admin') endpoints.push('admins');
-  if (userRole === 'teacher' || userRole?.includes('teacher')) endpoints.push('teachers');
-  if (userRole === 'secretary') endpoints.push('secretaries');
-  endpoints.push('students');
-  
-  // Add remaining endpoints as fallbacks
-  if (!endpoints.includes('teachers')) endpoints.push('teachers');
-  if (!endpoints.includes('admins')) endpoints.push('admins');
-  if (!endpoints.includes('secretaries')) endpoints.push('secretaries');
-  
-  for (const endpoint of endpoints) {
-    try {
-      const user = await getUserById(endpoint, userId);
-      const role = user.role ?? (
-        endpoint === 'admins' ? 'admin' : 
-        endpoint === 'teachers' ? 'teacher' : 
-        endpoint === 'secretaries' ? 'secretary' : 
-        'student'
-      );
-      return { user: { ...user, role: role as 'student' | 'teacher' | 'admin' | 'secretary' }, endpoint };
-    } catch (error: unknown) {
-      const axiosError = error as { response?: { status?: number } };
-      if (axiosError?.response?.status !== 404) {
-        throw error; // Re-throw non-404 errors
-      }
-      // Continue to next endpoint for 404 errors
+  try {
+    // استخدام الـ unified /profile endpoint - يعمل لجميع الأدوار
+    const user = await getProfile();
+    
+    // تحديد الـ endpoint بناءً على الـ role
+    const role = user.role ?? userRole as 'student' | 'teacher' | 'admin' | 'secretary';
+    const endpoint = getUserEndpoint(role);
+    
+    return { user: { ...user, role }, endpoint };
+  } catch (error: unknown) {
+    const axiosError = error as { response?: { status?: number } };
+    
+    // If 404, the user was deleted
+    if (axiosError?.response?.status === 404) {
+      throw new Error('المستخدم غير موجود - قد يكون تم حذف الحساب');
     }
+    
+    // If 401, unauthorized
+    if (axiosError?.response?.status === 401) {
+      throw error;
+    }
+    
+    throw error;
   }
-  
-  throw new Error('المستخدم غير موجود في أي من قواعد البيانات');
 };
 
 // Check duplicate field value (real-time validation)

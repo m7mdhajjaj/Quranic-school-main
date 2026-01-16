@@ -79,15 +79,15 @@ export const PasswordStrengthIndicator: React.FC<
   const colors = getStrengthColors(label);
 
   return (
-    <div className={`mt-3 ${className}`} dir="rtl">
+    <div className={`mt-2 sm:mt-3 ${className}`} dir="rtl">
       {/* Label and Score */}
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-medium text-gray-700 text-right">
+      <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+        <span className="text-[10px] sm:text-xs font-medium text-gray-700 text-right">
           قوة كلمة المرور:
         </span>
         <span
           className={`
-            text-xs font-bold transition-colors duration-300
+            text-[10px] sm:text-xs font-bold transition-colors duration-300
             ${password ? colors.text : 'text-gray-400'}
           `}
         >
@@ -98,7 +98,7 @@ export const PasswordStrengthIndicator: React.FC<
       {/* Progress Bar Container */}
       <div
         className={`
-          relative h-2.5 rounded-full overflow-hidden
+          relative h-2 sm:h-2.5 rounded-full overflow-hidden
           ${password ? colors.bgLight : 'bg-gray-100'}
           border ${password ? colors.border : 'border-gray-200'}
           transition-all duration-300
@@ -130,7 +130,7 @@ export const PasswordStrengthIndicator: React.FC<
 
       {/* Strength Segments (Visual Indicator) */}
       {password && (
-        <div className="flex gap-1 mt-2">
+        <div className="flex gap-0.5 sm:gap-1 mt-1.5 sm:mt-2">
           {[0, 1, 2, 3].map((segment) => {
             const segmentValue = (segment + 1) * 25;
             const isActive = progressValue >= segmentValue;
@@ -146,7 +146,7 @@ export const PasswordStrengthIndicator: React.FC<
               <div
                 key={segment}
                 className={`
-                  flex-1 h-1 rounded-full transition-all duration-300
+                  flex-1 h-0.5 sm:h-1 rounded-full transition-all duration-300
                   ${segmentColor}
                   ${isActive ? 'opacity-100' : 'opacity-30'}
                 `}

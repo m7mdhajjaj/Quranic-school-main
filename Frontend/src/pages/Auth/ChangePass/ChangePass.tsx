@@ -17,7 +17,7 @@ import {
   SecurityTips, 
   PasswordStrengthIndicator 
 } from "@/components/Auth";
-import { Lock, CheckCircle2, XCircle } from 'lucide-react';
+import { Lock, CheckCircle2, XCircle, KeyRound } from 'lucide-react';
 import { useChangePassword } from './hooks/useChangePassword';
 import type { ChangePasswordModalProps } from '../types';
 
@@ -52,41 +52,42 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
       size="4xl"
       showCloseButton={true}
       closeOnOverlayClick={true}
-      bodyClassName="p-6 sm:p-8"
+      bodyClassName="p-4 sm:p-6 lg:p-8"
       overlayClassName="bg-black/30 backdrop-blur-sm"
+      className="max-h-[95vh] sm:max-h-[90vh] overflow-y-auto mx-2 sm:mx-4"
     >
       {logoLoading ? (
-        <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
-          <p className="mt-4 text-gray-600">جاري التحميل...</p>
+        <div className="text-center py-8 sm:py-12">
+          <div className="inline-block animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-emerald-600"></div>
+          <p className="mt-3 sm:mt-4 text-gray-600 text-sm sm:text-base">جاري التحميل...</p>
         </div>
       ) : (
         <div dir="rtl" className="w-full animate-in fade-in slide-in-from-bottom-4 duration-300">
           {/* ================================================================== */}
           {/* HEADER - رأس الصفحة */}
           {/* ================================================================== */}
-          <div className="flex flex-col items-center mb-8">
+          <div className="flex flex-col items-center mb-4 sm:mb-6 lg:mb-8">
             {/* Logo with Lock Icon - Animated */}
-            <div className="relative mb-4 animate-in zoom-in duration-500">
+            <div className="relative mb-3 sm:mb-4 animate-in zoom-in duration-500">
               <Logo
                 logoUrl={logoUrl}
                 logoLoading={logoLoading}
                 size="sm"
                 showGlow={false}
-                className="!h-20 !w-20"
+                className="!h-14 !w-14 sm:!h-16 sm:!w-16 lg:!h-20 lg:!w-20"
               />
-              <div className="absolute -bottom-1 -right-1 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full p-1.5 shadow-lg shadow-emerald-500/50 animate-pulse">
-                <Lock className="w-4 h-4 text-white" />
+              <div className="absolute -bottom-1 -right-1 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full p-1 sm:p-1.5 shadow-lg shadow-emerald-500/50 animate-pulse">
+                <Lock className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
               </div>
             </div>
 
             {/* Title */}
-            <h1 className="text-2xl sm:text-3xl font-bold text-center mb-2 text-gray-800 animate-in fade-in slide-in-from-top-2 duration-500">
+            <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-center mb-1 sm:mb-2 text-gray-800 animate-in fade-in slide-in-from-top-2 duration-500">
               تغيير كلمة المرور
             </h1>
             
             {/* Subtitle */}
-            <p className="text-center text-gray-600 text-sm animate-in fade-in slide-in-from-top-2 duration-500 delay-100">
+            <p className="text-center text-gray-600 text-xs sm:text-sm animate-in fade-in slide-in-from-top-2 duration-500 delay-100 px-4">
               يرجى إدخال كلمة المرور الحالية والجديدة
             </p>
           </div>
@@ -111,11 +112,11 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
             />
 
             {/* Form Content Grid - Responsive */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 xl:gap-8" dir="rtl">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 lg:gap-6" dir="rtl">
               {/* ============================================================== */}
               {/* LEFT COLUMN - العمود الأيسر: حقول كلمة المرور */}
               {/* ============================================================== */}
-              <div className="space-y-5 order-2 xl:order-1">
+              <div className="space-y-3 sm:space-y-4 order-2 lg:order-1">
                 {/* Current Password Field */}
                 <div className="animate-in fade-in slide-in-from-right-4 duration-500 delay-75">
                   <Input
@@ -131,6 +132,7 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
                     error={validationErrors.currentPassword}
                     showPasswordToggle={true}
                     required
+                    leftIcon={<KeyRound className="w-4 h-4 text-gray-400" />}
                   />
                 </div>
 
@@ -149,6 +151,7 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
                     error={validationErrors.newPassword}
                     showPasswordToggle={true}
                     required
+                    leftIcon={<Lock className="w-4 h-4 text-gray-400" />}
                   />
                 </div>
 
@@ -166,9 +169,10 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
                     autoComplete="new-password"
                     error={validationErrors.confirmPassword}
                     showPasswordToggle={true}
+                    leftIcon={<Lock className="w-4 h-4 text-gray-400" />}
                     rightIcon={
                       formData.confirmPassword && !validationErrors.confirmPassword ? (
-                        <CheckCircle2 className="w-5 h-5 text-emerald-500 animate-in zoom-in duration-300" />
+                        <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 animate-in zoom-in duration-300" />
                       ) : undefined
                     }
                     required
@@ -193,9 +197,9 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
                     className="animate-in fade-in slide-in-from-top-2 duration-300"
                     dir="rtl"
                   >
-                    <p className="mt-1 text-xs text-red-600 flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg p-2">
+                    <p className="mt-1 text-xs text-red-600 flex items-center gap-1.5 sm:gap-2 bg-red-50 border border-red-200 rounded-lg p-2">
                       <svg
-                        className="w-4 h-4 flex-shrink-0"
+                        className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0"
                         fill="currentColor"
                         viewBox="0 0 20 20"
                       >
@@ -205,13 +209,13 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
                           clipRule="evenodd"
                         />
                       </svg>
-                      <span>{validationErrors.newPassword}</span>
+                      <span className="text-[11px] sm:text-xs">{validationErrors.newPassword}</span>
                     </p>
                   </div>
                 )}
 
                 {/* Action Buttons */}
-                <div className="mt-6 flex flex-col sm:flex-row gap-3" dir="rtl">
+                <div className="mt-4 sm:mt-6 flex flex-col-reverse sm:flex-row gap-2 sm:gap-3" dir="rtl">
                   <Button
                     type="submit"
                     variant="primary"
@@ -226,10 +230,10 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
                       !formData.confirmPassword
                     }
                     leftIcon={
-                      <CheckCircle2 className="w-4 h-4" />
+                      <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     }
                     gradient={true}
-                    className="transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                    className="transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] text-sm sm:text-base py-2 sm:py-2.5"
                   >
                     {isLoading ? 'جاري التغيير...' : 'تغيير كلمة المرور'}
                   </Button>
@@ -241,8 +245,8 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
                     fullWidth
                     onClick={onClose}
                     disabled={isLoading}
-                    leftIcon={<XCircle className="w-4 h-4" />}
-                    className="transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                    leftIcon={<XCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+                    className="transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] text-sm sm:text-base py-2 sm:py-2.5"
                   >
                     إلغاء
                   </Button>
@@ -252,14 +256,14 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
               {/* ============================================================== */}
               {/* RIGHT COLUMN - العمود الأيمن: متطلبات ونصائح */}
               {/* ============================================================== */}
-              <div className="space-y-6 order-1 xl:order-2">
+              <div className="space-y-3 sm:space-y-4 lg:space-y-6 order-1 lg:order-2">
                 {/* Password Requirements - Animated */}
                 <div className="animate-in fade-in slide-in-from-left-4 duration-500 delay-75">
                   <PasswordRequirements password={formData.newPassword} />
                 </div>
 
                 {/* Security Tips - Collapsible */}
-                <div className="animate-in fade-in slide-in-from-left-4 duration-500 delay-150">
+                <div className="animate-in fade-in slide-in-from-left-4 duration-500 delay-150 hidden sm:block">
                   <SecurityTips collapsible={true} defaultOpen={false} />
                 </div>
               </div>
