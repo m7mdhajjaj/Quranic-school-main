@@ -30,7 +30,7 @@ const {
   validateUpdateFavorite,
   validateDeleteFavorite,
   validateGetFavorites
-} = require('../../Validation/aiChatValidation');
+} = require('../../Validation/ChatBot/aiChatValidation');
 
 // AI Chat endpoint
 router.post('/', protect, validateChatMessage, aiChatController.chat);

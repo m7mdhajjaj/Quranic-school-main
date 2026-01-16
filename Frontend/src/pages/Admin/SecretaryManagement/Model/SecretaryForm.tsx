@@ -357,10 +357,11 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
                     } as React.ChangeEvent<HTMLInputElement>)
                   }
                   error={errors.birthDate}
-                  success={!errors.birthDate && formData.birthDate ? "مقبول" : undefined}
+                  success={!errors.birthDate && formData.birthDate && formData.birthDate.length >= 10 ? "مقبول" : undefined}
                   required
                   minYear={1950}
-                  maxYear={new Date().getFullYear()}
+                  maxYear={new Date().getFullYear() - 21}
+                  minAge={21}
                 />
               </div>
 
@@ -471,6 +472,8 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
                   name="permissions.groupsAccess"
                   value={formData.permissions.groupsAccess}
                   onChange={(e) => handleChange(e)}
+                  title="صلاحية إدارة الحلقات"
+                  aria-label="صلاحية إدارة الحلقات"
                   className="w-full px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all border-gray-200 hover:border-gray-300 text-sm"
                 >
                   <option value="none">🚫 بدون وصول</option>
@@ -494,6 +497,8 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
                   name="permissions.teachersAccess"
                   value={formData.permissions.teachersAccess}
                   onChange={(e) => handleChange(e)}
+                  title="صلاحية إدارة المعلمين"
+                  aria-label="صلاحية إدارة المعلمين"
                   className="w-full px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all border-gray-200 hover:border-gray-300 text-sm"
                 >
                   <option value="none">🚫 بدون وصول</option>
@@ -517,6 +522,8 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
                   name="permissions.studentsAccess"
                   value={formData.permissions.studentsAccess}
                   onChange={(e) => handleChange(e)}
+                  title="صلاحية إدارة الطلاب"
+                  aria-label="صلاحية إدارة الطلاب"
                   className="w-full px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all border-gray-200 hover:border-gray-300 text-sm"
                 >
                   <option value="none">🚫 بدون وصول</option>

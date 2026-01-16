@@ -14,6 +14,7 @@ interface DatePickerProps {
   maxYear?: number;
   minDate?: string; // Minimum allowed date (YYYY-MM-DD)
   maxDate?: string; // Maximum allowed date (YYYY-MM-DD)
+  minAge?: number; // Minimum age required (e.g., 21 for secretary)
 }
 
 export const DatePicker: React.FC<DatePickerProps> = ({
@@ -29,7 +30,27 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   maxYear = new Date().getFullYear() + 10, // حتى السنة الحالية + 10 سنوات للمستقبل
   minDate,
   maxDate,
+  minAge, // الحد الأدنى للعمر (اختياري)
 }) => {
+  // Calculate age from birth date
+  const calculateAge = (birthDate: string): number => {
+    if (!birthDate || birthDate.length < 10) return 0;
+    
+    const today = new Date();
+    const birth = new Date(birthDate);
+    
+    if (isNaN(birth.getTime())) return 0;
+    
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    
+    return age;
+  };
+  
   // Check if a date is valid based on min/max constraints
   const isDateValid = (dateString: string): boolean => {
     if (!dateString) return true;
@@ -69,12 +90,20 @@ export const DatePicker: React.FC<DatePickerProps> = ({
 
   const { day, month, year } = parseDate(value);
 
+  // حساب العمر الحالي
+  const currentAge = calculateAge(value);
+  
+  // التحقق من العمر الأدنى
+  const ageError = minAge && value && value.length >= 10 && currentAge < minAge
+    ? `يجب أن يكون العمر ${minAge} سنة على الأقل (العمر الحالي: ${currentAge})`
+    : undefined;
+
   // Check if current value violates min/max constraints
   const currentDateError = !isDateValid(value) && value !== '' 
     ? (minDate && new Date(value) < new Date(minDate) 
         ? 'التاريخ لا يمكن أن يكون في الماضي' 
         : 'التاريخ خارج النطاق المسموح')
-    : undefined;
+    : ageError; // إضافة خطأ العمر
 
   // Handle change for each part with number input
   const handleDayChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -108,11 +137,30 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   };
 
   const handleYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newYear = e.target.value;
-    const newDate = `${newYear || new Date().getFullYear()}-${month || '01'}-${day || '01'}`;
+    let newYear = e.target.value;
     
-    // Validate against min/max dates
-    if (isDateValid(newDate)) {
+    // السماح فقط بالأرقام
+    newYear = newYear.replace(/\D/g, '');
+    
+    // الحد الأقصى 4 أرقام
+    if (newYear.length > 4) {
+      newYear = newYear.slice(0, 4);
+    }
+    
+    // تحديث القيمة حتى لو كانت أقل من 4 أرقام (للسماح بالكتابة)
+    const newDate = `${newYear || ''}-${month || '01'}-${day || '01'}`;
+    
+    // التحقق من صحة التاريخ فقط إذا كانت السنة 4 أرقام
+    if (newYear.length === 4) {
+      const yearNum = parseInt(newYear);
+      if (yearNum >= minYear && yearNum <= maxYear && isDateValid(newDate)) {
+        onChange(newDate);
+      } else if (yearNum < minYear || yearNum > maxYear) {
+        // لا تحدث إذا خارج النطاق
+        return;
+      }
+    } else {
+      // تحديث مؤقت أثناء الكتابة
       onChange(newDate);
     }
   };
@@ -161,17 +209,17 @@ export const DatePicker: React.FC<DatePickerProps> = ({
           />
         </div>
 
-        {/* Year */}
+        {/* Year - text input للتحكم الكامل */}
         <div>
           <input
-            type="number"
+            type="text"
+            inputMode="numeric"
             value={year || ''}
             onChange={handleYearChange}
             placeholder="السنة"
             disabled={disabled}
             required={required}
-            min={minYear}
-            max={maxYear}
+            maxLength={4}
             className={`w-full px-4 py-2.5 text-center text-base border ${
               currentDateError ? 'border-red-400 bg-red-50' : 'border-gray-300'
             } rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors ${className}`}
