@@ -286,30 +286,98 @@ export const SecretaryTableView: React.FC<SecretaryTableViewProps> = memo(({
                   {/* Expanded Details Row */}
                   {isExpanded && (
                     <tr>
-                      <td colSpan={9} className="px-4 py-4 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 border-t-2 border-emerald-300">
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                          {/* Personal Information Section */}
+                      <td colSpan={10} className="px-4 py-4 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 border-t-2 border-emerald-300">
+                        {/* Two columns layout like the image */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+                          {/* Right Side - المعلومات الشخصية */}
                           <div className="bg-white rounded-xl border border-emerald-200 p-4 shadow-sm">
                             <h4 className="text-sm font-bold text-emerald-700 mb-3 pb-2 border-b border-emerald-200 flex items-center gap-2">
                               <div className="w-1 h-5 bg-emerald-500 rounded-full"></div>
                               المعلومات الشخصية
                             </h4>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                              {/* رقم السكرتير */}
-                              <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                                <span className="text-sm font-semibold text-gray-600 flex items-center gap-1">
-                                  <Shield className="w-4 h-4" />
-                                  رقم السكرتير:
-                                </span>
-                                <span className="text-sm font-bold text-emerald-700">
-                                  {secretary.secretaryId}
+                            <div className="space-y-3">
+                              {/* الاسم الكامل */}
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-gray-600">الاسم الكامل:</span>
+                                <span className="text-sm font-bold text-gray-900">
+                                  {[secretary.firstName, secretary.fatherName, secretary.grandFatherName, secretary.lastName].filter(Boolean).join(' ')}
                                 </span>
                               </div>
 
-                              {/* حالة الاتصال */}
-                              <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                                <span className="text-sm font-semibold text-gray-600">حالة الاتصال:</span>
+                              {/* اسم الأم */}
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-gray-600">اسم الأم:</span>
+                                <span className="text-sm text-gray-900">
+                                  {secretary.motherName || <span className="text-gray-400">-</span>}
+                                </span>
+                              </div>
+
+                              {/* رقم الهوية */}
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-gray-600">رقم الهوية:</span>
+                                <span className="text-sm text-gray-900 font-mono" dir="ltr">
+                                  {secretary.idNumber || <span className="text-gray-400">-</span>}
+                                </span>
+                              </div>
+
+                              {/* العمر */}
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-gray-600">العمر:</span>
+                                {secretary.age ? (
+                                  <span className="inline-flex items-center px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-semibold">
+                                    {secretary.age} سنة
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-400">-</span>
+                                )}
+                              </div>
+
+                              {/* تاريخ الميلاد */}
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-gray-600">تاريخ الميلاد:</span>
+                                <span className="text-sm text-gray-900">
+                                  {secretary.birthDate ? new Date(secretary.birthDate).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' }) : <span className="text-gray-400">-</span>}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Left Side - معلومات التواصل */}
+                          <div className="bg-white rounded-xl border border-teal-200 p-4 shadow-sm">
+                            <h4 className="text-sm font-bold text-teal-700 mb-3 pb-2 border-b border-teal-200 flex items-center gap-2">
+                              <div className="w-1 h-5 bg-teal-500 rounded-full"></div>
+                              معلومات التواصل
+                            </h4>
+
+                            <div className="space-y-3">
+                              {/* البريد الإلكتروني */}
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-gray-600">البريد الإلكتروني:</span>
+                                <span className="text-sm text-gray-900" dir="ltr">
+                                  {secretary.email || <span className="text-gray-400">-</span>}
+                                </span>
+                              </div>
+
+                              {/* رقم الهاتف */}
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-gray-600">رقم الهاتف:</span>
+                                <span className="text-sm text-gray-900 font-mono" dir="ltr">
+                                  {secretary.phoneNumber || <span className="text-gray-400">-</span>}
+                                </span>
+                              </div>
+
+                              {/* مكان السكن */}
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-gray-600">مكان السكن:</span>
+                                <span className="text-sm text-gray-900">
+                                  {secretary.residence || <span className="text-gray-400">-</span>}
+                                </span>
+                              </div>
+
+                              {/* حالة النشاط */}
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-gray-600">حالة النشاط:</span>
                                 <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                                   secretary.lastSeen && new Date(secretary.lastSeen).getTime() > Date.now() - 5 * 60 * 1000 
                                   ? 'bg-green-100 text-green-800' 
@@ -324,182 +392,82 @@ export const SecretaryTableView: React.FC<SecretaryTableViewProps> = memo(({
                                 </span>
                               </div>
 
-                              {/* الاسم الكامل */}
-                              <div className="flex items-center justify-start gap-4 py-2 border-b border-gray-100 col-span-1 md:col-span-2">
-                                <span className="text-sm font-semibold text-gray-600">الاسم الكامل:</span>
-                                <span className="text-sm font-bold text-gray-900">
-                                  {[secretary.firstName, secretary.fatherName, secretary.grandFatherName, secretary.lastName].filter(Boolean).join(' ')}
-                                </span>
-                              </div>
-
-                              {/* اسم الجد */}
-                              {secretary.grandFatherName && (
-                                <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                                  <span className="text-sm font-semibold text-gray-600">اسم الجد:</span>
-                                  <span className="text-sm text-gray-900 text-right">{secretary.grandFatherName}</span>
-                                </div>
-                              )}
-
-                              {/* اسم الأم */}
-                              {secretary.motherName && (
-                                <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                                  <span className="text-sm font-semibold text-gray-600">اسم الأم:</span>
-                                  <span className="text-sm text-gray-900 text-right">{secretary.motherName}</span>
-                                </div>
-                              )}
-
-                              {/* رقم الهوية */}
-                              <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                                <span className="text-sm font-semibold text-gray-600 flex items-center gap-1">
-                                  <CreditCard className="w-4 h-4" />
-                                  رقم الهوية:
-                                </span>
-                                <span className="text-sm text-gray-900 font-mono" dir="ltr">
-                                  {secretary.idNumber || <span className="text-gray-400">غير محدد</span>}
-                                </span>
-                              </div>
-
-                              {/* البريد الإلكتروني */}
-                              <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                                <span className="text-sm font-semibold text-gray-600 flex items-center gap-1">
-                                  <Mail className="w-4 h-4" />
-                                  البريد الإلكتروني:
-                                </span>
-                                <span className="text-sm text-gray-900" dir="ltr">
-                                  {secretary.email || <span className="text-gray-400">غير محدد</span>}
-                                </span>
-                              </div>
-
-                              {/* رقم الهاتف */}
-                              <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                                <span className="text-sm font-semibold text-gray-600 flex items-center gap-1">
-                                  <Phone className="w-4 h-4" />
-                                  رقم الهاتف:
-                                </span>
-                                <span className="text-sm text-gray-900 font-mono" dir="ltr">
-                                  {secretary.phoneNumber || <span className="text-gray-400">غير محدد</span>}
-                                </span>
-                              </div>
-
-                              {/* تاريخ الميلاد */}
-                              <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                                <span className="text-sm font-semibold text-gray-600 flex items-center gap-1">
-                                  <Calendar className="w-4 h-4" />
-                                  تاريخ الميلاد:
-                                </span>
+                              {/* آخر ظهور */}
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-gray-600">آخر ظهور:</span>
                                 <span className="text-sm text-gray-900">
-                                  {secretary.birthDate || <span className="text-gray-400">غير محدد</span>}
-                                  {secretary.age && <span className="text-gray-500 mr-2">({secretary.age} سنة)</span>}
-                                </span>
-                              </div>
-
-                              {/* الجنس */}
-                              <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                                <span className="text-sm font-semibold text-gray-600">الجنس:</span>
-                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                  secretary.gender === 'ذكر' || secretary.gender === 'male'
-                                    ? 'bg-blue-100 text-blue-800'
-                                    : 'bg-pink-100 text-pink-800'
-                                }`}>
-                                  {secretary.gender === "male" ? "ذكر" : secretary.gender === "female" ? "أنثى" : secretary.gender}
-                                </span>
-                              </div>
-
-                              {/* مكان الإقامة */}
-                              <div className="flex items-center justify-between py-2">
-                                <span className="text-sm font-semibold text-gray-600 flex items-center gap-1">
-                                  <MapPin className="w-4 h-4" />
-                                  مكان الإقامة:
-                                </span>
-                                <span className="text-sm text-gray-900 text-right">
-                                  {secretary.residence || <span className="text-gray-400">غير محدد</span>}
+                                  {secretary.lastSeen 
+                                    ? new Date(secretary.lastSeen).toLocaleString('ar-EG', { dateStyle: 'short', timeStyle: 'short' })
+                                    : <span className="text-gray-400">-</span>
+                                  }
                                 </span>
                               </div>
                             </div>
                           </div>
+                        </div>
 
-                          {/* Permissions Section */}
-                          <div className="bg-white rounded-xl border border-teal-200 p-4 shadow-sm">
-                            <h4 className="text-sm font-bold text-teal-700 mb-3 pb-2 border-b border-teal-200 flex items-center gap-2">
-                              <div className="w-1 h-5 bg-teal-500 rounded-full"></div>
-                              الصلاحيات
+                        {/* Permissions Section - Compact */}
+                        <div className="bg-white rounded-xl border border-purple-200 p-3 shadow-sm">
+                          <div className="flex items-center gap-4">
+                            <h4 className="text-sm font-bold text-purple-700 flex items-center gap-2 whitespace-nowrap">
+                              <Shield className="w-4 h-4" />
+                              الصلاحيات:
                             </h4>
-
-                            <div className="grid grid-cols-3 gap-3">
-                              {/* studentsAccess - صلاحية الطلاب */}
-                              <div className={`flex items-center gap-2 p-2 rounded-lg text-xs ${
+                            
+                            <div className="flex items-center gap-3 flex-wrap">
+                              {/* الطلاب */}
+                              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
                                 secretary.permissions?.studentsAccess === 'manage' 
-                                  ? 'bg-blue-50 text-blue-700' 
+                                  ? 'bg-blue-100 text-blue-700' 
                                   : secretary.permissions?.studentsAccess === 'view'
-                                    ? 'bg-sky-50 text-sky-700'
-                                    : 'bg-gray-50 text-gray-400'
+                                    ? 'bg-sky-100 text-sky-700'
+                                    : 'bg-gray-100 text-gray-400'
                               }`}>
-                                <div className={`w-2 h-2 rounded-full ${
+                                <span className={`w-1.5 h-1.5 rounded-full ${
                                   secretary.permissions?.studentsAccess === 'manage' 
                                     ? 'bg-blue-500' 
                                     : secretary.permissions?.studentsAccess === 'view'
                                       ? 'bg-sky-500'
                                       : 'bg-gray-300'
-                                }`}></div>
-                                <span className="font-medium">الطلاب: </span>
-                                <span className="font-bold">
-                                  {secretary.permissions?.studentsAccess === 'manage' 
-                                    ? 'إدارة كاملة' 
-                                    : secretary.permissions?.studentsAccess === 'view'
-                                      ? 'عرض فقط'
-                                      : 'بدون وصول'}
-                                </span>
-                              </div>
+                                }`}></span>
+                                الطلاب: {secretary.permissions?.studentsAccess === 'manage' ? 'إدارة' : secretary.permissions?.studentsAccess === 'view' ? 'عرض' : 'لا'}
+                              </span>
 
-                              {/* groupsAccess - صلاحية الحلقات */}
-                              <div className={`flex items-center gap-2 p-2 rounded-lg text-xs ${
+                              {/* الحلقات */}
+                              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
                                 secretary.permissions?.groupsAccess === 'manage' 
-                                  ? 'bg-emerald-50 text-emerald-700' 
+                                  ? 'bg-emerald-100 text-emerald-700' 
                                   : secretary.permissions?.groupsAccess === 'view'
-                                    ? 'bg-green-50 text-green-700'
-                                    : 'bg-gray-50 text-gray-400'
+                                    ? 'bg-green-100 text-green-700'
+                                    : 'bg-gray-100 text-gray-400'
                               }`}>
-                                <div className={`w-2 h-2 rounded-full ${
+                                <span className={`w-1.5 h-1.5 rounded-full ${
                                   secretary.permissions?.groupsAccess === 'manage' 
                                     ? 'bg-emerald-500' 
                                     : secretary.permissions?.groupsAccess === 'view'
                                       ? 'bg-green-500'
                                       : 'bg-gray-300'
-                                }`}></div>
-                                <span className="font-medium">الحلقات: </span>
-                                <span className="font-bold">
-                                  {secretary.permissions?.groupsAccess === 'manage' 
-                                    ? 'إدارة كاملة' 
-                                    : secretary.permissions?.groupsAccess === 'view'
-                                      ? 'عرض فقط'
-                                      : 'بدون وصول'}
-                                </span>
-                              </div>
+                                }`}></span>
+                                الحلقات: {secretary.permissions?.groupsAccess === 'manage' ? 'إدارة' : secretary.permissions?.groupsAccess === 'view' ? 'عرض' : 'لا'}
+                              </span>
 
-                              {/* teachersAccess - صلاحية المعلمين */}
-                              <div className={`flex items-center gap-2 p-2 rounded-lg text-xs ${
+                              {/* المعلمين */}
+                              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
                                 secretary.permissions?.teachersAccess === 'manage' 
-                                  ? 'bg-teal-50 text-teal-700' 
+                                  ? 'bg-teal-100 text-teal-700' 
                                   : secretary.permissions?.teachersAccess === 'view'
-                                    ? 'bg-cyan-50 text-cyan-700'
-                                    : 'bg-gray-50 text-gray-400'
+                                    ? 'bg-cyan-100 text-cyan-700'
+                                    : 'bg-gray-100 text-gray-400'
                               }`}>
-                                <div className={`w-2 h-2 rounded-full ${
+                                <span className={`w-1.5 h-1.5 rounded-full ${
                                   secretary.permissions?.teachersAccess === 'manage' 
                                     ? 'bg-teal-500' 
                                     : secretary.permissions?.teachersAccess === 'view'
                                       ? 'bg-cyan-500'
                                       : 'bg-gray-300'
-                                }`}></div>
-                                <span className="font-medium">المعلمين: </span>
-                                <span className="font-bold">
-                                  {secretary.permissions?.teachersAccess === 'manage' 
-                                    ? 'إدارة كاملة' 
-                                    : secretary.permissions?.teachersAccess === 'view'
-                                      ? 'عرض فقط'
-                                      : 'بدون وصول'}
-                                </span>
-                              </div>
+                                }`}></span>
+                                المعلمين: {secretary.permissions?.teachersAccess === 'manage' ? 'إدارة' : secretary.permissions?.teachersAccess === 'view' ? 'عرض' : 'لا'}
+                              </span>
                             </div>
                           </div>
                         </div>
