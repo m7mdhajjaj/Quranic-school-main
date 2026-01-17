@@ -131,6 +131,52 @@ export const getActiveGroups = async (
 };
 
 /**
+ * Get allowed groups for teacher assistant
+ * @description جلب الحلقات المسموح لمساعد المدرس بالوصول إليها
+ */
+export const getTeacherAssistantGroups = async (): Promise<ApiResponse<any[]>> => {
+  try {
+    const response = await api.get('/teacher-assistants/my-groups');
+    return {
+      success: true,
+      data: response.data.data || [],
+      message: response.data.message,
+    };
+  } catch (error) {
+    console.error("❌ Error fetching teacher assistant groups:", error);
+    const axiosError = error as AxiosError<{ message?: string }>;
+    return {
+      success: false,
+      message: axiosError.response?.data?.message || "حدث خطأ أثناء جلب حلقات مساعد المدرس",
+      error: String(error),
+    };
+  }
+};
+
+/**
+ * Get students for teacher assistant's allowed groups
+ * @description جلب طلاب الحلقات المسموح لمساعد المدرس بالوصول إليها
+ */
+export const getTeacherAssistantStudents = async (): Promise<ApiResponse<any[]>> => {
+  try {
+    const response = await api.get('/teacher-assistants/my-students');
+    return {
+      success: true,
+      data: response.data.data || [],
+      message: response.data.message,
+    };
+  } catch (error) {
+    console.error("❌ Error fetching teacher assistant students:", error);
+    const axiosError = error as AxiosError<{ message?: string }>;
+    return {
+      success: false,
+      message: axiosError.response?.data?.message || "حدث خطأ أثناء جلب طلاب مساعد المدرس",
+      error: String(error),
+    };
+  }
+};
+
+/**
  * Get group statistics (students count and sections count)
  * @param groupName - اسم الحلقة
  * @param month - الشهر (اختياري)

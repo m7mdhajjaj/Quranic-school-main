@@ -522,6 +522,20 @@ exports.secretaryStudentsAccess = (requiredLevel = 'view') => {
           });
         }
         
+        // ✅ مساعد المدرس يستطيع عرض طلاب حلقاته المسموح بها فقط (view)
+        if (req.user.role === "teacherAssistant") {
+          console.log('👨‍🏫 [secretaryStudentsAccess] TeacherAssistant - View Access for Allowed Groups');
+          if (requiredLevel === 'view') {
+            req.isTeacherAssistantAccess = true;
+            return next();
+          }
+          // مساعد المدرس لا يستطيع إدارة الطلاب (إضافة/حذف)
+          return res.status(403).json({
+            success: false,
+            message: "ليس لديك صلاحية لإدارة الطلاب",
+          });
+        }
+        
         // السماح للطالب بالوصول لبياناته الخاصة فقط (للعرض)
         if (req.user.role === "student") {
           const requestedId = req.params.id || req.params.studentId;

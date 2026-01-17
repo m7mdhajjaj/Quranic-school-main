@@ -6,8 +6,10 @@ import { getStudentsByGroup } from "@/Api/studentApi";
 /**
  * Custom hook مدمج لإدارة بيانات TeacherView
  * يجمع: section selection, student filtering, data fetching
+ * @param selectedGroup - اسم الحلقة المحددة
+ * @param studentsFromParent - قائمة الطلاب من الـ parent (اختياري - لمساعد المدرس)
  */
-export const useTeacherViewData = (selectedGroup: string) => {
+export const useTeacherViewData = (selectedGroup: string, studentsFromParent?: Student[]) => {
   // ============ Section Selection State ============
   const [selectedSection, setSelectedSection] = useState<Section | null>(null);
   const [sectionStudents, setSectionStudents] = useState<Student[]>([]);
@@ -27,10 +29,17 @@ export const useTeacherViewData = (selectedGroup: string) => {
     setLoadingSectionData(true);
     
     try {
-      // Fetch students in the group
-      const studentsResponse = await getStudentsByGroup(selectedGroup);
-      if (studentsResponse.success && studentsResponse.data) {
-        setSectionStudents(studentsResponse.data);
+      // إذا كان لدينا طلاب من الـ parent (مساعد المدرس)، نستخدمهم مباشرة
+      if (studentsFromParent && studentsFromParent.length > 0) {
+        // فلترة الطلاب حسب الحلقة المحددة
+        const groupStudents = studentsFromParent.filter(s => s.group === selectedGroup);
+        setSectionStudents(groupStudents);
+      } else {
+        // جلب الطلاب من API (للمعلم والأدمن)
+        const studentsResponse = await getStudentsByGroup(selectedGroup);
+        if (studentsResponse.success && studentsResponse.data) {
+          setSectionStudents(studentsResponse.data);
+        }
       }
 
       // Fetch marks for this section

@@ -20,6 +20,7 @@ import {
  * Teacher view component - Shows groups cards first, then sections table when group is selected
  */
 const TeacherViewComponent = ({
+  students, // ✅ Add students from props
   selectedGroup,
   teacherGroups,
   sections,
@@ -86,6 +87,7 @@ const TeacherViewComponent = ({
   // Groups stats are now calculated in DailyMarksPage
 
   // Use merged custom hook for section selection, data fetching, and student filtering
+  // ✅ Pass students from parent to avoid API calls for teacherAssistant
   const {
     selectedSection,
     loadingSectionData,
@@ -95,7 +97,7 @@ const TeacherViewComponent = ({
     studentSearchQuery,
     setStudentSearchQuery,
     tableData,
-  } = useTeacherViewData(selectedGroup);
+  } = useTeacherViewData(selectedGroup, students);
 
   const sectionIdParam = searchParams.get('sectionId');
 

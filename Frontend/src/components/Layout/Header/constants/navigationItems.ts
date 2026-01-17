@@ -291,6 +291,12 @@ export const getPrimaryNavItems = (
     return [
       homeItem,
       {
+        to: '/daily-marks',
+        label: 'العلامات اليومية',
+        icon: Award,
+        color: 'from-orange-500 to-red-500',
+      },
+      {
         to: '/goals',
         label: 'الأهداف',
         icon: Target,
