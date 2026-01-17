@@ -5,6 +5,9 @@
 // ✅ يستخدم توقيت Asia/Jerusalem (القدس، فلسطين)
 
 const { TIMEZONE, toDateKey } = require('../../../config/timezone');
+const { createLogger } = require('../../../utils/logger');
+
+const logger = createLogger('DateTimeHelper');
 
 // ========== CONSTANTS ==========
 // ⚠️ ترتيب الأيام: السبت = 0 (بداية الأسبوع) إلى الجمعة = 6
@@ -97,6 +100,7 @@ const normalizeTimeFormat = (timeStr) => {
 // ========== TIME COMPARISON ==========
 /**
  * ✅ مقارنة وقتين
+ * @internal تستخدم داخلياً - محفوظة للاستخدام المستقبلي
  */
 const areTimesEqual = (time1, time2) => {
   const m1 = timeToMinutes(time1);
@@ -119,6 +123,7 @@ const findTimeIndex = (timeList, time) => {
 
 /**
  * ✅ التحقق من وجود وقت في قائمة
+ * @internal تستخدم داخلياً - محفوظة للاستخدام المستقبلي
  */
 const isTimeInList = (time, timeList) => {
   return findTimeIndex(timeList, time) !== -1;
@@ -142,6 +147,7 @@ const hasTimeOverlap = (start1, end1, start2, end2) => {
 
 /**
  * ✅ فحص إذا كان الوقت ضمن نطاق
+ * @internal تستخدم داخلياً - محفوظة للاستخدام المستقبلي
  */
 const isTimeInRange = (time, start, end) => {
   const t = timeToMinutes(time);
@@ -262,6 +268,7 @@ const validateTimeRange = (startHour, endHour, options = {}) => {
 
 /**
  * ✅ التحقق من ساعات العمل
+ * @internal تستخدم داخلياً - محفوظة للاستخدام المستقبلي
  */
 const validateWorkingHours = (startHour, endHour, date = new Date()) => {
   const availableHours = generateAvailableHours(date);
@@ -326,7 +333,7 @@ const getWeekRange = (date = new Date()) => {
   endOfWeek.setDate(startOfWeek.getDate() + 6);
   endOfWeek.setHours(23, 59, 59, 999);
   
-  console.log('📅 [getWeekRange] Calculated:', {
+  logger.debug('📅 [getWeekRange] Calculated:', {
     inputDate: date.toISOString(),
     dateKeyPalestine: dateKey,
     dayInPalestine: currentDay,

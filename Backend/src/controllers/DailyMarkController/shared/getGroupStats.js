@@ -5,11 +5,14 @@
 
 const Student = require("../../../schema/Student");
 const Section = require("../../../schema/DailyMark/Section");
+const { createLogger } = require("../../../utils/logger");
 const {
   sendSuccess,
   sendError,
   sendValidationError,
 } = require("../utils/responseHelpers");
+
+const logger = createLogger('GroupStats');
 
 /**
  * @route GET /api/daily-marks/group-stats/:groupName
@@ -25,7 +28,7 @@ exports.getGroupStats = async (req, res) => {
     const { groupName } = req.params;
     const { month, year } = req.query;
 
-    console.log("🔍 [getGroupStats] Fetching stats for group:", groupName);
+    logger.debug("Fetching stats for group:", groupName);
 
     if (!groupName) {
       return sendValidationError(res, "اسم الحلقة مطلوب");
@@ -36,7 +39,7 @@ exports.getGroupStats = async (req, res) => {
       group: groupName,
     });
 
-    console.log(`   👥 Students count: ${studentsCount}`);
+    logger.debug(`Students count: ${studentsCount}`);
 
     // 2. عد المقاطع في الحلقة
     let sectionQuery = { group: groupName };
@@ -64,7 +67,7 @@ exports.getGroupStats = async (req, res) => {
 
     const sectionsCount = await Section.countDocuments(sectionQuery);
 
-    console.log(`   📚 Sections count: ${sectionsCount}`);
+    logger.debug(`Sections count: ${sectionsCount}`);
 
     sendSuccess(
       res,
@@ -80,7 +83,7 @@ exports.getGroupStats = async (req, res) => {
       "تم جلب إحصائيات الحلقة بنجاح"
     );
   } catch (error) {
-    console.error("❌ Error fetching group stats:", error);
+    logger.error("Error fetching group stats:", error);
     sendError(res, "حدث خطأ أثناء جلب إحصائيات الحلقة", 500, error);
   }
 };

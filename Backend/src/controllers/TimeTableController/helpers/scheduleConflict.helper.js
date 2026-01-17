@@ -9,6 +9,9 @@ const TimeTable = require("../../../schema/TimeTable");
 const mongoose = require("mongoose");
 const { timeToMinutes, hasTimeOverlap } = require("./dateTime.helper");
 const { TIMEZONE } = require('../../../config/timezone');
+const { createLogger } = require('../../../utils/logger');
+
+const logger = createLogger('ScheduleConflict');
 
 /**
  * تطبيع التاريخ (بدون الوقت) للمقارنة
@@ -94,18 +97,18 @@ const checkTimeConflict = async (options) => {
 
     // ⚠️ التاريخ مطلوب - بدون تاريخ لا يمكن فحص التعارض
     if (!sessionDate) {
-      console.warn("⚠️ checkTimeConflict: sessionDate مطلوب للتحقق من التعارض");
+      logger.warn("checkTimeConflict: sessionDate مطلوب للتحقق من التعارض");
       return { hasConflict: false, message: "لم يتم تحديد تاريخ" };
     }
 
     // التحقق من صحة التاريخ
     if (!isValidDate(sessionDate)) {
-      console.warn("⚠️ checkTimeConflict: تاريخ غير صالح:", sessionDate);
+      logger.warn("checkTimeConflict: تاريخ غير صالح:", sessionDate);
       return { hasConflict: false, message: "تاريخ غير صالح" };
     }
 
     if (!teacherId || !startHour || !endHour) {
-      console.warn("⚠️ checkTimeConflict: بيانات ناقصة:", { teacherId, startHour, endHour });
+      logger.warn("checkTimeConflict: بيانات ناقصة:", { teacherId, startHour, endHour });
       return { hasConflict: false, message: "بيانات ناقصة" };
     }
 
@@ -123,7 +126,7 @@ const checkTimeConflict = async (options) => {
     const targetDate = normalizeDate(sessionDate);
     const nextDay = normalizeNextDay(sessionDate);
     
-    console.log("🔍 checkTimeConflict:", {
+    logger.debug("🔍 checkTimeConflict:", {
       sessionDate,
       targetDate: targetDate.toISOString(),
       nextDay: nextDay.toISOString(),
@@ -177,7 +180,7 @@ const checkTimeConflict = async (options) => {
     return { hasConflict: false };
 
   } catch (error) {
-    console.error("❌ Error checking conflict:", error);
+    logger.error("Error checking conflict:", error);
     throw error;
   }
 };
@@ -192,13 +195,13 @@ const checkGroupConflict = async (options) => {
 
     // ⚠️ التاريخ مطلوب
     if (!sessionDate) {
-      console.warn("⚠️ checkGroupConflict: sessionDate مطلوب للتحقق من التعارض");
+      logger.warn("checkGroupConflict: sessionDate مطلوب للتحقق من التعارض");
       return { hasConflict: false };
     }
 
     // التحقق من صحة التاريخ
     if (!isValidDate(sessionDate)) {
-      console.warn("⚠️ checkGroupConflict: تاريخ غير صالح:", sessionDate);
+      logger.warn("checkGroupConflict: تاريخ غير صالح:", sessionDate);
       return { hasConflict: false };
     }
 
@@ -236,7 +239,7 @@ const checkGroupConflict = async (options) => {
     return { hasConflict: false };
 
   } catch (error) {
-    console.error("❌ Error:", error);
+    logger.error("Error checking group conflict:", error);
     throw error;
   }
 };

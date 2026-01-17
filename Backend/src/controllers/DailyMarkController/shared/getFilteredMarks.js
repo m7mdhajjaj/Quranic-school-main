@@ -4,6 +4,9 @@
 
 const Mark = require("../../../schema/DailyMark/DailyMark");
 const Section = require("../../../schema/DailyMark/Section");
+const { createLogger } = require("../../../utils/logger");
+
+const logger = createLogger('FilteredMarks');
 
 // استيراد الدوال المساعدة للفلترة من utils
 const {
@@ -26,7 +29,7 @@ const {
  */
 exports.getFilteredMarks = async (req, res) => {
   try {
-    console.log("🔍 ========== FILTERED MARKS REQUEST ==========");
+    logger.info("FILTERED MARKS REQUEST");
     const startTime = Date.now();
 
     const {
@@ -42,7 +45,7 @@ exports.getFilteredMarks = async (req, res) => {
       endDate,
     } = req.query;
 
-    console.log("📋 Filters received:", {
+    logger.debug("Filters received:", {
       month,
       year,
       day,
@@ -87,7 +90,7 @@ exports.getFilteredMarks = async (req, res) => {
       const yearNum = parseInt(year);
       const startDate = new Date(yearNum, monthNum - 1, dayNum, 0, 0, 0, 0);
       const endDate = new Date(yearNum, monthNum - 1, dayNum, 23, 59, 59, 999);
-      console.log("📅 Date filter (day):", {
+      logger.debug("Date filter (day):", {
         day: dayNum,
         month: monthNum,
         year: yearNum,
@@ -99,7 +102,7 @@ exports.getFilteredMarks = async (req, res) => {
       const yearNum = parseInt(year);
       const startDate = new Date(yearNum, monthNum - 1, 1);
       const endDate = new Date(yearNum, monthNum, 0, 23, 59, 59, 999);
-      console.log("📅 Date filter:", {
+      logger.debug("Date filter:", {
         month: monthNum,
         year: yearNum,
         startDate,
@@ -109,21 +112,21 @@ exports.getFilteredMarks = async (req, res) => {
       const yearNum = parseInt(year);
       const startDate = new Date(yearNum, 0, 1);
       const endDate = new Date(yearNum, 11, 31, 23, 59, 59, 999);
-      console.log("📅 Year filter:", { year: yearNum, startDate, endDate });
+      logger.debug("Year filter:", { year: yearNum, startDate, endDate });
     }
 
     if (search && search.trim()) {
-      console.log("🔎 Search query:", search);
+      logger.debug("Search query:", search);
     }
 
-    console.log("🔧 Section filter built:", sectionFilter);
+    logger.debug("Section filter built:", sectionFilter);
 
     // Find sections matching the filters
     const matchedSections = await Section.find(sectionFilter)
       .select("_id date memorizationSection reviewSection group")
       .lean();
 
-    console.log(`📊 Found ${matchedSections.length} matching sections`);
+    logger.debug(`Found ${matchedSections.length} matching sections`);
 
     if (matchedSections.length === 0) {
       return res.json({
@@ -151,14 +154,14 @@ exports.getFilteredMarks = async (req, res) => {
     // Filter by student if provided
     if (studentId) {
       markFilter.studentId = studentId;
-      console.log("👤 Filtering by student:", studentId);
+      logger.debug("Filtering by student:", studentId);
     }
 
-    console.log("🔧 Mark filter built:", markFilter);
+    logger.debug("Mark filter built:", markFilter);
 
     // Count total matching marks
     const total = await Mark.countDocuments(markFilter);
-    console.log(`📈 Total matching marks: ${total}`);
+    logger.debug(`Total matching marks: ${total}`);
 
     // Calculate pagination
     const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -177,8 +180,8 @@ exports.getFilteredMarks = async (req, res) => {
       .lean();
 
     const duration = Date.now() - startTime;
-    console.log(`✅ Fetched ${marks.length} marks in ${duration}ms`);
-    console.log("🔍 ========== FILTERED MARKS COMPLETE ==========\n");
+    logger.success(`Fetched ${marks.length} marks in ${duration}ms`);
+    logger.info("FILTERED MARKS COMPLETE");
 
     res.json({
       success: true,
@@ -201,7 +204,7 @@ exports.getFilteredMarks = async (req, res) => {
       message: `تم تحميل ${marks.length} علامة بنجاح`,
     });
   } catch (error) {
-    console.error("❌ Error fetching filtered marks:", error);
+    logger.error("Error fetching filtered marks:", error);
     res.status(500).json({
       success: false,
       message: error.message,

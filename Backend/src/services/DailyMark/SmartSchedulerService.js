@@ -3,6 +3,15 @@ const mongoose = require("mongoose");
 const { getSurahByNumber } = require("../../utils/Quran/dailyMarkQuranMetadata");
 const Group = require("../../schema/Group");
 const { toDateKey, TIMEZONE } = require("../../config/timezone");
+const { createLogger } = require("../../utils/logger");
+const { 
+  WEEKLY_QUOTA, 
+  MIN_CHUNK_SIZE, 
+  DEFAULT_CHUNK_MIN, 
+  DEFAULT_CHUNK_MAX 
+} = require("../../config/constants");
+
+const logger = createLogger('SmartSchedulerService');
 
 /**
  * ============================================================================
@@ -26,14 +35,10 @@ const { toDateKey, TIMEZONE } = require("../../config/timezone");
 class SmartSchedulerService {
 
   // ============================================================================
-  // 🔧 CONFIGURATION
+  // 🔧 CONFIGURATION (Local only - others imported from config/constants.js)
   // ============================================================================
   
   static CONFIG = {
-    WEEKLY_QUOTA: 3,                    // الحد الأسبوعي
-    DEFAULT_CHUNK_MIN: 10,              // أقل حجم مقطع افتراضي
-    DEFAULT_CHUNK_MAX: 15,              // أكبر حجم مقطع افتراضي
-    MIN_CHUNK_SIZE: 5,                  // أقل حجم مقبول لمقطع (لا نكسره أكثر)
     MAX_LOOKAHEAD_WEEKS: 12,            // أقصى عدد أسابيع للبحث للأمام
     WEEK_START_DAY: 6,                  // السبت = 6
   };
@@ -44,8 +49,9 @@ class SmartSchedulerService {
 
   /**
    * تحويل التاريخ إلى مفتاح فريد (YYYY-MM-DD) - توقيت فلسطين
+   * @deprecated استخدم toDateKey مباشرة من config/timezone.js
    */
-  toDateKeyUTC(d) {
+  toDateKeyLocal(d) {
     return toDateKey(d);
   }
 
@@ -84,7 +90,7 @@ class SmartSchedulerService {
         weekNumber: i + 1,
         start: new Date(current),
         end: this.getWeekEnd(current),
-        dateKey: this.toDateKeyUTC(current)
+        dateKey: this.toDateKeyLocal(current)
       });
       current.setDate(current.getDate() + 7);
     }
@@ -103,7 +109,7 @@ class SmartSchedulerService {
       const dayIndex = current.getDay();
       days.push({
         date: new Date(current),
-        dateKey: this.toDateKeyUTC(current),
+        dateKey: this.toDateKeyLocal(current),
         dayIndex,
         dayName: this.getDayName(dayIndex),
         isPreferred: preferredDays ? preferredDays.includes(dayIndex) : true,
@@ -186,8 +192,8 @@ class SmartSchedulerService {
       });
       usage[week.dateKey] = {
         count,
-        remaining: SmartSchedulerService.CONFIG.WEEKLY_QUOTA - count,
-        isFull: count >= SmartSchedulerService.CONFIG.WEEKLY_QUOTA
+        remaining: WEEKLY_QUOTA - count,
+        isFull: count >= WEEKLY_QUOTA
       };
     }
     
@@ -278,8 +284,7 @@ class SmartSchedulerService {
       return chunks;
     }
 
-    // B) التقسيم الذكي (10-15 آية)
-    const { DEFAULT_CHUNK_MIN, DEFAULT_CHUNK_MAX, MIN_CHUNK_SIZE } = SmartSchedulerService.CONFIG;
+    // B) التقسيم الذكي (10-15 آية) - الثوابت من config/constants.js
 
     // إذا الفجوة صغيرة جداً، لا نقسمها
     if (size <= DEFAULT_CHUNK_MAX) {
@@ -482,7 +487,7 @@ class SmartSchedulerService {
         if (newChunk.ayahStart > existing.ayahStart) {
           return {
             isValid: false,
-            reason: `التاريخ ${this.toDateKeyUTC(newDate)} يكسر الترتيب: تحاول إضافة آيات (${newChunk.ayahStart}-${newChunk.ayahEnd}) بينما تاريخ لاحق (${this.toDateKeyUTC(existingDate)}) يحتوي على آيات أقدم (${existing.ayahStart}-${existing.ayahEnd}).`,
+            reason: `التاريخ ${this.toDateKeyLocal(newDate)} يكسر الترتيب: تحاول إضافة آيات (${newChunk.ayahStart}-${newChunk.ayahEnd}) بينما تاريخ لاحق (${this.toDateKeyLocal(existingDate)}) يحتوي على آيات أقدم (${existing.ayahStart}-${existing.ayahEnd}).`,
             conflictingSegment: existing,
             suggestedAction: 'MOVE_DATE_FORWARD'
           };
@@ -495,7 +500,7 @@ class SmartSchedulerService {
         if (newChunk.ayahStart < existing.ayahStart) {
           return {
             isValid: false,
-            reason: `التاريخ ${this.toDateKeyUTC(newDate)} يكسر الترتيب: تحاول إضافة آيات (${newChunk.ayahStart}-${newChunk.ayahEnd}) وهي أقدم من آيات بتاريخ سابق (${this.toDateKeyUTC(existingDate)}): (${existing.ayahStart}-${existing.ayahEnd}).`,
+            reason: `التاريخ ${this.toDateKeyLocal(newDate)} يكسر الترتيب: تحاول إضافة آيات (${newChunk.ayahStart}-${newChunk.ayahEnd}) وهي أقدم من آيات بتاريخ سابق (${this.toDateKeyLocal(existingDate)}): (${existing.ayahStart}-${existing.ayahEnd}).`,
             conflictingSegment: existing,
             suggestedAction: 'MOVE_DATE_BACKWARD'
           };
@@ -546,7 +551,7 @@ class SmartSchedulerService {
       // التاريخ الجديد لازم يكون بعد أو يساوي تاريخ المقطع السابق قرآنياً
       // (نفس اليوم مسموح لأن الترتيب داخل اليوم غير مهم)
       minDate = new Date(beforeDate);
-      minDateReason = `بعد مقطع (${before.ayahStart}-${before.ayahEnd}) بتاريخ ${this.toDateKeyUTC(beforeDate)}`;
+      minDateReason = `بعد مقطع (${before.ayahStart}-${before.ayahEnd}) بتاريخ ${this.toDateKeyLocal(beforeDate)}`;
     }
     
     // القاعدة 2: إذا في مقطع بعده قرآنياً → لازم التاريخ يكون قبله
@@ -557,7 +562,7 @@ class SmartSchedulerService {
       
       // التاريخ الجديد لازم يكون قبل أو يساوي تاريخ المقطع اللاحق قرآنياً
       maxDate = new Date(afterDate);
-      maxDateReason = `قبل مقطع (${after.ayahStart}-${after.ayahEnd}) بتاريخ ${this.toDateKeyUTC(afterDate)}`;
+      maxDateReason = `قبل مقطع (${after.ayahStart}-${after.ayahEnd}) بتاريخ ${this.toDateKeyLocal(afterDate)}`;
     }
     
     // ============================================
@@ -574,7 +579,7 @@ class SmartSchedulerService {
         // existing أحدث قرآنياً → chunk لازم يكون قبله زمنياً
         if (!maxDate || existingDate < maxDate) {
           maxDate = new Date(existingDate);
-          maxDateReason = `قبل مقطع (${existing.ayahStart}-${existing.ayahEnd}) بتاريخ ${this.toDateKeyUTC(existingDate)}`;
+          maxDateReason = `قبل مقطع (${existing.ayahStart}-${existing.ayahEnd}) بتاريخ ${this.toDateKeyLocal(existingDate)}`;
         }
       }
       
@@ -584,7 +589,7 @@ class SmartSchedulerService {
         // existing أقدم قرآنياً → chunk لازم يكون بعده زمنياً
         if (!minDate || existingDate > minDate) {
           minDate = new Date(existingDate);
-          minDateReason = `بعد مقطع (${existing.ayahStart}-${existing.ayahEnd}) بتاريخ ${this.toDateKeyUTC(existingDate)}`;
+          minDateReason = `بعد مقطع (${existing.ayahStart}-${existing.ayahEnd}) بتاريخ ${this.toDateKeyLocal(existingDate)}`;
         }
       }
     }
@@ -626,8 +631,8 @@ class SmartSchedulerService {
           dateKey: slot.dateKey,
           reason: slot.reason,
           constraints: { 
-            minDate: minDate ? this.toDateKeyUTC(minDate) : null, 
-            maxDate: maxDate ? this.toDateKeyUTC(maxDate) : null,
+            minDate: minDate ? this.toDateKeyLocal(minDate) : null, 
+            maxDate: maxDate ? this.toDateKeyLocal(maxDate) : null,
             minDateReason,
             maxDateReason
           }
@@ -640,25 +645,25 @@ class SmartSchedulerService {
     // ============================================
     let reason = 'لا يوجد تاريخ متاح يحترم الترتيب القرآني.';
     if (minDate && maxDate) {
-      const minStr = this.toDateKeyUTC(minDate);
-      const maxStr = this.toDateKeyUTC(maxDate);
+      const minStr = this.toDateKeyLocal(minDate);
+      const maxStr = this.toDateKeyLocal(maxDate);
       if (new Date(minDate) > new Date(maxDate)) {
         reason = `تعارض في الترتيب: المقطع (${chunk.ayahStart}-${chunk.ayahEnd}) يجب أن يكون بين ${minStr} و ${maxStr}، لكن هذا النطاق غير صالح. قد يكون هناك خطأ في بيانات المقاطع الموجودة.`;
       } else {
         reason = `لا توجد تواريخ متاحة بين ${minStr} و ${maxStr}. جرب توسيع نطاق البحث أو تحرير بعض التواريخ القديمة.`;
       }
     } else if (minDate) {
-      reason = `لا توجد تواريخ متاحة بعد ${this.toDateKeyUTC(minDate)} (${minDateReason}).`;
+      reason = `لا توجد تواريخ متاحة بعد ${this.toDateKeyLocal(minDate)} (${minDateReason}).`;
     } else if (maxDate) {
-      reason = `لا توجد تواريخ متاحة قبل ${this.toDateKeyUTC(maxDate)} (${maxDateReason}).`;
+      reason = `لا توجد تواريخ متاحة قبل ${this.toDateKeyLocal(maxDate)} (${maxDateReason}).`;
     }
     
     return {
       found: false,
       reason,
       constraints: { 
-        minDate: minDate ? this.toDateKeyUTC(minDate) : null, 
-        maxDate: maxDate ? this.toDateKeyUTC(maxDate) : null,
+        minDate: minDate ? this.toDateKeyLocal(minDate) : null, 
+        maxDate: maxDate ? this.toDateKeyLocal(maxDate) : null,
         minDateReason,
         maxDateReason
       }
@@ -838,7 +843,7 @@ class SmartSchedulerService {
       if (current.ayahStart > next.ayahStart) {
         violations.push({
           type: 'ORDER_VIOLATION',
-          message: `تعارض في الترتيب: (${current.ayahStart}-${current.ayahEnd}) في ${this.toDateKeyUTC(current.date)} قبل (${next.ayahStart}-${next.ayahEnd}) في ${this.toDateKeyUTC(next.date)}`
+          message: `تعارض في الترتيب: (${current.ayahStart}-${current.ayahEnd}) في ${this.toDateKeyLocal(current.date)} قبل (${next.ayahStart}-${next.ayahEnd}) في ${this.toDateKeyLocal(next.date)}`
         });
       }
     }
@@ -1175,14 +1180,14 @@ class SmartSchedulerService {
   async debugShowOrder(groupId, surahNumber) {
     const { byDate, byQuran } = await this.getExistingSegments(groupId, surahNumber);
     
-    console.log('\n📅 الترتيب حسب التاريخ:');
+    logger.debug('\n📅 الترتيب حسب التاريخ:');
     byDate.forEach((s, i) => {
-      console.log(`  ${i + 1}. ${s.dateKey || this.toDateKeyUTC(s.date)} → الآيات ${s.ayahStart}-${s.ayahEnd}`);
+      logger.debug(`  ${i + 1}. ${s.dateKey || this.toDateKeyLocal(s.date)} → الآيات ${s.ayahStart}-${s.ayahEnd}`);
     });
     
-    console.log('\n📖 الترتيب القرآني:');
+    logger.debug('\n📖 الترتيب القرآني:');
     byQuran.forEach((s, i) => {
-      console.log(`  ${i + 1}. الآيات ${s.ayahStart}-${s.ayahEnd} ← ${s.dateKey || this.toDateKeyUTC(s.date)}`);
+      logger.debug(`  ${i + 1}. الآيات ${s.ayahStart}-${s.ayahEnd} ← ${s.dateKey || this.toDateKeyLocal(s.date)}`);
     });
     
     // التحقق من التطابق
@@ -1192,12 +1197,12 @@ class SmartSchedulerService {
       const next = byDate[i + 1];
       if (current.ayahStart > next.ayahStart) {
         isMonotonic = false;
-        console.log(`\n⚠️ تعارض: ${current.dateKey} (${current.ayahStart}-${current.ayahEnd}) قبل ${next.dateKey} (${next.ayahStart}-${next.ayahEnd}) زمنياً لكن آياته أحدث!`);
+        logger.warn(`\n⚠️ تعارض: ${current.dateKey} (${current.ayahStart}-${current.ayahEnd}) قبل ${next.dateKey} (${next.ayahStart}-${next.ayahEnd}) زمنياً لكن آياته أحدث!`);
       }
     }
     
     if (isMonotonic) {
-      console.log('\n✅ الترتيب سليم (Monotonic)');
+      logger.debug('\n✅ الترتيب سليم (Monotonic)');
     }
     
     return { byDate, byQuran, isMonotonic };

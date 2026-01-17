@@ -2,38 +2,10 @@ const Section = require("../../../schema/DailyMark/Section");
 const Group = require("../../../schema/Group");
 const { sendSuccess, sendError } = require("../utils/responseHelpers");
 const mongoose = require("mongoose");
+const { toDateKey, getWeekKey, addDays } = require("../../../config/timezone");
+const { createLogger } = require("../../../utils/logger");
 
-/**
- * Helper: توليد dateKey من تاريخ
- */
-function toDateKeyUTC(date) {
-  const dt = new Date(date);
-  const y = dt.getUTCFullYear();
-  const m = String(dt.getUTCMonth() + 1).padStart(2, "0");
-  const day = String(dt.getUTCDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
-/**
- * Helper: إضافة أيام لتاريخ
- */
-function addDays(date, days) {
-  const result = new Date(date);
-  result.setDate(result.getDate() + days);
-  return result;
-}
-
-/**
- * Helper: حساب رقم الأسبوع لتاريخ معين
- */
-function getWeekKey(date) {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  const startOfYear = new Date(d.getFullYear(), 0, 1);
-  const dayOfYear = Math.floor((d - startOfYear) / (24 * 60 * 60 * 1000));
-  const weekNumber = Math.ceil((dayOfYear + startOfYear.getDay() + 1) / 7);
-  return `${d.getFullYear()}-W${weekNumber}`;
-}
+const logger = createLogger('BulkCreate');
 
 /**
  * 🚀 SMART BULK CREATE - مع احترام الترتيب الزمني
@@ -48,16 +20,16 @@ exports.bulkCreateSections = async (req, res) => {
   try {
     const { sections, groupId } = req.body;
 
-    console.log(`\n🚀 ========== BULK CREATE REQUEST ==========`);
-    console.log(`📦 Received:`, JSON.stringify({ sectionsCount: sections?.length, groupId }, null, 2));
+    logger.info("BULK CREATE REQUEST");
+    logger.debug(`Received:`, JSON.stringify({ sectionsCount: sections?.length, groupId }, null, 2));
 
     if (!sections || !Array.isArray(sections) || sections.length === 0) {
-      console.log(`❌ Error: No sections provided`);
+      logger.warn("No sections provided");
       return sendError(res, "يجب توفير قائمة بالمقاطع المراد إنشائها", 400);
     }
 
     if (!groupId) {
-      console.log(`❌ Error: No groupId provided`);
+      logger.warn("No groupId provided");
       return sendError(res, "يجب تحديد معرّف الحلقة", 400);
     }
 
@@ -70,21 +42,21 @@ exports.bulkCreateSections = async (req, res) => {
       group = await Group.findOne({ name: groupId });
     }
     if (!group) {
-      console.log(`❌ Error: Group not found: ${groupId}`);
+      logger.warn(`Group not found: ${groupId}`);
       return sendError(res, "الحلقة غير موجودة", 404);
     }
 
     // التحقق من وجود memorizationMeta
     if (!sections[0].memorizationMeta || !sections[0].memorizationMeta[0]) {
-      console.log(`❌ Error: Invalid section structure`, sections[0]);
+      logger.warn("Invalid section structure", sections[0]);
       return sendError(res, "بنية المقطع غير صحيحة", 400);
     }
 
     const surahNumber = sections[0].memorizationMeta[0].surahNumber;
     const WEEKLY_LIMIT = 3;
 
-    console.log(`📖 Surah: ${surahNumber}, Group: ${group.name}`);
-    console.log(`📦 Sections needed: ${sections.length}`);
+    logger.debug(`Surah: ${surahNumber}, Group: ${group.name}`);
+    logger.debug(`Sections needed: ${sections.length}`);
 
     // ======================================================
     // الخطوة 1: جلب المقاطع الموجودة للسورة مرتبة بالآية
@@ -105,8 +77,8 @@ exports.bulkCreateSections = async (req, res) => {
       };
     }).sort((a, b) => a.ayahStart - b.ayahStart);
 
-    console.log(`📚 Existing surah sections: ${existingRanges.length}`);
-    existingRanges.forEach(r => console.log(`   📌 (${r.ayahStart}-${r.ayahEnd}) → ${r.dateKey}`));
+    logger.debug(`Existing surah sections: ${existingRanges.length}`);
+    existingRanges.forEach(r => logger.trace(`   (٠${r.ayahStart}-${r.ayahEnd}) → ${r.dateKey}`));
 
     // ======================================================
     // الخطوة 2: جلب كل التواريخ المحجوزة للحلقة
@@ -133,14 +105,14 @@ exports.bulkCreateSections = async (req, res) => {
         ex.ayahStart <= meta.ayahEnd && ex.ayahEnd >= meta.ayahStart
       );
       if (hasOverlap) {
-        console.log(`⚠️ Skipping overlap: ${meta.ayahStart}-${meta.ayahEnd}`);
+        logger.debug(`Skipping overlap: ${meta.ayahStart}-${meta.ayahEnd}`);
       }
       return !hasOverlap;
     });
 
     if (validSections.length === 0) {
       // جميع المقاطع موجودة أصلاً - هذا نجاح وليس خطأ!
-      console.log(`✅ All sections already exist - nothing to create`);
+      logger.info("All sections already exist - nothing to create");
       return sendSuccess(res, {
         created: 0,
         total: sections.length,
@@ -155,7 +127,7 @@ exports.bulkCreateSections = async (req, res) => {
       a.memorizationMeta[0].ayahStart - b.memorizationMeta[0].ayahStart
     );
 
-    console.log(`✅ Valid new sections: ${validSections.length}`);
+    logger.debug(`Valid new sections: ${validSections.length}`);
 
     // ======================================================
     // الخطوة 4: دمج كل المقاطع وترتيبها
@@ -172,9 +144,9 @@ exports.bulkCreateSections = async (req, res) => {
       }))
     ].sort((a, b) => a.ayahStart - b.ayahStart);
 
-    console.log(`\n📊 Merged ranges (sorted by ayah):`);
+    logger.trace(`Merged ranges (sorted by ayah):`);
     allRanges.forEach((r, i) => {
-      console.log(`   ${i+1}. (${r.ayahStart}-${r.ayahEnd}) ${r.isExisting ? '✓ ' + r.dateKey : '◯ NEW'}`);
+      logger.trace(`   ${i+1}. (${r.ayahStart}-${r.ayahEnd}) ${r.isExisting ? '✓ ' + r.dateKey : '○ NEW'}`);
     });
 
     // ======================================================
@@ -191,7 +163,7 @@ exports.bulkCreateSections = async (req, res) => {
     const createdSections = [];
     const errors = [];
 
-    console.log(`\n🔍 Finding dates with ordering constraint...`);
+    logger.debug("Finding dates with ordering constraint...");
 
     for (let i = 0; i < allRanges.length; i++) {
       const range = allRanges[i];
@@ -218,8 +190,8 @@ exports.bulkCreateSections = async (req, res) => {
         }
       }
 
-      console.log(`\n   📌 (${range.ayahStart}-${range.ayahEnd})`);
-      console.log(`      Range: ${toDateKeyUTC(minDate)} → ${toDateKeyUTC(maxDate)}`);
+      logger.trace(`   (${range.ayahStart}-${range.ayahEnd})`);
+      logger.trace(`      Range: ${toDateKey(minDate)} → ${toDateKey(maxDate)}`);
 
       // البحث عن تاريخ متاح ضمن النطاق
       let foundDate = null;
@@ -227,7 +199,7 @@ exports.bulkCreateSections = async (req, res) => {
       let attempts = 0;
 
       while (candidateDate <= maxDate && attempts < 90) {
-        const candidateDateKey = toDateKeyUTC(candidateDate);
+        const candidateDateKey = toDateKey(candidateDate);
         const weekKey = getWeekKey(candidateDate);
 
         const isDateFree = !tempOccupied.has(candidateDateKey);
@@ -249,7 +221,7 @@ exports.bulkCreateSections = async (req, res) => {
           range.date = foundDate.date;
           range.dateKey = foundDate.dateKey;
           
-          console.log(`      ✅ Found: ${candidateDateKey} (Week ${weekKey}: ${currentWeekUsage + 1}/${WEEKLY_LIMIT})`);
+          logger.debug(`      Found: ${candidateDateKey} (Week ${weekKey}: ${currentWeekUsage + 1}/${WEEKLY_LIMIT})`);
           break;
         }
 
@@ -258,10 +230,10 @@ exports.bulkCreateSections = async (req, res) => {
       }
 
       if (!foundDate) {
-        console.log(`      ❌ No date available in range!`);
+        logger.warn(`      No date available in range!`);
         errors.push({
           section: `${range.surahName} (${range.ayahStart}-${range.ayahEnd})`,
-          error: `لا يوجد تاريخ متاح بين ${toDateKeyUTC(minDate)} و ${toDateKeyUTC(maxDate)}`
+          error: `لا يوجد تاريخ متاح بين ${toDateKey(minDate)} و ${toDateKey(maxDate)}`
         });
         continue;
       }
@@ -289,7 +261,7 @@ exports.bulkCreateSections = async (req, res) => {
         createdSections.push(newSection);
 
       } catch (err) {
-        console.error(`      ❌ Error:`, err.message);
+        logger.error(`      Error:`, err.message);
         errors.push({
           section: `${range.surahName} (${range.ayahStart}-${range.ayahEnd})`,
           error: err.message
@@ -300,11 +272,10 @@ exports.bulkCreateSections = async (req, res) => {
     // حساب المقاطع المتخطاة (الموجودة أصلاً)
     const skippedCount = sections.length - validSections.length;
 
-    console.log(`\n📊 ========== RESULT ==========`);
-    console.log(`✅ Created: ${createdSections.length}`);
-    console.log(`⏭️ Skipped: ${skippedCount}`);
-    console.log(`❌ Errors: ${errors.length}`);
-    console.log(`================================\n`);
+    logger.info("BULK CREATE RESULT");
+    logger.success(`Created: ${createdSections.length}`);
+    logger.debug(`Skipped: ${skippedCount}`);
+    if (errors.length > 0) logger.warn(`Errors: ${errors.length}`);
 
     if (createdSections.length === 0 && errors.length > 0) {
       return sendError(res, `فشل إنشاء جميع المقاطع: ${errors.map(e => e.error).join(', ')}`, 400);
@@ -319,7 +290,7 @@ exports.bulkCreateSections = async (req, res) => {
     }, `تم إنشاء ${createdSections.length} من ${sections.length} مقطع بنجاح${skippedCount > 0 ? ` (تم تخطي ${skippedCount} مقطع موجود)` : ''}`);
 
   } catch (err) {
-    console.error("❌ Bulk create error:", err);
+    logger.error("Bulk create error:", err);
     return sendError(res, err.message, 500);
   }
 };

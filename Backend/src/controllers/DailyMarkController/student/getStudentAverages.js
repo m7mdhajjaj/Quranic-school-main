@@ -4,6 +4,9 @@
 
 const Mark = require("../../../schema/DailyMark/DailyMark");
 const Section = require("../../../schema/DailyMark/Section");
+const { createLogger } = require("../../../utils/logger");
+
+const logger = createLogger('StudentAverages');
 
 // استيراد الدوال المساعدة للفلترة من utils
 const {
@@ -20,13 +23,13 @@ const {
  */
 exports.getStudentAverages = async (req, res) => {
   try {
-    console.log("📊 ========== STUDENT AVERAGES REQUEST ==========");
+    logger.info("STUDENT AVERAGES REQUEST");
     const startTime = Date.now();
 
     const { studentId } = req.params;
     const { month, year, group } = req.query;
 
-    console.log("📋 Request:", { studentId, month, year, group });
+    logger.debug("Request:", { studentId, month, year, group });
 
     // Get user's group(s) based on role using helper function
     let userGroup;
@@ -57,13 +60,13 @@ exports.getStudentAverages = async (req, res) => {
       ...(Object.keys(dateFilter).length > 0 ? { date: dateFilter } : {}),
     };
 
-    console.log("🔧 Section filter:", sectionFilter);
+    logger.debug("Section filter:", sectionFilter);
 
     // Find matching sections
     const sections = await Section.find(sectionFilter).select("_id").lean();
     const sectionIds = sections.map((s) => s._id);
 
-    console.log(`📊 Found ${sectionIds.length} matching sections`);
+    logger.debug(`Found ${sectionIds.length} matching sections`);
 
     if (sectionIds.length === 0) {
       return res.json({
@@ -90,7 +93,7 @@ exports.getStudentAverages = async (req, res) => {
       sectionId: { $in: sectionIds },
     }).lean();
 
-    console.log(`📈 Found ${marks.length} marks for student`);
+    logger.debug(`Found ${marks.length} marks for student`);
 
     if (marks.length === 0) {
       return res.json({
@@ -146,9 +149,9 @@ exports.getStudentAverages = async (req, res) => {
     };
 
     const duration = Date.now() - startTime;
-    console.log(`✅ Calculated averages in ${duration}ms`);
-    console.log("📊 Averages:", averagesData);
-    console.log("📊 ========== STUDENT AVERAGES COMPLETE ==========\n");
+    logger.success(`Calculated averages in ${duration}ms`);
+    logger.debug("Averages:", averagesData);
+    logger.info("STUDENT AVERAGES COMPLETE");
 
     res.json({
       success: true,
@@ -161,7 +164,7 @@ exports.getStudentAverages = async (req, res) => {
       message: "تم حساب المعدلات بنجاح",
     });
   } catch (error) {
-    console.error("❌ Error calculating student averages:", error);
+    logger.error("Error calculating student averages:", error);
     res.status(500).json({
       success: false,
       message: error.message,

@@ -3,10 +3,13 @@
 // ============================================================================
 
 const Mark = require("../../../schema/DailyMark/DailyMark");
+const { createLogger } = require("../../../utils/logger");
 const {
   sendSuccess,
   sendError,
 } = require("../utils/responseHelpers");
+
+const logger = createLogger('StudentMarks');
 
 /**
  * Get all marks for a specific student
@@ -14,7 +17,7 @@ const {
  */
 exports.getStudentMarks = async (req, res) => {
   try {
-    console.log("⚡ Fetching marks for student:", req.params.studentId);
+    logger.debug("⚡ Fetching marks for student:", req.params.studentId);
     const startTime = Date.now();
 
     const marks = await Mark.find({ studentId: req.params.studentId })
@@ -27,11 +30,11 @@ exports.getStudentMarks = async (req, res) => {
       .lean();
 
     const duration = Date.now() - startTime;
-    console.log(`✅ Fetched ${marks.length} marks in ${duration}ms`);
+    logger.debug(`✅ Fetched ${marks.length} marks in ${duration}ms`);
 
     sendSuccess(res, marks, `تم تحميل ${marks.length} علامة للطالب بنجاح`);
   } catch (error) {
-    console.error("❌ Error fetching student marks:", error);
+    logger.error("❌ Error fetching student marks:", error);
     sendError(res, error.message, 500, error);
   }
 };
@@ -42,7 +45,7 @@ exports.getStudentMarks = async (req, res) => {
  */
 exports.getStudentMarkStats = async (req, res) => {
   try {
-    console.log("⚡ Calculating mark statistics for student:", req.params.studentId);
+    logger.debug("⚡ Calculating mark statistics for student:", req.params.studentId);
 
     const marks = await Mark.find({ studentId: req.params.studentId });
 
@@ -68,11 +71,11 @@ exports.getStudentMarkStats = async (req, res) => {
       memorizationMarksCount: memorizationMarks.length,
     };
 
-    console.log(`✅ Statistics calculated for student`);
+    logger.debug(`✅ Statistics calculated for student`);
 
     sendSuccess(res, stats, "تم حساب إحصائيات الطالب بنجاح");
   } catch (error) {
-    console.error("❌ Error calculating statistics:", error);
+    logger.error("❌ Error calculating statistics:", error);
     sendError(res, error.message, 500, error);
   }
 };

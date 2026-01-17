@@ -17,6 +17,10 @@
 const Group = require("../../schema/Group");
 const Section = require("../../schema/DailyMark/Section");
 const { getSurahByNumber, surahData } = require("../../utils/Quran/dailyMarkQuranMetadata");
+const { createLogger } = require("../../utils/logger");
+const { toDateKey, TIMEZONE } = require("../../config/timezone");
+
+const logger = createLogger('GroupActiveSurahService');
 
 class GroupActiveSurahService {
   
@@ -294,7 +298,7 @@ class GroupActiveSurahService {
       }
     }
 
-    console.log('📊 نتائج التهجير:', results);
+    logger.info('📊 نتائج التهجير:', results);
     return results;
   }
 
@@ -376,10 +380,10 @@ class GroupActiveSurahService {
         
         if (!lastMemorizationSection && !lastReviewSection) {
           results.cleared++;
-          console.log(`🧹 تم مسح السور الفعالة لحلقة ${group.name} (لا توجد مقاطع)`);
+          logger.debug(`🧹 تم مسح السور الفعالة لحلقة ${group.name} (لا توجد مقاطع)`);
         } else {
           results.synced++;
-          console.log(`✅ مزامنة حلقة ${group.name}`);
+          logger.debug(`✅ مزامنة حلقة ${group.name}`);
         }
 
       } catch (error) {
@@ -391,7 +395,7 @@ class GroupActiveSurahService {
       }
     }
 
-    console.log('📊 نتائج المزامنة:', results);
+    logger.info('📊 نتائج المزامنة:', results);
     return results;
   }
 

@@ -7,6 +7,10 @@ const TimeTable = require("../../schema/TimeTable");
 const Section = require("../../schema/DailyMark/Section");
 const Group = require("../../schema/Group");
 const { getWeekRange, getDateForDayInWeek } = require("./helpers/dateTime.helper");
+const { TIMEZONE } = require("../../config/timezone");
+const { createLogger } = require("../../utils/logger");
+
+const logger = createLogger('TimetableGet');
 
 /**
  * استخراج معلومات المقطع للعرض
@@ -62,7 +66,7 @@ exports.getTimetables = async (req, res) => {
       endDate
     } = req.query;
 
-    console.log('📅 [Timetable] getTimetables called', {
+    logger.debug('📅 [Timetable] getTimetables called', {
       userId: user?._id,
       role: user?.role,
       weekFilter,
@@ -149,7 +153,7 @@ exports.getTimetables = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("❌ Error fetching timetables:", error);
+    logger.error("Error fetching timetables:", error);
     res.status(500).json({
       success: false,
       message: "حدث خطأ أثناء جلب المواعيد"
@@ -183,7 +187,7 @@ exports.getTimetableById = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("❌ Error fetching timetable:", error);
+    logger.error("Error fetching timetable:", error);
     res.status(500).json({
       success: false,
       message: "حدث خطأ"
@@ -227,10 +231,10 @@ exports.getTimetableBySection = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("❌ Error:", error);
+    logger.error("Error fetching section timetable:", error);
     res.status(500).json({
       success: false,
-      message: "حدث خطأ"
+      message: "حدث خطأ أثناء جلب موعد المقطع"
     });
   }
 };
@@ -287,7 +291,7 @@ exports.getGroupTimetable = async (req, res) => {
           sessionDateFormatted: sessionDate ? sessionDate.toLocaleDateString('ar-SA', {
             day: 'numeric',
             month: 'short',
-            timeZone: 'Asia/Jerusalem'
+            timeZone: TIMEZONE
           }) : null
         };
       })
@@ -305,17 +309,17 @@ exports.getGroupTimetable = async (req, res) => {
         weekInfo: {
           startOfWeek: startOfWeek.toISOString(),
           endOfWeek: endOfWeek.toISOString(),
-          startFormatted: startOfWeek.toLocaleDateString('ar-SA', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Jerusalem' }),
-          endFormatted: endOfWeek.toLocaleDateString('ar-SA', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Jerusalem' })
+          startFormatted: startOfWeek.toLocaleDateString('ar-SA', { day: 'numeric', month: 'short', year: 'numeric', timeZone: TIMEZONE }),
+          endFormatted: endOfWeek.toLocaleDateString('ar-SA', { day: 'numeric', month: 'short', year: 'numeric', timeZone: TIMEZONE })
         }
       }
     });
 
   } catch (error) {
-    console.error("❌ Error:", error);
+    logger.error("Error fetching group timetable:", error);
     res.status(500).json({
       success: false,
-      message: "حدث خطأ"
+      message: "حدث خطأ أثناء جلب جدول الحلقة"
     });
   }
 };
@@ -355,7 +359,7 @@ exports.getTeacherTimetables = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("❌ Error:", error);
+    logger.error("Error fetching teacher timetables:", error);
     res.status(500).json({
       success: false,
       message: "حدث خطأ"

@@ -6,11 +6,14 @@ const DailyMark = require("../../../schema/DailyMark/DailyMark");
 const TimeTable = require("../../../schema/TimeTable");
 const { notifySectionDeleted } = require("../../../Notifications");
 const smartScheduler = require("../../../services/DailyMark/SmartSchedulerService");
+const { createLogger } = require("../../../utils/logger");
 const {
   sendSuccess,
   sendError,
   sendNotFound,
 } = require("../utils/responseHelpers");
+
+const logger = createLogger('SectionDelete');
 
 /**
  * Delete a section
@@ -25,14 +28,14 @@ exports.deleteSection = async (req, res) => {
     // ✅ حذف TimeTable المرتبط (إذا وجد)
     if (section.timetableId) {
       await TimeTable.findByIdAndDelete(section.timetableId);
-      console.log(`🗑️ تم حذف TimeTable المرتبط: ${section.timetableId}`);
+      logger.debug(`تم حذف TimeTable المرتبط: ${section.timetableId}`);
     }
 
     // إرسال إشعارات في الخلفية
     const io = req.app.get("io");
     if (io && section.group) {
       notifySectionDeleted(section, io).catch(err => 
-        console.error("⚠️ Error sending delete notification:", err)
+        logger.warn("Error sending delete notification:", err)
       );
     }
 
@@ -63,7 +66,7 @@ exports.bulkDeleteSections = async (req, res) => {
       return sendError(res, "يجب توفير قائمة بمعرفات المقاطع", 400);
     }
 
-    console.log(`🗑️ بدء حذف ${sectionIds.length} مقطع...`);
+    logger.debug(`بدء حذف ${sectionIds.length} مقطع...`);
 
     // جلب المقاطع للحصول على timetableIds
     const sections = await Section.find({ _id: { $in: sectionIds } }).select('timetableId group');
@@ -76,7 +79,7 @@ exports.bulkDeleteSections = async (req, res) => {
     // حذف TimeTables المرتبطة
     if (timetableIds.length > 0) {
       await TimeTable.deleteMany({ _id: { $in: timetableIds } });
-      console.log(`🗑️ تم حذف ${timetableIds.length} TimeTable مرتبط`);
+      logger.debug(`تم حذف ${timetableIds.length} TimeTable مرتبط`);
     }
 
     // إرسال إشعارات في الخلفية
@@ -84,18 +87,18 @@ exports.bulkDeleteSections = async (req, res) => {
     for (const section of sections) {
       if (io && section.group) {
         notifySectionDeleted(section, io).catch(err => 
-          console.error("⚠️ Error sending delete notification:", err)
+          logger.warn("Error sending delete notification:", err)
         );
       }
     }
 
     // حذف العلامات المرتبطة
     const marksResult = await DailyMark.deleteMany({ sectionId: { $in: sectionIds } });
-    console.log(`🗑️ تم حذف ${marksResult.deletedCount} علامة مرتبطة`);
+    logger.debug(`تم حذف ${marksResult.deletedCount} علامة مرتبطة`);
 
     // حذف المقاطع
     const sectionsResult = await Section.deleteMany({ _id: { $in: sectionIds } });
-    console.log(`🗑️ تم حذف ${sectionsResult.deletedCount} مقطع`);
+    logger.success(`تم حذف ${sectionsResult.deletedCount} مقطع`);
 
     sendSuccess(res, { 
       deletedCount: sectionsResult.deletedCount,
@@ -104,7 +107,7 @@ exports.bulkDeleteSections = async (req, res) => {
       deletedMarks: marksResult.deletedCount
     }, `تم حذف ${sectionsResult.deletedCount} مقطع بنجاح.`);
   } catch (error) {
-    console.error("❌ Error in bulkDeleteSections:", error);
+    logger.error("Error in bulkDeleteSections:", error);
     sendError(res, error.message, 500, error);
   }
 };

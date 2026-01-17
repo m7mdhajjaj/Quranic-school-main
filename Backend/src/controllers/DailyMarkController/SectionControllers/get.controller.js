@@ -2,11 +2,15 @@ const Section = require("../../../schema/DailyMark/Section");
 const Group = require("../../../schema/Group");
 const sequenceService = require("../../../services/DailyMark/SectionSequenceService");
 const { getSurahByNumber, surahData } = require("../../../utils/Quran/dailyMarkQuranMetadata");
+const { createLogger } = require("../../../utils/logger");
 const {
   sendSuccess,
   sendError,
   sendNotFound,
 } = require("../utils/responseHelpers");
+
+const logger = createLogger('SectionGet');
+const { getWeekRange, toDateKey } = require("../../../config/timezone");
 
 // New imports for getFilteredSections
 const { updateSectionMarksStatus } = require("./sectionMarksStatus");
@@ -33,30 +37,20 @@ exports.getSections = async (req, res) => {
       filter.teacher = teacher;
     }
 
-    // ✅ V3: Weekly Filter (Current Week: Sat -> Fri) - Using UTC for consistency
+    // ✅ V3: Weekly Filter (Current Week: Sat -> Fri) - Using config/timezone.js
     if (period === 'week') {
-      const d = new Date();
-      // ✅ FIX: Use UTC-based date calculations
-      const todayKey = d.toISOString().split('T')[0];
-      const todayUTC = new Date(todayKey + 'T12:00:00.000Z'); // Noon UTC to avoid edge cases
+      const { startOfWeek, endOfWeek } = getWeekRange(new Date());
       
-      // Calculate start of week (Saturday)
-      const dayIndex = todayUTC.getUTCDay(); // 0-6
-      const distFromSat = (dayIndex + 1) % 7;
-      
-      const startOfWeek = new Date(todayUTC);
-      startOfWeek.setUTCDate(todayUTC.getUTCDate() - distFromSat);
-      startOfWeek.setUTCHours(0, 0, 0, 0);
-      
-      const endOfWeek = new Date(startOfWeek);
-      endOfWeek.setUTCDate(startOfWeek.getUTCDate() + 7);
-      endOfWeek.setUTCHours(0, 0, 0, 0);
+      // إنشاء نهاية الأسبوع الفعلية (بداية اليوم التالي للجمعة)
+      const endOfWeekExclusive = new Date(endOfWeek);
+      endOfWeekExclusive.setDate(endOfWeek.getDate() + 1);
+      endOfWeekExclusive.setHours(0, 0, 0, 0);
 
-      console.log(`📅 [Weekly Filter] Range: ${startOfWeek.toISOString()} to ${endOfWeek.toISOString()}`);
+      logger.debug(`Weekly Filter Range: ${toDateKey(startOfWeek)} to ${toDateKey(endOfWeek)}`);
 
       filter.date = { 
         $gte: startOfWeek, 
-        $lt: endOfWeek 
+        $lt: endOfWeekExclusive 
       };
     }
 
@@ -96,12 +90,12 @@ exports.getSection = async (req, res) => {
  */
 exports.getFilteredSections = async (req, res) => {
   try {
-    console.log("🔍 ========== FILTERED SECTIONS REQUEST ==========");
+    logger.info("FILTERED SECTIONS REQUEST");
     const startTime = Date.now();
 
     const { month, year, day, search, group, startDate, endDate, period } = req.query;
 
-    console.log("📋 Filters received:", { month, year, day, search, group, startDate, endDate, period });
+    logger.debug("Filters received:", { month, year, day, search, group, startDate, endDate, period });
 
     // Get user's group(s) based on role using helper function
     let userGroup, teacherGroups;
@@ -142,7 +136,7 @@ exports.getFilteredSections = async (req, res) => {
       endOfWeek.setUTCDate(startOfWeek.getUTCDate() + 6); // End of Friday
       endOfWeek.setUTCHours(23, 59, 59, 999); // End of Friday (23:59:59)
 
-      console.log(`📅 [Filtered Sections] Weekly Filter: ${startOfWeek.toISOString()} -> ${endOfWeek.toISOString()}`);
+      logger.debug(`Weekly Filter: ${startOfWeek.toISOString()} -> ${endOfWeek.toISOString()}`);
 
       // Override dateFilter to strict Range
       dateFilter = { 
@@ -160,7 +154,7 @@ exports.getFilteredSections = async (req, res) => {
       ...searchFilter,
     };
 
-    console.log("🔧 Section filter:", sectionFilter);
+    logger.debug("Section filter:", sectionFilter);
 
     // Find sections
     const sections = await Section.find(sectionFilter)
@@ -197,7 +191,7 @@ exports.getFilteredSections = async (req, res) => {
               },
             };
           } catch (error) {
-            console.error(`⚠️ Error updating status for section ${section._id}:`, error);
+            logger.warn(`Error updating status for section ${section._id}:`, error);
             // Return section with default values if update fails
             return {
               ...section,
@@ -224,9 +218,9 @@ exports.getFilteredSections = async (req, res) => {
     );
 
     const duration = Date.now() - startTime;
-    console.log(`✅ Fetched ${sectionsWithStatus.length} sections with marks status in ${duration}ms`);
+    logger.success(`Fetched ${sectionsWithStatus.length} sections with marks status in ${duration}ms`);
     
-    console.log("🔍 ========== FILTERED SECTIONS COMPLETE ==========\n");
+    logger.info("FILTERED SECTIONS COMPLETE");
 
     res.json({
       success: true,
@@ -241,7 +235,7 @@ exports.getFilteredSections = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("❌ Error in getFilteredSections:", error);
+    logger.error("Error in getFilteredSections:", error);
     sendError(res, error.message, 500, error);
   }
 };
@@ -631,7 +625,7 @@ exports.getActiveSurahs = async (req, res) => {
     }, "تم جلب السور الفعالة بنجاح");
 
   } catch (error) {
-    console.error("❌ Error fetching active surahs:", error);
+    logger.error("Error fetching active surahs:", error);
     sendError(res, error.message, 500, error);
   }
 };
@@ -662,7 +656,7 @@ exports.getActiveSurahInfo = async (req, res) => {
     sendSuccess(res, info, "تم جلب معلومات السور الفعالة بنجاح");
 
   } catch (error) {
-    console.error("❌ Error fetching active surah info:", error);
+    logger.error("Error fetching active surah info:", error);
     sendError(res, error.message, 500, error);
   }
 };
@@ -692,7 +686,7 @@ exports.resetActiveSurah = async (req, res) => {
     }, `تم إعادة تعيين سورة ${type === 'memorization' ? 'الحفظ' : 'المراجعة'} الفعالة`);
 
   } catch (error) {
-    console.error("❌ Error resetting active surah:", error);
+    logger.error("Error resetting active surah:", error);
     sendError(res, error.message, 500, error);
   }
 };
@@ -741,7 +735,7 @@ exports.completeSurah = async (req, res) => {
     }, `تم إكمال سورة ${activeSurah.surahName} بنجاح`);
 
   } catch (error) {
-    console.error("❌ Error completing surah:", error);
+    logger.error("Error completing surah:", error);
     sendError(res, error.message, 500, error);
   }
 };
@@ -772,7 +766,7 @@ exports.syncActiveSurahs = async (req, res) => {
     sendSuccess(res, results, `تم مزامنة السور الفعالة بنجاح`);
 
   } catch (error) {
-    console.error("❌ Error syncing active surahs:", error);
+    logger.error("Error syncing active surahs:", error);
     sendError(res, error.message, 500, error);
   }
 };

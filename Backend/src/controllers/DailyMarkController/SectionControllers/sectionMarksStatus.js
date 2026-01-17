@@ -5,6 +5,9 @@
 const Section = require("../../../schema/DailyMark/Section");
 const Mark = require("../../../schema/DailyMark/DailyMark");
 const Student = require("../../../schema/Student");
+const { createLogger } = require("../../../utils/logger");
+
+const logger = createLogger('SectionMarksStatus');
 
 /**
  * Calculate marks status for a section
@@ -81,7 +84,7 @@ async function calculateSectionMarksStatus(sectionId, groupName = null) {
       },
     };
   } catch (error) {
-    console.error("❌ Error calculating section marks status:", error);
+    logger.error("Error calculating section marks status:", error);
     throw error;
   }
 }
@@ -138,11 +141,11 @@ async function updateSectionMarksStatus(sectionId, groupName = null) {
     
     const updatedSection = await section.save();
 
-    console.log(`✅ Section ${sectionId}: marksStatus=${statusData.marksStatus}, segments status updated`);
+    logger.debug(`Section ${sectionId}: marksStatus=${statusData.marksStatus}, segments status updated`);
 
     return updatedSection;
   } catch (error) {
-    console.error("❌ Error updating section marks status:", error);
+    logger.error("Error updating section marks status:", error);
     throw error;
   }
 }
@@ -158,13 +161,13 @@ async function updateMultipleSectionsMarksStatus(sectionIds) {
       try {
         await updateSectionMarksStatus(sectionId);
       } catch (error) {
-        console.error(`⚠️ Error updating status for section ${sectionId}:`, error);
+        logger.warn(`Error updating status for section ${sectionId}:`, error);
       }
     });
 
     await Promise.all(updatePromises);
   } catch (error) {
-    console.error("❌ Error updating multiple sections marks status:", error);
+    logger.error("Error updating multiple sections marks status:", error);
     throw error;
   }
 }

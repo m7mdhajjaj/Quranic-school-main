@@ -6,6 +6,9 @@
 const TimeTable = require("../../schema/TimeTable");
 const Section = require("../../schema/DailyMark/Section");
 const { notifyTimetableDeleted } = require("../../Notifications");
+const { createLogger } = require("../../utils/logger");
+
+const logger = createLogger('TimetableDelete');
 
 /**
  * حذف موعد
@@ -43,19 +46,19 @@ exports.deleteTimetable = async (req, res) => {
         scheduleStatus: "needs_schedule",
         scheduleInfo: null
       });
-      console.log(`🔓 تم فك ربط Section ${timetable.sectionId}`);
+      logger.debug(`🔓 تم فك ربط Section ${timetable.sectionId}`);
     }
 
     // ✅ 4. إرسال إشعارات للطلاب قبل الحذف (في الخلفية)
     const io = req.app.get("io");
     notifyTimetableDeleted(timetable, io).catch(err => 
-      console.error("⚠️ Error sending timetable delete notification:", err)
+      logger.error("⚠️ Error sending timetable delete notification:", err)
     );
 
     // ✅ 5. حذف الموعد
     await TimeTable.findByIdAndDelete(id);
 
-    console.log(`🗑️ Timetable deleted: ${id} for group "${timetable.note}"`);
+    logger.info(`🗑️ Timetable deleted: ${id} for group "${timetable.note}"`);
 
     res.json({
       success: true,
@@ -64,7 +67,7 @@ exports.deleteTimetable = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("❌ Error deleting timetable:", error);
+    logger.error("❌ Error deleting timetable:", error);
     res.status(500).json({
       success: false,
       message: error.message || "حدث خطأ"
@@ -127,7 +130,7 @@ exports.unlinkTimetableFromSection = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("❌ Error:", error);
+    logger.error("Error unlinking timetable:", error);
     res.status(500).json({
       success: false,
       message: "حدث خطأ"

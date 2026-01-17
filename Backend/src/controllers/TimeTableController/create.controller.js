@@ -10,6 +10,9 @@ const Group = require("../../schema/Group");
 const { checkTimeConflict, normalizeDate } = require("./helpers/scheduleConflict.helper");
 const { getArabicDayFromDate, extractDayInfo, validateTimeRange, normalizeTimeFormat } = require("./helpers/dateTime.helper");
 const { notifyTimetableCreated } = require("../../Notifications");
+const { createLogger } = require("../../utils/logger");
+
+const logger = createLogger('TimetableCreate');
 
 /**
  * إنشاء موعد جديد
@@ -88,7 +91,7 @@ exports.createTimetable = async (req, res) => {
           finalSessionType = 'both'; // افتراضي
         }
         
-        console.log('📚 Auto-detected sessionType from section:', {
+        logger.debug('📚 Auto-detected sessionType from section:', {
           sectionId,
           hasMemorization,
           hasReview,
@@ -113,11 +116,11 @@ exports.createTimetable = async (req, res) => {
         message: timeValidation.error
       });
     }
-    console.log(`⏰ Time validation passed: ${startHour} - ${endHour} (${timeValidation.duration} min)`);
+    logger.debug(`⏰ Time validation passed: ${startHour} - ${endHour} (${timeValidation.duration} min)`);
 
     // ✅ تطبيع التاريخ ليكون UTC midnight دائماً
     sessionDate = normalizeDate(sessionDate);
-    console.log("📅 Normalized sessionDate:", sessionDate.toISOString());
+    logger.debug("📅 Normalized sessionDate:", sessionDate.toISOString());
 
     // اشتقاق اليوم من التاريخ
     const dayInfo = extractDayInfo(sessionDate);
@@ -183,10 +186,10 @@ exports.createTimetable = async (req, res) => {
     // ✅ 8. إرسال إشعارات للطلاب (في الخلفية)
     const io = req.app.get("io");
     notifyTimetableCreated(result, io).catch(err => 
-      console.error("⚠️ Error sending timetable notification:", err)
+      logger.error("⚠️ Error sending timetable notification:", err)
     );
 
-    console.log(`📅 Timetable created: ${result._id} for group "${finalNote}" on ${sessionDate.toISOString().split('T')[0]}`);
+    logger.info(`📅 Timetable created: ${result._id} for group "${finalNote}" on ${sessionDate.toISOString().split('T')[0]}`);
 
     res.status(201).json({
       success: true,
@@ -195,7 +198,7 @@ exports.createTimetable = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("❌ Error creating timetable:", error);
+    logger.error("❌ Error creating timetable:", error);
     res.status(500).json({
       success: false,
       message: error.message || "حدث خطأ أثناء إنشاء الموعد"
@@ -237,7 +240,7 @@ exports.createTimetableForSection = async (req, res) => {
     const dayInfo = extractDayInfo(sessionDate);
     const day = dayInfo.dayName;
     
-    console.log("📅 Section sessionDate normalized:", sessionDate.toISOString());
+    logger.debug("📅 Section sessionDate normalized:", sessionDate.toISOString());
 
     // ✅ 4. تحديد teacherId
     let finalTeacherId = teacherId;
@@ -324,7 +327,7 @@ exports.createTimetableForSection = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("❌ Error creating timetable for section:", error);
+    logger.error("Error creating timetable for section:", error);
     res.status(500).json({
       success: false,
       message: error.message || "حدث خطأ"

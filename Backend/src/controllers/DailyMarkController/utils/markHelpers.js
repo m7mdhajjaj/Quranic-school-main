@@ -10,6 +10,9 @@ const {
   updateSectionMarksStatus,
   updateMultipleSectionsMarksStatus,
 } = require("../SectionControllers/sectionMarksStatus");
+const { createLogger } = require("../../../utils/logger");
+
+const logger = createLogger('MarkHelpers');
 
 // ============================================================================
 // Monthly Average Update
@@ -22,17 +25,17 @@ const {
  */
 async function updateStudentMonthlyAverage(studentId, section) {
   if (section && section.date) {
-    console.log("🔄 تحديث المتوسط الشهري...");
+    logger.debug("🔄 تحديث المتوسط الشهري...");
     const sectionDate = new Date(section.date);
     const month = sectionDate.getMonth() + 1;
     const year = sectionDate.getFullYear();
 
     try {
       await calculateAndUpdateMonthlyAverage(studentId, month, year);
-      console.log("✅ تم تحديث المتوسط الشهري");
+      logger.debug("✅ تم تحديث المتوسط الشهري");
       return true;
     } catch (avgError) {
-      console.error("⚠️ خطأ في تحديث المتوسط الشهري:", avgError);
+      logger.error("⚠️ خطأ في تحديث المتوسط الشهري:", avgError);
       return false;
     }
   }
@@ -46,7 +49,7 @@ async function updateStudentMonthlyAverage(studentId, section) {
  * @param {Number} year - السنة (اختياري - يستخدم السنة الحالية)
  */
 async function updateMultipleStudentsMonthlyAverage(studentIds, month = null, year = null) {
-  console.log("🔄 تحديث المتوسطات الشهرية...");
+  logger.debug("🔄 تحديث المتوسطات الشهرية...");
   
   const now = new Date();
   const targetMonth = month || (now.getMonth() + 1);
@@ -56,12 +59,12 @@ async function updateMultipleStudentsMonthlyAverage(studentIds, month = null, ye
     try {
       await calculateAndUpdateMonthlyAverage(studentId, targetMonth, targetYear);
     } catch (error) {
-      console.error(`⚠️ خطأ في تحديث المتوسط للطالب ${studentId}:`, error);
+      logger.error(`⚠️ خطأ في تحديث المتوسط للطالب ${studentId}:`, error);
     }
   });
   
   await Promise.all(updatePromises);
-  console.log("✅ تم تحديث المتوسطات الشهرية");
+  logger.debug("✅ تم تحديث المتوسطات الشهرية");
 }
 
 // ============================================================================
@@ -76,10 +79,10 @@ async function updateMultipleStudentsMonthlyAverage(studentIds, month = null, ye
 async function updateSingleSectionStatus(sectionId, group = null) {
   try {
     await updateSectionMarksStatus(sectionId, group);
-    console.log("✅ تم تحديث حالة علامات المقطع");
+    logger.debug("✅ تم تحديث حالة علامات المقطع");
     return true;
   } catch (statusError) {
-    console.error("⚠️ خطأ في تحديث حالة علامات المقطع:", statusError);
+    logger.error("⚠️ خطأ في تحديث حالة علامات المقطع:", statusError);
     return false;
   }
 }
@@ -89,13 +92,13 @@ async function updateSingleSectionStatus(sectionId, group = null) {
  * @param {Array} sectionIds - قائمة معرفات المقاطع
  */
 async function updateMultipleSectionsStatus(sectionIds) {
-  console.log("🔄 تحديث حالة علامات المقاطع...");
+  logger.debug("🔄 تحديث حالة علامات المقاطع...");
   try {
     await updateMultipleSectionsMarksStatus(sectionIds);
-    console.log("✅ تم تحديث حالة علامات المقاطع");
+    logger.debug("✅ تم تحديث حالة علامات المقاطع");
     return true;
   } catch (error) {
-    console.error("⚠️ خطأ في تحديث حالة علامات المقاطع:", error);
+    logger.error("⚠️ خطأ في تحديث حالة علامات المقاطع:", error);
     return false;
   }
 }
@@ -112,12 +115,12 @@ async function updateMultipleSectionsStatus(sectionIds) {
  */
 function emitSocketEvent(io, eventName, data) {
   if (io) {
-    console.log(`📡 إرسال حدث ${eventName}...`);
+    logger.debug(`📡 إرسال حدث ${eventName}...`);
     io.emit(eventName, {
       ...data,
       timestamp: Date.now(),
     });
-    console.log(`✅ تم إرسال حدث ${eventName}`);
+    logger.debug(`✅ تم إرسال حدث ${eventName}`);
     return true;
   }
   return false;
@@ -132,7 +135,7 @@ function emitSocketEvent(io, eventName, data) {
  */
 async function notifyAndEmitMarkEvent(io, notifyFunction, mark, additionalData = {}) {
   // إرسال الإشعار
-  console.log("🔔 إرسال الإشعار...");
+  logger.debug("🔔 إرسال الإشعار...");
   await notifyFunction(mark, io, ...Object.values(additionalData));
   
   // إرسال حدث Socket.IO

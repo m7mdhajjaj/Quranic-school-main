@@ -5,6 +5,7 @@
 
 const { getTeacherGroups } = require("../../basicController/teacherController/utils.controller");
 const Student = require("../../../schema/Student");
+const { parseDateString, getStartOfDay, getEndOfDay } = require("../../../config/timezone");
 
 // ============================================================================
 // Helper Functions - Role-based Group Filtering
@@ -99,19 +100,14 @@ function buildGroupFilter(user, userGroup, requestedGroup = null) {
  * @returns {Object} MongoDB date filter object
  */
 function buildDateFilter(month, year, day, startDate, endDate) {
-  // Helper: parse date-only strings as LOCAL dates (avoids UTC shift)
+  // ✅ استخدام parseDateString من config/timezone.js للتوحيد
   const parseLocalDateOnly = (dateStr, endOfDay = false) => {
     if (!dateStr) return null;
-    // If it's exactly YYYY-MM-DD, build a local Date at start/end of day
-    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(dateStr));
-    if (m) {
-      const y = Number(m[1]);
-      const mo = Number(m[2]);
-      const d = Number(m[3]);
-      return endOfDay
-        ? new Date(y, mo - 1, d, 23, 59, 59, 999)
-        : new Date(y, mo - 1, d, 0, 0, 0, 0);
-    }
+    
+    // استخدام الدالة المركزية من config
+    const parsed = parseDateString(dateStr, endOfDay);
+    if (parsed) return parsed;
+    
     // Fallback: full ISO string / timestamp etc.
     const dt = new Date(dateStr);
     if (Number.isNaN(dt.getTime())) return null;

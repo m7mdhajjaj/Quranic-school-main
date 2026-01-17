@@ -3,6 +3,7 @@
 // ============================================================================
 
 const { TIMEZONE } = require('../../../config/timezone');
+const { EDIT_WINDOW_DAYS } = require('../../../config/constants');
 
 /**
  * Validate marks array
@@ -113,10 +114,7 @@ function validateMonthYear(month, year) {
 // ⏰ Mark Edit Window Validation - نافذة التعديل الزمنية
 // ============================================================================
 
-/**
- * مدة نافذة التعديل بعد تاريخ المقطع (بالأيام)
- */
-const EDIT_WINDOW_DAYS = 14; // أسبوعين
+// ✅ EDIT_WINDOW_DAYS الآن في config/constants.js
 
 /**
  * التحقق من أن العلامة قابلة للتعديل

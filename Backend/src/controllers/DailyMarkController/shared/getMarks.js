@@ -3,11 +3,14 @@
 // ============================================================================
 
 const Mark = require("../../../schema/DailyMark/DailyMark");
+const { createLogger } = require("../../../utils/logger");
 const {
   sendSuccess,
   sendError,
   formatPagination,
 } = require("../utils/responseHelpers");
+
+const logger = createLogger('Marks');
 
 /**
  * Get all marks with pagination and performance optimization
@@ -15,7 +18,7 @@ const {
  */
 exports.getMarks = async (req, res) => {
   try {
-    console.log("⚡ Fetching all marks...");
+    logger.debug("Fetching all marks...");
     const startTime = Date.now();
 
     const page = req.query.page || 1;
@@ -33,13 +36,13 @@ exports.getMarks = async (req, res) => {
     const total = await Mark.countDocuments();
 
     const duration = Date.now() - startTime;
-    console.log(`✅ Fetched ${marks.length} marks in ${duration}ms`);
+    logger.success(`Fetched ${marks.length} marks in ${duration}ms`);
 
     sendSuccess(res, marks, `تم تحميل ${marks.length} علامة بنجاح`, 200, {
       pagination: formatPagination(total, page, limit),
     });
   } catch (error) {
-    console.error("❌ Error fetching marks:", error);
+    logger.error("Error fetching marks:", error);
     sendError(res, error.message, 500, error);
   }
 };
@@ -50,7 +53,7 @@ exports.getMarks = async (req, res) => {
  */
 exports.getSectionMarks = async (req, res) => {
   try {
-    console.log("⚡ Fetching marks for section:", req.params.sectionId);
+    logger.debug("Fetching marks for section:", req.params.sectionId);
     const startTime = Date.now();
 
     const marks = await Mark.find({ sectionId: req.params.sectionId })
@@ -60,11 +63,11 @@ exports.getSectionMarks = async (req, res) => {
       .sort({ createdAt: -1 });
 
     const duration = Date.now() - startTime;
-    console.log(`✅ Fetched ${marks.length} marks in ${duration}ms`);
+    logger.success(`Fetched ${marks.length} section marks in ${duration}ms`);
 
     sendSuccess(res, marks, `تم تحميل ${marks.length} علامة للقسم بنجاح`);
   } catch (error) {
-    console.error("❌ Error fetching section marks:", error);
+    logger.error("Error fetching section marks:", error);
     sendError(res, error.message, 500, error);
   }
 };

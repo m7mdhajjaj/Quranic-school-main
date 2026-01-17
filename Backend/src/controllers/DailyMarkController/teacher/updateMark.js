@@ -5,6 +5,9 @@
 const Mark = require("../../../schema/DailyMark/DailyMark");
 const Section = require("../../../schema/DailyMark/Section");
 const { notifyMarkUpdated } = require("../../../Notifications");
+const { createLogger } = require("../../../utils/logger");
+
+const logger = createLogger('UpdateMark');
 
 // استيراد الدوال المساعدة
 const {
@@ -36,7 +39,7 @@ exports.createOrUpdateMark = async (req, res) => {
   try {
     const markData = req.validatedData || req.body;
 
-    console.log("📝 Creating/updating mark with data:", markData);
+    logger.debug("📝 Creating/updating mark with data:", markData);
 
     const { studentId, sectionId, reviewMark, memorizationMark } = markData;
 
@@ -69,13 +72,13 @@ exports.createOrUpdateMark = async (req, res) => {
 
     if (mark) {
       // Update existing mark
-      console.log("🔄 Updating existing mark");
+      logger.debug("🔄 Updating existing mark");
       mark.reviewMark = reviewMark || null;
       mark.memorizationMark = memorizationMark || null;
       await mark.save();
     } else {
       // Create new mark
-      console.log("✨ Creating new mark");
+      logger.debug("✨ Creating new mark");
       mark = new Mark({
         studentId,
         sectionId,
@@ -90,7 +93,7 @@ exports.createOrUpdateMark = async (req, res) => {
       .populate("studentId", "firstName fatherName lastName group")
       .populate("sectionId");
 
-    console.log("✅ تم حفظ العلامة بنجاح");
+    logger.debug("✅ تم حفظ العلامة بنجاح");
 
     const statusCode = isNewMark ? 201 : 200;
     const message = isNewMark ? "تم إضافة العلامة بنجاح" : "تم تحديث العلامة بنجاح";
@@ -101,14 +104,14 @@ exports.createOrUpdateMark = async (req, res) => {
         await Promise.all([
             updateStudentMonthlyAverage(mark.studentId._id, mark.sectionId),
             mark.sectionId && mark.sectionId._id ? updateSingleSectionStatus(mark.sectionId._id.toString()) : Promise.resolve(),
-            notifyMarkUpdated(mark, req.app.get("io"), isNewMark, oldTotalMark, (mark.reviewMark || 0) + (mark.memorizationMark || 0)).catch(e => console.error('Notification error:', e))
+            notifyMarkUpdated(mark, req.app.get("io"), isNewMark, oldTotalMark, (mark.reviewMark || 0) + (mark.memorizationMark || 0)).catch(e => logger.error('Notification error:', e))
         ]);
         
         const io = req.app.get("io");
         const eventName = isNewMark ? "markCreated" : "markUpdated";
         emitSocketEvent(io, eventName, { mark, isNew: isNewMark });
     } catch (err) {
-        console.error("Background task error:", err);
+        logger.error("Background task error:", err);
         // Continue even if background tasks fail, main mark is saved
     }
 
@@ -118,7 +121,7 @@ exports.createOrUpdateMark = async (req, res) => {
       sendSuccess(res, mark, message);
     }
   } catch (error) {
-    console.error("❌ Error in createOrUpdateMark:", error);
+    logger.error("❌ Error in createOrUpdateMark:", error);
 
     if (error.name === "ValidationError") {
       const validationErrors = Object.keys(error.errors)
@@ -141,7 +144,7 @@ exports.updateMarkById = async (req, res) => {
     const { id } = req.params;
     const { reviewMark, memorizationMark } = req.body;
 
-    console.log("📝 Updating mark by ID:", id);
+    logger.debug("📝 Updating mark by ID:", id);
 
     // Find the mark with section date
     let mark = await Mark.findById(id).populate("sectionId", "date");
@@ -167,7 +170,7 @@ exports.updateMarkById = async (req, res) => {
       mark.memorizationMark = memorizationMark || null;
 
     await mark.save();
-    console.log("✅ تم تحديث العلامة بنجاح");
+    logger.debug("✅ تم تحديث العلامة بنجاح");
 
     // Populate the references
     mark = await Mark.findById(mark._id)
@@ -182,7 +185,7 @@ exports.updateMarkById = async (req, res) => {
 
     // Send notification and Socket event
     const newTotalMark = (mark.reviewMark || 0) + (mark.memorizationMark || 0);
-    console.log("🔔 إرسال الإشعار...");
+    logger.debug("🔔 إرسال الإشعار...");
     const io = req.app.get("io");
     await notifyMarkUpdated(mark, io, false, oldTotalMark, newTotalMark);
     
@@ -194,7 +197,7 @@ exports.updateMarkById = async (req, res) => {
       message: "تم تحديث العلامة بنجاح",
     });
   } catch (error) {
-    console.error("❌ Error in updateMarkById:", error);
+    logger.error("❌ Error in updateMarkById:", error);
     res.status(500).json({
       success: false,
       message: error.message,
@@ -211,8 +214,8 @@ exports.updateMultipleMarks = async (req, res) => {
   try {
     const { marks } = req.body;
 
-    console.log("📝 Updating multiple marks...");
-    console.log(`📊 Number of marks: ${marks.length}`);
+    logger.debug("📝 Updating multiple marks...");
+    logger.debug(`📊 Number of marks: ${marks.length}`);
 
     // Validate using helper
     try {
@@ -226,14 +229,14 @@ exports.updateMultipleMarks = async (req, res) => {
     // Update marks in bulk
     for (const markData of marks) {
       if (!markData.id) {
-        console.warn("⚠️ Skipping mark without id");
+        logger.warn("Skipping mark without id");
         continue;
       }
 
       try {
         const mark = await Mark.findById(markData.id);
         if (!mark) {
-          console.warn(`⚠️ Mark not found: ${markData.id}`);
+          logger.warn(`Mark not found: ${markData.id}`);
           continue;
         }
 
@@ -245,11 +248,11 @@ exports.updateMultipleMarks = async (req, res) => {
         await mark.save();
         updatedMarks.push(mark);
       } catch (error) {
-        console.error(`⚠️ Error updating mark ${markData.id}:`, error);
+        logger.warn(`Error updating mark ${markData.id}:`, error);
       }
     }
 
-    console.log(`✅ Updated ${updatedMarks.length} marks`);
+    logger.debug(`✅ Updated ${updatedMarks.length} marks`);
 
     // Collect IDs using helper
     const { studentIds, sectionIds } = collectMarkIds(updatedMarks);
@@ -273,7 +276,7 @@ exports.updateMultipleMarks = async (req, res) => {
 
     sendSuccess(res, updatedMarks, `تم تحديث ${updatedMarks.length} علامة بنجاح`);
   } catch (error) {
-    console.error("❌ Error in updateMultipleMarks:", error);
+    logger.error("Error in updateMultipleMarks:", error);
     sendError(res, "حدث خطأ أثناء تحديث العلامات", 500, error);
   }
 };

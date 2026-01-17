@@ -4,12 +4,15 @@ const Group = require("../../../schema/Group");
 const Teacher = require("../../../schema/Teacher");
 const { notifySectionUpdated } = require("../../../Notifications");
 const sequenceService = require("../../../services/DailyMark/SectionSequenceService");
+const { createLogger } = require("../../../utils/logger");
 const {
   sendSuccess,
   sendError,
   sendNotFound,
   sendValidationError,
 } = require("../utils/responseHelpers");
+
+const logger = createLogger('SectionUpdate');
 
 /**
  * Update a section
@@ -29,7 +32,7 @@ exports.updateSection = async (req, res) => {
       const groupDoc = await Group.findOne({ name: updateData.group.trim() });
       if (groupDoc) {
         updateData.groupId = groupDoc._id;
-        console.log(`🔗 تم تحديث groupId إلى: ${groupDoc._id}`);
+        logger.debug(`تم تحديث groupId إلى: ${groupDoc._id}`);
       }
     }
 
@@ -56,7 +59,7 @@ exports.updateSection = async (req, res) => {
       
       if (teacherDoc) {
         updateData.teacherId = teacherDoc._id;
-        console.log(`🔗 تم تحديث teacherId إلى: ${teacherDoc._id}`);
+        logger.debug(`تم تحديث teacherId إلى: ${teacherDoc._id}`);
       }
     }
 
@@ -201,8 +204,8 @@ exports.updateSection = async (req, res) => {
         TimeTable.findByIdAndUpdate(
           typeof updatedSection.timetableId === 'object' ? updatedSection.timetableId._id : updatedSection.timetableId,
           timetableUpdates
-        ).catch(err => console.error("Timetable sync error:", err));
-        console.log(`🔄 TimeTable synced with Section ${updatedSection._id}`);
+        ).catch(err => logger.warn("Timetable sync error:", err));
+        logger.debug(`TimeTable synced with Section ${updatedSection._id}`);
       }
     }
 
@@ -210,7 +213,7 @@ exports.updateSection = async (req, res) => {
     const io = req.app.get("io");
     if (io && updatedSection.group) {
        notifySectionUpdated(updatedSection, oldSection, io)
-        .catch(err => console.error("Notification Error (Async):", err));
+        .catch(err => logger.warn("Notification Error (Async):", err));
     }
  
     // Check for completed Surahs from the UPDATE data

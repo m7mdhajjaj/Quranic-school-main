@@ -6,6 +6,9 @@ const Section = require("../../../schema/DailyMark/Section");
 const Mark = require("../../../schema/DailyMark/DailyMark");
 const { sendSuccess, sendError } = require("../utils/responseHelpers");
 const { getSurahByNumber } = require("../../../utils/Quran/dailyMarkQuranMetadata");
+const { createLogger } = require("../../../utils/logger");
+
+const logger = createLogger('StudentSectionsGrouped');
 
 /**
  * Get student sections grouped by Surah with progress tracking
@@ -22,8 +25,8 @@ exports.getStudentSectionsGrouped = async (req, res) => {
     const { studentId } = req.params;
     const { groupId } = req.query; // اختياري: تصفية حسب الحلقة
 
-    console.log(`📚 [Student Grouped Sections] Fetching for student: ${studentId}`);
-    console.log(`📚 [Student Grouped Sections] groupId from query: ${groupId}`);
+    logger.debug(`Fetching for student: ${studentId}`);
+    logger.debug(`groupId from query: ${groupId}`);
 
     // 1. Get student's group
     const Student = require("../../../schema/Student/Student");
@@ -36,7 +39,7 @@ exports.getStudentSectionsGrouped = async (req, res) => {
       return sendError(res, "الطالب غير موجود", 404);
     }
 
-    console.log(`📚 Student data: group=${student.group}, groupId=${student.groupId}`);
+    logger.debug(`Student data: group=${student.group}, groupId=${student.groupId}`);
 
     // 2. Build filter for sections
     // نبحث بكلا الطريقتين: groupId (ObjectId) أو group (اسم)
@@ -47,7 +50,7 @@ exports.getStudentSectionsGrouped = async (req, res) => {
     if (groupId) {
       // التحقق مما إذا كان groupId هو ObjectId صالح أو اسم المجموعة
       const isValidObjectId = mongoose.Types.ObjectId.isValid(groupId);
-      console.log(`📚 groupId provided: "${groupId}", isValidObjectId: ${isValidObjectId}`);
+      logger.debug(`groupId provided: "${groupId}", isValidObjectId: ${isValidObjectId}`);
       
       if (isValidObjectId) {
         resolvedGroupId = groupId;
@@ -60,7 +63,7 @@ exports.getStudentSectionsGrouped = async (req, res) => {
         // البحث باسم المجموعة
         resolvedGroupName = groupId;
         const group = await Group.findOne({ name: groupId }).select('_id name');
-        console.log(`📚 Found group by name:`, group);
+        logger.debug(`Found group by name: ${JSON.stringify(group)}`);
         if (group) {
           resolvedGroupId = group._id;
         }
@@ -95,23 +98,23 @@ exports.getStudentSectionsGrouped = async (req, res) => {
       sectionFilter = { group: resolvedGroupName };
     }
 
-    console.log(`📚 Resolved: groupId=${resolvedGroupId}, groupName="${resolvedGroupName}"`);
-    console.log("🔍 Final Section Filter:", JSON.stringify(sectionFilter));
+    logger.debug(`Resolved: groupId=${resolvedGroupId}, groupName="${resolvedGroupName}"`);
+    logger.debug(`Final Section Filter: ${JSON.stringify(sectionFilter)}`);
 
     // 3. Get all sections for this student's group
     const sections = await Section.find(sectionFilter)
       .sort({ date: -1 })
       .lean();
 
-    console.log(`✅ Found ${sections.length} sections`);
+    logger.debug(`Found ${sections.length} sections`);
     
     // Debug: Show first 3 sections details
     if (sections.length > 0) {
-      console.log("📋 First 3 sections:");
+      logger.trace("First 3 sections:");
       sections.slice(0, 3).forEach((s, i) => {
-        console.log(`  ${i+1}. group: "${s.group}", groupId: "${s.groupId}", date: ${s.date}`);
+        logger.trace(`  ${i+1}. group: "${s.group}", groupId: "${s.groupId}", date: ${s.date}`);
         if (s.memorizationMeta && s.memorizationMeta[0]) {
-          console.log(`     memorizationMeta[0]: surah ${s.memorizationMeta[0].surahNumber} - ${s.memorizationMeta[0].surahNameCanonical}`);
+          logger.trace(`     memorizationMeta[0]: surah ${s.memorizationMeta[0].surahNumber} - ${s.memorizationMeta[0].surahNameCanonical}`);
         }
       });
     }
@@ -121,7 +124,7 @@ exports.getStudentSectionsGrouped = async (req, res) => {
       .populate('sectionId')
       .lean();
 
-    console.log(`✅ Found ${marks.length} marks`);
+    logger.debug(`Found ${marks.length} marks`);
 
     // Create marks map for quick lookup
     const marksMap = new Map();
@@ -199,7 +202,7 @@ exports.getStudentSectionsGrouped = async (req, res) => {
       })
       .sort((a, b) => a.surahNumber - b.surahNumber); // Sort by Surah number
 
-    console.log(`✅ Grouped into ${groupedSurahs.length} Surahs`);
+    logger.success(`Grouped into ${groupedSurahs.length} Surahs`);
 
     sendSuccess(res, {
       student: {
@@ -219,7 +222,7 @@ exports.getStudentSectionsGrouped = async (req, res) => {
     }, "تم جلب المقاطع المجمعة بنجاح");
 
   } catch (error) {
-    console.error("❌ Error fetching grouped sections:", error);
+    logger.error("Error fetching grouped sections:", error);
     sendError(res, error.message, 500, error);
   }
 };

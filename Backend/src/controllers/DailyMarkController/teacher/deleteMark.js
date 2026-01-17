@@ -4,6 +4,9 @@
 
 const Mark = require("../../../schema/DailyMark/DailyMark");
 const { notifyMarkDeleted } = require("../../../Notifications");
+const { createLogger } = require("../../../utils/logger");
+
+const logger = createLogger('DeleteMark');
 
 // استيراد الدوال المساعدة
 const {
@@ -31,7 +34,7 @@ exports.deleteMark = async (req, res) => {
   try {
     const { id } = req.params;
 
-    console.log("🗑️ Deleting mark:", id);
+    logger.debug("Deleting mark:", id);
 
     // Get the mark before deletion to get student info and section date
     const mark = await Mark.findById(id).populate("sectionId", "date");
@@ -52,7 +55,7 @@ exports.deleteMark = async (req, res) => {
     const studentId = mark.studentId;
     const sectionId = mark.sectionId;
 
-    console.log("📊 Mark details:", {
+    logger.debug("Mark details:", {
       studentId,
       reviewMark: mark.reviewMark,
       memorizationMark: mark.memorizationMark,
@@ -64,13 +67,13 @@ exports.deleteMark = async (req, res) => {
       .populate("sectionId");
 
     // Send notification
-    console.log("🔔 Sending deletion notification...");
+    logger.debug("Sending deletion notification...");
     const io = req.app.get("io");
     await notifyMarkDeleted(markWithStudent, io);
 
     // Delete the mark
     await Mark.findByIdAndDelete(id);
-    console.log("✅ تم حذف العلامة بنجاح");
+    logger.success("تم حذف العلامة بنجاح");
 
     // Send success response immediately to make UI faster
     sendSuccess(res, { deletedId: id, studentId }, "تم حذف العلامة بنجاح");
@@ -90,10 +93,10 @@ exports.deleteMark = async (req, res) => {
         studentId,
       });
     } catch (bgError) {
-      console.error("⚠️ Error in background updates after delete:", bgError);
+      logger.warn("Error in background updates after delete:", bgError);
     }
   } catch (error) {
-    console.error("❌ Error in deleteMark:", error);
+    logger.error("Error in deleteMark:", error);
     // Only send error if response hasn't been sent yet
     if (!res.headersSent) {
       sendError(res, error.message, 500, error);

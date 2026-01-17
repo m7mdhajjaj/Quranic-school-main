@@ -1,6 +1,9 @@
 const smartScheduler = require("../../../services/DailyMark/SmartSchedulerService");
 const Section = require("../../../schema/DailyMark/Section");
 const { sendSuccess, sendError } = require("../utils/responseHelpers");
+const { createLogger } = require("../../../utils/logger");
+
+const logger = createLogger('RepairSequence');
 
 /**
  * Repair Sequence Controller
@@ -19,7 +22,7 @@ exports.repairSequence = async (req, res) => {
 
     // إذا تم تحديد سورة معينة
     if (surahNumber) {
-      console.log(`🤖 Smart Scheduler: Analyzing Surah ${surahNumber} for Group ${groupId}...`);
+      logger.debug(`Analyzing Surah ${surahNumber} for Group ${groupId}...`);
       
       const result = await smartScheduler.suggestGapFilling(groupId, surahNumber, {
         chunkSize: effectiveChunkSize
@@ -33,7 +36,7 @@ exports.repairSequence = async (req, res) => {
     }
 
     // إذا لم يتم تحديد سورة، نحلل جميع السور
-    console.log(`🤖 Smart Scheduler: Full analysis for Group ${groupId}...`);
+    logger.debug(`Full analysis for Group ${groupId}...`);
 
     // جلب جميع السور الموجودة في الحلقة
     const memSurahs = await Section.distinct("memorizationMeta.surahNumber", { group: groupId });
@@ -59,14 +62,14 @@ exports.repairSequence = async (req, res) => {
           chunkSize: effectiveChunkSize
         });
 
-        console.log(`\n📊 Surah ${surah} Analysis:`);
-        console.log(`   Gaps found: ${result.gaps?.length || 0}`);
-        console.log(`   Suggestions: ${result.suggestions?.length || 0}`);
+        logger.trace(`Surah ${surah} Analysis:`);
+        logger.trace(`   Gaps found: ${result.gaps?.length || 0}`);
+        logger.trace(`   Suggestions: ${result.suggestions?.length || 0}`);
         if (result.gaps?.length > 0) {
-          result.gaps.forEach(g => console.log(`      Gap: ${g.ayahStart}-${g.ayahEnd}`));
+          result.gaps.forEach(g => logger.trace(`      Gap: ${g.ayahStart}-${g.ayahEnd}`));
         }
         if (result.suggestions?.length > 0) {
-          result.suggestions.forEach(s => console.log(`      Suggestion: ${s.ayahStart}-${s.ayahEnd}`));
+          result.suggestions.forEach(s => logger.trace(`      Suggestion: ${s.ayahStart}-${s.ayahEnd}`));
         }
 
         if (result.success && result.gaps && result.gaps.length > 0) {
@@ -87,7 +90,7 @@ exports.repairSequence = async (req, res) => {
           }
         }
       } catch (err) {
-        console.error(`Error analyzing Surah ${surah}:`, err.message);
+        logger.warn(`Error analyzing Surah ${surah}:`, err.message);
       }
     }
 
@@ -111,7 +114,7 @@ exports.repairSequence = async (req, res) => {
     }, `تم اكتشاف ${totalGaps} فجوة`);
 
   } catch (error) {
-    console.error("❌ Smart Scheduler Error:", error);
+    logger.error("Smart Scheduler Error:", error);
     sendError(res, "حدث خطأ أثناء التحليل.", 500, error);
   }
 };

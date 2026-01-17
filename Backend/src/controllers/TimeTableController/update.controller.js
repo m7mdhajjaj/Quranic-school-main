@@ -9,6 +9,9 @@ const Group = require("../../schema/Group");
 const { checkTimeConflict, normalizeDate } = require("./helpers/scheduleConflict.helper");
 const { getArabicDayFromDate, normalizeTimeFormat } = require("./helpers/dateTime.helper");
 const { notifyTimetableUpdated } = require("../../Notifications");
+const { createLogger } = require("../../utils/logger");
+
+const logger = createLogger('TimetableUpdate');
 
 /**
  * تحديث موعد كامل
@@ -88,7 +91,7 @@ exports.updateTimetable = async (req, res) => {
         
         if (autoSessionType && autoSessionType !== timetable.sessionType) {
           updateData.sessionType = autoSessionType;
-          console.log('📚 Auto-updating sessionType from section:', {
+          logger.debug('📚 Auto-updating sessionType from section:', {
             timetableId: id,
             sectionId: timetable.sectionId,
             hasMemorization,
@@ -167,10 +170,10 @@ exports.updateTimetable = async (req, res) => {
     // ✅ 9. إرسال إشعارات للطلاب (في الخلفية)
     const io = req.app.get("io");
     notifyTimetableUpdated(updated, updateData, io).catch(err => 
-      console.error("⚠️ Error sending timetable update notification:", err)
+      logger.error("⚠️ Error sending timetable update notification:", err)
     );
 
-    console.log(`✏️ Timetable updated: ${updated._id} - Changes:`, Object.keys(updateData));
+    logger.info(`✏️ Timetable updated: ${updated._id} - Changes:`, Object.keys(updateData));
 
     res.json({
       success: true,
@@ -179,7 +182,7 @@ exports.updateTimetable = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("❌ Error updating timetable:", error);
+    logger.error("❌ Error updating timetable:", error);
     res.status(500).json({
       success: false,
       message: error.message || "حدث خطأ"
@@ -261,7 +264,7 @@ exports.updateTimetableTime = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("❌ Error:", error);
+    logger.error("Error updating timetable time:", error);
     res.status(500).json({
       success: false,
       message: "حدث خطأ"
@@ -352,7 +355,7 @@ exports.linkTimetableToSection = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("❌ Error:", error);
+    logger.error("Error linking timetable to section:", error);
     res.status(500).json({
       success: false,
       message: "حدث خطأ"

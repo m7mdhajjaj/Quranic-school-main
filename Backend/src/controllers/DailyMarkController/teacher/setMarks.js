@@ -5,6 +5,9 @@
 const Mark = require("../../../schema/DailyMark/DailyMark");
 const Section = require("../../../schema/DailyMark/Section");
 const { notifyMarksAdded } = require("../../../Notifications");
+const { createLogger } = require("../../../utils/logger");
+
+const logger = createLogger('SetMarks');
 
 // استيراد الدوال المساعدة
 const {
@@ -33,8 +36,8 @@ exports.setMarks = async (req, res) => {
   try {
     const marks = req.body.marks; // [{ studentId, sectionId, reviewMark, memorizationMark }]
 
-    console.log("📝 Setting marks for multiple students...");
-    console.log(`📊 Number of students: ${marks.length}`);
+    logger.debug("📝 Setting marks for multiple students...");
+    logger.debug(`📊 Number of students: ${marks.length}`);
 
     // Validate marks array using helper
     try {
@@ -84,9 +87,9 @@ exports.setMarks = async (req, res) => {
       },
     }));
 
-    console.log("🔄 Performing bulk write operation...");
+    logger.debug("🔄 Performing bulk write operation...");
     await Mark.bulkWrite(operations);
-    console.log("✅ Bulk write completed successfully");
+    logger.debug("✅ Bulk write completed successfully");
 
     // Collect IDs using helper
     const { studentIds, sectionIds } = collectMarkIds(validatedMarks);
@@ -107,11 +110,11 @@ exports.setMarks = async (req, res) => {
     await updateMultipleSectionsStatus(Array.from(sectionIds));
 
     // 🔔 Send notifications to students
-    console.log("🔔 إرسال الإشعارات...");
+    logger.debug("🔔 إرسال الإشعارات...");
     const io = req.app.get("io");
     // Use updatedMarks because it has populated sectionId and studentId
     await notifyMarksAdded(updatedMarks, io);
-    console.log("✅ تم إرسال الإشعارات");
+    logger.debug("✅ تم إرسال الإشعارات");
 
     // 🔌 Emit Socket.IO event
     emitSocketEvent(io, "markCreated", {
@@ -121,7 +124,7 @@ exports.setMarks = async (req, res) => {
 
     sendCreated(res, updatedMarks, `تم إضافة/تحديث ${updatedMarks.length} علامة بنجاح`);
   } catch (error) {
-    console.error("❌ Error in setMarks:", error);
+    logger.error("❌ Error in setMarks:", error);
 
     if (error.name === "ValidationError") {
       const validationErrors = Object.keys(error.errors)
@@ -144,8 +147,8 @@ exports.setMarksForSection = async (req, res) => {
     const { sectionId } = req.params;
     const marks = req.body.marks;
 
-    console.log("📝 Setting marks for section:", sectionId);
-    console.log(`📊 Number of students: ${marks.length}`);
+    logger.debug("📝 Setting marks for section:", sectionId);
+    logger.debug(`📊 Number of students: ${marks.length}`);
 
     if (!Array.isArray(marks) || marks.length === 0) {
       return res.status(400).json({
@@ -171,7 +174,7 @@ exports.setMarksForSection = async (req, res) => {
       res
     );
   } catch (error) {
-    console.error("❌ Error in setMarksForSection:", error);
+    logger.error("Error in setMarksForSection:", error);
     res.status(500).json({
       success: false,
       message: error.message,

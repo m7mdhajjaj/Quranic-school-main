@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const schedulerController = require("../../controllers/DailyMarkController/schedulerController");
-const { protect } = require("../../middleware/auth");
+const { protect, adminProtect } = require("../../middleware/auth");
 
 /**
  * ============================================================================
@@ -126,7 +126,8 @@ router.post("/validate-auto-fix", schedulerController.validateAndAutoFix);
  * GET /debug-order/:groupId/:surahNumber
  * عرض الترتيب الحالي للمقاطع (للتصحيح والفحص)
  * يُظهر إذا كان الترتيب الزمني يطابق الترتيب القرآني
+ * ⚠️ محمي بصلاحيات المشرف فقط
  */
-router.get("/debug-order/:groupId/:surahNumber", schedulerController.debugOrder);
+router.get("/debug-order/:groupId/:surahNumber", adminProtect, schedulerController.debugOrder);
 
 module.exports = router;

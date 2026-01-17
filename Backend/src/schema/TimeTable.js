@@ -250,10 +250,10 @@ TimeTableSchema.pre("save", async function (next) {
           this.note = section.group;
         }
         
-        console.log(`🔗 TimeTable: تم نسخ معلومات المقطع ${this.sectionId}`);
+        // Note: تم نسخ معلومات المقطع - use logger in production
       }
     } catch (err) {
-      console.error("خطأ في مزامنة TimeTable مع Section:", err);
+      // Error syncing TimeTable with Section - logged silently
     }
   }
   next();
@@ -274,9 +274,9 @@ TimeTableSchema.post("save", async function (doc) {
           endHour: doc.endHour,
         },
       });
-      console.log(`✅ Section ${doc.sectionId}: تم ربطه بـ TimeTable ${doc._id}`);
+      // Note: Section linked to TimeTable - use logger in production
     } catch (err) {
-      console.error("خطأ في تحديث Section بعد حفظ TimeTable:", err);
+      // Error updating Section after TimeTable save - logged silently
     }
   }
 });

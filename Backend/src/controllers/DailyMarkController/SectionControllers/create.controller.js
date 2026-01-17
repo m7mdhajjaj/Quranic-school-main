@@ -3,12 +3,15 @@ const Group = require("../../../schema/Group");
 const Teacher = require("../../../schema/Teacher");
 const { notifySectionAdded } = require("../../../Notifications");
 const { updateSectionMarksStatus } = require("./sectionMarksStatus");
-const sequenceService = require("../../../services/DailyMark/SectionSequenceService"); // Import New Service
+const sequenceService = require("../../../services/DailyMark/SectionSequenceService");
+const { createLogger } = require("../../../utils/logger");
 const {
   sendCreated,
   sendError,
   sendValidationError,
 } = require("../utils/responseHelpers");
+
+const logger = createLogger('SectionCreate');
 
 /**
  * Create a new section
@@ -20,8 +23,8 @@ const {
  */
 exports.createSection = async (req, res) => {
   try {
-    console.log(" Creating section with original data:", req.body);
-    console.log(" Using validated data:", req.validatedData);
+    logger.debug("Creating section with original data:", req.body);
+    logger.debug("Using validated data:", req.validatedData);
 
     // Use validated data from middleware
     const sectionData = req.validatedData || {
@@ -39,7 +42,7 @@ exports.createSection = async (req, res) => {
       const groupDoc = await Group.findOne({ name: sectionData.group.trim() });
       if (groupDoc) {
         sectionData.groupId = groupDoc._id;
-        console.log(`🔗 تم ربط Section بـ Group: ${groupDoc._id}`);
+        logger.debug(`تم ربط Section بـ Group: ${groupDoc._id}`);
       }
     }
 
@@ -68,7 +71,7 @@ exports.createSection = async (req, res) => {
       
       if (teacherDoc) {
         sectionData.teacherId = teacherDoc._id;
-        console.log(`🔗 تم ربط Section بـ Teacher: ${teacherDoc._id}`);
+        logger.debug(`تم ربط Section بـ Teacher: ${teacherDoc._id}`);
       }
     }
 
@@ -83,7 +86,7 @@ exports.createSection = async (req, res) => {
             sectionData.date
         );
         if (!dailyCheck.isValid && dailyCheck.isBlocked) {
-             console.log("❌ dailyCheck failed:", dailyCheck.message);
+             logger.warn("dailyCheck failed:", dailyCheck.message);
              return sendError(res, dailyCheck.message, 400); 
         }
 
@@ -93,7 +96,7 @@ exports.createSection = async (req, res) => {
             sectionData.date
         );
         if (!weeklyCheck.isValid) {
-             console.log("❌ weeklyCheck failed:", weeklyCheck.message);
+             logger.warn("weeklyCheck failed:", weeklyCheck.message);
              return sendError(res, weeklyCheck.message, 400);
         }
 
@@ -107,7 +110,7 @@ exports.createSection = async (req, res) => {
             const canAddMem = await Group.canAddSegment(sectionData.groupId, memSurahNumber, 'memorization');
             
             if (!canAddMem.allowed) {
-              console.log("❌ Active Surah Check (Memorization) failed:", canAddMem.reason);
+              logger.warn("Active Surah Check (Memorization) failed:", canAddMem.reason);
               return sendError(res, canAddMem.reason, 400);
             }
           }
@@ -118,7 +121,7 @@ exports.createSection = async (req, res) => {
             const canAddRev = await Group.canAddSegment(sectionData.groupId, revSurahNumber, 'review');
             
             if (!canAddRev.allowed) {
-              console.log("❌ Active Surah Check (Review) failed:", canAddRev.reason);
+              logger.warn("Active Surah Check (Review) failed:", canAddRev.reason);
               return sendError(res, canAddRev.reason, 400);
             }
           }
@@ -134,7 +137,7 @@ exports.createSection = async (req, res) => {
         );
         
         if (!memValidation.isValid) {
-            console.log("❌ memValidation failed:", memValidation.message);
+            logger.warn("memValidation failed:", memValidation.message);
             return sendValidationError(res, memValidation.message);
         }
 
@@ -165,9 +168,9 @@ exports.createSection = async (req, res) => {
 
     const section = new Section(sectionData);
 
-    console.log(" Section object created:", section);
+    logger.debug("Section object created:", section);
     let newSection = await section.save();
-    console.log(" Section saved successfully:", newSection);
+    logger.success("Section saved successfully:", newSection);
     
     // ✅ Populate timetableId for complete response
     newSection = await Section.findById(newSection._id)
@@ -224,14 +227,14 @@ exports.createSection = async (req, res) => {
     
     // Fire-and-forget: Status Update (Background)
     updateSectionMarksStatus(newSection._id.toString(), newSection.group)
-      .then(() => console.log("✅ Status updated in background"))
-      .catch(err => console.error("⚠️ Async Status Update Error:", err));
+      .then(() => logger.debug("Status updated in background"))
+      .catch(err => logger.warn("Async Status Update Error:", err));
 
     // Fire-and-forget: Notification (Background)
     const io = req.app.get("io");
     if (io && newSection.group) {
       notifySectionAdded(newSection, io)
-        .catch(err => console.error("⚠️ Async Notification Error:", err));
+        .catch(err => logger.warn("Async Notification Error:", err));
     }
 
     // Check for completed Surahs
@@ -261,7 +264,7 @@ exports.createSection = async (req, res) => {
     });
 
   } catch (error) {
-    console.error(" Error creating section:", error);
+    logger.error("Error creating section:", error);
 
     // Handle validation errors
     if (error.name === "ValidationError") {

@@ -1,6 +1,9 @@
 const smartScheduler = require("../../services/DailyMark/SmartSchedulerService");
 const { getSurahByNumber } = require("../../utils/Quran/dailyMarkQuranMetadata");
 const Group = require("../../schema/Group");
+const { createLogger } = require("../../utils/logger");
+
+const logger = createLogger('Scheduler');
 
 /**
  * ============================================================================
@@ -54,7 +57,7 @@ const suggestGapFilling = async (req, res) => {
     return res.json(result);
 
   } catch (error) {
-    console.error("Error in suggestGapFilling:", error);
+    logger.error("Error in suggestGapFilling:", error);
     return res.status(500).json({ 
       success: false, 
       message: "خطأ في اقتراح سد الفجوات", 
@@ -111,7 +114,7 @@ const suggestSingleDate = async (req, res) => {
     return res.json(result);
 
   } catch (error) {
-    console.error("Error in suggestSingleDate:", error);
+    logger.error("Error in suggestSingleDate:", error);
     return res.status(500).json({ 
       success: false, 
       message: "خطأ في اقتراح التاريخ", 
@@ -159,7 +162,7 @@ const validateBeforeInsert = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Error in validateBeforeInsert:", error);
+    logger.error("Error in validateBeforeInsert:", error);
     return res.status(500).json({ 
       success: false, 
       message: "خطأ في التحقق", 
@@ -201,7 +204,7 @@ const getAvailableDates = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Error in getAvailableDates:", error);
+    logger.error("Error in getAvailableDates:", error);
     return res.status(500).json({ 
       success: false, 
       message: "خطأ في جلب التواريخ المتاحة", 
@@ -253,7 +256,7 @@ const detectGaps = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Error in detectGaps:", error);
+    logger.error("Error in detectGaps:", error);
     return res.status(500).json({ 
       success: false, 
       message: "خطأ في اكتشاف الفجوات", 
@@ -314,7 +317,7 @@ const splitChunk = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Error in splitChunk:", error);
+    logger.error("Error in splitChunk:", error);
     return res.status(500).json({ 
       success: false, 
       message: "خطأ في تقسيم الفجوة", 
@@ -356,7 +359,7 @@ const getWeeklyUsage = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Error in getWeeklyUsage:", error);
+    logger.error("Error in getWeeklyUsage:", error);
     return res.status(500).json({ 
       success: false, 
       message: "خطأ في جلب استخدام الأسابيع", 
@@ -407,7 +410,7 @@ const validateAndAutoFix = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Error in validateAndAutoFix:", error);
+    logger.error("Error in validateAndAutoFix:", error);
     return res.status(500).json({ 
       success: false, 
       message: "خطأ في التحقق والإصلاح التلقائي", 
@@ -453,7 +456,7 @@ const debugOrder = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Error in debugOrder:", error);
+    logger.error("Error in debugOrder:", error);
     return res.status(500).json({ 
       success: false, 
       message: "خطأ في عرض الترتيب", 

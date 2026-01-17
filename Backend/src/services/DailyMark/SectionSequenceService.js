@@ -1,6 +1,9 @@
 const Section = require("../../schema/DailyMark/Section");
 const { getSurahByNumber } = require("../../utils/Quran/dailyMarkQuranMetadata");
 const { toDateKey, TIMEZONE } = require("../../config/timezone");
+const { createLogger } = require("../../utils/logger");
+
+const logger = createLogger('SectionSequence');
 
 /**
  * ============================================================================
@@ -55,13 +58,9 @@ class SectionSequenceService {
   /**
    * Helper: Convert Date to dateKey (YYYY-MM-DD in Palestine timezone)
    * استخدام توقيت فلسطين لضمان التوافق مع باقي النظام
+   * @deprecated استخدم toDateKey مباشرة من config/timezone.js
    */
   toDateKeyLocal(date) {
-    return toDateKey(date);
-  }
-
-  // للتوافق الخلفي - الاسم القديم يشير للجديد
-  toDateKeyUTC(date) {
     return toDateKey(date);
   }
 
@@ -202,7 +201,7 @@ class SectionSequenceService {
     
     // ✅ استخدام dateKey بدلاً من التحويل اليدوي
     const newDateKey = newSectionDate 
-      ? this.toDateKeyUTC(newSectionDate) 
+      ? this.toDateKeyLocal(newSectionDate) 
       : null;
 
     // ====================================================
@@ -277,7 +276,7 @@ class SectionSequenceService {
          
          // ب. تكرار المراجعة (ممنوع في نفس اليوم فقط - باستخدام dateKey)
          if (type === 'review' && newDateKey) {
-             const conflictDateKey = conflictingSection.dateKey || this.toDateKeyUTC(conflictingSection.date);
+             const conflictDateKey = conflictingSection.dateKey || this.toDateKeyLocal(conflictingSection.date);
              
              if (conflictDateKey === newDateKey) {
                  const exactMatch = conflictingSection[metaField].find(s =>
@@ -368,7 +367,7 @@ class SectionSequenceService {
 
           if (!hasLocalPredecessor && seg.ayahStart !== expectedStart && seg.ayahStart !== 1) {
               // تحذير فقط (لا نمنع، لكن نعلم المستخدم)
-              console.warn(`⚠️ تنبيه: المراجعة [${seg.surahNumber}:${seg.ayahStart}-${seg.ayahEnd}] لا تتبع التسلسل المتوقع (كان متوقع من ${expectedStart}).`);
+              logger.warn(`تنبيه: المراجعة [${seg.surahNumber}:${seg.ayahStart}-${seg.ayahEnd}] لا تتبع التسلسل المتوقع (كان متوقع من ${expectedStart}).`);
           }
       }
 
@@ -493,7 +492,7 @@ class SectionSequenceService {
   async checkDailyQuota(groupId, date, excludeSectionId = null) {
       if (!date || !groupId) return { isValid: true, isBlocked: false };
 
-      const dateKey = this.toDateKeyUTC(date);
+      const dateKey = this.toDateKeyLocal(date);
       
       const query = {
           group: groupId,
@@ -922,7 +921,7 @@ class SectionSequenceService {
             isValid: false,
             message: this.formatErrorMessage(
               "تعارض في ترتيب التواريخ والآيات",
-              `التاريخ المختار (${this.toDateKeyUTC(proposedDate)}) أقدم من تاريخ مقطع موجود (${existing.dateKey})، لكنك تحاول إضافة آيات (${ayahStart}-${ayahEnd}) أحدث من آيات ذلك المقطع (${existing.ayahStart}-${existing.ayahEnd}).`,
+              `التاريخ المختار (${this.toDateKeyLocal(proposedDate)}) أقدم من تاريخ مقطع موجود (${existing.dateKey})، لكنك تحاول إضافة آيات (${ayahStart}-${ayahEnd}) أحدث من آيات ذلك المقطع (${existing.ayahStart}-${existing.ayahEnd}).`,
               `اختر تاريخاً لاحقاً لـ ${existing.dateKey}، أو اختر آيات أقدم من الآية ${existing.ayahStart}.`
             )
           };
@@ -937,7 +936,7 @@ class SectionSequenceService {
             isValid: false,
             message: this.formatErrorMessage(
               "تعارض في ترتيب التواريخ والآيات",
-              `التاريخ المختار (${this.toDateKeyUTC(proposedDate)}) أحدث من تاريخ مقطع موجود (${existing.dateKey})، لكنك تحاول إضافة آيات (${ayahStart}-${ayahEnd}) أقدم من آيات ذلك المقطع (${existing.ayahStart}-${existing.ayahEnd}).`,
+              `التاريخ المختار (${this.toDateKeyLocal(proposedDate)}) أحدث من تاريخ مقطع موجود (${existing.dateKey})، لكنك تحاول إضافة آيات (${ayahStart}-${ayahEnd}) أقدم من آيات ذلك المقطع (${existing.ayahStart}-${existing.ayahEnd}).`,
               `اختر تاريخاً أقدم من ${existing.dateKey}، أو اختر آيات أحدث من الآية ${existing.ayahEnd}.`
             )
           };

@@ -6,6 +6,9 @@
 
 const TimeTable = require("../../schema/TimeTable");
 const Section = require("../../schema/DailyMark/Section");
+const Teacher = require("../../schema/Teacher");
+const mongoose = require("mongoose");
+const { createLogger } = require("../../utils/logger");
 const { 
   checkTimeConflict, 
   normalizeDate, 
@@ -22,6 +25,34 @@ const {
   timeToMinutes,
   getAllBookedHours
 } = require("./helpers/dateTime.helper");
+
+const logger = createLogger('AvailabilityController');
+
+/**
+ * التحقق من صحة teacherId
+ * @param {string} teacherId - معرف المعلم
+ * @returns {Promise<{valid: boolean, teacher?: Object, error?: string}>}
+ */
+async function validateTeacherId(teacherId) {
+  if (!teacherId) {
+    return { valid: false, error: "معرف المعلم مطلوب" };
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(teacherId)) {
+    return { valid: false, error: "معرف المعلم غير صالح" };
+  }
+
+  const teacher = await Teacher.findById(teacherId).select('firstName lastName isActive').lean();
+  if (!teacher) {
+    return { valid: false, error: "المعلم غير موجود" };
+  }
+
+  if (teacher.isActive === false) {
+    return { valid: false, error: "حساب المعلم غير نشط" };
+  }
+
+  return { valid: true, teacher };
+}
 
 /**
  * جلب الأوقات المتاحة (عامة)
@@ -49,7 +80,7 @@ exports.getAvailableHours = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("❌ Error:", error);
+    logger.error("Error getting available hours:", error);
     res.status(500).json({
       success: false,
       message: "حدث خطأ"
@@ -74,6 +105,15 @@ exports.getTeacherAvailableHours = async (req, res) => {
       });
     }
 
+    // ✅ التحقق من صحة teacherId
+    const teacherValidation = await validateTeacherId(teacherId);
+    if (!teacherValidation.valid) {
+      return res.status(400).json({
+        success: false,
+        message: teacherValidation.error
+      });
+    }
+
     // ✅ التحقق من صحة التاريخ
     if (!isValidDate(date)) {
       return res.status(400).json({
@@ -92,11 +132,12 @@ exports.getTeacherAvailableHours = async (req, res) => {
     const targetDate = normalizeDate(date);
     const nextDay = normalizeNextDay(date);
     
-    console.log("🔍 getTeacherAvailableHours:", {
+    logger.debug("🔍 getTeacherAvailableHours:", {
       date,
       targetDate: targetDate.toISOString(),
       nextDay: nextDay.toISOString(),
-      teacherId
+      teacherId,
+      teacherName: `${teacherValidation.teacher.firstName} ${teacherValidation.teacher.lastName}`
     });
     
     let query = { 
@@ -122,7 +163,7 @@ exports.getTeacherAvailableHours = async (req, res) => {
       })
       .lean();
 
-    console.log("📋 bookedSessions found:", bookedSessions.length);
+    logger.debug("📋 bookedSessions found:", bookedSessions.length);
 
     // ✅ 4. تجميع الأوقات المحجوزة مع تفاصيلها
     const bookedHoursMap = new Map(); // Map<timeSlot, sessionDetails[]>
@@ -162,7 +203,7 @@ exports.getTeacherAvailableHours = async (req, res) => {
           });
         }
       } else {
-        console.warn(`  ⚠️ Time not found! ${session.startHour} - ${session.endHour}`);
+        logger.warn(`Time not found! ${session.startHour} - ${session.endHour}`);
       }
       
       // بناء تفاصيل المقطع
@@ -233,7 +274,7 @@ exports.getTeacherAvailableHours = async (req, res) => {
       });
     });
 
-    console.log(`⏰ Teacher ${teacherId} on ${date}: ${bookedHours.length} booked, ${availableHours.length} available`);
+    logger.debug(`⏰ Teacher ${teacherId} on ${date}: ${bookedHours.length} booked, ${availableHours.length} available`);
 
     res.json({
       success: true,
@@ -268,7 +309,7 @@ exports.getTeacherAvailableHours = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("❌ Error:", error);
+    logger.error("Error getting teacher available hours:", error);
     res.status(500).json({
       success: false,
       message: "حدث خطأ في جلب الأوقات المتاحة",
@@ -371,7 +412,7 @@ exports.getTeacherDaySchedule = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Error getting teacher day schedule:', error);
+    logger.error('Error getting teacher day schedule:', error);
     res.status(500).json({
       success: false,
       message: 'خطأ في جلب جدول اليوم',
@@ -428,7 +469,7 @@ exports.checkConflict = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("❌ Error:", error);
+    logger.error("Error checking conflict:", error);
     res.status(500).json({
       success: false,
       message: "حدث خطأ"
