@@ -225,6 +225,25 @@ export const deleteSection = async (id: string): Promise<boolean> => {
   }
 };
 
+// Bulk delete sections
+export const bulkDeleteSections = async (sectionIds: string[]): Promise<{
+  deletedCount: number;
+  deletedSectionIds: string[];
+  deletedTimeTables: number;
+  deletedMarks: number;
+}> => {
+  try {
+    console.log("🗑️ Bulk deleting sections:", sectionIds);
+    const response = await api.delete("/daily-marks/sections/bulk", {
+      data: { sectionIds },
+    });
+    return response.data.data || response.data;
+  } catch (error) {
+    console.error("Failed to bulk delete sections:", error);
+    throw error;
+  }
+};
+
 // Get active sections
 export const getActiveSections = async (): Promise<Section[]> => {
   try {

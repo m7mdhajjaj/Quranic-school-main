@@ -1,28 +1,92 @@
 // ============================================================================
 // DailyMarkController/index.js - Main Controller Entry Point
 // ============================================================================
+//
+// 📚 نظام العلامات اليومية (DailyMark System)
+// ============================================================================
+//
+// 🎯 التنظيم حسب الدور (Role-Based Organization):
+//
+// ┌─────────────────────────────────────────────────────────────────────────┐
+// │ 👨‍🏫 TEACHER (المعلم)                                                    │
+// │ ─────────────────────────────────────────────────────────────────────── │
+// │ • Section CRUD: createSection, updateSection, deleteSection             │
+// │ • Bulk Operations: bulkCreateSections, repairSequence                   │
+// │ • Marks Write: setMarks, createOrUpdateMark, updateMarkById, deleteMark │
+// │ • Active Surah: getActiveSurahs, completeSurah, resetActiveSurah        │
+// │ • Helpers: getSections, getLastSegment, checkQuota                      │
+// └─────────────────────────────────────────────────────────────────────────┘
+//
+// ┌─────────────────────────────────────────────────────────────────────────┐
+// │ 👨‍🎓 STUDENT (الطالب)                                                    │
+// │ ─────────────────────────────────────────────────────────────────────── │
+// │ • My Marks: getStudentMarks, getStudentMarkStats                        │
+// │ • My Progress: getStudentAverages, getStudentSectionsGrouped            │
+// │ • Surah History: getCompletedSurahs, getSurahHistory                    │
+// └─────────────────────────────────────────────────────────────────────────┘
+//
+// ┌─────────────────────────────────────────────────────────────────────────┐
+// │ 🔄 SHARED (مشترك - للجميع)                                              │
+// │ ─────────────────────────────────────────────────────────────────────── │
+// │ • Marks Read: getMarks, getFilteredMarks, getSectionMarks               │
+// │ • Group Stats: getGroupStats                                            │
+// └─────────────────────────────────────────────────────────────────────────┘
+//
+// 📁 هيكل المجلدات:
+// ─────────────────
+// DailyMarkController/
+// ├── index.js              ← أنت هنا (Main Entry)
+// ├── teacher/
+// │   └── index.js          ← دوال المعلم (26 دالة)
+// ├── student/
+// │   └── index.js          ← دوال الطالب (6 دوال)
+// ├── shared/
+// │   └── index.js          ← دوال مشتركة (4 دوال)
+// ├── SectionControllers/   ← كونترولرز المقاطع
+// ├── utils/                ← دوال مساعدة
+// └── [legacy files]        ← ملفات الدوال الأصلية
+//
+// ============================================================================
 
-// Import DailyMark controllers
-const getMarks = require("./getMarks");
-const getFilteredMarks = require("./getFilteredMarks");
-const setMarks = require("./setMarks");
-const updateMark = require("./updateMark");
-const deleteMark = require("./deleteMark");
-const getGroupStats = require("./getGroupStats");
+// ============================================================================
+// ROLE-BASED IMPORTS
+// ============================================================================
+const teacherController = require("./teacher");
+const studentController = require("./student");
+const sharedController = require("./shared");
 
-// Import Section controllers (part of DailyMark system)
-const sectionControllers = require("./SectionControllers");
+// ============================================================================
+// SCHEDULER (Background Jobs)
+// ============================================================================
+const schedulerController = require("./schedulerController");
 
-// Export all functions
+// ============================================================================
+// LEGACY SUPPORT - للتوافق مع الكود القديم
+// ============================================================================
+// يمكن الوصول للدوال مباشرة أو عبر الفولدرات:
+// - dailyMarkController.setMarks() ← طريقة قديمة (لا تزال تعمل)
+// - dailyMarkController.teacher.setMarks() ← طريقة جديدة (موصى بها)
+
+// ============================================================================
+// EXPORTS - تصدير مع دعم كلا الطريقتين
+// ============================================================================
 module.exports = {
-  // DailyMark operations
-  ...getMarks,
-  ...getFilteredMarks,
-  ...setMarks,
-  ...updateMark,
-  ...deleteMark,
-  ...getGroupStats,
+  // ========== ROLE-BASED ACCESS (NEW) ==========
+  teacher: teacherController,
+  student: studentController,
+  shared: sharedController,
+  
+  // ========== SCHEDULER ==========
+  ...schedulerController,
 
-  // Section operations (part of DailyMark)
-  ...sectionControllers,
+  // ========== LEGACY FLAT EXPORTS (للتوافق) ==========
+  // Teacher Operations
+  ...teacherController,
+  
+  // Student Operations
+  ...studentController,
+  
+  // Shared Operations
+  ...sharedController,
 };
+

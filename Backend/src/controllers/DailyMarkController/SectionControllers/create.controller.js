@@ -97,6 +97,34 @@ exports.createSection = async (req, res) => {
              return sendError(res, weeklyCheck.message, 400);
         }
 
+        // ============================================
+        // 🔒 ACTIVE SURAH VALIDATION - منع البدء بسورة جديدة قبل إكمال الحالية
+        // ============================================
+        if (sectionData.groupId) {
+          // التحقق من مقاطع الحفظ
+          if (sectionData.memorizationMeta && sectionData.memorizationMeta.length > 0) {
+            const memSurahNumber = sectionData.memorizationMeta[0].surahNumber;
+            const canAddMem = await Group.canAddSegment(sectionData.groupId, memSurahNumber, 'memorization');
+            
+            if (!canAddMem.allowed) {
+              console.log("❌ Active Surah Check (Memorization) failed:", canAddMem.reason);
+              return sendError(res, canAddMem.reason, 400);
+            }
+          }
+
+          // التحقق من مقاطع المراجعة
+          if (sectionData.reviewMeta && sectionData.reviewMeta.length > 0) {
+            const revSurahNumber = sectionData.reviewMeta[0].surahNumber;
+            const canAddRev = await Group.canAddSegment(sectionData.groupId, revSurahNumber, 'review');
+            
+            if (!canAddRev.allowed) {
+              console.log("❌ Active Surah Check (Review) failed:", canAddRev.reason);
+              return sendError(res, canAddRev.reason, 400);
+            }
+          }
+        }
+        // ============================================
+
         // 1. Check Memorization Sequence (Date-Aware with Neighbors)
         const memValidation = await sequenceService.validateSequence(
             sectionData.memorizationMeta,
@@ -138,8 +166,61 @@ exports.createSection = async (req, res) => {
     const section = new Section(sectionData);
 
     console.log(" Section object created:", section);
-    const newSection = await section.save();
+    let newSection = await section.save();
     console.log(" Section saved successfully:", newSection);
+    
+    // ✅ Populate timetableId for complete response
+    newSection = await Section.findById(newSection._id)
+      .populate('timetableId', 'day startHour endHour sessionType')
+      .lean();
+    
+    // ============================================
+    // 🔄 UPDATE ACTIVE SURAH - تحديث السورة الفعالة
+    // ============================================
+    if (sectionData.groupId) {
+      // تحديث السورة الفعالة للحفظ
+      if (sectionData.memorizationMeta && sectionData.memorizationMeta.length > 0) {
+        const memSegment = sectionData.memorizationMeta[0];
+        const activeSurahs = await Group.getActiveSurahs(sectionData.groupId);
+        
+        if (!activeSurahs?.memorization?.surahNumber || activeSurahs.memorization.isCompleted) {
+          // تفعيل سورة جديدة
+          await Group.activateSurah(
+            sectionData.groupId,
+            memSegment.surahNumber,
+            memSegment.surahNameCanonical || memSegment.surahNameInput,
+            memSegment.ayahEnd,
+            'memorization'
+          );
+        } else {
+          // تحديث آخر آية
+          const maxAyahEnd = Math.max(...sectionData.memorizationMeta.map(s => s.ayahEnd));
+          await Group.updateLastAyah(sectionData.groupId, maxAyahEnd, 'memorization');
+        }
+      }
+
+      // تحديث السورة الفعالة للمراجعة
+      if (sectionData.reviewMeta && sectionData.reviewMeta.length > 0) {
+        const revSegment = sectionData.reviewMeta[0];
+        const activeSurahs = await Group.getActiveSurahs(sectionData.groupId);
+        
+        if (!activeSurahs?.review?.surahNumber || activeSurahs.review.isCompleted) {
+          // تفعيل سورة جديدة
+          await Group.activateSurah(
+            sectionData.groupId,
+            revSegment.surahNumber,
+            revSegment.surahNameCanonical || revSegment.surahNameInput,
+            revSegment.ayahEnd,
+            'review'
+          );
+        } else {
+          // تحديث آخر آية
+          const maxAyahEnd = Math.max(...sectionData.reviewMeta.map(s => s.ayahEnd));
+          await Group.updateLastAyah(sectionData.groupId, maxAyahEnd, 'review');
+        }
+      }
+    }
+    // ============================================
     
     // Fire-and-forget: Status Update (Background)
     updateSectionMarksStatus(newSection._id.toString(), newSection.group)

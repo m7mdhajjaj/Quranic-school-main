@@ -135,10 +135,20 @@ export const getWeekDates = (startOfWeek: Date): Date[] => {
 
 /**
  * تنسيق التاريخ للـ API (YYYY-MM-DD)
+ * ✅ إصلاح مشكلة الـ timezone عند التحويل من string
  */
 export const formatDateForAPI = (date: Date | string): string => {
-  const d = typeof date === 'string' ? new Date(date) : date;
-  return toDateKey(d);
+  if (typeof date === 'string') {
+    // ✅ إذا كان التاريخ بتنسيق YYYY-MM-DD بدون وقت، نُرجعه مباشرة
+    const dateOnly = date.split('T')[0];
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateOnly)) {
+      return dateOnly;
+    }
+    // إذا كان يحتوي على وقت، نحول للتاريخ ثم نستخرج بالـ timezone
+    const d = new Date(date);
+    return toDateKey(d);
+  }
+  return toDateKey(date);
 };
 
 /**

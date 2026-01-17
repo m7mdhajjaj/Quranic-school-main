@@ -1,6 +1,6 @@
 // Utility code for extracting validation messages from Yup and Segment objects
 // ✅ V3 Compatible - UI-layer validation only
-import { sectionValidationSchema } from '@/Validation/dailyMarksValidation';
+import { sectionValidationSchema } from '@/Validation/DailyMark';
 import type { QuranSegmentUI } from '../types/types';
 import * as yup from 'yup';
 

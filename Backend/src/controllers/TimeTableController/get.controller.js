@@ -89,8 +89,9 @@ exports.getTimetables = async (req, res) => {
     // ✅ 3. فلترة حسب التاريخ
     if (startDate && endDate) {
       // فلترة بنطاق تاريخ محدد (للعرض الشهري)
+      // ✅ إضافة الوقت صراحة لتجنب مشاكل الـ timezone
       query.sessionDate = { 
-        $gte: new Date(startDate), 
+        $gte: new Date(startDate + 'T00:00:00.000Z'), 
         $lte: new Date(endDate + 'T23:59:59.999Z') 
       };
     } else if (weekFilter === 'current' || weekStart) {

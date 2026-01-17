@@ -377,10 +377,67 @@ const validateSectionId = (req, res, next) => {
   next();
 };
 
+/**
+ * Validate Active Surah Request Data
+ * For reset-active-surah and complete-surah endpoints
+ */
+const validateActiveSurahData = (req, res, next) => {
+  try {
+    const { groupId, type } = req.body;
+    const errors = [];
+
+    if (!isRequired(groupId)) {
+      errors.push("معرّف الحلقة (groupId) مطلوب");
+    } else if (!mongoose.Types.ObjectId.isValid(groupId)) {
+      errors.push("معرّف الحلقة غير صالح");
+    }
+
+    if (!isRequired(type)) {
+      errors.push("نوع السورة (type) مطلوب");
+    } else if (!['memorization', 'review'].includes(type)) {
+      errors.push("نوع السورة يجب أن يكون 'memorization' أو 'review'");
+    }
+
+    if (errors.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "بيانات غير صحيحة",
+        errors: errors,
+      });
+    }
+
+    next();
+  } catch (error) {
+    console.error("❌ Validating Active Surah Data Error:", error);
+    res.status(500).json({ success: false, message: "Server Validation Error" });
+  }
+};
+
+/**
+ * Validate Group ID (for params)
+ */
+const validateGroupIdParam = (req, res, next) => {
+  const { groupId } = req.params;
+  
+  if (!isRequired(groupId)) {
+    return res.status(400).json({
+      success: false,
+      message: "معرّف الحلقة مطلوب"
+    });
+  }
+
+  // Allow both ObjectId and group name
+  // The controller will handle the lookup
+
+  next();
+};
+
 module.exports = {
   validateDailyMarksSectionData,
   validateRepairSequenceData,
   validateSectionId,
+  validateActiveSurahData,
+  validateGroupIdParam,
   sanitizeSectionData,
   validateDate,
   validateSectionName,

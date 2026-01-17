@@ -1,32 +1,94 @@
 // ============================================================================
-// SectionController/index.js - Main Controller Entry Point
+// SectionControllers/index.js - Section Controllers Entry Point
+// ============================================================================
+//
+// 📖 هيكل نظام المقاطع (Section System)
+// ============================================================================
+//
+// 1️⃣ GET OPERATIONS - عمليات الجلب
+//    ├── getSections()           → جلب جميع المقاطع
+//    ├── getSection()            → جلب مقطع واحد
+//    ├── getFilteredSections()   → جلب مقاطع مع فلترة
+//    ├── getLastSegment()        → آخر مقطع للاقتراح التلقائي
+//    ├── getNeighborSegments()   → المقاطع المجاورة (للتعبئة الرجعية)
+//    ├── checkQuota()            → فحص الحصة اليومية/الأسبوعية
+//    ├── getCompletedSurahs()    → السور المكتملة
+//    ├── getSurahHistory()       → تاريخ سورة معينة
+//    ├── getActiveSurahs()       → السور الفعالة (أساسي)
+//    └── getActiveSurahInfo()    → معلومات تفصيلية عن السور الفعالة
+//
+// 2️⃣ CREATE OPERATIONS - عمليات الإنشاء
+//    └── createSection()         → إنشاء مقطع جديد
+//
+// 3️⃣ UPDATE OPERATIONS - عمليات التعديل
+//    └── updateSection()         → تعديل مقطع
+//
+// 4️⃣ DELETE OPERATIONS - عمليات الحذف
+//    ├── deleteSection()         → حذف مقطع واحد
+//    └── bulkDeleteSections()    → حذف مقاطع متعددة
+//
+// 5️⃣ BULK OPERATIONS - عمليات بالجملة
+//    ├── bulkCreateSections()    → إنشاء مقاطع متعددة
+//    └── bulkDeleteSections()    → حذف مقاطع متعددة (أيضاً في DELETE)
+//
+// 6️⃣ REPAIR OPERATIONS - عمليات الإصلاح (AI)
+//    └── repairSequence()        → إصلاح تسلسل المقاطع
+//
+// 7️⃣ SURAH MANAGEMENT - إدارة السور
+//    ├── completeSurah()         → إكمال سورة يدوياً
+//    └── resetActiveSurah()      → إعادة تعيين السورة الفعالة
+//
 // ============================================================================
 
-// Import all controllers
+// ============================================================================
+// GET OPERATIONS - عمليات الجلب
+// ============================================================================
 const getController = require("./get.controller");
+
+// ============================================================================
+// CREATE OPERATIONS - عمليات الإنشاء
+// ============================================================================
 const createController = require("./create.controller");
+
+// ============================================================================
+// UPDATE OPERATIONS - عمليات التعديل
+// ============================================================================
 const updateController = require("./update.controller");
+
+// ============================================================================
+// DELETE OPERATIONS - عمليات الحذف
+// ============================================================================
 const deleteController = require("./delete.controller");
-const repairController = require("./repair.controller");
+
+// ============================================================================
+// BULK OPERATIONS - عمليات بالجملة
+// ============================================================================
 const bulkCreateController = require("./bulkCreate.controller");
 
-// Export all functions
-module.exports = {
-  // Repair operations (AI)
-  ...repairController,
+// ============================================================================
+// REPAIR OPERATIONS - عمليات الإصلاح (AI)
+// ============================================================================
+const repairController = require("./repair.controller");
 
-  // Get operations
+// ============================================================================
+// EXPORTS - تصدير جميع الدوال
+// ============================================================================
+module.exports = {
+  // ========== GET ==========
   ...getController,
   
-  // Create operations
+  // ========== CREATE ==========
   ...createController,
   
-  // Update operations
+  // ========== UPDATE ==========
   ...updateController,
   
-  // Delete operations
+  // ========== DELETE ==========
   ...deleteController,
 
-  // Bulk operations
+  // ========== BULK ==========
   ...bulkCreateController,
+
+  // ========== REPAIR (AI) ==========
+  ...repairController,
 };

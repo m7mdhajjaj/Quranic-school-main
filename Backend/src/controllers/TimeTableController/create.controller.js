@@ -178,7 +178,7 @@ exports.createTimetable = async (req, res) => {
     const result = await TimeTable.findById(timetable._id)
       .populate('teacherId', 'firstName lastName')
       .populate('groupId', 'name')
-      .populate('sectionId', 'date group memorizationSection reviewSection');
+      .populate('sectionId', 'date group memorizationSection reviewSection marksStatus');
 
     // ✅ 8. إرسال إشعارات للطلاب (في الخلفية)
     const io = req.app.get("io");
@@ -314,7 +314,7 @@ exports.createTimetableForSection = async (req, res) => {
     const result = await TimeTable.findById(timetable._id)
       .populate('teacherId', 'firstName lastName')
       .populate('groupId', 'name')
-      .populate('sectionId', 'date group memorizationSection reviewSection');
+      .populate('sectionId', 'date group memorizationSection reviewSection marksStatus');
 
     res.status(201).json({
       success: true,

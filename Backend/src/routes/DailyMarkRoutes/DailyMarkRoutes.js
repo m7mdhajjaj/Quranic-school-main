@@ -45,6 +45,10 @@ router.get("/filtered-sections", dailyMarkController.getFilteredSections);
 // GET /api/daily-marks/student/:studentId/averages?month=11&year=2024&group=الحلقة الأولى
 router.get("/student/:studentId/averages", dailyMarkController.getStudentAverages);
 
+// Get student sections grouped by Surah (NEW - للطالب فقط)
+// GET /api/daily-marks/student/:studentId/grouped-sections?groupId=123
+router.get("/student/:studentId/grouped-sections", dailyMarkController.getStudentSectionsGrouped);
+
 // Get all marks with pagination
 // GET /api/daily-marks?page=1&limit=200
 router.get("/", dailyMarkController.getMarks);

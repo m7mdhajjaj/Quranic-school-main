@@ -5,12 +5,17 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 import 'dayjs/locale/ar';
 import { getMonthlyPlan } from '@/Api/TimeTable.Api';
 import type { Timetable } from '@/Api/TimeTable.Api';
 import type { Session } from '../../types/timetable.types';
 import { showErrorMessage } from '@/utils/sweetalertUtils';
+import { TIMEZONE } from '@/utils/timezone';
 
+dayjs.extend(utc);
+dayjs.extend(timezone);
 dayjs.locale('ar');
 
 // تحويل Timetable من API إلى Session
@@ -61,11 +66,15 @@ export const useMonthlyTimetable = (refreshTrigger?: any) => {
   }, []);
 
   // جلب بيانات الشهر الحالي من الباك اند
+  // ✅ استخدام month و year مباشرة كـ dependencies لضمان الجلب الصحيح
+  const month = currentDate.month() + 1;
+  const year = currentDate.year();
+  
   const fetchMonthlyData = useCallback(async () => {
     try {
       setLoading(true);
-      const month = currentDate.month() + 1;
-      const year = currentDate.year();
+      
+      console.log(`📅 Fetching monthly data for ${month}/${year}`);
       
       const response = await getMonthlyPlan(month, year);
       
@@ -73,6 +82,7 @@ export const useMonthlyTimetable = (refreshTrigger?: any) => {
         // تحويل Timetable[] إلى Session[]
         const sessions = response.data.map(mapTimetableToSession);
         setMonthlySessions(sessions);
+        console.log(`✅ Loaded ${sessions.length} sessions for ${month}/${year}`);
       }
     } catch (error: any) {
       const errorMsg = error?.response?.data?.message || error?.message || "حدث خطأ في تحميل الخطة الشهرية";
@@ -80,7 +90,7 @@ export const useMonthlyTimetable = (refreshTrigger?: any) => {
     } finally {
       setLoading(false);
     }
-  }, [currentDate]);
+  }, [month, year]);
 
   useEffect(() => {
     fetchMonthlyData();
@@ -125,7 +135,10 @@ export const useMonthlyTimetable = (refreshTrigger?: any) => {
     return monthlySessions.filter(session => {
       // ⚠️ النظام الجديد: نقارن sessionDate
       if (!session.sessionDate) return false;
-      return dayjs(session.sessionDate).isSame(date, 'day');
+      // ✅ استخدام timezone فلسطين للمقارنة الصحيحة
+      const sessionDate = dayjs(session.sessionDate).tz(TIMEZONE);
+      const targetDate = date.tz(TIMEZONE);
+      return sessionDate.format('YYYY-MM-DD') === targetDate.format('YYYY-MM-DD');
     });
   }, [monthlySessions]);
 

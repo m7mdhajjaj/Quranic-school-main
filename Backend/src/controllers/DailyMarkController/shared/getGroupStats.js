@@ -1,15 +1,15 @@
 // ============================================================================
-// GET GROUP STATS - إحصائيات الحلقة
+// shared/getGroupStats.js - إحصائيات الحلقة
 // ============================================================================
 // دالة لجلب عدد الطلاب وعدد المقاطع لحلقة معينة
 
-const Student = require("../../schema/Student");
-const Section = require("../../schema/DailyMark/Section");
+const Student = require("../../../schema/Student");
+const Section = require("../../../schema/DailyMark/Section");
 const {
   sendSuccess,
   sendError,
   sendValidationError,
-} = require("./utils/responseHelpers");
+} = require("../utils/responseHelpers");
 
 /**
  * @route GET /api/daily-marks/group-stats/:groupName

@@ -185,7 +185,7 @@ export const getSectionById = async (
   sectionId: string
 ): Promise<ApiResponse<Section>> => {
   try {
-    const response = await api.get(`/sections/${sectionId}`);
+    const response = await api.get(`/daily-marks/sections/${sectionId}`);
     return {
       success: true,
       data: response.data.data || response.data,
@@ -209,7 +209,7 @@ export const createSection = async (
 ): Promise<ApiResponse<Section>> => {
   try {
     console.log("📤 Creating section:", sectionData);
-    const response = await api.post("/sections", sectionData);
+    const response = await api.post("/daily-marks/sections", sectionData);
     return {
       success: true,
       data: response.data.data || response.data,
@@ -254,7 +254,7 @@ export const updateSection = async (
 ): Promise<ApiResponse<Section>> => {
   try {
     console.log("📝 Updating section:", sectionId, sectionData);
-    const response = await api.put(`/sections/${sectionId}`, sectionData);
+    const response = await api.put(`/daily-marks/sections/${sectionId}`, sectionData);
     return {
       success: true,
       data: response.data.data || response.data,
@@ -279,7 +279,7 @@ export const deleteSection = async (
 ): Promise<ApiResponse<{ deletedId: string }>> => {
   try {
     console.log("🗑️ Deleting section:", sectionId);
-    await api.delete(`/sections/${sectionId}`);
+    await api.delete(`/daily-marks/sections/${sectionId}`);
     return {
       success: true,
       data: { deletedId: sectionId },
@@ -304,7 +304,7 @@ export const bulkDeleteSections = async (
 ): Promise<ApiResponse<{ deletedCount: number }>> => {
   try {
     console.log("🗑️ Bulk deleting sections:", sectionIds);
-    await api.delete("/sections/bulk", {
+    await api.delete("/daily-marks/sections/bulk", {
       data: { sectionIds },
     });
     return {

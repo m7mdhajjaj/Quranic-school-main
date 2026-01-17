@@ -1,9 +1,9 @@
 // ============================================================================
-// deleteMark.js - Delete Mark Operations
+// teacher/deleteMark.js - Delete Mark Operations
 // ============================================================================
 
-const Mark = require("../../schema/DailyMark/DailyMark");
-const { notifyMarkDeleted } = require("../../Notifications");
+const Mark = require("../../../schema/DailyMark/DailyMark");
+const { notifyMarkDeleted } = require("../../../Notifications");
 
 // استيراد الدوال المساعدة
 const {
@@ -12,16 +12,16 @@ const {
   updateSingleSectionStatus,
   updateMultipleSectionsStatus,
   emitSocketEvent,
-} = require("./utils/markHelpers");
+} = require("../utils/markHelpers");
 
 const {
   sendSuccess,
   sendError,
   sendNotFound,
   sendValidationError,
-} = require("./utils/responseHelpers");
+} = require("../utils/responseHelpers");
 
-const { validateMarkEditWindow } = require("./utils/validationHelpers");
+const { validateMarkEditWindow } = require("../utils/validationHelpers");
 
 /**
  * Delete a mark by ID
@@ -100,5 +100,3 @@ exports.deleteMark = async (req, res) => {
     }
   }
 };
-
-
