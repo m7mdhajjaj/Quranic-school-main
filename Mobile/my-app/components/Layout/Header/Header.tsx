@@ -59,7 +59,11 @@ export const Header: React.FC<HeaderProps> = ({
                 ? "معلم"
                 : currentUser?.role === "admin"
                   ? "مدير"
-                  : "طالب"}
+                  : currentUser?.role === "secretary"
+                    ? "سكرتير"
+                    : currentUser?.role === "teacherAssistant"
+                      ? "مساعد مدرس"
+                      : "طالب"}
             </Text>
           </View>
         </View>

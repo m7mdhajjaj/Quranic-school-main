@@ -6,7 +6,7 @@
  * 
  * البنية:
  * - protect.middleware.js: المصادقة الأساسية بواسطة JWT
- * - role.middleware.js: التحقق من الصلاحيات حسب الدور (teacher, admin, secretary, restrictAdmin)
+ * - role.middleware.js: التحقق من الصلاحيات حسب الدور (teacher, admin, secretary, teacherAssistant, restrictAdmin)
  */
 
 const { protect } = require("./protect.middleware");
@@ -17,6 +17,8 @@ const {
   secretaryProtect,
   secretaryOrAdminProtect,
   staffProtect,
+  teacherAssistantProtect,
+  teacherAssistantOrAdminProtect,
   secretaryGroupsAccess,
   secretaryTeachersAccess,
   secretaryStudentsAccess,
@@ -34,6 +36,8 @@ module.exports = {
   secretaryProtect,
   secretaryOrAdminProtect,
   staffProtect,
+  teacherAssistantProtect,
+  teacherAssistantOrAdminProtect,
   
   // Secretary permissions - صلاحيات السكرتير
   secretaryGroupsAccess,

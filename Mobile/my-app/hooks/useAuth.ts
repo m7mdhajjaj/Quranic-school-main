@@ -24,6 +24,7 @@ export const useRole = () => {
     isTeacher,
     isAdmin,
     isSecretary,
+    isTeacherAssistant,
     getSecretaryPermissions,
   } = useAuth();
 
@@ -33,6 +34,7 @@ export const useRole = () => {
     isTeacher: isTeacher(),
     isAdmin: isAdmin(),
     isSecretary: isSecretary(),
+    isTeacherAssistant: isTeacherAssistant(),
     secretaryPermissions: getSecretaryPermissions(),
   };
 };

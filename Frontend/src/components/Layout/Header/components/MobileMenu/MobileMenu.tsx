@@ -310,7 +310,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                         </h3>
                         <div className="flex items-center gap-2 mt-2">
                           <span className="text-white/90 text-xs font-bold px-3 py-1 bg-white/20 rounded-full backdrop-blur-sm">
-                            {user.role === "teacher" ? "معلم" : user.role === "admin" ? "مدير" : "طالب"}
+                            {user.role === "teacher" ? "معلم" : user.role === "admin" ? "مدير" : user.role === "secretary" ? "سكرتير" : user.role === "teacherAssistant" ? "مساعد مدرس" : "طالب"}
                           </span>
                           <span className="flex items-center gap-1.5 text-emerald-100 text-xs font-semibold">
                             <motion.div 

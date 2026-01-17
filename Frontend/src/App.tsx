@@ -589,6 +589,78 @@ const SecretaryRoutes: React.FC = () => {
   );
 };
 
+// ============================================================================
+// Teacher Assistant Routes Component
+// ============================================================================
+/**
+ * Handles all routing for teacher assistant users
+ * - Simple menu: Home, Goals only
+ * - No management or admin features
+ * - Limited access compared to teachers
+ * 
+ * Teacher Assistant Routes Structure:
+ * 1. Home (الصفحة الرئيسية)
+ * 2. Goals (الأهداف)
+ * 3. Profile (الملف الشخصي)
+ */
+const TeacherAssistantRoutes: React.FC = () => {
+  return (
+    <Layout>
+      <Routes>
+        {/* ============================================
+            الصفحة الرئيسية - Home
+            ============================================ */}
+        <Route path="/" element={<Home />} />
+        <Route path="/home" element={<Home />} />
+        <Route path="/welcome" element={<WelcomePage />} />
+
+        {/* ============================================
+            الأهداف - Goals
+            ============================================ */}
+        <Route 
+          path="/goals" 
+          element={
+            <React.Suspense fallback={
+              <div className="min-h-screen flex items-center justify-center">
+                <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
+              </div>
+            }>
+              <Goals />
+            </React.Suspense>
+          } 
+        />
+
+        {/* ============================================
+            الإعدادات الشخصية - User Settings
+            ============================================ */}
+        <Route path="/profile" element={<Profile />} />
+
+        {/* ============================================
+            تسجيل الدخول - Authentication
+            ============================================ */}
+        <Route path="/login" element={<Login />} />
+
+        {/* ============================================
+            صفحات خاصة - Special Pages
+            ============================================ */}
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/contact" element={<Contact />} />
+
+        {/* ============================================
+            Blocked Routes - منع الوصول لصفحات الإدارة
+            ============================================ */}
+        <Route path="/admin/*" element={<Navigate to="/" replace />} />
+
+        {/* ============================================
+            Fallback - إعادة توجيه للصفحة الرئيسية
+            ============================================ */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Layout>
+  );
+};
+
 const StudentRoutes: React.FC = () => {
   // Loading fallback component
   const LoadingFallback = ({ message }: { message: string }) => (
@@ -795,6 +867,9 @@ function AppContent() {
       break;
     case "secretary":
       routeComponent = <SecretaryRoutes />;
+      break;
+    case "teacherAssistant":
+      routeComponent = <TeacherAssistantRoutes />;
       break;
     case "teacher":
       routeComponent = <TeacherRoutes />;

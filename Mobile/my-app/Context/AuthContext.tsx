@@ -26,12 +26,13 @@ export interface User {
   lastName?: string;
   fatherName?: string;
   name?: string;
-  role: "student" | "teacher" | "admin" | "secretary";
+  role: "student" | "teacher" | "admin" | "secretary" | "teacherAssistant";
   email?: string;
   studentId?: string;
   teacherId?: string;
   adminId?: string;
   secretaryId?: string;
+  assistantId?: string;
   group?: string;
   imageUrl?: string;
   avatar?: {
@@ -40,6 +41,8 @@ export interface User {
   };
   isActive?: boolean;
   permissions?: SecretaryPermissions; // صلاحيات السكرتير
+  assignedTeacher?: string; // للمساعد - المعلم المرتبط به
+  allowedGroups?: string[]; // للمساعد - الحلقات المسموح له
   // يمكن إضافة المزيد من الخصائص حسب الحاجة
 }
 
@@ -61,6 +64,7 @@ export interface AuthContextType {
   isTeacher: () => boolean;
   isAdmin: () => boolean;
   isSecretary: () => boolean;
+  isTeacherAssistant: () => boolean;
   getSecretaryPermissions: () => SecretaryPermissions | null;
   getUserName: () => string;
   getUserId: () => string;
@@ -260,6 +264,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const isTeacher = (): boolean => user?.role === "teacher";
   const isAdmin = (): boolean => user?.role === "admin";
   const isSecretary = (): boolean => user?.role === "secretary";
+  const isTeacherAssistant = (): boolean => user?.role === "teacherAssistant";
 
   // الحصول على صلاحيات السكرتير
   const getSecretaryPermissions = (): SecretaryPermissions | null => {
@@ -306,6 +311,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isTeacher,
     isAdmin,
     isSecretary,
+    isTeacherAssistant,
     getSecretaryPermissions,
     getUserName,
     getUserId,

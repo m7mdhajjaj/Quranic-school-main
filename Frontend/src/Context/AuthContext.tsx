@@ -20,11 +20,13 @@ export interface User {
   lastName?: string;
   fatherName?: string;
   name?: string;
-  role: 'student' | 'teacher' | 'admin' | 'secretary';
+  role: 'student' | 'teacher' | 'admin' | 'secretary' | 'teacherAssistant';
   email?: string;
   studentId?: string;
   teacherId?: string;
   adminId?: string;
+  secretaryId?: string;
+  assistantId?: string;
   group?: string;
   imageUrl?: string;
   avatar?: {
@@ -34,6 +36,9 @@ export interface User {
   isActive?: boolean;
   // صلاحيات السكرتير
   permissions?: SecretaryPermissions;
+  // للمساعد - المعلم المرتبط به والحلقات المسموحة
+  assignedTeacher?: string;
+  allowedGroups?: string[];
   // يمكن إضافة المزيد من الخصائص حسب الحاجة
 }
 
@@ -54,6 +59,8 @@ export interface AuthContextType {
   isStudent: () => boolean;
   isTeacher: () => boolean;
   isAdmin: () => boolean;
+  isSecretary: () => boolean;
+  isTeacherAssistant: () => boolean;
   getUserName: () => string;
   getUserId: () => string;
 }
@@ -346,6 +353,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const isStudent = (): boolean => user?.role === 'student';
   const isTeacher = (): boolean => user?.role === 'teacher';
   const isAdmin = (): boolean => user?.role === 'admin';
+  const isSecretary = (): boolean => user?.role === 'secretary';
+  const isTeacherAssistant = (): boolean => user?.role === 'teacherAssistant';
 
   // وظيفة الحصول على اسم المستخدم
   const getUserName = (): string => {
@@ -379,6 +388,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isStudent,
     isTeacher,
     isAdmin,
+    isSecretary,
+    isTeacherAssistant,
     getUserName,
     getUserId,
   };

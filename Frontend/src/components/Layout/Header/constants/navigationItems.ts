@@ -279,6 +279,19 @@ export const getPrimaryNavItems = (
     return items;
   }
 
+  // ==================== Teacher Assistant Navigation ====================
+  if (rolePermissions.isTeacherAssistant) {
+    return [
+      homeItem,
+      {
+        to: '/goals',
+        label: 'الأهداف',
+        icon: Target,
+        color: 'from-green-500 to-emerald-500',
+      },
+    ];
+  }
+
   // ==================== Student Navigation ====================
   if (rolePermissions.isStudent) {
     return [

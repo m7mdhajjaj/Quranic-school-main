@@ -103,6 +103,8 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
                       ? "مدير" 
                       : user.role === "secretary"
                       ? "سكرتير"
+                      : user.role === "teacherAssistant"
+                      ? "مساعد مدرس"
                       : "طالب"}
                   </span>
                 )}

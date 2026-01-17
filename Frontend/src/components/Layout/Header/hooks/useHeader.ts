@@ -77,6 +77,7 @@ export const useHeader = ({ isGuest = false }: UseHeaderOptions = {}): UseHeader
   const isAdmin = currentUser?.role === 'admin';
   const isStudent = currentUser?.role === 'student';
   const isSecretary = currentUser?.role === 'secretary';
+  const isTeacherAssistant = currentUser?.role === 'teacherAssistant';
   const isTeacherOrAdmin = isTeacher || isAdmin;
   
   // صلاحيات السكرتير
@@ -88,6 +89,7 @@ export const useHeader = ({ isGuest = false }: UseHeaderOptions = {}): UseHeader
     isAdmin,
     isStudent,
     isSecretary,
+    isTeacherAssistant,
     isTeacherOrAdmin,
     secretaryPermissions,
   });

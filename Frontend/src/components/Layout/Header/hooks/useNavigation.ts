@@ -12,6 +12,7 @@ export const useNavigation = (params: UseNavigationParams): NavigationHookReturn
     isTeacher: params.isTeacher,
     isAdmin: params.isAdmin,
     isSecretary: params.isSecretary,
+    isTeacherAssistant: params.isTeacherAssistant,
     isTeacherOrAdmin: params.isTeacherOrAdmin,
     secretaryPermissions: params.secretaryPermissions,
   };
@@ -23,6 +24,7 @@ export const useNavigation = (params: UseNavigationParams): NavigationHookReturn
       rolePermissions.isTeacher,
       rolePermissions.isAdmin,
       rolePermissions.isSecretary,
+      rolePermissions.isTeacherAssistant,
       rolePermissions.isTeacherOrAdmin,
       rolePermissions.secretaryPermissions?.groupsAccess,
       rolePermissions.secretaryPermissions?.teachersAccess,

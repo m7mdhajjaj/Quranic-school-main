@@ -12,6 +12,7 @@ const Student = require("../../schema/Student");
 const Teacher = require("../../schema/Teacher");
 const Admin = require("../../schema/Admin");
 const Secretary = require("../../schema/Secretary");
+const TeacherAssistant = require("../../schema/TeacherAssistant");
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -143,6 +144,34 @@ exports.protect = async (req, res, next) => {
       });
       
       // إرسال إشعار Socket بتغيير حالة السكرتير
+      if (req.app && req.app.get("io")) {
+        req.app.get("io").emit("userStatusChange", {
+          userId: decoded.id,
+          isActive: true,
+          lastSeen: new Date().toISOString(),
+        });
+      }
+    } else if (decoded.role === "teacherAssistant") {
+      // البحث عن مساعد المدرس في قاعدة البيانات
+      const currentAssistant = await TeacherAssistant.findById(decoded.id);
+
+      if (!currentAssistant) {
+        return res.status(401).json({
+          success: false,
+          message: "مساعد المدرس المرتبط بهذا الرمز غير موجود",
+        });
+      }
+
+      // إضافة بيانات مساعد المدرس إلى الطلب
+      req.user = currentAssistant;
+      req.user.role = "teacherAssistant";
+      
+      // تحديث حالة النشاط فقط (بدون تغيير lastSeen)
+      await TeacherAssistant.findByIdAndUpdate(decoded.id, { 
+        isActive: true 
+      });
+      
+      // إرسال إشعار Socket بتغيير حالة مساعد المدرس
       if (req.app && req.app.get("io")) {
         req.app.get("io").emit("userStatusChange", {
           userId: decoded.id,

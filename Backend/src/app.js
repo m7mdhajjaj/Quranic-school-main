@@ -137,6 +137,7 @@ app.use('/api/students', require('./routes/studentRoutes'));
 app.use('/api/teachers', require('./routes/teacherRoutes'));
 app.use('/api/admins', require('./routes/adminRoutes'));
 app.use('/api/secretaries', require('./routes/secretaryRoutes'));
+app.use('/api/teacher-assistants', require('./routes/teacherAssistantRoutes'));
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/news', require('./routes/NewsRoutes/newsRoutes'));
 app.use('/api/rankings', require('./routes/rankingRoutes'));
