@@ -5,69 +5,119 @@ import { useAiChatbot } from './useAiChatbot';
 import { showSuccessToast } from '../../utils/toastUtils';
 import { showErrorMessage } from '../../utils/sweetalertUtils';
 
-// Remove static defined QUICK_SUGGESTIONS if it exists in the file, we will use smartSuggestions
+// ═══════════════════════════════════════════════════════════════════════════
+// 📖 FormattedMessage - عرض التفسير بشكل جميل
+// يدعم الـ format الجديد من Backend
+// ═══════════════════════════════════════════════════════════════════════════
 
-// Component to handle the formatted Quranic response
 const FormattedMessage = ({ content }: { content: string }) => {
-  // Check if content has the specific markers we added in backend
-  const hasMarkers = content.includes('🌿') && content.includes('🔹');
-
-  if (!hasMarkers) {
-    return <p className="text-sm leading-relaxed whitespace-pre-wrap relative z-10">{content}</p>;
-  }
-
-  // Regex to find all blocks: Header ... Quran ... Tafsir ... End/Separator
-  const blockRegex = /🌿(.*?)🌿[\s\S]*?﴿([\s\S]*?)﴾[\s\S]*?🔸.*?:([\s\S]*?)(?=━━━━━━━━|$)/g;
-  const blocks = [...content.matchAll(blockRegex)];
-
-  // Fallback: If strict regex fails but markers exist (maybe partial output), try single match or raw text
-  if (blocks.length === 0) {
-     return <p className="text-sm leading-relaxed whitespace-pre-wrap relative z-10">{content}</p>;
-  }
-
-  return (
-    <div className="space-y-8 relative z-10 w-full">
-      {blocks.map((match, index) => {
-        const [_, header, quran, tafsir] = match;
-        return (
-          <div key={index} className="space-y-3 relative">
-            {/* Header */}
-            <div className="flex justify-center mb-4">
-              <div className="bg-emerald-50/80 backdrop-blur-sm border border-emerald-100 px-4 py-1.5 rounded-full shadow-sm">
-                <span className="text-emerald-700 font-bold text-xs sm:text-sm text-center block">
-                  {header.trim()}
-                </span>
-              </div>
-            </div>
-
-            {/* Quranic Text */}
-            <div className="bg-gradient-to-br from-emerald-50 to-teal-50 p-4 rounded-xl border border-emerald-100/50 shadow-inner relative group text-center my-2">
-               <div className="absolute top-0 right-0 p-2 opacity-50">
-                 <BookOpen size={16} className="text-emerald-400" />
-               </div>
-               <p className="font-serif text-xl sm:text-2xl leading-[2] text-gray-800 font-medium py-2 px-2" dir="rtl">
-                 ﴿ {quran.trim()} ﴾
-               </p>
-            </div>
-
-            {/* Tafsir */}
-            <div className="bg-white/60 p-3 rounded-lg border-r-4 border-amber-400 shadow-sm">
-               <div className="flex items-center gap-2 mb-2">
-                  <span className="text-[10px] uppercase font-bold text-amber-600 tracking-wider">التفسير المختصر</span>
-               </div>
-               <p className="text-gray-700 text-sm leading-7 text-justify pl-2">
-                 {tafsir.trim()}
-               </p>
-            </div>
-            
-            {/* Separator Line for multiple items (except last) */}
-            {index < blocks.length - 1 && (
-              <div className="border-b border-gray-200/50 w-1/2 mx-auto pt-4" />
-            )}
+  // 1️⃣ Format جديد: 📖 **سورة X - الآية Y** + 📜 **نص الآية:** + 📚 **تفسير ابن كثير:**
+  const newFormatRegex = /📖\s*\*\*(.+?)\*\*[\s\S]*?📜\s*\*\*نص الآية:\*\*\s*([\s\S]*?)📚\s*\*\*تفسير ابن كثير:\*\*\s*([\s\S]*?)(?=📌|$)/;
+  const newMatch = content.match(newFormatRegex);
+  
+  if (newMatch) {
+    const [_, header, ayahText, tafsir] = newMatch;
+    
+    // تحقق من سبب النزول
+    const nuzulMatch = content.match(/📌\s*\*\*سبب النزول:\*\*\s*([\s\S]*?)$/);
+    const nuzulText = nuzulMatch ? nuzulMatch[1].trim() : null;
+    
+    return (
+      <div className="space-y-4 relative z-10 w-full">
+        {/* Header - اسم السورة والآية */}
+        <div className="flex justify-center mb-4">
+          <div className="bg-emerald-50/80 backdrop-blur-sm border border-emerald-100 px-4 py-2 rounded-full shadow-sm">
+            <span className="text-emerald-700 font-bold text-sm text-center block">
+              📖 {header.trim()}
+            </span>
           </div>
-        );
-      })}
-    </div>
+        </div>
+
+        {/* نص الآية القرآنية */}
+        <div className="bg-gradient-to-br from-emerald-50 to-teal-50 p-4 rounded-xl border border-emerald-100/50 shadow-inner relative group text-center my-2">
+          <div className="absolute top-2 right-2 opacity-50">
+            <BookOpen size={16} className="text-emerald-400" />
+          </div>
+          <p className="font-serif text-xl sm:text-2xl leading-[2] text-gray-800 font-medium py-2 px-2" dir="rtl">
+            ﴿ {ayahText.trim()} ﴾
+          </p>
+        </div>
+
+        {/* تفسير ابن كثير */}
+        <div className="bg-white/60 p-4 rounded-lg border-r-4 border-amber-400 shadow-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-xs uppercase font-bold text-amber-600 tracking-wider">📚 تفسير ابن كثير</span>
+          </div>
+          <p className="text-gray-700 text-sm leading-8 text-justify whitespace-pre-wrap">
+            {tafsir.trim()}
+          </p>
+        </div>
+
+        {/* سبب النزول (إذا وُجد) */}
+        {nuzulText && (
+          <div className="bg-blue-50/60 p-3 rounded-lg border-r-4 border-blue-400 shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xs uppercase font-bold text-blue-600 tracking-wider">📌 سبب النزول</span>
+            </div>
+            <p className="text-gray-700 text-sm leading-7 text-justify">
+              {nuzulText}
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // 2️⃣ Format قديم: 🌿 و 🔸 (للتوافق مع الردود القديمة)
+  const hasOldMarkers = content.includes('🌿') && content.includes('🔸');
+  if (hasOldMarkers) {
+    const blockRegex = /🌿(.*?)🌿[\s\S]*?﴿([\s\S]*?)﴾[\s\S]*?🔸.*?:([\s\S]*?)(?=━━━━━━━━|$)/g;
+    const blocks = [...content.matchAll(blockRegex)];
+    
+    if (blocks.length > 0) {
+      return (
+        <div className="space-y-8 relative z-10 w-full">
+          {blocks.map((match, index) => {
+            const [_, header, quran, tafsir] = match;
+            return (
+              <div key={index} className="space-y-3 relative">
+                <div className="flex justify-center mb-4">
+                  <div className="bg-emerald-50/80 backdrop-blur-sm border border-emerald-100 px-4 py-1.5 rounded-full shadow-sm">
+                    <span className="text-emerald-700 font-bold text-xs sm:text-sm text-center block">
+                      {header.trim()}
+                    </span>
+                  </div>
+                </div>
+                <div className="bg-gradient-to-br from-emerald-50 to-teal-50 p-4 rounded-xl border border-emerald-100/50 shadow-inner relative group text-center my-2">
+                  <p className="font-serif text-xl sm:text-2xl leading-[2] text-gray-800 font-medium py-2 px-2" dir="rtl">
+                    ﴿ {quran.trim()} ﴾
+                  </p>
+                </div>
+                <div className="bg-white/60 p-3 rounded-lg border-r-4 border-amber-400 shadow-sm">
+                  <p className="text-gray-700 text-sm leading-7 text-justify pl-2">
+                    {tafsir.trim()}
+                  </p>
+                </div>
+                {index < blocks.length - 1 && (
+                  <div className="border-b border-gray-200/50 w-1/2 mx-auto pt-4" />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+  }
+
+  // 3️⃣ Fallback: عرض النص العادي مع Markdown بسيط
+  // تحويل **text** إلى bold
+  const formattedContent = content.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  
+  return (
+    <p 
+      className="text-sm leading-relaxed whitespace-pre-wrap relative z-10"
+      dangerouslySetInnerHTML={{ __html: formattedContent }}
+    />
   );
 };
 

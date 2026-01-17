@@ -261,7 +261,7 @@ async function extractVerseKey(question) {
     .replace(/[أإآ]/g, 'ا')
     .replace(/ى/g, 'ي')
     .replace(/ة/g, 'ه')
-    .toLowerCase();
+    .toLowerCase(); // fixed v2
 
   // 1️⃣ البحث في الآيات المشهورة
   for (const [key, value] of Object.entries(FAMOUS_VERSES)) {
@@ -288,19 +288,37 @@ async function extractVerseKey(question) {
   }
 
   // 3️⃣ البحث باسم السورة + رقم الآية
+  // نرتب الأسماء من الأطول للأقصر لتجنب التطابق الخاطئ
+  // مثال: "الإخلاص" يجب أن يُكتشف قبل "ص"
   let foundSurah = null;
   let foundAyah = null;
 
-  for (const [name, number] of Object.entries(SURAH_NAMES)) {
+  const sortedSurahNames = Object.entries(SURAH_NAMES)
+    .sort((a, b) => b[0].length - a[0].length); // الأطول أولاً
+
+  for (const [name, number] of sortedSurahNames) {
     const normalizedName = name
       .replace(/[أإآ]/g, 'ا')
       .replace(/ى/g, 'ي')
       .replace(/ة/g, 'ه')
       .toLowerCase();
-    if (normalizedText.includes(normalizedName)) {
-      foundSurah = number;
-      console.log(`📌 Surah name detected: ${name} = ${number}`);
-      break;
+    
+    // استخدام word boundary للأسماء القصيرة (أقل من 3 أحرف)
+    if (normalizedName.length <= 2) {
+      // أسماء قصيرة مثل "ص" و "ق" و "طه" - نتحقق من word boundary
+      const regex = new RegExp(`(^|\\s|سورة\\s*)${normalizedName}(\\s|$|\\d)`, 'i');
+      if (regex.test(normalizedText)) {
+        foundSurah = number;
+        console.log(`📌 Surah name detected (short): ${name} = ${number}`);
+        break;
+      }
+    } else {
+      // أسماء طويلة - البحث العادي
+      if (normalizedText.includes(normalizedName)) {
+        foundSurah = number;
+        console.log(`📌 Surah name detected: ${name} = ${number}`);
+        break;
+      }
     }
   }
 

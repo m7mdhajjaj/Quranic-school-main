@@ -342,22 +342,66 @@ export const useAiChatbot = () => {
     // Stop any ongoing speech
     handleStopSpeaking();
 
-    // ---------------------------------------------------------
-    // RULE: Only speak the Explanation (Tafsir), NOT the Verse.
-    // ---------------------------------------------------------
-    let textToSpeak = text;
-    // Marker matching the Backend output exactly
-    const tafsirMarker = "📜 التفسير (ابن كثير – مختصر):";
+    // ═══════════════════════════════════════════════════════════════════════
+    // 🔊 Smart TTS - يقرأ التفسير فقط بذكاء
+    // ═══════════════════════════════════════════════════════════════════════
     
-    if (text.includes(tafsirMarker)) {
-      const parts = text.split(tafsirMarker);
+    let textToSpeak = '';
+    
+    // 1️⃣ Format جديد: 📚 **تفسير ابن كثير:**
+    const newTafsirMarker = /📚\s*\*\*تفسير ابن كثير:\*\*\s*/;
+    if (newTafsirMarker.test(text)) {
+      const parts = text.split(newTafsirMarker);
       if (parts.length > 1) {
-        textToSpeak = parts[1].trim(); 
+        // نأخذ التفسير وننظفه من أي markers إضافية
+        textToSpeak = parts[1]
+          .replace(/📌\s*\*\*سبب النزول:\*\*[\s\S]*/g, '') // إزالة سبب النزول
+          .replace(/\*\*/g, '') // إزالة Markdown bold
+          .replace(/━+/g, '') // إزالة الفواصل
+          .trim();
       }
     }
-    // ---------------------------------------------------------
     
-    if (!textToSpeak) return;
+    // 2️⃣ Format قديم: 🔸 التفسير:
+    else if (text.includes('🔸') && text.includes('﴿')) {
+      const tafsirMatch = text.match(/🔸.*?:\s*([\s\S]*?)(?=━━━|$)/);
+      if (tafsirMatch) {
+        textToSpeak = tafsirMatch[1].trim();
+      }
+    }
+    
+    // 3️⃣ Format: 📜 التفسير (ابن كثير – مختصر):
+    else if (text.includes('📜 التفسير')) {
+      const parts = text.split(/📜\s*التفسير.*?:/);
+      if (parts.length > 1) {
+        textToSpeak = parts[1]
+          .replace(/📌[\s\S]*/g, '')
+          .trim();
+      }
+    }
+    
+    // 4️⃣ Fallback: إذا لم نجد أي format، نقرأ النص كاملاً
+    // لكن ننظفه من الرموز والـ Markdown
+    if (!textToSpeak) {
+      textToSpeak = text
+        .replace(/📖|📜|📚|📌|🌿|🔸|🔹|━+|﴿|﴾|\*\*/g, '')
+        .replace(/--+/g, '')
+        .trim();
+    }
+    
+    // لا نقرأ الرسائل الفارغة أو القصيرة جداً
+    if (!textToSpeak || textToSpeak.length < 10) {
+      console.log('TTS: No valid text to speak');
+      return;
+    }
+    
+    // تقصير النص الطويل جداً (OpenAI TTS limit)
+    if (textToSpeak.length > 4000) {
+      textToSpeak = textToSpeak.substring(0, 4000) + '...';
+    }
+
+    console.log('🔊 TTS will speak:', textToSpeak.substring(0, 100) + '...');
+    // ═══════════════════════════════════════════════════════════════════════
 
     try {
       setIsSpeaking(true);
