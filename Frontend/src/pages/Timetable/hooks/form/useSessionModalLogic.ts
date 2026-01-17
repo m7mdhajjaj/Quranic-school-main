@@ -6,7 +6,7 @@ import { useState, useCallback } from "react";
 import type { SessionFormData, Session } from "../../types/timetable.types";
 import { validateTimetableData } from "@/Validation/timetableValidation";
 import { showErrorMessage } from "@/utils/sweetalertUtils";
-import { isTimeInArray } from "../../utils";
+import { isTimeInArray, timeToMinutes } from "../../utils";
 
 interface UseSessionModalLogicProps {
   onSubmit: (formData: SessionFormData, sessionId?: string) => Promise<boolean>;
@@ -42,7 +42,8 @@ export const useSessionModalLogic = ({
       };
     }
 
-    // 2️⃣ فحص إضافي للأوقات المحجوزة (باستخدام isTimeInArray لتجنب مشاكل الـ format)
+    // 2️⃣ فحص إضافي للأوقات المحجوزة
+    // ✅ وقت البداية لا يجب أن يكون محجوز
     if (isTimeInArray(bookedHours, formData.startHour)) {
       return {
         isValid: false,
@@ -50,11 +51,24 @@ export const useSessionModalLogic = ({
       };
     }
 
-    if (isTimeInArray(bookedHours, formData.endHour)) {
-      return {
-        isValid: false,
-        errorMessage: '❌ وقت النهاية محجوز مسبقاً',
-      };
+    // ✅ وقت النهاية يمكن أن يكون مساوي لوقت بداية جلسة أخرى (لا تداخل)
+    // مثال: 9:00-11:00 ثم 11:00-12:30 ✅ (مسموح - لا تداخل)
+    // لذلك لا نفحص endHour ضد bookedHours مباشرة
+    
+    // 3️⃣ فحص التداخل: هل هناك وقت محجوز بين البداية والنهاية؟
+    // مثال: 9:00-12:00 مع وجود 10:00 محجوز → ممنوع
+    const startMinutes = timeToMinutes(formData.startHour);
+    const endMinutes = timeToMinutes(formData.endHour);
+    
+    for (const bookedHour of bookedHours) {
+      const bookedMinutes = timeToMinutes(bookedHour);
+      // إذا كان الوقت المحجوز > وقت البداية و < وقت النهاية → تداخل!
+      if (bookedMinutes > startMinutes && bookedMinutes < endMinutes) {
+        return {
+          isValid: false,
+          errorMessage: `❌ يوجد وقت محجوز (${bookedHour}) ضمن الفترة المحددة`,
+        };
+      }
     }
 
     return { isValid: true };
