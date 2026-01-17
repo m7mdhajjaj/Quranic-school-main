@@ -253,10 +253,14 @@ export const SessionModal: React.FC<SessionModalProps> = (props) => {
                     {hours.map((hour) => {
                       const hourIdx = findTimeIndex(hours, hour);
                       const startIdx = findTimeIndex(hours, formData.startHour);
-                      const isBooked = isTimeInArray(bookedHours, hour);
                       const isBeforeStart = hourIdx <= startIdx;
                       
-                      // ✅ منع اختيار وقت نهاية إذا كان هناك وقت محجوز بين البداية والنهاية
+                      // ✅ وقت النهاية يمكن أن يكون = بداية جلسة أخرى (لا تداخل)
+                      // مثال: 9:00-11:00 ثم 11:00-12:30 ✅ (مسموح)
+                      // لذلك لا نفحص isBooked للنهاية مباشرة
+                      
+                      // ✅ فحص التداخل: هل هناك وقت محجوز بين البداية والنهاية؟
+                      // (لا نحسب وقت النهاية نفسه لأنه يمكن أن يكون = بداية جلسة أخرى)
                       let hasBookedBetween = false;
                       if (!isBeforeStart && startIdx !== -1) {
                         for (let i = startIdx + 1; i < hourIdx; i++) {
@@ -267,7 +271,12 @@ export const SessionModal: React.FC<SessionModalProps> = (props) => {
                         }
                       }
                       
-                      const isDisabled = isBooked || isBeforeStart || hasBookedBetween;
+                      // ✅ المنطق الجديد: نمنع فقط إذا كان قبل البداية أو يوجد تداخل
+                      // وقت النهاية نفسه (hour) ليس مشكلة حتى لو كان في bookedHours
+                      const isDisabled = isBeforeStart || hasBookedBetween;
+                      
+                      // للعرض: نظهر أنه "مشغول" لكن ليس disabled
+                      const isBookedSlot = isTimeInArray(bookedHours, hour);
                       
                       return (
                         <button
@@ -278,13 +287,13 @@ export const SessionModal: React.FC<SessionModalProps> = (props) => {
                           className={`px-2 py-3 rounded-lg font-bold transition-all min-w-0 text-center ${
                             formData.endHour === hour
                               ? 'bg-red-600 text-white shadow-md scale-105 text-sm'
-                              : isBooked
-                              ? 'bg-red-100 text-red-400 cursor-not-allowed opacity-60 line-through text-xs border border-red-200'
-                              : isBeforeStart || hasBookedBetween
+                              : isDisabled
                               ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50 text-xs'
+                              : isBookedSlot
+                              ? 'bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-300 text-xs'
                               : 'bg-gray-50 text-gray-700 hover:bg-red-50 hover:text-red-700 border border-gray-200 text-xs'
                           }`}
-                          title={isBooked ? getBookedHourTooltip(hour) : hasBookedBetween ? '🚫 يوجد وقت محجوز قبله' : isBeforeStart ? 'قبل وقت البداية' : ''}>
+                          title={isDisabled ? (hasBookedBetween ? '🚫 يوجد وقت محجوز قبله' : 'قبل وقت البداية') : (isBookedSlot ? '⚠️ بداية جلسة أخرى (يمكن الاختيار)' : '')}>
                           <div className="flex flex-col leading-tight">
                             <span className="block">{hour.split(' ')[0]}</span>
                             <span className="block text-[10px]">{hour.split(' ')[1]}</span>
