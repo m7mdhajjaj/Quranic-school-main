@@ -1,3 +1,6 @@
+/* Arabic font support */
+@import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap');
+
 .quran-audio-player {
   max-width: 900px;
   margin: 0 auto;
@@ -15,6 +18,3 @@
 .quran-word:active {
   transform: scale(0.95);
 }
-
-/* Arabic font support */
-@import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap');

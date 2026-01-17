@@ -1,4 +1,4 @@
-const AiChatFavorite = require('../../schema/AiChatFavorite');
+const AiChatFavorite = require('../../schema/AI/AiChatFavorite');
 const mongoose = require('mongoose');
 const { validationResult } = require('express-validator');
 

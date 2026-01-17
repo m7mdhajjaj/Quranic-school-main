@@ -5,9 +5,6 @@ import {
   processAyahs,
   getReciters,
   getAudioUrls,
-  saveFavoriteReciter,
-  getFavoriteReciter,
-  saveListeningProgress,
   estimateAyahTiming,
   getCurrentAyahFromTime,
   type Surah,
@@ -88,13 +85,8 @@ export const useQuranAudio = () => {
       const availableReciters = getReciters();
       setReciters(availableReciters);
 
-      // Load everything else in parallel for better performance
-      const [favoriteReciter] = await Promise.all([
-        getFavoriteReciter(),
-        fetchSurahs(),
-      ]);
-      
-      setReciter(favoriteReciter);
+      // Load surahs
+      await fetchSurahs();
     } catch (error) {
       console.error("Error initializing component:", error);
     }
@@ -116,11 +108,6 @@ export const useQuranAudio = () => {
           setIsPlaying(true);
           setAudioError(null);
           console.log(`Successfully playing: ${audioUrl}`);
-
-          // Save progress asynchronously without blocking
-          saveListeningProgress(selectedSurah.number, 0).catch(err => 
-            console.log('Could not save progress:', err)
-          );
           return;
         } catch (error) {
           console.log(`Failed to play ${audioUrl}:`, error);
@@ -184,11 +171,6 @@ export const useQuranAudio = () => {
     if (audioRef.current) {
       audioRef.current.pause();
     }
-
-    // Save to backend asynchronously without blocking
-    saveFavoriteReciter(newReciter).catch(error => 
-      console.log("Could not save favorite reciter:", error)
-    );
   }, []);
 
   // Toggle highlight words
