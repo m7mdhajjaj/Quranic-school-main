@@ -48,10 +48,10 @@ export default function CustomTabBar() {
   const router = useRouter();
   const pathname = usePathname();
   const scaleValue = React.useRef(new Animated.Value(1)).current;
-  const { isAdmin, isSecretary } = useAuth();
+  const { isAdmin, isSecretary, isTeacherAssistant } = useAuth();
 
-  // Hide CustomTabBar completely for admin and secretary users
-  if (isAdmin() || isSecretary()) {
+  // Hide CustomTabBar completely for admin, secretary, and teacher assistant users
+  if (isAdmin() || isSecretary() || isTeacherAssistant()) {
     return null;
   }
 

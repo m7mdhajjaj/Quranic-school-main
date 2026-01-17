@@ -8,6 +8,7 @@ import {
   loginTeacher,
   loginAdmin,
   loginSecretary,
+  loginTeacherAssistant,
 } from "@/Api/authApi";
 import type { User } from "@/Context/AuthContext";
 import type { LoginFormData } from "../LoginForm";
@@ -152,9 +153,24 @@ export const useLoginLogic = () => {
                 : "خطأ في تسجيل دخول السكرتير";
               loginErrors.push(`سكرتير: ${secretaryMsg}`);
 
-              throw new Error(
-                `فشل تسجيل الدخول. البيانات غير صحيحة أو المستخدم غير موجود.`
-              );
+              // Try teacher assistant login
+              try {
+                response = await loginTeacherAssistant({
+                  assistantId: formData.userId,
+                  password: formData.password,
+                  userType: "teacherAssistant",
+                  rememberMe: rememberMe,
+                });
+              } catch (assistantError) {
+                const assistantMsg = axios.isAxiosError(assistantError)
+                  ? assistantError.response?.data?.message
+                  : "خطأ في تسجيل دخول مساعد المدرس";
+                loginErrors.push(`مساعد مدرس: ${assistantMsg}`);
+
+                throw new Error(
+                  `فشل تسجيل الدخول. البيانات غير صحيحة أو المستخدم غير موجود.`
+                );
+              }
             }
           }
         }

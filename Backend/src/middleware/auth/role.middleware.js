@@ -178,7 +178,7 @@ exports.staffProtect = async (req, res, next) => {
     // استخدام وسيط الحماية أولاً
     await protect(req, res, () => {
       // التحقق من أن المستخدم موظف
-      const allowedRoles = ["teacher", "secretary", "admin"];
+      const allowedRoles = ["teacher", "secretary", "admin", "teacherAssistant"];
       if (!allowedRoles.includes(req.user.role)) {
         return res.status(403).json({
           success: false,
@@ -190,6 +190,68 @@ exports.staffProtect = async (req, res, next) => {
     });
   } catch (error) {
     console.error("Staff protect middleware error:", error);
+    return res.status(401).json({
+      success: false,
+      message: "خطأ في التحقق من الصلاحيات",
+    });
+  }
+};
+
+/**
+ * Teacher Assistant only access
+ * الوصول لمساعد المدرس فقط
+ * 
+ * @middleware
+ * @description يسمح فقط للمستخدمين من نوع teacherAssistant
+ * @access Protected (Teacher Assistant only)
+ */
+exports.teacherAssistantProtect = async (req, res, next) => {
+  try {
+    // استخدام وسيط الحماية أولاً
+    await protect(req, res, () => {
+      // التحقق من أن المستخدم مساعد مدرس
+      if (req.user.role !== "teacherAssistant") {
+        return res.status(403).json({
+          success: false,
+          message: "غير مصرح لغير مساعد المدرس بالوصول إلى هذه الصفحة",
+        });
+      }
+
+      next();
+    });
+  } catch (error) {
+    console.error("Teacher Assistant protect middleware error:", error);
+    return res.status(401).json({
+      success: false,
+      message: "خطأ في التحقق من الصلاحيات",
+    });
+  }
+};
+
+/**
+ * Teacher Assistant or Admin access
+ * الوصول لمساعد المدرس أو المدير
+ * 
+ * @middleware
+ * @description يسمح لمساعد المدرس والمدير فقط
+ * @access Protected (Teacher Assistant, Admin)
+ */
+exports.teacherAssistantOrAdminProtect = async (req, res, next) => {
+  try {
+    // استخدام وسيط الحماية أولاً
+    await protect(req, res, () => {
+      // التحقق من أن المستخدم مساعد مدرس أو إداري
+      if (req.user.role !== "teacherAssistant" && req.user.role !== "admin") {
+        return res.status(403).json({
+          success: false,
+          message: "غير مصرح لغير مساعد المدرس أو المدير بالوصول إلى هذه الصفحة",
+        });
+      }
+
+      next();
+    });
+  } catch (error) {
+    console.error("Teacher Assistant or Admin protect middleware error:", error);
     return res.status(401).json({
       success: false,
       message: "خطأ في التحقق من الصلاحيات",

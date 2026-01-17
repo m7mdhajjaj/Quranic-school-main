@@ -49,7 +49,7 @@ interface DrawerMenuProps {
 }
 
 export const DrawerMenu: React.FC<DrawerMenuProps> = ({ isOpen, onClose }) => {
-  const { user, logout, getSecretaryPermissions } = useAuth();
+  const { user, logout, getSecretaryPermissions, isTeacherAssistant } = useAuth();
   const router = useRouter();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const slideAnim = new Animated.Value(isOpen ? 0 : 300);
@@ -144,6 +144,14 @@ export const DrawerMenu: React.FC<DrawerMenuProps> = ({ isOpen, onClose }) => {
       return secretaryItems;
     }
 
+    // قائمة مساعد المدرس - الصفحة الرئيسية والأهداف فقط
+    if (user?.role === "teacherAssistant") {
+      return [
+        { to: "/(tabs)", label: "الرئيسية", icon: Home },
+        { to: "/(tabs)/goals", label: "الأهداف", icon: Target },
+      ];
+    }
+
     const studentTeacherItems: MenuItem[] = [
       { to: "/(tabs)", label: "الرئيسية", icon: Home },
       { to: "/(tabs)/news", label: "الأخبار", icon: Newspaper },
@@ -236,7 +244,11 @@ export const DrawerMenu: React.FC<DrawerMenuProps> = ({ isOpen, onClose }) => {
                       ? "معلم"
                       : user.role === "admin"
                         ? "مدير"
-                        : "طالب"}
+                        : user.role === "secretary"
+                          ? "سكرتير"
+                          : user.role === "teacherAssistant"
+                            ? "مساعد مدرس"
+                            : "طالب"}
                   </Text>
                   <Text style={styles.statusText}>متصل الآن</Text>
                 </View>

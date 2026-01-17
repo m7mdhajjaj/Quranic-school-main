@@ -2,6 +2,7 @@ const Student = require("../../schema/Student");
 const Teacher = require("../../schema/Teacher");
 const Admin = require("../../schema/Admin");
 const Secretary = require("../../schema/Secretary");
+const TeacherAssistant = require("../../schema/TeacherAssistant");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 
@@ -67,6 +68,16 @@ exports.login = async (req, res) => {
       
       if (secretary) {
         return await authenticateSecretary(secretary, password, rememberMe, res);
+      }
+    }
+
+    // 5. محاولة البحث كمساعد مدرس (assistantId) - assistantId هو Number
+    const assistantIdNumber = parseInt(identifier);
+    if (!isNaN(assistantIdNumber)) {
+      const assistant = await TeacherAssistant.findOne({ assistantId: assistantIdNumber });
+      
+      if (assistant) {
+        return await authenticateTeacherAssistant(assistant, password, rememberMe, res);
       }
     }
 
@@ -350,6 +361,64 @@ const authenticateSecretary = async (secretary, password, rememberMe, res) => {
     });
   } catch (error) {
     console.error("خطأ في مصادقة السكرتير:", error);
+    throw error;
+  }
+};
+
+/**
+ * مصادقة مساعد المدرس بعد التحقق من وجوده
+ */
+const authenticateTeacherAssistant = async (assistant, password, rememberMe, res) => {
+  try {
+    const isMatch = await bcrypt.compare(password, assistant.password);
+
+    if (!isMatch) {
+      console.log("❌ فشل التحقق من كلمة المرور لمساعد المدرس");
+      return res.status(401).json({
+        success: false,
+        message: "كلمة المرور غير صحيحة",
+      });
+    }
+
+    // ✅ تحديث lastSeen فقط (isActive يتم عبر Socket.io)
+    await TeacherAssistant.findByIdAndUpdate(assistant._id, {
+      lastSeen: new Date(),
+    });
+
+    // ℹ️ Note: Status update (online/offline) يتم تلقائياً عبر Socket.io
+
+    const tokenExpiry = rememberMe ? "7d" : "30m";
+
+    const token = jwt.sign(
+      {
+        id: assistant._id,
+        assistantId: assistant.assistantId,
+        name: `${assistant.firstName} ${assistant.lastName}`,
+        role: "teacherAssistant",
+      },
+      JWT_SECRET,
+      { expiresIn: tokenExpiry }
+    );
+
+    return res.status(200).json({
+      success: true,
+      token,
+      user: {
+        _id: assistant._id,
+        assistantId: assistant.assistantId,
+        firstName: assistant.firstName,
+        lastName: assistant.lastName,
+        email: assistant.email,
+        gender: assistant.gender,
+        avatar: assistant.avatar,
+        assignedTeacher: assistant.assignedTeacher,
+        allowedGroups: assistant.allowedGroups,
+        role: "teacherAssistant",
+        // ℹ️ isActive managed by Socket.io
+      },
+    });
+  } catch (error) {
+    console.error("خطأ في مصادقة مساعد المدرس:", error);
     throw error;
   }
 };

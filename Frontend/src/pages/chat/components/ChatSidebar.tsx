@@ -205,7 +205,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
                             contact.role === 'teacher' ? 'bg-purple-50 text-purple-600' : 
                             'bg-orange-50 text-orange-600'
                           }`}>
-                            {contact.role === 'student' ? 'طالب' : contact.role === 'teacher' ? 'معلم' : 'مدير'}
+                            {contact.role === 'student' ? 'طالب' : contact.role === 'teacher' ? 'معلم' : contact.role === 'secretary' ? 'سكرتير' : contact.role === 'teacherAssistant' ? 'مساعد مدرس' : 'مدير'}
                           </span>
                         </div>
                       </div>

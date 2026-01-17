@@ -14,7 +14,7 @@ export interface User {
   firstName?: string;
   lastName?: string;
   email?: string;
-  role: "student" | "teacher" | "admin" | "secretary";
+  role: "student" | "teacher" | "admin" | "secretary" | "teacherAssistant";
   profileImage?: string;
 }
 
@@ -87,6 +87,7 @@ export interface RolePermissions {
   isTeacher: boolean;
   isAdmin: boolean;
   isSecretary: boolean;
+  isTeacherAssistant: boolean;
   isTeacherOrAdmin: boolean;
   // صلاحيات السكرتير
   secretaryPermissions?: SecretaryPermissions;
