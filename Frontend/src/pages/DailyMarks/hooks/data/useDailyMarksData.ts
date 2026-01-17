@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import type { LoggedInUser, Student } from "../types/types";
 import { getStudentsByTeacher } from "@/Api/studentApi";
-import { getActiveGroups } from "@/Api/DailyMark/dailyMarksApi";
+import { getActiveGroups, getTeacherAssistantGroups, getTeacherAssistantStudents } from "@/Api/DailyMark/dailyMarksApi";
 
 interface UseDailyMarksDataReturn {
   currentUser: LoggedInUser | null;
@@ -18,6 +18,7 @@ interface UseDailyMarksDataReturn {
  * - Fetches user data from localStorage
  * - Loads students and teacher groups
  * - Handles authentication and redirects
+ * - Supports teacher, admin, and teacherAssistant roles
  * - Note: Sections and marks are fetched via useFilteredMarksData hook
  * 
  * @returns {UseDailyMarksDataReturn} User data, students, groups, and loading state
@@ -69,7 +70,7 @@ export const useDailyMarksData = (): UseDailyMarksDataReturn => {
 
         setCurrentUser(user);
 
-        // If user is a teacher, fetch students by teacher name and teacher's groups
+        // If user is a teacher or admin, fetch students by teacher name and teacher's groups
         if (user.role === "teacher" || user.role === "admin") {
           const teacherName = `${user.firstName} ${user.lastName}`;
 
@@ -96,6 +97,38 @@ export const useDailyMarksData = (): UseDailyMarksDataReturn => {
               ? studentsResponse.data
               : [];
           setStudents(students);
+        }
+        // 🆕 مساعد المدرس - جلب الحلقات المسموح له بها فقط
+        else if (user.role === "teacherAssistant") {
+          console.log("👨‍🏫 [DailyMarks] Loading data for teacherAssistant...");
+          
+          // جلب الحلقات المسموح بها لمساعد المدرس
+          const groupsResponse = await getTeacherAssistantGroups();
+
+          if (!isMounted) return;
+
+          if (groupsResponse.success && groupsResponse.data) {
+            const groups = groupsResponse.data.map((g: any) => g.name);
+            setTeacherGroups(groups);
+            console.log("✅ [DailyMarks] TeacherAssistant groups loaded:", groups);
+
+            // جلب طلاب الحلقات المسموح بها باستخدام API مخصص
+            const studentsResponse = await getTeacherAssistantStudents();
+              
+            if (!isMounted) return;
+              
+            if (studentsResponse.success && Array.isArray(studentsResponse.data)) {
+              setStudents(studentsResponse.data);
+              console.log(`✅ [DailyMarks] Loaded ${studentsResponse.data.length} students for teacherAssistant`);
+            } else {
+              setStudents([]);
+              console.log("⚠️ [DailyMarks] No students found for teacherAssistant groups");
+            }
+          } else {
+            console.error("❌ [DailyMarks] Failed to load teacherAssistant groups:", groupsResponse.message || groupsResponse.error);
+            setTeacherGroups([]);
+            setStudents([]);
+          }
         }
       } catch (err) {
         console.error("Error fetching data:", err);

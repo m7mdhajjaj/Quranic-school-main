@@ -633,6 +633,22 @@ const TeacherAssistantRoutes: React.FC = () => {
         />
 
         {/* ============================================
+            العلامات اليومية - Daily Marks (للحلقات المسموح بها فقط)
+            ============================================ */}
+        <Route 
+          path="/daily-marks" 
+          element={
+            <React.Suspense fallback={
+              <div className="min-h-screen flex items-center justify-center">
+                <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
+              </div>
+            }>
+              <DailyMarks />
+            </React.Suspense>
+          } 
+        />
+
+        {/* ============================================
             الإعدادات الشخصية - User Settings
             ============================================ */}
         <Route path="/profile" element={<Profile />} />

@@ -249,7 +249,8 @@ const DailyMarksPage = () => {
   // ==========================================================================
 
   const isStudent = currentUser?.role === 'student';
-  const isTeacher = !isStudent;
+  const isTeacherAssistant = currentUser?.role === 'teacherAssistant';
+  const isTeacher = !isStudent; // Includes teacher, admin, and teacherAssistant
 
   // Default month/year for student view
   const currentDate = new Date();
@@ -339,13 +340,15 @@ const DailyMarksPage = () => {
               loadingMarks={loadingMarks || loading}
               onBulkMarks={() => {}}
               onGroupSelect={(g) => setGroupWithUrl(g, false)}
-              onAddSection={handleAddSectionClick}
-              onEditSection={openEditSectionModal}
-              onDeleteSection={handlers.handleDeleteSection}
-              onBulkDelete={() => state.setIsBulkDeleteModalOpen(true)}
+              // مساعد المدرس لا يستطيع إضافة أو تعديل أو حذف المقاطع
+              onAddSection={isTeacherAssistant ? undefined : handleAddSectionClick}
+              onEditSection={isTeacherAssistant ? undefined : openEditSectionModal}
+              onDeleteSection={isTeacherAssistant ? undefined : handlers.handleDeleteSection}
+              onBulkDelete={isTeacherAssistant ? undefined : () => state.setIsBulkDeleteModalOpen(true)}
+              // مساعد المدرس يستطيع فقط إضافة علامات، ولا يستطيع تعديلها أو حذفها
               onAddMark={openAddMarkModal}
-              onUpdateMark={openUpdateMarkModal}
-              onDeleteMark={handlers.handleDeleteMark}
+              onUpdateMark={isTeacherAssistant ? undefined : openUpdateMarkModal}
+              onDeleteMark={isTeacherAssistant ? undefined : handlers.handleDeleteMark}
               onMarkChange={refetchMarksOnly}
               onRefreshData={() => {
                 refetchSectionsOnly();
