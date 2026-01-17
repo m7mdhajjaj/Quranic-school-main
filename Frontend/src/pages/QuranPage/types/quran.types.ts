@@ -2,6 +2,7 @@ import type {
   Surah as ApiSurah,
   SurahData as ApiSurahData,
   Ayah as ApiAyah,
+  ReadingSettings as ApiReadingSettings,
 } from "@/Api/quranAudioApi";
 
 // ✅ نمد الأنواع من الـ API
@@ -21,10 +22,6 @@ export interface SurahData extends ApiSurahData {
 
 export type Surah = ApiSurah;
 
-export interface ReadingSettings {
-  fontSize: number;
-  theme: string;
-  ayahsPerPage: number;
-}
+export type ReadingSettings = ApiReadingSettings;
 
 export type SortOrder = "asc" | "desc";

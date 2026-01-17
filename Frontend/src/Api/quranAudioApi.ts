@@ -289,3 +289,52 @@ export const getCurrentAyahFromTime = (
   }
   return ayahTimings.length > 0 ? ayahTimings[ayahTimings.length - 1].ayahNumber : null;
 };
+
+// ============================================================================
+// Reading Settings & Bookmarks
+// ============================================================================
+
+export interface ReadingSettings {
+  fontSize: number;
+  theme: string;
+  ayahsPerPage: number;
+}
+
+// Get reading settings from backend
+export const getReadingSettings = async (): Promise<ReadingSettings> => {
+  try {
+    const response = await api.get('/quran/reading-settings');
+    return response.data?.data || response.data;
+  } catch (error) {
+    console.log('Could not fetch reading settings, using defaults:', error);
+    // Return default settings
+    return {
+      fontSize: 18,
+      theme: "light",
+      ayahsPerPage: 10,
+    };
+  }
+};
+
+// Save reading settings to backend
+export const saveReadingSettings = async (settings: ReadingSettings): Promise<void> => {
+  try {
+    await api.post('/quran/reading-settings', settings);
+  } catch (error) {
+    console.log('Could not save reading settings:', error);
+    // Fail silently - settings will be saved next time
+  }
+};
+
+// Save reading bookmark (current surah and ayah)
+export const saveReadingBookmark = async (surahNumber: number, ayahNumber: number): Promise<void> => {
+  try {
+    await api.post('/quran/bookmark', {
+      surahNumber,
+      ayahNumber,
+    });
+  } catch (error) {
+    console.log('Could not save reading bookmark:', error);
+    // Fail silently - bookmark will be saved next time
+  }
+};
