@@ -1,6 +1,6 @@
 import { createSection, updateSection, deleteSection } from "@/Api/DailyMark/sectionApi";
 import { createMark, deleteMark, updateMark } from "@/Api/DailyMark/dailyMarksApi";
-import { sectionValidationSchema } from "@/Validation/dailyMarksValidation"; // Import Schema
+import { sectionValidationSchema } from '@/Validation/DailyMark';
 import * as yup from "yup";
 import {
   showCenteredSwal,
@@ -168,7 +168,14 @@ export const useDailyMarksHandlers = ({
           ? (createdSectionResponse as any) 
           : createdSectionResponse;
 
-        setSections((prev) => [createdSection, ...prev]);
+        // ✅ إعادة جلب المقاطع بدلاً من الإضافة المحلية لضمان الحصول على كل البيانات
+        // مثل timetableId, marksStatus, marksProgress
+        if (refetchSections) {
+          await refetchSections();
+        } else {
+          setSections((prev) => [createdSection, ...prev]);
+        }
+        
         setIsAddSectionModalOpen(false);
 
         setNewSection({
@@ -255,7 +262,7 @@ export const useDailyMarksHandlers = ({
     } finally {
       setIsAddingSectionLoading(false);
     }
-  }, [selectedGroup, currentUser, setSections, setIsAddSectionModalOpen, navigate]);
+  }, [selectedGroup, currentUser, setSections, setIsAddSectionModalOpen, navigate, refetchSections, refetchStats, refetchCompletedSurahs]);
 
   // Handler: Edit Section
   const handleEditSection = useCallback(async (
@@ -285,11 +292,16 @@ export const useDailyMarksHandlers = ({
 
       // 2. Success: Update UI
       if (updatedSection) {
-        setSections((prev) =>
-          prev.map((section) =>
-            section._id === editingSection._id ? updatedSection : section
-          ).filter((s): s is Section => s !== null)
-        );
+        // ✅ إعادة جلب المقاطع لضمان الحصول على كل البيانات
+        if (refetchSections) {
+          await refetchSections();
+        } else {
+          setSections((prev) =>
+            prev.map((section) =>
+              section._id === editingSection._id ? updatedSection : section
+            ).filter((s): s is Section => s !== null)
+          );
+        }
         
         setIsEditSectionModalOpen(false);
         setEditingSection(null);
@@ -341,7 +353,7 @@ export const useDailyMarksHandlers = ({
     } finally {
       setIsEditingSectionLoading?.(false);
     }
-  }, [setSections, setIsEditSectionModalOpen, setEditingSection, selectedGroup, navigate]);
+  }, [setSections, setIsEditSectionModalOpen, setEditingSection, selectedGroup, navigate, refetchSections, refetchStats, refetchCompletedSurahs]);
 
   // Handler: Delete Section
   const handleDeleteSection = useCallback(async (sectionId: string) => {

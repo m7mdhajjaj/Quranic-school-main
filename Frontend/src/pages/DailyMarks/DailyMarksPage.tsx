@@ -33,7 +33,7 @@ import { useAllGroupsStats } from './Views/TeacherView/hooks';
 
 // Page Components
 import { AveragesSection } from './components/AveragesSection';
-import { StudentView } from './Views/StudentView';
+import { NewStudentView } from './Views/NewStudentView';
 import { ModalsContainer } from './modals/ModalsContainer';
 import { GroupsGridView } from './Views/TeacherView/components/GroupsGridView';
 
@@ -272,6 +272,21 @@ const DailyMarksPage = () => {
     );
   }
 
+  // ==========================================================================
+  // STUDENT VIEW - Full Width Layout (No wrapper, no header)
+  // ==========================================================================
+  if (isStudent) {
+    return (
+      <NewStudentView
+        studentId={currentUser?._id || selectedStudentId || ''}
+        groupId={selectedGroup || currentUser?.group || undefined}
+      />
+    );
+  }
+
+  // ==========================================================================
+  // TEACHER VIEW - With Header and Container
+  // ==========================================================================
   return (
     <div
       className="min-h-screen bg-gradient-to-b from-emerald-50 via-teal-50 to-green-50 py-6 px-3 md:px-4 lg:px-6"
@@ -304,7 +319,7 @@ const DailyMarksPage = () => {
         {/* Groups Grid Skeleton - REMOVED per user request */}
 
         {/* Averages Section - Teacher Only */}
-        {isTeacher && !loading && (
+        {!loading && (
           <AveragesSection
             selectedStudentId={selectedStudentId}
             sectionsCount={sectionsCount}
@@ -313,22 +328,9 @@ const DailyMarksPage = () => {
           />
         )}
 
-        {/* Main Content Area */}
-        {isStudent ? (
-          <StudentView
-            sections={sections}
-            marks={marks}
-            loadingMarks={loadingMarks || loading}
-            averages={averages}
-            selectedMonth={selectedMonth ?? currentMonth}
-            selectedYear={selectedYear ?? currentYear}
-            studentId={selectedStudentId}
-            onMonthChange={(month: number) => setSelectedMonth(month)}
-            onYearChange={(year: number) => setSelectedYear(year)}
-          />
-        ) : (
-          <Suspense fallback={<div className="h-40 animate-pulse bg-gray-100 rounded-xl"></div>}>
-            <TeacherView
+        {/* Main Content Area - Teacher View */}
+        <Suspense fallback={<div className="h-40 animate-pulse bg-gray-100 rounded-xl"></div>}>
+          <TeacherView
               students={students}
               selectedGroup={selectedGroup}
               teacherGroups={teacherGroups}
@@ -365,12 +367,10 @@ const DailyMarksPage = () => {
               onFilterModeChange={setFilterMode}
             />
           </Suspense>
-        )}
       </div>
 
       {/* Modals - Teacher Only */}
-      {isTeacher && (
-        <ModalsContainer
+      <ModalsContainer
           currentUser={currentUser}
           selectedStudentId={selectedStudentId}
         selectedGroup={selectedGroup}
@@ -392,7 +392,6 @@ const DailyMarksPage = () => {
         toggleSectionSelection={toggleSectionSelection}
         getSelectedStudent={getSelectedStudent}
         />
-      )}
     </div>
   );
 };

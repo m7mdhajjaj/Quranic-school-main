@@ -63,7 +63,8 @@ export const useWeeklyGrid = ({ sessions }: UseWeeklyGridProps) => {
         return;
       }
       
-      const sessionDateKey = session.sessionDate.split('T')[0];
+      // ✅ استخدام toDateKey لضمان التوافق مع timezone فلسطين
+      const sessionDateKey = toDateKey(new Date(session.sessionDate));
       
       if (!grid[sessionDateKey]) {
         return;

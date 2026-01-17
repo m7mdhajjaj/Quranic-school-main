@@ -37,6 +37,16 @@ export const useTimetableActions = ({
     return (data: any): Session => {
       const currentUser = getCurrentUser();
       
+      // ✅ استخراج sectionDetails من sectionId المُـpopulated
+      let sectionDetails = data.sectionDetails;
+      if (!sectionDetails && data.sectionId && typeof data.sectionId === 'object') {
+        sectionDetails = {
+          memorizationSection: data.sectionId.memorizationSection,
+          reviewSection: data.sectionId.reviewSection,
+          marksStatus: data.sectionId.marksStatus,
+        };
+      }
+      
       const session: Session = {
         _id: data._id,
         sessionDate: data.sessionDate,
@@ -47,6 +57,7 @@ export const useTimetableActions = ({
         description: data.description,
         sessionType: data.sessionType,
         groupId: typeof data.groupId === 'object' ? data.groupId?._id : data.groupId,
+        groupName: typeof data.groupId === 'object' ? data.groupId?.name : data.note,
         teacherId: typeof data.teacherId === 'string' && currentUser && currentUser._id === data.teacherId
           ? {
               _id: currentUser._id,
@@ -55,6 +66,7 @@ export const useTimetableActions = ({
             } as any
           : data.teacherId,
         sectionId: typeof data.sectionId === 'object' ? data.sectionId?._id : data.sectionId,
+        sectionDetails: sectionDetails,
       };
       
       return session;

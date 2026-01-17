@@ -10,7 +10,11 @@
     "move-students": "node src/scripts/moveStudents.js",
     "check-db": "node src/scripts/checkDatabase.js",
     "reset-warnings": "node src/scripts/resetAllWarnings.js",
-    "recalculate-active-status": "node src/scripts/recalculateGroupsActiveStatus.js"
+    "recalculate-active-status": "node src/scripts/recalculateGroupsActiveStatus.js",
+    "dailymark:migrate": "node scripts/dailymark-groups.js migrate",
+    "dailymark:sync": "node scripts/dailymark-groups.js sync",
+    "dailymark:report": "node scripts/dailymark-groups.js report",
+    "dailymark:list": "node scripts/dailymark-groups.js list"
   },
   "keywords": [],
   "author": "",

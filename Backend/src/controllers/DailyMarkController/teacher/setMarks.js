@@ -1,10 +1,10 @@
 // ============================================================================
-// setMarks.js - Add/Update Marks for Multiple Students (Bulk Operation)
+// teacher/setMarks.js - Add/Update Marks for Multiple Students (Bulk Operation)
 // ============================================================================
 
-const Mark = require("../../schema/DailyMark/DailyMark");
-const Section = require("../../schema/DailyMark/Section");
-const { notifyMarksAdded } = require("../../Notifications");
+const Mark = require("../../../schema/DailyMark/DailyMark");
+const Section = require("../../../schema/DailyMark/Section");
+const { notifyMarksAdded } = require("../../../Notifications");
 
 // استيراد الدوال المساعدة
 const {
@@ -13,16 +13,16 @@ const {
   emitSocketEvent,
   validateMarksArray,
   collectMarkIds,
-} = require("./utils/markHelpers");
+} = require("../utils/markHelpers");
 
 const {
   sendSuccess,
   sendError,
   sendValidationError,
   sendCreated,
-} = require("./utils/responseHelpers");
+} = require("../utils/responseHelpers");
 
-const { checkMarkEditWindow } = require("./utils/validationHelpers");
+const { checkMarkEditWindow } = require("../utils/validationHelpers");
 
 /**
  * Add or update marks for many students in one section

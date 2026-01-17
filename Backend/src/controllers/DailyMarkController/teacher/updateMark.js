@@ -1,10 +1,10 @@
 // ============================================================================
-// updateMark.js - Update Single Mark
+// teacher/updateMark.js - Update Single Mark
 // ============================================================================
 
-const Mark = require("../../schema/DailyMark/DailyMark");
-const Section = require("../../schema/DailyMark/Section");
-const { notifyMarkUpdated } = require("../../Notifications");
+const Mark = require("../../../schema/DailyMark/DailyMark");
+const Section = require("../../../schema/DailyMark/Section");
+const { notifyMarkUpdated } = require("../../../Notifications");
 
 // استيراد الدوال المساعدة
 const {
@@ -15,7 +15,7 @@ const {
   emitSocketEvent,
   validateMarksArray,
   collectMarkIds,
-} = require("./utils/markHelpers");
+} = require("../utils/markHelpers");
 
 const {
   sendSuccess,
@@ -23,9 +23,9 @@ const {
   sendValidationError,
   sendNotFound,
   sendCreated,
-} = require("./utils/responseHelpers");
+} = require("../utils/responseHelpers");
 
-const { validateMarkEditWindow } = require("./utils/validationHelpers");
+const { validateMarkEditWindow } = require("../utils/validationHelpers");
 
 /**
  * Update or create a mark for a single student

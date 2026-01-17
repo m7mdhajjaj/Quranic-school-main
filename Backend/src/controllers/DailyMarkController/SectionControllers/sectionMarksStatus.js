@@ -88,6 +88,7 @@ async function calculateSectionMarksStatus(sectionId, groupName = null) {
 
 /**
  * Update marks status for a section in the database
+ * Also updates the status of memorizationMeta and reviewMeta segments
  * @param {string} sectionId - Section ID
  * @param {string} groupName - Group name (optional)
  * @returns {Promise<Section>}
@@ -96,14 +97,48 @@ async function updateSectionMarksStatus(sectionId, groupName = null) {
   try {
     const statusData = await calculateSectionMarksStatus(sectionId, groupName);
     
-    const updatedSection = await Section.findByIdAndUpdate(
-      sectionId,
-      {
-        marksStatus: statusData.marksStatus,
-        marksProgress: statusData.marksProgress,
-      },
-      { new: true }
-    );
+    // ✅ تحديث حالة الـ segments أيضاً
+    // إذا كانت حالة العلامات "completed" (جميع الطلاب أخذوا علامات)
+    // نقوم بتحديث status كل segment إلى "completed"
+    const segmentStatus = statusData.marksStatus === "completed" 
+      ? "completed" 
+      : statusData.marksStatus === "in_progress" 
+        ? "in_progress" 
+        : "not_started";
+
+    // جلب المقطع لتحديث الـ segments
+    const section = await Section.findById(sectionId);
+    if (!section) {
+      throw new Error("المقطع غير موجود");
+    }
+
+    // تحديث حالة مقاطع الحفظ
+    if (section.memorizationMeta && section.memorizationMeta.length > 0) {
+      section.memorizationMeta.forEach(seg => {
+        seg.status = segmentStatus;
+        if (segmentStatus === "completed" && !seg.completedAt) {
+          seg.completedAt = new Date();
+        }
+      });
+    }
+
+    // تحديث حالة مقاطع المراجعة
+    if (section.reviewMeta && section.reviewMeta.length > 0) {
+      section.reviewMeta.forEach(seg => {
+        seg.status = segmentStatus;
+        if (segmentStatus === "completed" && !seg.completedAt) {
+          seg.completedAt = new Date();
+        }
+      });
+    }
+
+    // تحديث Section مع marksStatus و segments المحدثة
+    section.marksStatus = statusData.marksStatus;
+    section.marksProgress = statusData.marksProgress;
+    
+    const updatedSection = await section.save();
+
+    console.log(`✅ Section ${sectionId}: marksStatus=${statusData.marksStatus}, segments status updated`);
 
     return updatedSection;
   } catch (error) {

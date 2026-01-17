@@ -83,7 +83,26 @@ export const useSessionForm = ({
   
   // ============================================
   // 🔄 جلب الأوقات من Backend API
+  // ✅ استخدام القيم المحسوبة مباشرة لتجنب race conditions
   // ============================================
+  
+  // ✅ حساب teacherId و sessionDate الفعليين من editingSession أو formData
+  const effectiveTeacherId = useMemo(() => {
+    if (editingSession?.teacherId) {
+      return typeof editingSession.teacherId === 'string'
+        ? editingSession.teacherId
+        : editingSession.teacherId?._id || "";
+    }
+    return formData.teacherId || defaultTeacherId;
+  }, [editingSession?.teacherId, formData.teacherId, defaultTeacherId]);
+
+  const effectiveSessionDate = useMemo(() => {
+    if (editingSession?.sessionDate) {
+      return formatDateForAPI(editingSession.sessionDate);
+    }
+    return formData.sessionDate || getTodayDate();
+  }, [editingSession?.sessionDate, formData.sessionDate]);
+
   useEffect(() => {
     const fetchAvailableHours = async () => {
       try {
@@ -96,17 +115,18 @@ export const useSessionForm = ({
         }
         
         // 🔍 Step 2: جلب الأوقات المحجوزة للمعلم في التاريخ المحدد
-        if (formData.teacherId && formData.sessionDate) {
+        // ✅ استخدام القيم الفعلية بدلاً من formData
+        if (effectiveTeacherId && effectiveSessionDate) {
           const excludeId = editingSession?._id;
           console.log("🔍 Fetching teacher hours:", {
-            teacherId: formData.teacherId,
-            sessionDate: formData.sessionDate,
+            teacherId: effectiveTeacherId,
+            sessionDate: effectiveSessionDate,
             excludeId
           });
           
           const teacherResponse = await getTeacherAvailableHours(
-            formData.teacherId,
-            formData.sessionDate, // ⚠️ إرسال التاريخ بدلاً من اليوم
+            effectiveTeacherId,
+            effectiveSessionDate,
             excludeId
           );
           
@@ -141,7 +161,7 @@ export const useSessionForm = ({
     };
     
     fetchAvailableHours();
-  }, [formData.teacherId, formData.sessionDate, editingSession?._id]);
+  }, [effectiveTeacherId, effectiveSessionDate, editingSession?._id]);
   
   // ============================================
   // 📅 Auto-fill Date and SessionType from Section
@@ -247,6 +267,12 @@ export const useSessionForm = ({
   // 🔄 تحديث النموذج عند التعديل
   // ============================================
   useEffect(() => {
+    console.log("🔄 [useSessionForm] editingSession changed:", {
+      hasEditingSession: !!editingSession,
+      sessionId: editingSession?._id,
+      sessionDate: editingSession?.sessionDate,
+    });
+    
     if (editingSession) {
       const teacherIdValue = typeof editingSession.teacherId === 'string' 
         ? editingSession.teacherId 
@@ -260,15 +286,21 @@ export const useSessionForm = ({
           : String((editingSession.groupId as unknown as { _id?: string })?._id || "");
       }
 
+      const formattedDate = editingSession.sessionDate ? formatDateForAPI(editingSession.sessionDate) : getTodayDate();
+      console.log("📅 [useSessionForm] Formatted date:", {
+        original: editingSession.sessionDate,
+        formatted: formattedDate,
+      });
+
       setFormData({
-        sessionDate: editingSession.sessionDate ? formatDateForAPI(editingSession.sessionDate) : getTodayDate(),
+        sessionDate: formattedDate,
         startHour: editingSession.startHour,
         endHour: editingSession.endHour,
         note: editingSession.note || "",
         description: editingSession.description || "",
         sessionType: editingSession.sessionType,
         teacherId: teacherIdValue,
-        groupId: groupIdValue, // ✅ هنا كان الخلل، الآن نستخرجه بشكل صحيح
+        groupId: groupIdValue,
         sectionId: editingSession.sectionId || "",
       });
       

@@ -1,4 +1,5 @@
 const Section = require("../../../schema/DailyMark/Section");
+const Group = require("../../../schema/Group");
 const sequenceService = require("../../../services/DailyMark/SectionSequenceService");
 const { getSurahByNumber, surahData } = require("../../../utils/Quran/dailyMarkQuranMetadata");
 const {
@@ -558,5 +559,220 @@ exports.getSurahHistory = async (req, res) => {
     sendSuccess(res, history, "Surah history retrieved");
   } catch (error) {
      sendError(res, error.message, 500, error);
+  }
+};
+
+/**
+ * Get active surahs for a group
+ * @route GET /api/daily-marks/sections/active-surahs/:groupId
+ * 
+ * @description
+ * يجلب السور الفعالة والمكتملة للحلقة
+ * السورة الفعالة = السورة الحالية التي يجب إكمالها قبل البدء بسورة جديدة
+ */
+exports.getActiveSurahs = async (req, res) => {
+  try {
+    const { groupId } = req.params;
+
+    if (!groupId) {
+      return sendError(res, "معرف الحلقة مطلوب", 400);
+    }
+
+    // البحث عن المجموعة باستخدام ID أو الاسم
+    const mongoose = require('mongoose');
+    const isValidObjectId = mongoose.Types.ObjectId.isValid(groupId);
+    
+    let group;
+    if (isValidObjectId) {
+      group = await Group.findById(groupId).select(
+        'activeMemorizationSurah activeReviewSurah completedSurahs name'
+      );
+    } else {
+      // البحث باسم المجموعة إذا لم يكن ObjectId صالح
+      group = await Group.findOne({ name: groupId }).select(
+        'activeMemorizationSurah activeReviewSurah completedSurahs name'
+      );
+    }
+
+    if (!group) {
+      return sendNotFound(res, "الحلقة");
+    }
+
+    // إحصائيات إضافية
+    const memorizationStats = {
+      activeSurah: group.activeMemorizationSurah?.surahNumber ? {
+        surahNumber: group.activeMemorizationSurah.surahNumber,
+        surahName: group.activeMemorizationSurah.surahName,
+        lastAyahEnd: group.activeMemorizationSurah.lastAyahEnd,
+        isCompleted: group.activeMemorizationSurah.isCompleted,
+        startedAt: group.activeMemorizationSurah.startedAt,
+      } : null,
+      completedCount: group.completedSurahs?.memorization?.length || 0,
+      completedSurahs: group.completedSurahs?.memorization || [],
+    };
+
+    const reviewStats = {
+      activeSurah: group.activeReviewSurah?.surahNumber ? {
+        surahNumber: group.activeReviewSurah.surahNumber,
+        surahName: group.activeReviewSurah.surahName,
+        lastAyahEnd: group.activeReviewSurah.lastAyahEnd,
+        isCompleted: group.activeReviewSurah.isCompleted,
+        startedAt: group.activeReviewSurah.startedAt,
+      } : null,
+      completedCount: group.completedSurahs?.review?.length || 0,
+      completedSurahs: group.completedSurahs?.review || [],
+    };
+
+    sendSuccess(res, {
+      groupId: group._id.toString(),
+      groupName: group.name,
+      memorization: memorizationStats,
+      review: reviewStats,
+    }, "تم جلب السور الفعالة بنجاح");
+
+  } catch (error) {
+    console.error("❌ Error fetching active surahs:", error);
+    sendError(res, error.message, 500, error);
+  }
+};
+
+/**
+ * Get detailed active surah info for a group (with progress)
+ * @route GET /api/daily-marks/sections/active-surah-info/:groupId
+ * 
+ * @description
+ * يجلب معلومات تفصيلية عن السور الفعالة مع نسبة التقدم
+ * يستخدم للتحقق قبل إضافة مقطع جديد
+ */
+exports.getActiveSurahInfo = async (req, res) => {
+  try {
+    const { groupId } = req.params;
+
+    if (!groupId) {
+      return sendError(res, "معرف الحلقة مطلوب", 400);
+    }
+
+    // استخدام الـ method الجديد من Group Schema
+    const info = await Group.getActiveSurahInfo(groupId);
+
+    if (!info) {
+      return sendNotFound(res, "الحلقة");
+    }
+
+    sendSuccess(res, info, "تم جلب معلومات السور الفعالة بنجاح");
+
+  } catch (error) {
+    console.error("❌ Error fetching active surah info:", error);
+    sendError(res, error.message, 500, error);
+  }
+};
+
+/**
+ * Reset active surah for a group (Admin/Emergency use)
+ * @route POST /api/daily-marks/sections/reset-active-surah
+ */
+exports.resetActiveSurah = async (req, res) => {
+  try {
+    const { groupId, type } = req.body;
+
+    if (!groupId || !type) {
+      return sendError(res, "معرف الحلقة ونوع السورة مطلوبان", 400);
+    }
+
+    if (!['memorization', 'review'].includes(type)) {
+      return sendError(res, "نوع السورة يجب أن يكون 'memorization' أو 'review'", 400);
+    }
+
+    await Group.resetActiveSurah(groupId, type);
+
+    sendSuccess(res, {
+      groupId,
+      type,
+      reset: true
+    }, `تم إعادة تعيين سورة ${type === 'memorization' ? 'الحفظ' : 'المراجعة'} الفعالة`);
+
+  } catch (error) {
+    console.error("❌ Error resetting active surah:", error);
+    sendError(res, error.message, 500, error);
+  }
+};
+
+/**
+ * Mark a surah as completed
+ * @route POST /api/daily-marks/sections/complete-surah
+ */
+exports.completeSurah = async (req, res) => {
+  try {
+    const { groupId, type } = req.body;
+
+    if (!groupId || !type) {
+      return sendError(res, "معرف الحلقة ونوع المقطع مطلوبان", 400);
+    }
+
+    if (!['memorization', 'review'].includes(type)) {
+      return sendError(res, "نوع المقطع يجب أن يكون 'memorization' أو 'review'", 400);
+    }
+
+    // Count total segments for this surah
+    const activeSurahs = await Group.getActiveSurahs(groupId);
+    const activeSurah = type === 'memorization' 
+      ? activeSurahs?.memorization 
+      : activeSurahs?.review;
+
+    if (!activeSurah || !activeSurah.surahNumber) {
+      return sendError(res, "لا توجد سورة فعالة لإكمالها", 400);
+    }
+
+    const metaField = type === 'memorization' ? 'memorizationMeta' : 'reviewMeta';
+    const totalSegments = await Section.countDocuments({
+      groupId,
+      [`${metaField}.surahNumber`]: activeSurah.surahNumber
+    });
+
+    await Group.completeSurah(groupId, type, totalSegments);
+
+    sendSuccess(res, {
+      completedSurah: {
+        surahNumber: activeSurah.surahNumber,
+        surahName: activeSurah.surahName,
+        type,
+        totalSegments,
+      }
+    }, `تم إكمال سورة ${activeSurah.surahName} بنجاح`);
+
+  } catch (error) {
+    console.error("❌ Error completing surah:", error);
+    sendError(res, error.message, 500, error);
+  }
+};
+/**
+ * Sync active surahs from existing sections
+ * Fixes orphaned activeSurah data when sections don't exist
+ * @route POST /api/daily-marks/sections/sync-active-surahs
+ */
+exports.syncActiveSurahs = async (req, res) => {
+  try {
+    const { groupId, groupName } = req.body;
+
+    // إذا تم إرسال اسم الحلقة بدل الـ ID
+    let targetGroupId = groupId;
+    if (!targetGroupId && groupName) {
+      const group = await Group.findOne({ name: groupName.trim() });
+      if (group) {
+        targetGroupId = group._id;
+      } else {
+        return sendError(res, `الحلقة "${groupName}" غير موجودة`, 404);
+      }
+    }
+
+    const groupActiveSurahService = require("../../../services/DailyMark/GroupActiveSurahService");
+    
+    const results = await groupActiveSurahService.syncActiveSurahsFromSections(targetGroupId || null);
+
+    sendSuccess(res, results, `تم مزامنة السور الفعالة بنجاح`);
+
+  } catch (error) {
+    console.error("❌ Error syncing active surahs:", error);
+    sendError(res, error.message, 500, error);
   }
 };

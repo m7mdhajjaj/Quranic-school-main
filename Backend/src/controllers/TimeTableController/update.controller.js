@@ -145,7 +145,7 @@ exports.updateTimetable = async (req, res) => {
     )
       .populate('teacherId', 'firstName lastName')
       .populate('groupId', 'name')
-      .populate('sectionId', 'date group');
+      .populate('sectionId', 'date group memorizationSection reviewSection marksStatus');
 
     // ✅ 8. مزامنة مع Section إذا موجود
     if (updated.sectionId) {
@@ -342,7 +342,8 @@ exports.linkTimetableToSection = async (req, res) => {
     // ✅ 4. إرجاع النتيجة
     const result = await TimeTable.findById(id)
       .populate('teacherId', 'firstName lastName')
-      .populate('sectionId', 'date group');
+      .populate('groupId', 'name')
+      .populate('sectionId', 'date group memorizationSection reviewSection marksStatus');
 
     res.json({
       success: true,

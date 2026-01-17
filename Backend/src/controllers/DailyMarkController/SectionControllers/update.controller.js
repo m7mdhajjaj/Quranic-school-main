@@ -67,6 +67,18 @@ exports.updateSection = async (req, res) => {
     const targetGroup = updateData.group || section.group;
     
     if (targetGroup) {
+         // ✅ 0. Check Daily Quota (If date changes)
+         if (updateData.date && new Date(updateData.date).getTime() !== new Date(section.date).getTime()) {
+             const dailyCheck = await sequenceService.checkDailyQuota(
+                 targetGroup,
+                 targetDate,
+                 section._id.toString() // استثناء المقطع الحالي
+             );
+             if (dailyCheck.isBlocked) {
+                 return sendValidationError(res, dailyCheck.message);
+             }
+         }
+         
          // 0.5 Check Weekly Quota (If date changes)
          if (updateData.date && new Date(updateData.date).getTime() !== new Date(section.date).getTime()) {
              const weeklyCheck = await sequenceService.checkWeeklyQuota(

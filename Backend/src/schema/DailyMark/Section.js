@@ -234,8 +234,9 @@ sectionSchema.pre("validate", function (next) {
 });
 
 // ✅ مزامنة بيانات Section مع TimeTable المرتبط عند التحديث
+// ✅ تحديث السور الفعالة في الحلقة تلقائياً
 sectionSchema.post("save", async function (doc) {
-  // إذا كان هناك TimeTable مرتبط، حدّث معلوماته
+  // 1. مزامنة مع TimeTable
   if (doc.timetableId) {
     try {
       const TimeTable = mongoose.model("TimeTable");
@@ -252,6 +253,77 @@ sectionSchema.post("save", async function (doc) {
       console.log(`🔄 TimeTable ${doc.timetableId}: تم تحديث معلومات المقطع`);
     } catch (err) {
       console.error("خطأ في مزامنة Section مع TimeTable:", err);
+    }
+  }
+
+  // 2. ✅ تحديث السور الفعالة في الحلقة
+  if (doc.groupId) {
+    try {
+      const Group = mongoose.model("Group");
+      
+      // تحديث سورة الحفظ الفعالة
+      if (doc.memorizationMeta && doc.memorizationMeta.length > 0) {
+        const lastSegment = doc.memorizationMeta[doc.memorizationMeta.length - 1];
+        const activeSurahs = await Group.getActiveSurahs(doc.groupId);
+        
+        // إذا لا توجد سورة فعالة أو السورة مكتملة → تفعيل سورة جديدة
+        if (!activeSurahs?.memorization?.surahNumber || activeSurahs.memorization.isCompleted) {
+          await Group.activateSurah(
+            doc.groupId,
+            lastSegment.surahNumber,
+            lastSegment.surahNameCanonical || lastSegment.surahNameInput,
+            lastSegment.ayahEnd,
+            'memorization'
+          );
+        } else if (activeSurahs.memorization.surahNumber === lastSegment.surahNumber) {
+          // تحديث آخر آية فقط إذا نفس السورة
+          const maxAyahEnd = Math.max(...doc.memorizationMeta.map(s => s.ayahEnd));
+          await Group.updateLastAyah(doc.groupId, maxAyahEnd, 'memorization');
+          
+          // ✅ فحص إكمال السورة تلقائياً
+          if (lastSegment.surahAyahCount && maxAyahEnd >= lastSegment.surahAyahCount) {
+            await Group.checkAndCompleteSurah(
+              doc.groupId, 
+              maxAyahEnd, 
+              lastSegment.surahAyahCount, 
+              'memorization'
+            );
+          }
+        }
+      }
+
+      // تحديث سورة المراجعة الفعالة
+      if (doc.reviewMeta && doc.reviewMeta.length > 0) {
+        const lastSegment = doc.reviewMeta[doc.reviewMeta.length - 1];
+        const activeSurahs = await Group.getActiveSurahs(doc.groupId);
+        
+        if (!activeSurahs?.review?.surahNumber || activeSurahs.review.isCompleted) {
+          await Group.activateSurah(
+            doc.groupId,
+            lastSegment.surahNumber,
+            lastSegment.surahNameCanonical || lastSegment.surahNameInput,
+            lastSegment.ayahEnd,
+            'review'
+          );
+        } else if (activeSurahs.review.surahNumber === lastSegment.surahNumber) {
+          const maxAyahEnd = Math.max(...doc.reviewMeta.map(s => s.ayahEnd));
+          await Group.updateLastAyah(doc.groupId, maxAyahEnd, 'review');
+          
+          // ✅ فحص إكمال السورة تلقائياً
+          if (lastSegment.surahAyahCount && maxAyahEnd >= lastSegment.surahAyahCount) {
+            await Group.checkAndCompleteSurah(
+              doc.groupId, 
+              maxAyahEnd, 
+              lastSegment.surahAyahCount, 
+              'review'
+            );
+          }
+        }
+      }
+      
+      console.log(`📖 Section ${doc._id}: تم تحديث السور الفعالة للحلقة ${doc.groupId}`);
+    } catch (err) {
+      console.error("❌ خطأ في تحديث السور الفعالة:", err);
     }
   }
 });
