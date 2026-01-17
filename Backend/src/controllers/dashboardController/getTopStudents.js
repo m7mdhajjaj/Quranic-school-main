@@ -6,7 +6,7 @@
 
 const Student = require("../../schema/Student");
 const DailyMark = require("../../schema/DailyMark/DailyMark");
-const ExamSchedule = require("../../schema/ExamSchedule");
+const ExamSchedule = require("../../schema/ExamShedule/ExamSchedule");
 
 /**
  * Get top 5 students by combined marks

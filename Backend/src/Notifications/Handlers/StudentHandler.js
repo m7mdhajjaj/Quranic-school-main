@@ -1,4 +1,4 @@
-const Notification = require("../../schema/Notification");
+const Notification = require("../../schema/Notfcation/Notification");
 const Student = require("../../schema/Student");
 const Group = require("../../schema/Group");
 const { sendRealTimeNotification } = require("../Core/SocketSender");

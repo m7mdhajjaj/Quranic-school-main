@@ -2,7 +2,7 @@
 // getMarks.js - Get Marks Operations
 // ============================================================================
 
-const ExamSchedule = require("../../../schema/ExamSchedule");
+const ExamSchedule = require("../../../schema/ExamShedule/ExamSchedule");
 
 /**
  * Get all marks for a specific student

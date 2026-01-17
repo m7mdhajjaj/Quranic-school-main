@@ -2,7 +2,7 @@ const cron = require("node-cron");
 const mongoose = require("mongoose");
 const Section = require("../../schema/DailyMark/Section");
 const Teacher = require("../../schema/Teacher");
-const Notification = require("../../schema/Notification");
+const Notification = require("../../schema/Notfcation/Notification");
 
 /**
  * Schedule Reminder Job

@@ -1,10 +1,10 @@
 const Student = require("../../schema/Student");
 const Teacher = require("../../schema/Teacher");
-const ExamSchedule = require("../../schema/ExamSchedule");
+const ExamSchedule = require("../../schema/ExamShedule/ExamSchedule");
 const Group = require("../../schema/Group");
 const News = require("../../schema/News");
 const DailyMark = require("../../schema/DailyMark/DailyMark");
-const ExamMark = require("../../schema/ExamMark");
+const ExamMark = require("../../schema/ExamShedule/ExamMark");
 const Attendance = require("../../schema/Attendance");
 
 /**

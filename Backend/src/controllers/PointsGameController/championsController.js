@@ -5,7 +5,7 @@
 const Student = require("../../schema/Student");
 const MonthlyPoints = require("../../schema/MonthlyPoints");
 const MonthlyChampion = require("../../schema/MonthlyChampion");
-const StudentBadge = require("../../schema/StudentBadge");
+const StudentBadge = require("../../schema/Student/StudentBadge");
 const { getMonthName } = require("../../utils/helpers/pointsGameDateUtils");
 
 /**

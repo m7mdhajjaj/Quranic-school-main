@@ -2,7 +2,7 @@
 // badgesController - إدارة الشارات
 // ============================================================================
 
-const StudentBadge = require("../../schema/StudentBadge");
+const StudentBadge = require("../../schema/Student/StudentBadge");
 const { allBadges } = require("../../utils/helpers/pointsGameBadges");
 
 /**

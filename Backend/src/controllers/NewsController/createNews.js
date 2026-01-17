@@ -6,7 +6,7 @@ const News = require("../../schema/News");
 const { cloudinary } = require("../../config/cloudinary");
 const { validateNewsTitle, validateContent } = require("../../Validation/News/NewsValidation");
 const Student = require("../../schema/Student");
-const Notification = require("../../schema/Notification");
+const Notification = require("../../schema/Notfcation/Notification");
 const { notifyNewsCreated } = require("../../Notifications");
 
 /**

@@ -3,7 +3,7 @@
 // ============================================================================
 // إرسال إشعارات للطلاب عند إضافة/تعديل/حذف مواعيد الحلقات
 
-const Notification = require("../../schema/Notification");
+const Notification = require("../../schema/Notfcation/Notification");
 const Student = require("../../schema/Student");
 const Group = require("../../schema/Group");
 const mongoose = require("mongoose");

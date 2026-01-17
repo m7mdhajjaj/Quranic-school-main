@@ -2,7 +2,7 @@
 // updateExam.js - Update Existing Exam
 // ============================================================================
 
-const ExamSchedule = require("../../../schema/ExamSchedule");
+const ExamSchedule = require("../../../schema/ExamShedule/ExamSchedule");
 const { isTimeWithinAllowedRange, buildDuplicateQuery, checkTeacherTimeConflict, checkGroupDailyLimit, validateDuration } = require("./examHelpers");
 const { notifyExamUpdated } = require("../../../Notifications");
 

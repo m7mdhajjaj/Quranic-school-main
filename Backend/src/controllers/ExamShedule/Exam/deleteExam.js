@@ -2,8 +2,8 @@
 // deleteExam.js - Delete Exam and Related Marks
 // ============================================================================
 
-const ExamSchedule = require("../../../schema/ExamSchedule");
-const ExamMark = require("../../../schema/ExamMark");
+const ExamSchedule = require("../../../schema/ExamShedule/ExamSchedule");
+const ExamMark = require("../../../schema/ExamShedule/ExamMark");
 const { notifyExamDeleted } = require("../../../Notifications");
 
 /**

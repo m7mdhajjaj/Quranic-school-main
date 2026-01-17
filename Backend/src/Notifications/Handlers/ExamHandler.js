@@ -1,4 +1,4 @@
-const Notification = require("../../schema/Notification");
+const Notification = require("../../schema/Notfcation/Notification");
 const { sendRealTimeNotification } = require("../Core/SocketSender");
 const { sendPushNotification } = require("../Core/PushSender");
 

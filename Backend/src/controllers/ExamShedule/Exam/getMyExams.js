@@ -2,7 +2,7 @@
 // getMyExams.js - Get User's Exams (Role-Based Filtering on Backend)
 // ============================================================================
 
-const ExamSchedule = require("../../../schema/ExamSchedule");
+const ExamSchedule = require("../../../schema/ExamShedule/ExamSchedule");
 const Student = require("../../../schema/Student");
 const Teacher = require("../../../schema/Teacher");
 const Group = require("../../../schema/Group");

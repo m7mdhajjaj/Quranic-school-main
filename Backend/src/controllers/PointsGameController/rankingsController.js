@@ -6,7 +6,7 @@ const Student = require("../../schema/Student");
 const Teacher = require("../../schema/Teacher");
 const Group = require("../../schema/Group");
 const MonthlyPoints = require("../../schema/MonthlyPoints");
-const StudentBadge = require("../../schema/StudentBadge");
+const StudentBadge = require("../../schema/Student/StudentBadge");
 const DailyPoints = require("../../schema/DailyPoints");
 const {
   getCurrentMonth,

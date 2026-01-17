@@ -2,7 +2,7 @@
 // updateMark.js - Update Single Mark
 // ============================================================================
 
-const ExamSchedule = require("../../../schema/ExamSchedule");
+const ExamSchedule = require("../../../schema/ExamShedule/ExamSchedule");
 
 /**
  * Update single student mark

@@ -45,7 +45,7 @@ const buildDuplicateQuery = (date, group) => {
  * @returns {Promise<Object|null>} Existing exam or null
  */
 const checkGroupDailyLimit = async (date, group, excludeExamId = null) => {
-  const ExamSchedule = require("../../../schema/ExamSchedule");
+  const ExamSchedule = require("../../../schema/ExamShedule/ExamSchedule");
   
   if (!date || !group) return null;
 
@@ -101,7 +101,7 @@ const validateDuration = (duration) => {
  * @returns {Promise<Object|null>} Conflicting exam or null
  */
 const checkTeacherTimeConflict = async (teacherId, date, time, duration = 60, excludeExamId = null) => {
-  const ExamSchedule = require("../../../schema/ExamSchedule");
+  const ExamSchedule = require("../../../schema/ExamShedule/ExamSchedule");
   const Group = require("../../../schema/Group");
   
   if (!teacherId || !date || !time) return null;

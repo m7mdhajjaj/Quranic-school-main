@@ -2,7 +2,7 @@
 // bulkDeleteExams.js - Bulk Delete Multiple Exams
 // ============================================================================
 
-const ExamSchedule = require("../../../schema/ExamSchedule");
+const ExamSchedule = require("../../../schema/ExamShedule/ExamSchedule");
 
 /**
  * Bulk delete multiple exams

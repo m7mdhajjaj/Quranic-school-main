@@ -2,7 +2,7 @@
 // setMarks.js - Add/Update Marks for Multiple Students (Bulk Operation)
 // ============================================================================
 
-const ExamSchedule = require("../../../schema/ExamSchedule");
+const ExamSchedule = require("../../../schema/ExamShedule/ExamSchedule");
 const { updateExamAverage } = require("../Exam/examAverage");
 
 /**

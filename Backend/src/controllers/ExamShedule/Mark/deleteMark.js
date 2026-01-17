@@ -2,7 +2,7 @@
 // deleteMark.js - Delete Mark
 // ============================================================================
 
-const ExamSchedule = require("../../../schema/ExamSchedule");
+const ExamSchedule = require("../../../schema/ExamShedule/ExamSchedule");
 
 /**
  * Delete student mark

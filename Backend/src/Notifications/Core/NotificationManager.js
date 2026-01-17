@@ -1,4 +1,4 @@
-const Notification = require("../../schema/Notification");
+const Notification = require("../../schema/Notfcation/Notification");
 const cron = require("node-cron");
 const PrayerJob = require("../Jobs/PrayerJob");
 const ScheduleReminderJob = require("../Jobs/ScheduleReminderJob");

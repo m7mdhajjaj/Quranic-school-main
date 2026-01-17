@@ -2,7 +2,7 @@
 // getExams.js - Get All Exams with Filtering, Sorting, and Pagination
 // ============================================================================
 
-const ExamSchedule = require("../../../schema/ExamSchedule");
+const ExamSchedule = require("../../../schema/ExamShedule/ExamSchedule");
 
 /**
  * Get all exams with advanced filtering and sorting

@@ -5,7 +5,7 @@
 const express = require("express");
 const router = express.Router();
 const mongoose = require("mongoose");
-const Notification = require("../../schema/Notification");
+const Notification = require("../../schema/Notfcation/Notification");
 const { protect } = require("../../middleware/auth");
 
 // Helper: Validate ObjectId

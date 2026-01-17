@@ -5,7 +5,7 @@
 const News = require("../../schema/News");
 const { cloudinary } = require("../../config/cloudinary");
 const Student = require("../../schema/Student");
-const Notification = require("../../schema/Notification");
+const Notification = require("../../schema/Notfcation/Notification");
 const { notifyNewsUpdated } = require("../../Notifications");
 
 /**

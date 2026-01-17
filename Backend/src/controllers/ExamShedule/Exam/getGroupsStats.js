@@ -2,7 +2,7 @@
 // getGroupsStats.js - Get Exam Statistics for Groups
 // ============================================================================
 
-const ExamSchedule = require("../../../schema/ExamSchedule");
+const ExamSchedule = require("../../../schema/ExamShedule/ExamSchedule");
 const Group = require("../../../schema/Group");
 
 /**

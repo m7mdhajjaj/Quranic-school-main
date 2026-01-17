@@ -3,7 +3,7 @@
 // ============================================================================
 
 const Mark = require("../../schema/DailyMark/DailyMark");
-const ExamMark = require("../../schema/ExamMark");
+const ExamMark = require("../../schema/ExamShedule/ExamMark");
 const Student = require("../../schema/Student");
 const Attendance = require("../../schema/Attendance");
 const mongoose = require("mongoose");

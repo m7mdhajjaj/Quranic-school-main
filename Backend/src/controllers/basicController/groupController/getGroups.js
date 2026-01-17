@@ -4,7 +4,7 @@
 
 const Group = require("../../../schema/Group");
 const Student = require("../../../schema/Student");
-const ExamSchedule = require("../../../schema/ExamSchedule");
+const ExamSchedule = require("../../../schema/ExamShedule/ExamSchedule");
 const TimeTable = require("../../../schema/TimeTable");
 const Teacher = require("../../../schema/Teacher");
 const {

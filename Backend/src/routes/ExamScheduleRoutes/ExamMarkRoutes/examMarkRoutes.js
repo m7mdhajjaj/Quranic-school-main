@@ -18,7 +18,7 @@ router.get("/teacher-groups", protect, async (req, res) => {
 
     // جلب الحلقات مع الطلاب مباشرة
     const Group = require("../../../schema/Group");
-    const ExamSchedule = require("../../../schema/ExamSchedule");
+    const ExamSchedule = require("../../../schema/ExamShedule/ExamSchedule");
     const Teacher = require("../../../schema/Teacher");
 
     const teacherId = req.user.id;
@@ -117,7 +117,7 @@ router.post("/", protect, async (req, res) => {
       });
     }
 
-    const ExamSchedule = require("../../../schema/ExamSchedule");
+    const ExamSchedule = require("../../../schema/ExamShedule/ExamSchedule");
 
     // البحث عن الامتحان
     const exam = await ExamSchedule.findById(examId);
@@ -181,7 +181,7 @@ router.put("/:markId", protect, async (req, res) => {
     const { mark } = req.body;
     console.log("🎯 [update-mark] Updating mark:", { markId, mark });
 
-    const ExamSchedule = require("../../../schema/ExamSchedule");
+    const ExamSchedule = require("../../../schema/ExamShedule/ExamSchedule");
 
     // البحث عن الامتحان الذي يحتوي على هذه العلامة
     const exam = await ExamSchedule.findOne({ "marks._id": markId });
@@ -225,7 +225,7 @@ router.delete("/:markId", protect, async (req, res) => {
 
     // تجاهل إذا كان markId يبدو كـ examId (24 حرف hex)
     if (markId.length === 24) {
-      const ExamSchedule = require("../../../schema/ExamSchedule");
+      const ExamSchedule = require("../../../schema/ExamShedule/ExamSchedule");
 
       // البحث عن الامتحان الذي يحتوي على هذه العلامة
       const exam = await ExamSchedule.findOne({ "marks._id": markId });
