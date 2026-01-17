@@ -105,6 +105,7 @@ import StudentsManagement from "./pages/Admin/StudentsManagement/index";
 import TeachersManagement from "./pages/Admin/TeachersManagement/index";
 import GroupManagement from "./pages/Admin/GroupManagement/index";
 import SecretaryManagement from "./pages/Admin/SecretaryManagement/index";
+import TeacherAssistantManagement from "./pages/Admin/TeacherAssistantManagement/index";
 
 // ============================================================================
 // Chat Components
@@ -240,6 +241,7 @@ const AdminRoutes: React.FC = () => {
         <Route path="/admin/teachers" element={<TeachersManagement />} />
         <Route path="/admin/groups" element={<GroupManagement />} />
         <Route path="/admin/secretaries" element={<SecretaryManagement />} />
+        <Route path="/admin/assistants" element={<TeacherAssistantManagement />} />
         <Route path="/admin/settings" element={<NotFound />} />
 
         {/* ============================================

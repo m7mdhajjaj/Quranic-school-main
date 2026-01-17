@@ -18,6 +18,7 @@ import {
   GraduationCap,
   LayoutDashboard,
   ScrollText,
+  HandHelping,
 } from 'lucide-react';
 import type {
   NavigationItem,
@@ -67,6 +68,12 @@ export const getPrimaryNavItems = (
             label: 'إدارة السكرتارية',
             icon: UserCheck,
             color: 'from-amber-600 to-orange-600',
+          },
+          {
+            to: '/admin/assistants',
+            label: 'إدارة المساعدين',
+            icon: HandHelping,
+            color: 'from-purple-600 to-indigo-600',
           },
           {
             to: '/admin/groups',
