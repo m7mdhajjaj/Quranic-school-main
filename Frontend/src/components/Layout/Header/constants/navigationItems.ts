@@ -19,6 +19,8 @@ import {
   LayoutDashboard,
   ScrollText,
   HandHelping,
+  Trophy,
+  TestTube,
 } from 'lucide-react';
 import type {
   NavigationItem,
@@ -183,6 +185,12 @@ export const getPrimaryNavItems = (
             label: 'مواعيد الحلقة',
             icon: CalendarDays,
             color: 'from-emerald-500 to-green-500',
+          },
+          {
+            to: '/points-game',
+            label: 'لعبة النقاط',
+            icon: Trophy,
+            color: 'from-amber-500 to-yellow-500',
           },
         ],
       },
@@ -362,6 +370,26 @@ export const getPrimaryNavItems = (
             label: 'مواعيد حلقتي',
             icon: CalendarDays,
             color: 'from-emerald-500 to-green-500',
+          },
+        ],
+      },
+      {
+        to: '#games',
+        label: 'تحديات',
+        icon: Trophy,
+        color: 'from-amber-500 to-yellow-500',
+        subItems: [
+          {
+            to: '/points-game',
+            label: 'لعبة النقاط',
+            icon: Trophy,
+            color: 'from-amber-500 to-yellow-500',
+          },
+          {
+            to: '/test',
+            label: 'اختبر نفسك',
+            icon: TestTube,
+            color: 'from-pink-500 to-rose-500',
           },
         ],
       },
