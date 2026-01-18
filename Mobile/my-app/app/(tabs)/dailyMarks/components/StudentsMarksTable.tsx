@@ -24,8 +24,8 @@ interface StudentsMarksTableProps {
   loading?: boolean;
   searchQuery?: string;
   onAddMark: (student: Student) => void;
-  onEditMark: (mark: Mark, student: Student) => void;
-  onDeleteMark: (markId: string) => void;
+  onEditMark?: (mark: Mark, student: Student) => void;
+  onDeleteMark?: (markId: string) => void;
 }
 
 export const StudentsMarksTable: React.FC<StudentsMarksTableProps> = ({
@@ -174,16 +174,24 @@ export const StudentsMarksTable: React.FC<StudentsMarksTableProps> = ({
                   <View style={[styles.cell, styles.actionsCell]}>
                     {row.mark ? (
                       <View style={styles.actionButtons}>
-                        <TouchableOpacity
-                          style={styles.editButton}
-                          onPress={() => onEditMark(row.mark!, row.student)}>
-                          <Edit size={18} color="#10b981" />
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          style={styles.deleteButton}
-                          onPress={() => onDeleteMark(row.mark!._id)}>
-                          <Trash2 size={18} color="#ef4444" />
-                        </TouchableOpacity>
+                        {onEditMark && (
+                          <TouchableOpacity
+                            style={styles.editButton}
+                            onPress={() => onEditMark(row.mark!, row.student)}>
+                            <Edit size={18} color="#10b981" />
+                          </TouchableOpacity>
+                        )}
+                        {onDeleteMark && (
+                          <TouchableOpacity
+                            style={styles.deleteButton}
+                            onPress={() => onDeleteMark(row.mark!._id)}>
+                            <Trash2 size={18} color="#ef4444" />
+                          </TouchableOpacity>
+                        )}
+                        {/* إذا لا يوجد صلاحيات تعديل/حذف - إظهار رسالة */}
+                        {!onEditMark && !onDeleteMark && (
+                          <Text style={styles.noActionsText}>تم التقييم</Text>
+                        )}
                       </View>
                     ) : (
                       <TouchableOpacity
@@ -334,5 +342,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     minWidth: 50,
+  },
+  noActionsText: {
+    fontSize: 12,
+    color: "#9ca3af",
+    fontStyle: "italic",
   },
 });

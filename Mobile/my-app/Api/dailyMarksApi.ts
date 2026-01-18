@@ -750,6 +750,56 @@ export const setMarksForSection = async (
 // ============================================================================
 
 /**
+ * Get teacher assistant's allowed groups
+ * @description جلب الحلقات المسموح لمساعد المدرس بالوصول إليها
+ */
+export const getTeacherAssistantGroups = async (): Promise<ApiResponse<any[]>> => {
+  try {
+    const response = await api.get("/teacher-assistant/my-groups");
+    return {
+      success: true,
+      data: response.data.data || [],
+      message: response.data.message,
+    };
+  } catch (error) {
+    console.error("❌ Error fetching teacher assistant groups:", error);
+    const axiosError = error as AxiosError<{ message?: string }>;
+    return {
+      success: false,
+      message:
+        axiosError.response?.data?.message ||
+        "حدث خطأ أثناء جلب الحلقات",
+      error: String(error),
+    };
+  }
+};
+
+/**
+ * Get students for teacher assistant's allowed groups
+ * @description جلب جميع الطلاب من الحلقات المسموح لمساعد المدرس بها
+ */
+export const getTeacherAssistantStudents = async (): Promise<ApiResponse<Student[]>> => {
+  try {
+    const response = await api.get("/teacher-assistant/my-students");
+    return {
+      success: true,
+      data: response.data.data || [],
+      message: response.data.message,
+    };
+  } catch (error) {
+    console.error("❌ Error fetching teacher assistant students:", error);
+    const axiosError = error as AxiosError<{ message?: string }>;
+    return {
+      success: false,
+      message:
+        axiosError.response?.data?.message ||
+        "حدث خطأ أثناء جلب الطلاب",
+      error: String(error),
+    };
+  }
+};
+
+/**
  * Get all data needed for DailyMarks initialization
  * NOTE: This function is deprecated and not used anymore.
  * Use the filtered APIs instead (getFilteredSections, getFilteredMarks, etc.)
@@ -776,6 +826,10 @@ export default {
   // Groups
   getActiveGroups,
   getGroupStats,
+  
+  // Teacher Assistant
+  getTeacherAssistantGroups,
+  getTeacherAssistantStudents,
 
   // Sections
   getSectionById,

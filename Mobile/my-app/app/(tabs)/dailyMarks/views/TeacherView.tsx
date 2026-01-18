@@ -16,6 +16,7 @@ import {
   getFilteredMarks,
   deleteSection,
   deleteMark,
+  getTeacherAssistantStudents,
 } from "@/Api/dailyMarksApi";
 import type { Section, Mark } from "@/Api/dailyMarksApi";
 import { GroupsGridView } from "../components/GroupsGridView";
@@ -35,6 +36,7 @@ interface TeacherViewProps {
   students: Student[];
   teacherGroups: string[];
   currentUser: any;
+  isTeacherAssistant?: boolean;
 }
 
 interface GroupWithStats {
@@ -48,6 +50,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   students,
   teacherGroups,
   currentUser,
+  isTeacherAssistant = false,
 }) => {
   // State Management
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
@@ -130,12 +133,19 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
     for (let i = 0; i < teacherGroups.length; i++) {
       const groupName = teacherGroups[i];
       try {
-        // Load students count from API
-        const studentsResponse = await getStudentsByGroup(groupName);
-        const studentsCount =
-          studentsResponse.success && studentsResponse.data
-            ? studentsResponse.data.length
-            : 0;
+        let studentsCount = 0;
+        
+        // مساعد المدرس - استخدام الطلاب من الـ props
+        if (isTeacherAssistant && students.length > 0) {
+          studentsCount = students.filter(s => s.group === groupName).length;
+        } else {
+          // Load students count from API
+          const studentsResponse = await getStudentsByGroup(groupName);
+          studentsCount =
+            studentsResponse.success && studentsResponse.data
+              ? studentsResponse.data.length
+              : 0;
+        }
 
         // Load sections count
         const sectionsResponse = await getFilteredSections({
@@ -174,6 +184,14 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   const loadGroupStudents = async (groupName: string) => {
     console.log("📚 [TeacherView] Loading students for group:", groupName);
     try {
+      // مساعد المدرس - استخدام الطلاب من الـ props مباشرة
+      if (isTeacherAssistant && students.length > 0) {
+        const filteredStudents = students.filter(s => s.group === groupName);
+        setGroupStudents(filteredStudents);
+        console.log("✅ [TeacherView] Teacher assistant - filtered students:", filteredStudents.length);
+        return;
+      }
+
       const response = await getStudentsByGroup(groupName);
 
       if (response.success && response.data) {
@@ -446,8 +464,8 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
               marks={marks}
               students={groupStudents}
               onAddMark={handleAddMark}
-              onEditMark={handleEditMark}
-              onDeleteMark={handleDeleteMark}
+              onEditMark={isTeacherAssistant ? undefined : handleEditMark}
+              onDeleteMark={isTeacherAssistant ? undefined : handleDeleteMark}
               searchQuery={studentSearchQuery}
             />
           </SectionDetailsView>
@@ -514,25 +532,27 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
           marks={marks}
           isTeacher={true}
           onSectionSelect={handleSectionSelect}
-          onEditSection={handleEditSection}
-          onDeleteSection={handleDeleteSection}
-          onAddSection={handleAddSection}
-          onAddSchedule={handleAddSchedule}
-          showActions={true}
+          onEditSection={isTeacherAssistant ? undefined : handleEditSection}
+          onDeleteSection={isTeacherAssistant ? undefined : handleDeleteSection}
+          onAddSection={isTeacherAssistant ? undefined : handleAddSection}
+          onAddSchedule={isTeacherAssistant ? undefined : handleAddSchedule}
+          showActions={!isTeacherAssistant}
         />
       </ScrollView>
 
-      {/* Modals */}
-      <AddEditSectionModal
-        visible={showSectionModal}
-        onClose={() => setShowSectionModal(false)}
-        onSuccess={handleSectionModalSuccess}
-        group={selectedGroup}
-        editingSection={editingSection}
-      />
+      {/* Modals - مساعد المدرس لا يستطيع إضافة أو تعديل المقاطع */}
+      {!isTeacherAssistant && (
+        <AddEditSectionModal
+          visible={showSectionModal}
+          onClose={() => setShowSectionModal(false)}
+          onSuccess={handleSectionModalSuccess}
+          group={selectedGroup}
+          editingSection={editingSection}
+        />
+      )}
 
-      {/* Timetable Modal for adding schedule to existing section */}
-      {scheduleTargetSection && (
+      {/* Timetable Modal for adding schedule to existing section - للمعلمين فقط */}
+      {!isTeacherAssistant && scheduleTargetSection && (
         <AddTimetableSessionModal
           visible={showTimetableModal}
           onClose={handleTimetableModalClose}

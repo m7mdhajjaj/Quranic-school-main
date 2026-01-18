@@ -144,11 +144,12 @@ export const DrawerMenu: React.FC<DrawerMenuProps> = ({ isOpen, onClose }) => {
       return secretaryItems;
     }
 
-    // قائمة مساعد المدرس - الصفحة الرئيسية والأهداف فقط
+    // قائمة مساعد المدرس - الصفحة الرئيسية والأهداف والعلامات اليومية
     if (user?.role === "teacherAssistant") {
       return [
         { to: "/(tabs)", label: "الرئيسية", icon: Home },
         { to: "/(tabs)/goals", label: "الأهداف", icon: Target },
+        { to: "/(tabs)/dailyMarks", label: "العلامات اليومية", icon: Award },
       ];
     }
 

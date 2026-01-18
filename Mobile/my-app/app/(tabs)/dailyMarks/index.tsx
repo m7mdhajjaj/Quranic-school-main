@@ -13,6 +13,7 @@ export default function DailyMarksPage() {
   const isStudent = currentUser?.role === "student";
   const isTeacher =
     currentUser?.role === "teacher" || currentUser?.role === "admin";
+  const isTeacherAssistant = currentUser?.role === "teacherAssistant";
 
   if (loading) {
     return (
@@ -27,11 +28,12 @@ export default function DailyMarksPage() {
     <View style={styles.container}>
       {isStudent ? (
         <StudentView />
-      ) : isTeacher ? (
+      ) : isTeacher || isTeacherAssistant ? (
         <TeacherView
           students={students}
           teacherGroups={teacherGroups}
           currentUser={currentUser}
+          isTeacherAssistant={isTeacherAssistant}
         />
       ) : (
         <View style={styles.errorContainer}>
