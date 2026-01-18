@@ -297,18 +297,25 @@ export const SectionsTable: React.FC<SectionsTableProps> = ({
                   <ChevronLeft size={16} color="#10b981" />
                 </TouchableOpacity>
 
-                <View style={styles.cardActions}>
-                  <TouchableOpacity
-                    style={styles.editCardButton}
-                    onPress={() => onEditSection?.(section)}>
-                    <Edit size={18} color="#f59e0b" />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.deleteCardButton}
-                    onPress={() => onDeleteSection?.(section._id)}>
-                    <Trash2 size={18} color="#ef4444" />
-                  </TouchableOpacity>
-                </View>
+                {/* أزرار التعديل والحذف - تظهر فقط إذا كانت الـ callbacks موجودة */}
+                {(onEditSection || onDeleteSection) && (
+                  <View style={styles.cardActions}>
+                    {onEditSection && (
+                      <TouchableOpacity
+                        style={styles.editCardButton}
+                        onPress={() => onEditSection(section)}>
+                        <Edit size={18} color="#f59e0b" />
+                      </TouchableOpacity>
+                    )}
+                    {onDeleteSection && (
+                      <TouchableOpacity
+                        style={styles.deleteCardButton}
+                        onPress={() => onDeleteSection(section._id)}>
+                        <Trash2 size={18} color="#ef4444" />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                )}
               </View>
             </TouchableOpacity>
           );

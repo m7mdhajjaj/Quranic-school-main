@@ -82,15 +82,47 @@ interface Notification {
     | "system"
     | "success"
     | "alert"
-    | "mention";
+    | "mention"
+    | "chat"
+    | "timetable"
+    | "reminder"
+    | "quran_progress"
+    | "memorization"
+    | "review"
+    | "test_result"
+    | "student_update"
+    | "teacher_added"
+    | "teacher_updated"
+    | "teacher_deleted"
+    | "student_added"
+    | "student_updated"
+    | "student_deleted"
+    | "group_assigned"
+    | "group_updated"
+    | "group_deleted"
+    | "group_transferred"
+    | "secretary_added"
+    | "secretary_updated"
+    | "secretary_deleted"
+    | "admin_action"
+    | "user_approval"
+    | "role_change"
+    | "system_update"
+    | "goal"
+    | "achievement"
+    | "points"
+    | "ranking"
+    | "other";
   title: string;
-  message: string;
+  message?: string;
+  messageSummary?: string;
   data?: NotificationData;
   createdAt: string;
   sentAt?: string;
   isRead: boolean;
   priority?: string;
   isNew?: boolean;
+  category?: "general" | "academic" | "admin" | "other";
 }
 
 interface NotificationStats {

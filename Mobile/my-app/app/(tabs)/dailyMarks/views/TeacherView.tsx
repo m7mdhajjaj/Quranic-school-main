@@ -17,6 +17,7 @@ import {
   deleteSection,
   deleteMark,
   getTeacherAssistantStudents,
+  Student as DailyMarksStudent,
 } from "@/Api/dailyMarksApi";
 import type { Section, Mark } from "@/Api/dailyMarksApi";
 import { GroupsGridView } from "../components/GroupsGridView";
@@ -184,12 +185,30 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   const loadGroupStudents = async (groupName: string) => {
     console.log("📚 [TeacherView] Loading students for group:", groupName);
     try {
-      // مساعد المدرس - استخدام الطلاب من الـ props مباشرة
-      if (isTeacherAssistant && students.length > 0) {
-        const filteredStudents = students.filter(s => s.group === groupName);
-        setGroupStudents(filteredStudents);
-        console.log("✅ [TeacherView] Teacher assistant - filtered students:", filteredStudents.length);
-        return;
+      // مساعد المدرس - استخدام الطلاب من الـ props إذا متوفرة
+      if (isTeacherAssistant) {
+        // أولاً: محاولة استخدام الطلاب من الـ props
+        if (students.length > 0) {
+          const filteredStudents = students.filter(s => s.group === groupName);
+          if (filteredStudents.length > 0) {
+            setGroupStudents(filteredStudents);
+            console.log("✅ [TeacherView] Teacher assistant - filtered students from props:", filteredStudents.length);
+            return;
+          }
+        }
+        
+        // إذا لم نجد طلاب، نجلبهم من الـ API
+        console.log("📚 [TeacherView] Teacher assistant - fetching students from API for group:", groupName);
+        const assistantStudentsResponse = await getTeacherAssistantStudents();
+        if (assistantStudentsResponse.success && assistantStudentsResponse.data) {
+          const filteredStudents = assistantStudentsResponse.data.filter((s: DailyMarksStudent) => s.group === groupName);
+          setGroupStudents(filteredStudents as Student[]);
+          console.log("✅ [TeacherView] Teacher assistant - loaded students from API:", filteredStudents.length);
+          return;
+        }
+        
+        // إذا فشل كل شيء، نستخدم API العادي
+        console.log("📚 [TeacherView] Teacher assistant - falling back to regular API");
       }
 
       const response = await getStudentsByGroup(groupName);
@@ -536,7 +555,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
           onDeleteSection={isTeacherAssistant ? undefined : handleDeleteSection}
           onAddSection={isTeacherAssistant ? undefined : handleAddSection}
           onAddSchedule={isTeacherAssistant ? undefined : handleAddSchedule}
-          showActions={!isTeacherAssistant}
+          showActions={true}
         />
       </ScrollView>
 

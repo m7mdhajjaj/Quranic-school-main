@@ -151,7 +151,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
     if (!user?._id) return;
 
     try {
-      const success = await markAllAsRead(user._id);
+      const success = await markAllAsRead();
       if (success) {
         setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
         setUnreadCount(0);

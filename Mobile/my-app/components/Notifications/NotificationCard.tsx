@@ -1,16 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { X } from "lucide-react-native";
-
-interface Notification {
-  _id: string;
-  title: string;
-  message: string;
-  type: string;
-  isRead: boolean;
-  createdAt: string;
-  sentAt?: string;
-}
+import type { Notification } from "@/Api/notificationApi";
 
 interface NotificationCardProps {
   notification: Notification;
@@ -37,7 +28,7 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
         </View>
 
         <Text style={styles.message} numberOfLines={2}>
-          {notification.message}
+          {notification.message || notification.messageSummary || ''}
         </Text>
 
         <Text style={styles.time}>

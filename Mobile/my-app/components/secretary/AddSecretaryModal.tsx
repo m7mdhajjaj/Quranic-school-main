@@ -30,6 +30,7 @@ import {
   validateSecretaryForm,
   hasValidationErrors,
   calculateAge,
+  SecretaryValidationErrors,
 } from "@/Validation/secretaryValidation";
 import type {
   Secretary,
@@ -73,7 +74,7 @@ export const AddSecretaryModal: React.FC<AddSecretaryModalProps> = ({
     },
   });
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<SecretaryValidationErrors & { submit?: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date(1990, 0, 1));
@@ -200,30 +201,35 @@ export const AddSecretaryModal: React.FC<AddSecretaryModalProps> = ({
       secureTextEntry?: boolean;
       required?: boolean;
     }
-  ) => (
-    <View className="mb-4">
-      <Text className="text-gray-700 font-medium mb-1">
-        {label}
-        {options?.required && <Text className="text-red-500"> *</Text>}
-      </Text>
-      <View className="flex-row items-center bg-gray-50 rounded-lg border border-gray-200 px-3">
-        {icon}
-        <TextInput
-          value={formData[field]?.toString() || ""}
-          onChangeText={(text) =>
-            setFormData((prev) => ({ ...prev, [field]: text }))
-          }
-          placeholder={label}
-          keyboardType={options?.keyboardType || "default"}
-          secureTextEntry={options?.secureTextEntry}
-          className="flex-1 py-3 px-2 text-gray-800"
-        />
+  ) => {
+    // Get error for this field if it exists in validation errors
+    const fieldError = (errors as Record<string, string | undefined>)[field];
+    
+    return (
+      <View className="mb-4">
+        <Text className="text-gray-700 font-medium mb-1">
+          {label}
+          {options?.required && <Text className="text-red-500"> *</Text>}
+        </Text>
+        <View className="flex-row items-center bg-gray-50 rounded-lg border border-gray-200 px-3">
+          {icon}
+          <TextInput
+            value={formData[field]?.toString() || ""}
+            onChangeText={(text) =>
+              setFormData((prev) => ({ ...prev, [field]: text }))
+            }
+            placeholder={label}
+            keyboardType={options?.keyboardType || "default"}
+            secureTextEntry={options?.secureTextEntry}
+            className="flex-1 py-3 px-2 text-gray-800"
+          />
+        </View>
+        {fieldError && (
+          <Text className="text-red-500 text-xs mt-1">{fieldError}</Text>
+        )}
       </View>
-      {errors[field] && (
-        <Text className="text-red-500 text-xs mt-1">{errors[field]}</Text>
-      )}
-    </View>
-  );
+    );
+  };
 
   const renderPermissionPicker = (
     label: string,

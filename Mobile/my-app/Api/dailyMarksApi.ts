@@ -755,7 +755,7 @@ export const setMarksForSection = async (
  */
 export const getTeacherAssistantGroups = async (): Promise<ApiResponse<any[]>> => {
   try {
-    const response = await api.get("/teacher-assistant/my-groups");
+    const response = await api.get("/teacher-assistants/my-groups");
     return {
       success: true,
       data: response.data.data || [],
@@ -780,7 +780,7 @@ export const getTeacherAssistantGroups = async (): Promise<ApiResponse<any[]>> =
  */
 export const getTeacherAssistantStudents = async (): Promise<ApiResponse<Student[]>> => {
   try {
-    const response = await api.get("/teacher-assistant/my-students");
+    const response = await api.get("/teacher-assistants/my-students");
     return {
       success: true,
       data: response.data.data || [],
