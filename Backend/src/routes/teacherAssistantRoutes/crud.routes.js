@@ -4,6 +4,11 @@ const router = express.Router();
 const controller = require("../../controllers/basicController/teacherAssistantController");
 const { protect } = require("../../middleware/auth/protect.middleware");
 const { adminProtect } = require("../../middleware/auth/role.middleware");
+const {
+  validateAssistantData,
+  validateAssistantGroups,
+  sanitizeAssistantData,
+} = require("../../Validation/TeacherAssistant/AssistantValidation");
 
 /**
  * CRUD Routes for Teacher Assistants
@@ -23,13 +28,27 @@ router.get("/next-id", adminProtect, controller.getNextAssistantId);
 router.get("/:id", protect, controller.getAssistantById);
 
 // Create new teacher assistant - Admin only
-router.post("/", adminProtect, controller.createAssistant);
+router.post(
+  "/",
+  adminProtect,
+  sanitizeAssistantData,
+  validateAssistantData,
+  validateAssistantGroups,
+  controller.createAssistant
+);
 
 // Bulk delete teacher assistants - Admin only
 router.post("/bulk-delete", adminProtect, controller.bulkDeleteAssistants);
 
 // Update teacher assistant - Admin or Self
-router.put("/:id", protect, controller.updateAssistant);
+router.put(
+  "/:id",
+  protect,
+  sanitizeAssistantData,
+  validateAssistantData,
+  validateAssistantGroups,
+  controller.updateAssistant
+);
 
 // Delete teacher assistant - Admin only
 router.delete("/:id", adminProtect, controller.deleteAssistant);

@@ -1,5 +1,5 @@
-// Teacher Validation using Yup
-// Validation للمعلم باستخدام مكتبة Yup - متطابق مع Backend Teacher model
+// Teacher Assistant Validation using Yup
+// Validation لمساعد المدرس باستخدام مكتبة Yup - متطابق مع Backend TeacherAssistant model
 
 import * as yup from 'yup';
 
@@ -22,7 +22,7 @@ yup.setLocale({
   },
 });
 
-// تطبيع الجنس - نفس المنطق في Backend Teacher model
+// تطبيع الجنس - نفس المنطق في Backend TeacherAssistant model
 const normalizeGender = (value: string): string => {
   if (!value) return '';
   const normalized = value.toString().toLowerCase().trim();
@@ -44,12 +44,12 @@ const calculateAge = (birthDate: string): number => {
   return age;
 };
 
-// Yup Schema - متطابق مع Backend Teacher validation
-export const teacherValidationSchema = yup.object({
-  // teacherId - يتم توليده تلقائياً في الباك اند
-  teacherId: yup
+// Yup Schema - متطابق مع Backend TeacherAssistant validation
+export const assistantValidationSchema = yup.object({
+  // assistantId - يتم توليده تلقائياً في الباك اند
+  assistantId: yup
     .number()
-    .positive('رقم المعلم يجب أن يكون رقماً موجباً')
+    .positive('رقم مساعد المدرس يجب أن يكون رقماً موجباً')
     .nullable(),
     
   // الأسماء - الاسم الأول واسم العائلة مطلوبان
@@ -81,7 +81,7 @@ export const teacherValidationSchema = yup.object({
     .trim()
     .transform((value) => value === '' ? null : value),
     
-  // رقم الهوية - مطلوب وفريد للمعلم
+  // رقم الهوية - مطلوب وفريد لمساعد المدرس
   idNumber: yup
     .string()
     .required('رقم الهوية مطلوب')
@@ -162,8 +162,8 @@ export const teacherValidationSchema = yup.object({
     .trim()
     .transform((value) => value === '' ? null : value),
     
-  // الحلقات - مصفوفة من كائنات الحلقات
-  groups: yup
+  // الحلقات المسموح بها - مصفوفة من كائنات الحلقات
+  allowedGroups: yup
     .array()
     .of(
       yup.object({
@@ -179,11 +179,11 @@ export const teacherValidationSchema = yup.object({
     .nullable()
     .transform((value) => value === null || value === undefined ? [] : value),
     
-  // الدور - افتراضي teacher
+  // الدور - افتراضي teacherAssistant
   role: yup
     .string()
-    .oneOf(['teacher'], 'الدور يجب أن يكون teacher')
-    .default('teacher'),
+    .oneOf(['teacherAssistant'], 'الدور يجب أن يكون teacherAssistant')
+    .default('teacherAssistant'),
     
   // الصورة الشخصية
   avatar: yup
@@ -202,6 +202,16 @@ export const teacherValidationSchema = yup.object({
   lastSeen: yup
     .date()
     .default(() => new Date()),
+
+  // كلمة المرور - مطلوبة عند الإنشاء فقط
+  password: yup
+    .string()
+    .when('$isNewAssistant', {
+      is: true,
+      then: (schema) => schema.required('كلمة المرور مطلوبة')
+        .min(6, 'كلمة المرور يجب أن تحتوي على 6 أحرف على الأقل'),
+      otherwise: (schema) => schema.nullable()
+    }),
     
 }).transform((data) => ({
   ...data,
@@ -211,24 +221,24 @@ export const teacherValidationSchema = yup.object({
   // تطبيع الجنس
   gender: data.gender ? normalizeGender(data.gender) : null,
   // ضمان القيم الافتراضية
-  groups: Array.isArray(data.groups) ? data.groups : [],
-  role: data.role || 'teacher',
+  allowedGroups: Array.isArray(data.allowedGroups) ? data.allowedGroups : [],
+  role: data.role || 'teacherAssistant',
   isActive: data.isActive !== undefined ? data.isActive : false,
   lastSeen: data.lastSeen || new Date(),
 }));
 
 // Type للبيانات بعد التحقق
-export type TeacherFormData = yup.InferType<typeof teacherValidationSchema>;
+export type AssistantFormData = yup.InferType<typeof assistantValidationSchema>;
 
 // دالة للتحقق من صحة البيانات
-export const validateTeacherWithYup = async (
+export const validateAssistantWithYup = async (
   data: Record<string, unknown>, 
-  isNewTeacher: boolean = false
-): Promise<{ isValid: boolean; errors: Record<string, string>; data?: TeacherFormData }> => {
+  isNewAssistant: boolean = false
+): Promise<{ isValid: boolean; errors: Record<string, string>; data?: AssistantFormData }> => {
   try {
-    const validData = await teacherValidationSchema.validate(data, {
+    const validData = await assistantValidationSchema.validate(data, {
       abortEarly: false,
-      context: { isNewTeacher },
+      context: { isNewAssistant },
     });
     
     return {
@@ -257,16 +267,16 @@ export const validateTeacherWithYup = async (
 };
 
 // دالة للتحقق من حقل واحد
-export const validateTeacherFieldWithYup = async (
+export const validateAssistantFieldWithYup = async (
   fieldName: string,
   value: unknown,
   allData: Record<string, unknown> = {},
-  isNewTeacher: boolean = false
+  isNewAssistant: boolean = false
 ): Promise<string | null> => {
   try {
-    const schema = yup.reach(teacherValidationSchema, fieldName) as yup.Schema;
+    const schema = yup.reach(assistantValidationSchema, fieldName) as yup.Schema;
     await schema.validate(value, {
-      context: { isNewTeacher, ...allData },
+      context: { isNewAssistant, ...allData },
     });
     return null;
   } catch (error) {
@@ -278,7 +288,7 @@ export const validateTeacherFieldWithYup = async (
 };
 
 // Schema مبسط للاستخدام مع React Hook Form
-export const teacherSchemaForHookForm = teacherValidationSchema;
+export const assistantSchemaForHookForm = assistantValidationSchema;
 
 // دالة مساعدة لتحويل تاريخ الميلاد إلى صيغة YYYY-MM-DD
 export const formatBirthDateForBackend = (dateInput: string | Date): string => {
@@ -309,14 +319,16 @@ export const parseBirthDateFromBackend = (dateString: string): Date | null => {
 export { normalizeGender, calculateAge };
 
 // معاينة schema للأخطاء الشائعة
-export const commonTeacherValidationErrors = {
+export const commonAssistantValidationErrors = {
   phoneFormat: 'الرقم يجب أن يبدأ بـ 05 ويتكوّن من 10 أرقام',
   emailFormat: 'صيغة البريد الإلكتروني غير صحيحة',
   birthDateFormat: 'صيغة التاريخ يجب أن تكون YYYY-MM-DD',
   idNumberFormat: 'رقم الهوية يجب أن يتكون من 9 أرقام فقط',
+  passwordMinLength: 'كلمة المرور يجب أن تحتوي على 6 أحرف على الأقل',
   minAge: 'يجب أن يكون العمر 18 سنة على الأقل',
   uniqueConstraints: {
     phone: 'رقم الهاتف موجود بالفعل',
     email: 'البريد الإلكتروني موجود بالفعل',
+    idNumber: 'رقم الهوية موجود بالفعل',
   },
 };

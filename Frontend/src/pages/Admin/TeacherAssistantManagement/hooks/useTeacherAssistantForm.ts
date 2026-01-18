@@ -4,6 +4,11 @@ import { checkDuplicate, getNextAssistantId } from "@/Api/teacherAssistantApi";
 import { getAllGroups, type Group } from "@/Api/groupApi";
 import { isEqual } from "@/utils/objectUtils";
 import { showInfoToast } from "@/utils/toastUtils";
+import {
+  validateAssistantFieldWithYup,
+  validateAssistantWithYup,
+  type AssistantFormData,
+} from "@/Validation/assistantValidation";
 
 // =================== Types ===================
 export interface TeacherAssistantFormData {
@@ -45,7 +50,7 @@ export interface UseTeacherAssistantFormReturn {
   handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
   handleGroupsChange: (groupIds: string[]) => void;
   handleSubmit: (e: React.FormEvent) => Promise<void>;
-  validateForm: () => boolean;
+  validateForm: () => Promise<boolean>;
 }
 
 // =================== Initial Data ===================
@@ -185,9 +190,9 @@ export const useTeacherAssistantForm = ({
     [assistant?._id]
   );
 
-  // Handle form change
+  // Handle form change with Yup validation
   const handleChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    async (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
       const { name, value } = e.target;
       
       setFormData(prev => ({ ...prev, [name]: value }));
@@ -201,23 +206,29 @@ export const useTeacherAssistantForm = ({
         });
       }
 
+      // Validate field with Yup
+      const error = await validateAssistantFieldWithYup(name, value, formData, !isEditMode);
+      if (error) {
+        setErrors(prev => ({ ...prev, [name]: error }));
+      }
+
       // Debounced duplicate checks
-      if (name === 'email' && EMAIL_REGEX.test(value)) {
+      if (name === 'email' && value && /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(value)) {
         if (emailCheckRef.current) clearTimeout(emailCheckRef.current);
         emailCheckRef.current = setTimeout(() => checkDuplicateField('email', value), 500);
       }
       
-      if (name === 'phoneNumber' && PHONE_REGEX.test(value)) {
+      if (name === 'phoneNumber' && value && /^05\d{8}$/.test(value)) {
         if (phoneCheckRef.current) clearTimeout(phoneCheckRef.current);
         phoneCheckRef.current = setTimeout(() => checkDuplicateField('phoneNumber', value), 500);
       }
       
-      if (name === 'idNumber' && ID_REGEX.test(value)) {
+      if (name === 'idNumber' && value && /^\d{9}$/.test(value)) {
         if (idCheckRef.current) clearTimeout(idCheckRef.current);
         idCheckRef.current = setTimeout(() => checkDuplicateField('idNumber', value), 500);
       }
     },
-    [errors, checkDuplicateField]
+    [errors, formData, isEditMode, checkDuplicateField]
   );
 
   // Handle groups change
@@ -225,60 +236,44 @@ export const useTeacherAssistantForm = ({
     setFormData(prev => ({ ...prev, allowedGroups: groupIds }));
   }, []);
 
-  // Validate form
-  const validateForm = useCallback((): boolean => {
-    const newErrors: Record<string, string> = {};
+  // Validate form with Yup
+  const validateForm = useCallback(async (): Promise<boolean> => {
+    const dataToValidate = {
+      ...formData,
+      allowedGroups: formData.allowedGroups.map(id => {
+        const group = groups.find(g => g._id === id);
+        return {
+          id: id,
+          name: group?.name || '',
+          number: group?.number || null,
+        };
+      }),
+    };
 
-    // Required fields
-    if (!formData.firstName?.trim()) {
-      newErrors.firstName = "الاسم الأول مطلوب";
+    const validation = await validateAssistantWithYup(dataToValidate, !isEditMode);
+    
+    if (!validation.isValid) {
+      setErrors(validation.errors);
+      return false;
     }
-    if (!formData.lastName?.trim()) {
-      newErrors.lastName = "الاسم الأخير مطلوب";
-    }
-    if (!formData.fatherName?.trim()) {
-      newErrors.fatherName = "اسم الأب مطلوب";
-    }
-    if (!formData.idNumber?.trim()) {
-      newErrors.idNumber = "رقم الهوية مطلوب";
-    } else if (!ID_REGEX.test(formData.idNumber)) {
-      newErrors.idNumber = "رقم الهوية يجب أن يتكون من 9 أرقام";
-    }
-    if (!formData.email?.trim()) {
-      newErrors.email = "البريد الإلكتروني مطلوب";
-    } else if (!EMAIL_REGEX.test(formData.email)) {
-      newErrors.email = "صيغة البريد الإلكتروني غير صحيحة";
-    }
-    if (!formData.phoneNumber?.trim()) {
-      newErrors.phoneNumber = "رقم الهاتف مطلوب";
-    } else if (!PHONE_REGEX.test(formData.phoneNumber)) {
-      newErrors.phoneNumber = "رقم الهاتف يجب أن يبدأ بـ 05 ويتكون من 10 أرقام";
-    }
-    if (!isEditMode && !formData.password?.trim()) {
-      newErrors.password = "كلمة المرور مطلوبة";
-    } else if (formData.password && formData.password.length < 6) {
-      newErrors.password = "كلمة المرور يجب أن تكون 6 أحرف على الأقل";
-    }
-    if (!formData.birthDate) {
-      newErrors.birthDate = "تاريخ الميلاد مطلوب";
-    }
-    if (!formData.residence?.trim()) {
-      newErrors.residence = "مكان السكن مطلوب";
-    }
+
+    // Additional validation for groups
     if (formData.allowedGroups.length === 0) {
-      newErrors.allowedGroups = "يجب اختيار حلقة واحدة على الأقل";
+      setErrors(prev => ({ ...prev, allowedGroups: "يجب اختيار حلقة واحدة على الأقل" }));
+      return false;
     }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  }, [formData, isEditMode]);
+    setErrors({});
+    return true;
+  }, [formData, groups, isEditMode]);
 
   // Handle submit
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
 
-      if (!validateForm()) {
+      const isValid = await validateForm();
+      if (!isValid) {
         return;
       }
 

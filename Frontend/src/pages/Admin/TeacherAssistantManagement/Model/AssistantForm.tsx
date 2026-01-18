@@ -367,12 +367,6 @@ export const AssistantForm: React.FC<AssistantFormProps> = memo(({
                   onChange={(date) => handleChange({ target: { name: 'birthDate', value: date } } as React.ChangeEvent<HTMLInputElement>)}
                   error={errors.birthDate}
                 />
-                {errors.birthDate && (
-                  <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
-                    <AlertCircle className="w-3.5 h-3.5" />
-                    {errors.birthDate}
-                  </p>
-                )}
               </div>
 
               {/* Gender */}
