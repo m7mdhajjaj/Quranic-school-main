@@ -302,6 +302,12 @@ export const getPrimaryNavItems = (
         icon: Target,
         color: 'from-green-500 to-emerald-500',
       },
+      {
+        to: '/chat',
+        label: 'المحادثة مع المعلم',
+        icon: MessageSquare,
+        color: 'from-blue-500 to-cyan-500',
+      },
     ];
   }
 

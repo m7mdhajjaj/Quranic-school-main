@@ -16,6 +16,7 @@ const Student = require("../../schema/Student");
 const Teacher = require("../../schema/Teacher");
 const Admin = require("../../schema/Admin");
 const Secretary = require("../../schema/Secretary");
+const TeacherAssistant = require("../../schema/TeacherAssistant");
 const Group = require("../../schema/Group");
 const Conversation = require("../../schema/Chat/Conversation");
 
@@ -153,6 +154,7 @@ class MessageService {
           if (await Teacher.exists({ _id: userId })) userModel = "Teacher";
           else if (await Admin.exists({ _id: userId })) userModel = "Admin";
           else if (await Secretary.exists({ _id: userId })) userModel = "Secretary";
+          else if (await TeacherAssistant.exists({ _id: userId })) userModel = "TeacherAssistant";
 
           processedMentions.push({
             type: "user",
@@ -330,8 +332,9 @@ class MessageService {
         const ids = Array.from(userIds);
         const Teacher = require("../../schema/Teacher");
         const Admin = require("../../schema/Admin");
+        const TeacherAssistant = require("../../schema/TeacherAssistant");
 
-        const [students, teachers, admins] = await Promise.all([
+        const [students, teachers, admins, assistants] = await Promise.all([
           Student.find({ _id: { $in: ids } })
             .select("firstName lastName avatar")
             .lean(),
@@ -341,10 +344,13 @@ class MessageService {
           Admin.find({ _id: { $in: ids } })
             .select("firstName lastName avatar")
             .lean(),
+          TeacherAssistant.find({ _id: { $in: ids } })
+            .select("firstName lastName avatar")
+            .lean(),
         ]);
 
         const userMap = new Map();
-        [...students, ...teachers, ...admins].forEach((u) =>
+        [...students, ...teachers, ...admins, ...assistants].forEach((u) =>
           userMap.set(u._id.toString(), u)
         );
 
@@ -531,16 +537,18 @@ class MessageService {
   }
 
   async _getUserModel(userId) {
-    // Helper to find user model (Student, Teacher, Admin)
+    // Helper to find user model (Student, Teacher, Admin, Secretary, TeacherAssistant)
     // This is a bit of a hack, ideally we know the role.
     // But for now we can try to find in each collection or pass role.
     // Since we don't have role here easily without querying, let's try:
     const Student = require("../../schema/Student/Student");
     const Teacher = require("../../schema/Teacher");
     const Admin = require("../../schema/Admin");
+    const TeacherAssistant = require("../../schema/TeacherAssistant");
 
     if (await Student.exists({ _id: userId })) return Student;
     if (await Teacher.exists({ _id: userId })) return Teacher;
+    if (await TeacherAssistant.exists({ _id: userId })) return TeacherAssistant;
     return Admin;
   }
 
