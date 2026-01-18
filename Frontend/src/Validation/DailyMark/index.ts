@@ -46,10 +46,12 @@ export {
   type SectionFormData,
   type QuranSegmentData,
   type ActiveSurahFormData,
+  type QuranSegmentUI,
   
   // Helpers
   validateSectionData,
   sanitizeSectionData,
+  validateSectionConsistency,
 } from './sectionValidation';
 
 // ============================================================================
@@ -77,6 +79,8 @@ export {
   validateGroupId,
   
   // Date Validation
+  dateFormatSchema,
+  validateDateFormat,
   isValidDate,
   formatDateForApi,
   

@@ -68,8 +68,17 @@ exports.updateSection = async (req, res) => {
     // ============================================
     const targetDate = updateData.date || section.date;
     const targetGroup = updateData.group || section.group;
+    const targetGroupId = updateData.groupId || section.groupId;
     
     if (targetGroup) {
+         // ✅ V7: Current Week Only Check (عند تغيير التاريخ)
+         if (updateData.date && new Date(updateData.date).getTime() !== new Date(section.date).getTime()) {
+             const currentWeekCheck = sequenceService.checkCurrentWeekOnly(targetDate);
+             if (!currentWeekCheck.isValid) {
+                 return sendValidationError(res, currentWeekCheck.message);
+             }
+         }
+
          // ✅ 0. Check Daily Quota (If date changes)
          if (updateData.date && new Date(updateData.date).getTime() !== new Date(section.date).getTime()) {
              const dailyCheck = await sequenceService.checkDailyQuota(
@@ -93,6 +102,44 @@ exports.updateSection = async (req, res) => {
                  return sendValidationError(res, weeklyCheck.message);
              }
          }
+
+         // ============================================
+         // 🔒 V6: ACTIVE SURAH VALIDATION - منع البدء بسورة جديدة قبل إكمال الحالية
+         // ============================================
+         if (targetGroupId) {
+           // التحقق من مقاطع الحفظ (إذا تم تغيير السورة)
+           if (updateData.memorizationMeta && updateData.memorizationMeta.length > 0) {
+             const newMemSurah = updateData.memorizationMeta[0].surahNumber;
+             const oldMemSurah = section.memorizationMeta?.[0]?.surahNumber;
+             
+             // فقط إذا تغيرت السورة
+             if (newMemSurah !== oldMemSurah) {
+               const canAddMem = await Group.canAddSegment(targetGroupId, newMemSurah, 'memorization');
+               
+               if (!canAddMem.allowed) {
+                 logger.warn("Active Surah Check (Memorization) failed:", canAddMem.reason);
+                 return sendError(res, canAddMem.reason, 400);
+               }
+             }
+           }
+
+           // التحقق من مقاطع المراجعة (إذا تم تغيير السورة)
+           if (updateData.reviewMeta && updateData.reviewMeta.length > 0) {
+             const newRevSurah = updateData.reviewMeta[0].surahNumber;
+             const oldRevSurah = section.reviewMeta?.[0]?.surahNumber;
+             
+             // فقط إذا تغيرت السورة
+             if (newRevSurah !== oldRevSurah) {
+               const canAddRev = await Group.canAddSegment(targetGroupId, newRevSurah, 'review');
+               
+               if (!canAddRev.allowed) {
+                 logger.warn("Active Surah Check (Review) failed:", canAddRev.reason);
+                 return sendError(res, canAddRev.reason, 400);
+               }
+             }
+           }
+         }
+         // ============================================
 
          // Check Memorization (with excludeSectionId)
          if (updateData.memorizationMeta) {

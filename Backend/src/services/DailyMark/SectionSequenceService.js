@@ -1,24 +1,26 @@
 const Section = require("../../schema/DailyMark/Section");
 const { getSurahByNumber } = require("../../utils/Quran/dailyMarkQuranMetadata");
 const { toDateKey, TIMEZONE } = require("../../config/timezone");
+const { WEEKLY_QUOTA } = require("../../config/constants");
 const { createLogger } = require("../../utils/logger");
 
 const logger = createLogger('SectionSequence');
 
 /**
  * ============================================================================
- * SectionSequenceService (The Strict Edition)
+ * SectionSequenceService (V7 Edition)
  * ============================================================================
  * خدمة مركزية لإدارة منطق تسلسل الحفظ والمراجعة في حلقات التحفيظ.
  * 
  * المبادئ الحاكمة (Rules of Engagement):
  * 1. الحفظ (Memorization): بناء تراكمي صارم. لا فجوات. الحجر فوق الحجر.
- * 2. المراجعة (Review): مرآة للحفظ.
- *    - لا يمكن مراجعة ما لم يحفظ.
- *    - "نفس الرينجات بالضبط": لا يمكن مراجعة نصف مقطع أو دمج مقطعين.
- *      إذا حفظت (1-10)، تراجع (1-10).
- *    - التسلسل: المراجعة تدور في حلقات (Cycles). بعد مراجعة (1-10)، الدور على (11-20).
- * 3. التزامن (Concurrency): دعم معالجة عدة مقاطع في طلب واحد (Batch Insert) وفهم علاقتها ببعضها.
+ * 2. المراجعة (Review): ✅ V7 - مرنة الرينج
+ *    - لا يمكن مراجعة ما لم يحفظ (ayahEnd ≤ maxMemorizedAyah).
+ *    - يمكن دمج عدة مقاطع في مراجعة واحدة (مثلاً 1-50 دفعة واحدة).
+ *    - التسلسل إجباري: ابدأ من 1، ثم أكمل بالتتالي.
+ *    - بعد إكمال دورة المراجعة، يمكن البدء من 1 مجدداً.
+ * 3. التواريخ: ✅ V7 - الأسبوع الحالي فقط (لا يمكن اختيار أسابيع سابقة/قادمة).
+ * 4. التزامن (Concurrency): دعم معالجة عدة مقاطع في طلب واحد (Batch Insert).
  */
 
 class SectionSequenceService {
@@ -205,10 +207,10 @@ class SectionSequenceService {
       : null;
 
     // ====================================================
-    // 🆕 V5: فحص الترتيب الزمني الصارم (Monotonic Order)
+    // 🆕 V6: فحص الترتيب الزمني الصارم (Monotonic Order) - للحفظ والمراجعة
     // القاعدة: date1 < date2 ⟹ ayahStart1 ≤ ayahStart2
     // ====================================================
-    if (newSectionDate && type === 'memorization') {
+    if (newSectionDate) {
       for (const seg of newSegments) {
         const monotonicCheck = await this.validateMonotonicOrder(
           groupId, 
@@ -216,7 +218,8 @@ class SectionSequenceService {
           seg.ayahStart, 
           seg.ayahEnd, 
           newSectionDate, 
-          excludeSectionId
+          excludeSectionId,
+          type // ✅ V6: تمرير النوع للتحقق من الحفظ أو المراجعة
         );
         
         if (!monotonicCheck.isValid) {
@@ -300,52 +303,64 @@ class SectionSequenceService {
       }
 
       // ====================================================
-      // 2. منطق المراجعة الصارم (Exact Match to Memorization)
+      // 2. منطق المراجعة المرن (V7: Flexible Range - Coverage Check)
       // ====================================================
       if (type === 'review') {
-          // القاعدة: نطاق المراجعة يجب أن يطابق بدقة نطاق حفظ سابق.
+          // ✅ V7: القاعدة الجديدة:
+          // - يمكن مراجعة أي نطاق (مثلاً 1-50 مرة واحدة)
+          // - الشرط: جميع الآيات في النطاق يجب أن تكون محفوظة سابقاً
+          // - لا يمكن تجاوز آخر آية تم حفظها في السورة
           
-          let strictMatchFound = false;
-
-          // فحص 1: هل تطابق حفظاً جديداً في نفس الطلب؟ (Local Sibling)
+          // الحصول على أقصى تقدم في الحفظ لهذه السورة
+          const maxMemProgress = await this.getMaxProgress(groupId, seg.surahNumber, 'memorization');
+          
+          // حساب أقصى حفظ من الطلب الحالي أيضاً (sibling)
+          let maxFromSibling = 0;
           if (siblingSegments && siblingSegments.length > 0) {
-              const siblingMatch = siblingSegments.find(m => 
-                  m.surahNumber === seg.surahNumber && 
-                  m.ayahStart === seg.ayahStart && 
-                  m.ayahEnd === seg.ayahEnd
-              );
-              if (siblingMatch) strictMatchFound = true;
+              const siblingOfSameSurah = siblingSegments.filter(m => m.surahNumber === seg.surahNumber);
+              for (const sib of siblingOfSameSurah) {
+                  if (sib.ayahEnd > maxFromSibling) maxFromSibling = sib.ayahEnd;
+              }
           }
-
-          // فحص 2: هل تطابق حفظاً تاريخياً في قاعدة البيانات؟ (DB History)
-          if (!strictMatchFound) {
-             const memQuery = {
-                group: groupId,
-                "memorizationMeta": {
-                    $elemMatch: {
-                        surahNumber: seg.surahNumber,
-                        ayahStart: seg.ayahStart,
-                        ayahEnd: seg.ayahEnd // تطابق تام
-                    }
-                }
-             };
-
-             // ✅ إضافة شرط التاريخ: يجب أن يكون الحفظ قد تم في وقت سابق أو نفس وقت المراجعة
-             if (newSectionDate) {
-                 memQuery.date = { $lte: newSectionDate };
-             }
-
-             const exists = await Section.exists(memQuery);
-             if (exists) strictMatchFound = true;
-          }
-
-          if (!strictMatchFound) {
+          
+          // أقصى آية محفوظة (من DB أو من الطلب الحالي)
+          const maxMemorizedAyah = Math.max(
+              maxMemProgress?.maxEnd || 0,
+              maxFromSibling
+          );
+          
+          // ✅ فحص 1: لا يمكن مراجعة ما لم يُحفظ (التاريخ لا يهم هنا - المهم أن الآيات محفوظة)
+          if (maxMemorizedAyah === 0) {
               return {
                   isValid: false,
                   message: this.formatErrorMessage(
-                      "المراجعة غير مطابقة للحفظ السابق",
-                      `المقطع المطلوب: سورة ${seg.surahNumber} (الآيات ${seg.ayahStart}-${seg.ayahEnd})`,
-                      "لم نجد سجلاً سابقاً لهذا المقطع بنفس البداية والنهاية. يجب أن تراجع نفس المقطع الذي حفظته سابقاً بالضبط (نفس عدد الآيات)، لا يمكنك زيادة أو إنقاص الآيات في المراجعة."
+                      "لا يوجد حفظ سابق لهذه السورة",
+                      `تحاول مراجعة سورة ${seg.surahNumber} (الآيات ${seg.ayahStart}-${seg.ayahEnd})، لكن لم نجد أي حفظ سابق لها.`,
+                      "يجب حفظ السورة أولاً قبل مراجعتها."
+                  )
+              };
+          }
+          
+          // ✅ فحص 2: لا يمكن للمراجعة أن تتجاوز آخر آية محفوظة
+          if (seg.ayahEnd > maxMemorizedAyah) {
+              return {
+                  isValid: false,
+                  message: this.formatErrorMessage(
+                      "المراجعة تتجاوز الحفظ",
+                      `تحاول مراجعة الآيات حتى ${seg.ayahEnd}، بينما آخر آية محفوظة في هذه السورة هي ${maxMemorizedAyah}.`,
+                      `يجب أن تنتهي المراجعة عند الآية ${maxMemorizedAyah} كحد أقصى. لا يمكنك مراجعة ما لم تحفظه بعد.`
+                  )
+              };
+          }
+          
+          // ✅ فحص 3: بداية المراجعة يجب أن تكون ضمن نطاق المحفوظ
+          if (seg.ayahStart > maxMemorizedAyah) {
+              return {
+                  isValid: false,
+                  message: this.formatErrorMessage(
+                      "بداية المراجعة خارج نطاق الحفظ",
+                      `تحاول بدء المراجعة من الآية ${seg.ayahStart}، بينما آخر آية محفوظة هي ${maxMemorizedAyah}.`,
+                      `يجب أن تبدأ المراجعة من آية ضمن ما تم حفظه (1 إلى ${maxMemorizedAyah}).`
                   )
               };
           }
@@ -358,6 +373,13 @@ class SectionSequenceService {
           
           if (lastReview) {
              expectedStart = lastReview.nextStart;
+             
+             // ✅ V7: إذا اكتملت المراجعة (وصلنا لآخر آية محفوظة)، يمكن إعادة البدء من 1
+             // حساب أقصى آية كانت محفوظة وقت آخر مراجعة (تقريبياً = maxMemorizedAyah)
+             if (lastReview.lastEnd >= maxMemorizedAyah) {
+                 // السورة مكتملة المراجعة، يمكن البدء من جديد
+                 expectedStart = 1;
+             }
           }
 
           // التحقق من الاتصال (Continuity)
@@ -367,14 +389,15 @@ class SectionSequenceService {
             s.ayahEnd === seg.ayahStart - 1
           );
 
-          // ✅ V6: منع الفجوات في المراجعة (إجباري الآن)
+          // ✅ V6: منع الفجوات في المراجعة (إجباري)
+          // ✅ V7: السماح بالبدء من 1 إذا اكتملت الدورة
           if (!hasLocalPredecessor && seg.ayahStart !== expectedStart && seg.ayahStart !== 1) {
               return {
                   isValid: false,
                   message: this.formatErrorMessage(
                       "فجوة في المراجعة (غير متصل)",
                       `تحاول مراجعة الآيات ${seg.ayahStart}-${seg.ayahEnd} من سورة ${seg.surahNumber}، بينما آخر مراجعة توقفت عند الآية ${lastReview ? lastReview.lastEnd : 0}.`,
-                      `يجب أن تكمل المراجعة بالتسلسل. ابدأ من الآية ${expectedStart}.`
+                      `يجب أن تكمل المراجعة بالتسلسل. ابدأ من الآية ${expectedStart}، أو ابدأ دورة جديدة من الآية 1.`
                   )
               };
           }
@@ -507,6 +530,63 @@ class SectionSequenceService {
   }
 
   /**
+   * ✅ V7: التحقق من أن التاريخ ضمن الأسبوع الحالي (Current Week Only Rule)
+   * يمنع اختيار تواريخ خارج الأسبوع الحالي (السبت - الجمعة)
+   * 
+   * @param {Date} date - التاريخ المراد التحقق منه
+   * @returns {{ isValid: boolean, message?: string }}
+   */
+  checkCurrentWeekOnly(date) {
+      if (!date) return { isValid: true };
+      
+      // الحصول على "الآن" بتوقيت فلسطين
+      const now = new Date();
+      
+      // حساب بداية ونهاية الأسبوع الحالي
+      const dayIndex = now.getDay(); // 0 (Sun) to 6 (Sat)
+      const distFromSat = (dayIndex + 1) % 7; // عدد الأيام للعودة للسبت
+      
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - distFromSat);
+      startOfWeek.setHours(0, 0, 0, 0);
+      
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 7); // نهاية الجمعة (= بداية السبت القادم)
+      endOfWeek.setHours(0, 0, 0, 0);
+      
+      // التحقق من التاريخ المُدخل
+      const inputDate = new Date(date);
+      inputDate.setHours(0, 0, 0, 0);
+      
+      // تنسيق التواريخ للعرض
+      const formatDate = (dateObj) => {
+         return dateObj.toLocaleDateString('ar-EG', { 
+             weekday: 'long',
+             day: 'numeric', 
+             month: 'numeric',
+             timeZone: TIMEZONE 
+         });
+      };
+      
+      // التحقق: هل التاريخ ضمن الأسبوع الحالي؟
+      if (inputDate < startOfWeek || inputDate >= endOfWeek) {
+          const isInFuture = inputDate >= endOfWeek;
+          const isPast = inputDate < startOfWeek;
+          
+          return {
+              isValid: false,
+              message: this.formatErrorMessage(
+                  isInFuture ? "لا يمكن اختيار تاريخ في أسبوع قادم" : "لا يمكن اختيار تاريخ في أسبوع ماضٍ",
+                  `التاريخ المختار (${this.toDateKeyLocal(inputDate)}) ${isInFuture ? 'يقع بعد' : 'يقع قبل'} الأسبوع الحالي.\nالأسبوع الحالي: ${formatDate(startOfWeek)} - ${formatDate(new Date(endOfWeek.getTime() - 1))}.`,
+                  `يرجى اختيار تاريخ ضمن الأسبوع الحالي فقط (من ${formatDate(startOfWeek)} إلى ${formatDate(new Date(endOfWeek.getTime() - 1))}).`
+              )
+          };
+      }
+      
+      return { isValid: true };
+  }
+
+  /**
    * ✅ التحقق من وجود تسميع سابق لنفس اليوم (One Section Per Day Rule)
    * تمنع إضافة أكثر من سجل واحد لنفس الحلقة في نفس اليوم (24H).
    */
@@ -577,8 +657,8 @@ class SectionSequenceService {
 
       const count = await Section.countDocuments(query);
       
-      // 3. التحقق من الحد (3 مقاطع)
-      if (count >= 3) {
+      // 3. التحقق من الحد (WEEKLY_QUOTA من config/constants)
+      if (count >= WEEKLY_QUOTA) {
           // تنسيق التاريخ للعرض في الرسالة بشكل مقروء
           const formatDate = (dateObj) => {
              return dateObj.toLocaleDateString('ar-EG', { day: 'numeric', month: 'numeric', timeZone: TIMEZONE });
@@ -587,9 +667,9 @@ class SectionSequenceService {
           return {
               isValid: false,
               message: this.formatErrorMessage(
-                  "تجاوز الحد الأسبوعي (3 مقاطع)",
+                  `تجاوز الحد الأسبوعي (${WEEKLY_QUOTA} مقاطع)`,
                   `هذه الحلقة استنفدت رصيدها لهذا الأسبوع (${formatDate(startOfWeek)} - ${formatDate(new Date(endOfWeek.getTime() - 1))}).\nعدد المقاطع الحالي: ${count}.`,
-                  "النظام يسمح بـ 3 أيام تسميع فقط أسبوعياً لكل حلقة (بغض النظر عن المعلم). يرجى اختيار تاريخ في أسبوع آخر أو حذف سجل سابق."
+                  `النظام يسمح بـ ${WEEKLY_QUOTA} أيام تسميع فقط أسبوعياً لكل حلقة (بغض النظر عن المعلم). يرجى اختيار تاريخ في أسبوع آخر أو حذف سجل سابق.`
               )
           };
       }
@@ -886,7 +966,7 @@ class SectionSequenceService {
   }
 
   // ============================================================================
-  // 🆕 V5: MONOTONIC ORDER VALIDATION
+  // 🆕 V6: MONOTONIC ORDER VALIDATION - للحفظ والمراجعة
   // ============================================================================
 
   /**
@@ -898,18 +978,22 @@ class SectionSequenceService {
    * - تاريخ 10/1 → آيات 50-60
    * - تاريخ 11/1 → آيات 11-20 ❌ (تاريخ أحدث لكن آيات أقدم)
    * 
+   * ✅ V6: يُطبق على الحفظ والمراجعة (لنفس السورة)
+   * 
    * @param {string} groupId - معرف الحلقة
    * @param {number} surahNumber - رقم السورة
    * @param {number} ayahStart - بداية المقطع الجديد
    * @param {number} ayahEnd - نهاية المقطع الجديد
    * @param {Date} proposedDate - التاريخ المقترح
    * @param {string} excludeSectionId - استثناء مقطع (عند التعديل)
+   * @param {string} type - 'memorization' أو 'review'
    * @returns {Promise<{isValid: boolean, message?: string}>}
    */
-  async validateMonotonicOrder(groupId, surahNumber, ayahStart, ayahEnd, proposedDate, excludeSectionId = null) {
-    const metaField = 'memorizationMeta';
+  async validateMonotonicOrder(groupId, surahNumber, ayahStart, ayahEnd, proposedDate, excludeSectionId = null, type = 'memorization') {
+    const metaField = type === 'memorization' ? 'memorizationMeta' : 'reviewMeta';
+    const typeLabel = type === 'memorization' ? 'الحفظ' : 'المراجعة';
     
-    // جلب جميع المقاطع الموجودة لهذه السورة
+    // جلب جميع المقاطع الموجودة لهذه السورة (من نفس النوع)
     const query = {
       group: groupId,
       [`${metaField}.surahNumber`]: surahNumber
@@ -958,8 +1042,8 @@ class SectionSequenceService {
           return {
             isValid: false,
             message: this.formatErrorMessage(
-              "تعارض في ترتيب التواريخ والآيات",
-              `التاريخ المختار (${this.toDateKeyLocal(proposedDate)}) أقدم من تاريخ مقطع موجود (${existing.dateKey})، لكنك تحاول إضافة آيات (${ayahStart}-${ayahEnd}) أحدث من آيات ذلك المقطع (${existing.ayahStart}-${existing.ayahEnd}).`,
+              `تعارض في ترتيب التواريخ والآيات (${typeLabel})`,
+              `التاريخ المختار (${this.toDateKeyLocal(proposedDate)}) أقدم من تاريخ مقطع ${typeLabel} موجود (${existing.dateKey})، لكنك تحاول إضافة آيات (${ayahStart}-${ayahEnd}) أحدث من آيات ذلك المقطع (${existing.ayahStart}-${existing.ayahEnd}).`,
               `اختر تاريخاً لاحقاً لـ ${existing.dateKey}، أو اختر آيات أقدم من الآية ${existing.ayahStart}.`
             )
           };
@@ -973,8 +1057,8 @@ class SectionSequenceService {
           return {
             isValid: false,
             message: this.formatErrorMessage(
-              "تعارض في ترتيب التواريخ والآيات",
-              `التاريخ المختار (${this.toDateKeyLocal(proposedDate)}) أحدث من تاريخ مقطع موجود (${existing.dateKey})، لكنك تحاول إضافة آيات (${ayahStart}-${ayahEnd}) أقدم من آيات ذلك المقطع (${existing.ayahStart}-${existing.ayahEnd}).`,
+              `تعارض في ترتيب التواريخ والآيات (${typeLabel})`,
+              `التاريخ المختار (${this.toDateKeyLocal(proposedDate)}) أحدث من تاريخ مقطع ${typeLabel} موجود (${existing.dateKey})، لكنك تحاول إضافة آيات (${ayahStart}-${ayahEnd}) أقدم من آيات ذلك المقطع (${existing.ayahStart}-${existing.ayahEnd}).`,
               `اختر تاريخاً أقدم من ${existing.dateKey}، أو اختر آيات أحدث من الآية ${existing.ayahEnd}.`
             )
           };

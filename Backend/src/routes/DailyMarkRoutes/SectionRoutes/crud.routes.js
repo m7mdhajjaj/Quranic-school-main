@@ -4,7 +4,6 @@ const dailyMarkController = require("../../../controllers/DailyMarkController");
 const { protect, teacherProtect } = require("../../../middleware/auth");
 const {
   validateDailyMarksSectionData,
-  validateRepairSequenceData,
   validateSectionId,
   validateActiveSurahData,
 } = require("../../../Validation/DailyMark/DailyMarksSectionValidation");
@@ -16,15 +15,17 @@ router.use(protect);
 router.use(teacherProtect);
 
 // ============================================================================
-// POST/PUT/DELETE ROUTES - إدارة المقاطع (V3: Date-Aware + Active Surah)
+// POST/PUT/DELETE ROUTES - إدارة المقاطع (V7: Date-Aware + Flexible Range)
 // ============================================================================
 // 
-// V3 Features:
+// V7 Features:
 // - ✅ Supports backfilling (inserting sections with past dates)
 // - ✅ Date-aware validation (chronological order)
 // - ✅ Perfect bridging (no gaps between neighbors)
 // - ✅ Same-day duplicate prevention (using dateKey)
 // - ✅ Active Surah enforcement (can't start new surah before completing current)
+// - ✅ Current week only (can't select dates outside current week)
+// - ✅ Flexible review ranges (can review 1-50 at once)
 //
 // Validation Flow:
 // 1. validateDailyMarksSectionData - Format/structure validation
@@ -40,20 +41,13 @@ router.post(
   dailyMarkController.createSection
 );
 
-// 🤖 AI Auto-Repair Sequence
-router.post(
-    "/repair-sequence", 
-    validateRepairSequenceData,
-    dailyMarkController.repairSequence
-);
-
-// 🚀 Bulk Create Sections (for auto-repair)
+// 🚀 Bulk Create Sections
 router.post(
     "/bulk-create",
     dailyMarkController.bulkCreateSections
 );
 
-// ✅ NEW: Mark a surah as completed (manual completion)
+// ✅ Mark a surah as completed (manual completion)
 router.post(
     "/complete-surah",
     validateActiveSurahData,

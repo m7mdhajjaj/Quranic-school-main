@@ -33,18 +33,6 @@ const WEEKLY_QUOTA = 3;
 const MIN_CHUNK_SIZE = 5;
 
 /**
- * الحجم الافتراضي الأدنى للمقطع (عدد الآيات)
- * @type {number}
- */
-const DEFAULT_CHUNK_MIN = 10;
-
-/**
- * الحجم الافتراضي الأقصى للمقطع (عدد الآيات)
- * @type {number}
- */
-const DEFAULT_CHUNK_MAX = 15;
-
-/**
  * ============================================================================
  * 📅 إعدادات الجدول الزمني (Timetable)
  * ============================================================================
@@ -73,8 +61,6 @@ module.exports = {
   EDIT_WINDOW_DAYS,
   WEEKLY_QUOTA,
   MIN_CHUNK_SIZE,
-  DEFAULT_CHUNK_MIN,
-  DEFAULT_CHUNK_MAX,
   
   // Timetable
   MIN_SESSION_DURATION,

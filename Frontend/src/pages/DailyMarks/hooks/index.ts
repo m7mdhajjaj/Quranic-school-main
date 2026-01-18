@@ -36,13 +36,11 @@ export {
 } from './shared';
 
 // ============================================================================
-// 👨‍🏫 TEACHER HOOKS - خاصة بالمعلم
+// 👨‍🏫 TEACHER HOOKS - خاصة بالمعلم (V7)
 // ============================================================================
 export { 
   useDailyMarksHandlers,
   useStudentSelection,
-  useAiRepair,
-  useAutoValidateSchedule,
   useSectionValidation 
 } from './teacher';
 

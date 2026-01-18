@@ -1,7 +1,11 @@
 /**
  * ============================================================================
- * Teacher Hooks - خاصة بالمعلم فقط
+ * Teacher Hooks - خاصة بالمعلم فقط (V7)
  * ============================================================================
+ * 
+ * V7: All validation is now handled by:
+ * - Frontend: Validation/DailyMark (schemas + helpers)
+ * - Backend: SectionSequenceService
  */
 
 // معالجة CRUD للعلامات والمقاطع
@@ -10,11 +14,9 @@ export { useDailyMarksHandlers } from './useDailyMarksHandlers';
 // اختيار الطالب والحلقة
 export { useStudentSelection } from './useStudentSelection';
 
-// إصلاح المقاطع بالذكاء الاصطناعي
-export { useAiRepair } from './useAiRepair';
-
-// التحقق من صحة الجدولة
-export { useAutoValidateSchedule } from './useSchedulerValidation';
-
-// التحقق من صحة المقطع
+// التحقق من صحة المقطع (UI layer only)
 export { useSectionValidation } from './useSectionValidation';
+
+// التحقق من التاريخ والمقاطع (للنماذج - Modals)
+export { useAutoValidateSchedule } from './useAutoValidateSchedule';
+export type { SegmentData, AlternativeDateOption } from './useAutoValidateSchedule';

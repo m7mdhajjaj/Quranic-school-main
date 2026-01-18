@@ -2,7 +2,7 @@
 // DailyMarkController/index.js - Main Controller Entry Point
 // ============================================================================
 //
-// 📚 نظام العلامات اليومية (DailyMark System)
+// 📚 نظام العلامات اليومية (DailyMark System) - V7
 // ============================================================================
 //
 // 🎯 التنظيم حسب الدور (Role-Based Organization):
@@ -11,7 +11,7 @@
 // │ 👨‍🏫 TEACHER (المعلم)                                                    │
 // │ ─────────────────────────────────────────────────────────────────────── │
 // │ • Section CRUD: createSection, updateSection, deleteSection             │
-// │ • Bulk Operations: bulkCreateSections, repairSequence                   │
+// │ • Bulk Operations: bulkCreateSections, bulkDeleteSections               │
 // │ • Marks Write: setMarks, createOrUpdateMark, updateMarkById, deleteMark │
 // │ • Active Surah: getActiveSurahs, completeSurah, resetActiveSurah        │
 // │ • Helpers: getSections, getLastSegment, checkQuota                      │
@@ -56,11 +56,6 @@ const studentController = require("./student");
 const sharedController = require("./shared");
 
 // ============================================================================
-// SCHEDULER (Background Jobs)
-// ============================================================================
-const schedulerController = require("./schedulerController");
-
-// ============================================================================
 // LEGACY SUPPORT - للتوافق مع الكود القديم
 // ============================================================================
 // يمكن الوصول للدوال مباشرة أو عبر الفولدرات:
@@ -75,9 +70,6 @@ module.exports = {
   teacher: teacherController,
   student: studentController,
   shared: sharedController,
-  
-  // ========== SCHEDULER ==========
-  ...schedulerController,
 
   // ========== LEGACY FLAT EXPORTS (للتوافق) ==========
   // Teacher Operations

@@ -1,15 +1,17 @@
 import api from "../api";
 
 // ============================================================================
-// Section API - Daily Assignment Sections Management (V3)
+// Section API - Daily Assignment Sections Management (V7)
 // ============================================================================
 // Note: Sections are now part of DailyMarks system
 // Base URL: /api/daily-marks/sections
 // 
-// V3 Features:
-// - ✅ Date-aware validation (chronological order)
-// - ✅ Backfilling support (insert sections with past dates)
-// - ✅ Neighbor segments API for context-aware UI
+// V7 Features:
+// - ✅ Current week only (Sat-Fri) - no past/future weeks
+// - ✅ Flexible review ranges (1-50 ayahs at once)
+// - ✅ Review cannot exceed last memorized ayah
+// - ✅ Daily quota: 1 per day per type
+// - ✅ Weekly quota: 3 per week per type
 // - ✅ Auto-generation of dateKey & canonicalKey
 // ============================================================================
 
@@ -52,7 +54,7 @@ export interface ProgressSummary {
 export interface Section {
   _id: string;
   date: string;
-  dateKey?: string; // ✅ V3: YYYY-MM-DD format for same-day comparison
+  dateKey?: string; // ✅ V7: YYYY-MM-DD format for same-day comparison
   
   // Legacy Strings (Display)
   memorizationSection: string;
@@ -81,7 +83,7 @@ export interface Section {
       percentage: number;
   };
 
-  quranMetaVersion?: number; // ✅ V3: version 3
+  quranMetaVersion?: number; // ✅ V7: version 7
   createdAt?: string;
   updatedAt?: string;
 }
@@ -270,8 +272,8 @@ export const toggleSectionStatus = async (
 
 /**
  * Get the last recorded segment to suggest the next step
- * ✅ V3: Still supported for backward compatibility
- * Note: For date-aware context, use getNeighborSegments()
+ * ✅ V7: Still supported for backward compatibility
+ * Note: For context-aware UI, use getNeighborSegments()
  */
 export const getLastSegment = async (
   group: string, 
@@ -294,7 +296,7 @@ export const getLastSegment = async (
 };
 
 // ============================================================================
-// ✅ V3: NEW ENDPOINTS - Backfilling Support
+// ✅ V7: HELPER ENDPOINTS - Context & Quota Support
 // ============================================================================
 
 /**
@@ -336,11 +338,11 @@ export interface NeighborSegmentsResponse {
 }
 
 /**
- * ✅ V3: Get neighbor segments for backfilling validation
+ * ✅ V7: Get neighbor segments for context-aware UI
  * 
  * Returns the closest segments BEFORE and AFTER the specified date.
  * Useful for:
- * - Backfilling UI (show context)
+ * - Context display in UI
  * - Validation preview
  * - Auto-suggestions based on chronological neighbors
  * 
@@ -350,7 +352,7 @@ export interface NeighborSegmentsResponse {
  * @param date - التاريخ المستهدف (YYYY-MM-DD format)
  * 
  * @example
- * const neighbors = await getNeighborSegments('حلقة الإتقان', 2, 'memorization', '2026-01-10');
+ * const neighbors = await getNeighborSegments('حلقة الإتقان', 2, 'memorization', '2026-01-15');
  * if (neighbors?.suggestions.canInsert) {
  *   console.log(`Suggested: ${neighbors.suggestions.suggestedStart}-${neighbors.suggestions.suggestedEnd}`);
  * }
@@ -393,41 +395,6 @@ export const checkSectionQuota = async (
     console.error('Error checking quota:', error);
     // On error, we default to allowing (backend will perform final check)
     return { allowed: true };
-  }
-};
-
-/**
- * 🤖 AI Auto-Repair Sequence
- * 
- * Attempts to fix sequence gaps and orphan reviews automatically
- * 
- * @param groupId - معرّف الحلقة (Group ID)
- * @param surahNumber - رقم السورة (Surah Number)
- * @param options - خيارات إضافية مثل الحد الأقصى للآيات (maxVersesPerDay)
- */
-export const repairSequence = async (
-  groupId: string,
-  surahNumber?: number,
-  options?: { 
-    maxVersesPerDay?: number;
-    suggestedDates?: string[]; // Array of YYYY-MM-DD
-  }
-): Promise<{ 
-    repaired: boolean; 
-    message: string; 
-    stats?: { gapsFixed: number; orphansFixed: number };
-    details?: string[];
-} | null> => {
-  try {
-    const response = await api.post("/daily-marks/sections/repair-sequence", {
-        groupId,
-        surahNumber,
-        options
-    });
-    return response.data.data || response.data;
-  } catch (error) {
-    console.error("Failed to repair sequence:", error);
-    throw error;
   }
 };
 

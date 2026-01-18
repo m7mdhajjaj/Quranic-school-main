@@ -146,11 +146,6 @@ app.use(
   '/api/daily-marks',
   require('./routes/DailyMarkRoutes/DailyMarkRoutes')
 );
-// Smart Scheduler API for gap filling and date suggestions
-app.use(
-  '/api/daily-marks/scheduler',
-  require('./routes/DailyMarkRoutes/schedulerRoutes')
-);
 app.use('/api/attendance', require('./routes/attendanceRoutes'));
 app.use('/api/chat', require('./routes/ChatRoutes/chatRoutes'));
 app.use('/api/mentions', require('./routes/ChatRoutes/mentionRoutes'));

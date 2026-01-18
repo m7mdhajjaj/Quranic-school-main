@@ -1,11 +1,12 @@
 // Re-export types from API for consistency
 import type { Mark as ApiMark, Section as ApiSection } from "@/Api/DailyMark/dailyMarksApi";
-import type { QuranSegmentData } from '@/Validation/DailyMark';
+import type { QuranSegmentData, QuranSegmentUI as ValidationQuranSegmentUI } from '@/Validation/DailyMark';
 
-// UI Extension for QuranSegmentData (includes error state)
-export type QuranSegmentUI = QuranSegmentData & {
-  error?: string;
-};
+// Re-export QuranSegmentUI from Validation (single source of truth)
+export type QuranSegmentUI = ValidationQuranSegmentUI;
+
+// Re-export QuranSegmentData for convenience
+export type { QuranSegmentData } from '@/Validation/DailyMark';
 
 // Use API types directly
 export type Mark = ApiMark;

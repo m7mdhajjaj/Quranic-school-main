@@ -328,16 +328,112 @@ sectionSchema.post("save", async function (doc) {
   }
 });
 
-// Clean up TimeTable if Section is deleted
+// ============================================================================
+// DELETE MIDDLEWARE - تنظيف تلقائي عند حذف مقطع
+// ============================================================================
+
+/**
+ * Pre-delete: حذف TimeTable المرتبط
+ * V7: يحذف TimeTable قبل حذف Section
+ */
 sectionSchema.pre("findOneAndDelete", async function (next) {
   try {
     const section = await this.model.findOne(this.getFilter());
     if (section?.timetableId) {
       await mongoose.model("TimeTable").findByIdAndDelete(section.timetableId);
+      console.log(`🗑️ [Pre-Delete] TimeTable ${section.timetableId} deleted`);
     }
     next();
   } catch (error) {
     next(error);
+  }
+});
+
+/**
+ * Post-delete: إعادة حساب السور الفعالة
+ * V7: يعيد حساب Active Surah بعد حذف Section
+ * 
+ * ⚠️ ملاحظة: هذا middleware لن يعمل مع deleteMany()
+ * لذلك يجب استخدام Controller logic في bulkDelete
+ */
+sectionSchema.post("findOneAndDelete", async function (doc) {
+  if (!doc || !doc.groupId) return;
+
+  try {
+    const Group = mongoose.model("Group");
+    
+    // إعادة حساب سورة الحفظ (إذا كان المقطع يحتوي على حفظ)
+    if (doc.memorizationMeta && doc.memorizationMeta.length > 0) {
+      const activeSurah = await Group.findById(doc.groupId).select('activeMemorizationSurah');
+      if (activeSurah?.activeMemorizationSurah?.surahNumber) {
+        const surahNumber = activeSurah.activeMemorizationSurah.surahNumber;
+        
+        // البحث عن مقاطع متبقية لنفس السورة
+        const remainingSections = await this.model.find({
+          groupId: doc.groupId,
+          'memorizationMeta.surahNumber': surahNumber
+        }).select('memorizationMeta');
+
+        if (remainingSections.length === 0) {
+          // لا توجد مقاطع متبقية - مسح السورة الفعالة
+          await Group.findByIdAndUpdate(doc.groupId, {
+            'activeMemorizationSurah.surahNumber': null,
+            'activeMemorizationSurah.surahName': null,
+            'activeMemorizationSurah.lastAyahEnd': 0,
+            'activeMemorizationSurah.isCompleted': false,
+          });
+          console.log(`🧹 [Post-Delete] Cleared memorization surah ${surahNumber} for group ${doc.groupId}`);
+        } else {
+          // إعادة حساب lastAyahEnd
+          let maxAyahEnd = 0;
+          for (const section of remainingSections) {
+            for (const seg of section.memorizationMeta) {
+              if (seg.surahNumber === surahNumber && seg.ayahEnd > maxAyahEnd) {
+                maxAyahEnd = seg.ayahEnd;
+              }
+            }
+          }
+          await Group.updateLastAyah(doc.groupId, maxAyahEnd, 'memorization');
+          console.log(`📊 [Post-Delete] Updated memorization lastAyahEnd to ${maxAyahEnd}`);
+        }
+      }
+    }
+
+    // إعادة حساب سورة المراجعة (إذا كان المقطع يحتوي على مراجعة)
+    if (doc.reviewMeta && doc.reviewMeta.length > 0) {
+      const activeSurah = await Group.findById(doc.groupId).select('activeReviewSurah');
+      if (activeSurah?.activeReviewSurah?.surahNumber) {
+        const surahNumber = activeSurah.activeReviewSurah.surahNumber;
+        
+        const remainingSections = await this.model.find({
+          groupId: doc.groupId,
+          'reviewMeta.surahNumber': surahNumber
+        }).select('reviewMeta');
+
+        if (remainingSections.length === 0) {
+          await Group.findByIdAndUpdate(doc.groupId, {
+            'activeReviewSurah.surahNumber': null,
+            'activeReviewSurah.surahName': null,
+            'activeReviewSurah.lastAyahEnd': 0,
+            'activeReviewSurah.isCompleted': false,
+          });
+          console.log(`🧹 [Post-Delete] Cleared review surah ${surahNumber} for group ${doc.groupId}`);
+        } else {
+          let maxAyahEnd = 0;
+          for (const section of remainingSections) {
+            for (const seg of section.reviewMeta) {
+              if (seg.surahNumber === surahNumber && seg.ayahEnd > maxAyahEnd) {
+                maxAyahEnd = seg.ayahEnd;
+              }
+            }
+          }
+          await Group.updateLastAyah(doc.groupId, maxAyahEnd, 'review');
+          console.log(`📊 [Post-Delete] Updated review lastAyahEnd to ${maxAyahEnd}`);
+        }
+      }
+    }
+  } catch (err) {
+    console.error("❌ [Post-Delete] خطأ في إعادة حساب السور الفعالة:", err);
   }
 });
 

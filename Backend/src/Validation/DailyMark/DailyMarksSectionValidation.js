@@ -7,19 +7,24 @@ const logger = createLogger('SectionValidation');
 
 /**
  * ============================================================================
- * Daily Marks Section Validation Middleware (V3)
+ * Daily Marks Section Validation Middleware (V7)
  * ============================================================================
  * 
  * Validates section data for daily marks (date, reviewSection, memorizationSection)
  * Updated to support Structured Quran Segments (Meta)
  * 
- * V3 Changes:
- * - ✅ Removed past date restriction (supports backfilling)
- * - ✅ Moved deep sequence validation to Service layer
- * - ✅ Focus on data format/structure validation only
+ * V7 Edition - Validation Rules:
+ * ─────────────────────────────────────────────────────────────────────────────
+ * ✅ Data format/structure validation only (this file)
+ * ✅ Deep sequence validation delegated to SectionSequenceService
  * 
- * Note: Complex validation (gaps, overlaps, date-aware checks) 
- * is handled by SectionSequenceService.validateSequence()
+ * V7 Rules (enforced in SectionSequenceService):
+ * - Current week only (Sat-Fri) - no future/past weeks
+ * - Flexible review ranges (1-50 ayahs at once)
+ * - Review cannot exceed last memorized ayah
+ * - Daily quota: 1 per day per type
+ * - Weekly quota: 3 per week per type
+ * ─────────────────────────────────────────────────────────────────────────────
  */
 
 /**
@@ -33,7 +38,8 @@ const isRequired = (value) => {
 
 /**
  * Validate date field
- * ✅ V3: Removed past date restriction to support backfilling
+ * ✅ V7: Basic format validation only
+ * Current week restriction enforced in SectionSequenceService.checkCurrentWeekOnly()
  */
 const validateDate = (date, isUpdate = false) => {
   if (!isRequired(date)) {
@@ -45,8 +51,8 @@ const validateDate = (date, isUpdate = false) => {
     return { isValid: false, message: "التاريخ غير صحيح" };
   }
 
-  // ✅ V3: Allow past dates for backfilling
-  // No restriction on date - sequence validation happens in Service layer
+  // ✅ V7: Date format validation only
+  // Current week restriction happens in Service layer (checkCurrentWeekOnly)
 
   return { isValid: true, value: dateObj };
 };
@@ -250,8 +256,12 @@ const validateDailyMarksSectionData = async (req, res, next) => {
       errors.push("يجب إدخال مقطع الحفظ أو مقطع المراجعة على الأقل");
     }
 
-    // ✅ V3: Consistency validation moved to Service layer
+    // ✅ V7: Consistency validation moved to Service layer
     // Basic validation only - deep sequence checks happen in SectionSequenceService
+    // V7 Rules enforced in SectionSequenceService:
+    //   - Current week only (checkCurrentWeekOnly)
+    //   - Flexible review ranges (1-50 ayahs at once)
+    //   - Review cannot exceed last memorized ayah
     // This keeps validation simple and focused on data format/structure
 
     // Validate group (optional)
@@ -300,49 +310,6 @@ const validateDailyMarksSectionData = async (req, res, next) => {
       message: "خطأ في خادم التحقق من البيانات",
       error: error.message,
     });
-  }
-};
-
-/**
- * Validate Repair Sequence Data
- * Checks for groupId and surahNumber
- */
-const validateRepairSequenceData = (req, res, next) => {
-  try {
-    const { groupId, surahNumber, repairAll } = req.body;
-    const errors = [];
-
-    if (!isRequired(groupId)) {
-      errors.push("معرّف الحلقة (Group ID) مطلوب");
-    }
-
-    // إذا لم يتم تحديد "إصلاح الكل" ولم يتم إرسال رقم السورة
-    if (!repairAll && !isRequired(surahNumber)) {
-        // نسمح بعدم إرسال رقم السورة إذا كان القصد إصلاح الكل ضمنياً
-        // ولكن للوضوح يفضل استخدام flag
-        // errors.push("رقم السورة مطلوب"); 
-    }
-    
-    // Check if surahNumber is provided, it must be valid
-    if (surahNumber) {
-        const surahNum = parseInt(surahNumber);
-        if (isNaN(surahNum) || surahNum < 1 || surahNum > 114) {
-            errors.push("رقم السورة يجب أن يكون بين 1 و 114");
-        }
-    }
-
-    if (errors.length > 0) {
-      return res.status(400).json({
-        success: false,
-        message: "بيانات الإصلاح غير صحيحة",
-        errors: errors,
-      });
-    }
-
-    next();
-  } catch (error) {
-     console.error("❌ Validating Repair Data Error:", error);
-     res.status(500).json({ success: false, message: "Server Validation Error" });
   }
 };
 
@@ -426,7 +393,6 @@ const validateGroupIdParam = (req, res, next) => {
 
 module.exports = {
   validateDailyMarksSectionData,
-  validateRepairSequenceData,
   validateSectionId,
   validateActiveSurahData,
   validateGroupIdParam,
