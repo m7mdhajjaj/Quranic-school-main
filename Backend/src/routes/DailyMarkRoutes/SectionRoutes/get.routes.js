@@ -1,6 +1,12 @@
 const express = require("express");
 const router = express.Router();
 const dailyMarkController = require("../../../controllers/DailyMarkController");
+const { protect } = require("../../../middleware/auth");
+
+// ============================================================================
+// MIDDLEWARE - حماية routes القراءة
+// ============================================================================
+router.use(protect);
 
 // ============================================================================
 // GET ROUTES - جلب المقاطع (V3: Date-Aware + Active Surah System)
