@@ -5,7 +5,6 @@
 // ⚠️ مهم: التعارض يعتمد على التاريخ المحدد وليس اليوم فقط
 
 const TimeTable = require("../../schema/TimeTable");
-const Section = require("../../schema/DailyMark/Section");
 const Teacher = require("../../schema/Teacher");
 const mongoose = require("mongoose");
 const { createLogger } = require("../../utils/logger");
@@ -16,8 +15,8 @@ const {
   isValidDate 
 } = require("./helpers/scheduleConflict.helper");
 const { 
-  isSummerTime, 
   generateAvailableHours,
+  WORKING_HOURS,
   extractDayInfo,
   formatDateArabic,
   findTimeIndex,
@@ -63,16 +62,12 @@ exports.getAvailableHours = async (req, res) => {
     const { date } = req.query;
     const targetDate = date ? new Date(date) : new Date();
     
-    const summer = isSummerTime(targetDate);
-    const hours = generateAvailableHours(targetDate);
+    const hours = generateAvailableHours();
 
     res.json({
       success: true,
       data: {
-        isSummerTime: summer,
-        season: summer ? 'summer' : 'winter',
-        seasonAr: summer ? 'صيفي' : 'شتوي',
-        range: summer ? '12:00 PM - 9:00 PM' : '11:00 AM - 8:00 PM',
+        range: `${WORKING_HOURS.startTime} - ${WORKING_HOURS.endTime}`,
         hours,
         totalSlots: hours.length,
         date: targetDate.toISOString().split('T')[0]
@@ -283,7 +278,6 @@ exports.getTeacherAvailableHours = async (req, res) => {
         date: dateInfo.dateFormatted,
         dateShort: dateInfo.dateShort,
         day: dateInfo.dayName,
-        isSummerTime: isSummerTime(new Date(date)),
         
         // الأوقات
         allHours,

@@ -100,8 +100,6 @@ export const useDailyMarksData = (): UseDailyMarksDataReturn => {
         }
         // 🆕 مساعد المدرس - جلب الحلقات المسموح له بها فقط
         else if (user.role === "teacherAssistant") {
-          console.log("👨‍🏫 [DailyMarks] Loading data for teacherAssistant...");
-          
           // جلب الحلقات المسموح بها لمساعد المدرس
           const groupsResponse = await getTeacherAssistantGroups();
 
@@ -110,7 +108,6 @@ export const useDailyMarksData = (): UseDailyMarksDataReturn => {
           if (groupsResponse.success && groupsResponse.data) {
             const groups = groupsResponse.data.map((g: any) => g.name);
             setTeacherGroups(groups);
-            console.log("✅ [DailyMarks] TeacherAssistant groups loaded:", groups);
 
             // جلب طلاب الحلقات المسموح بها باستخدام API مخصص
             const studentsResponse = await getTeacherAssistantStudents();
@@ -119,13 +116,11 @@ export const useDailyMarksData = (): UseDailyMarksDataReturn => {
               
             if (studentsResponse.success && Array.isArray(studentsResponse.data)) {
               setStudents(studentsResponse.data);
-              console.log(`✅ [DailyMarks] Loaded ${studentsResponse.data.length} students for teacherAssistant`);
             } else {
               setStudents([]);
-              console.log("⚠️ [DailyMarks] No students found for teacherAssistant groups");
             }
           } else {
-            console.error("❌ [DailyMarks] Failed to load teacherAssistant groups:", groupsResponse.message || groupsResponse.error);
+            console.error("Failed to load teacherAssistant groups:", groupsResponse.message || groupsResponse.error);
             setTeacherGroups([]);
             setStudents([]);
           }

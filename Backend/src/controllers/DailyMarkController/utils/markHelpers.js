@@ -147,23 +147,8 @@ async function notifyAndEmitMarkEvent(io, notifyFunction, mark, additionalData =
 }
 
 // ============================================================================
-// Validation Helpers
+// Utility Helpers
 // ============================================================================
-
-/**
- * Validate marks array
- * @param {Array} marks - Array of marks to validate
- * @throws {Error} If marks array is invalid
- */
-function validateMarksArray(marks) {
-  if (!Array.isArray(marks)) {
-    throw new Error("marks يجب أن تكون قائمة (array)");
-  }
-  if (marks.length === 0) {
-    throw new Error("marks يجب أن تحتوي على عنصر واحد على الأقل");
-  }
-  return true;
-}
 
 /**
  * Collect unique IDs from marks array
@@ -203,7 +188,6 @@ module.exports = {
   emitSocketEvent,
   notifyAndEmitMarkEvent,
   
-  // Validation & Utilities
-  validateMarksArray,
+  // Utilities
   collectMarkIds,
 };

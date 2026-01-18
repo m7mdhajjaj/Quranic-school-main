@@ -74,12 +74,10 @@ export interface DateInfo {
 export interface AvailableHoursResponse {
   success: boolean;
   data: {
-    isSummerTime: boolean;
-    season: 'summer' | 'winter';
-    seasonAr: string;
     range: string;
     hours: string[];
     totalSlots: number;
+    date?: string;
   };
 }
 
@@ -90,7 +88,6 @@ export interface TeacherAvailableHoursResponse {
     date: string;        // "12 يناير 2026"
     dateShort: string;   // "12/1/2026"
     day: string;         // "الاثنين"
-    isSummerTime: boolean;
     allHours: string[];
     bookedHours: string[];
     availableHours: string[];

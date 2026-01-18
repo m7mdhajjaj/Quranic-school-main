@@ -23,12 +23,7 @@ export const useStudentGroupedSections = (
   const [error, setError] = useState<string | null>(null);
 
   const fetchData = async () => {
-    console.log('🔍 [useStudentGroupedSections] Starting fetch...');
-    console.log('🔍 studentId:', studentId);
-    console.log('🔍 groupId:', groupId);
-
     if (!studentId) {
-      console.log('❌ No studentId provided, skipping fetch');
       setLoading(false);
       return;
     }
@@ -37,24 +32,18 @@ export const useStudentGroupedSections = (
     setError(null);
 
     try {
-      console.log('📡 Calling getStudentSectionsGrouped API...');
       const response = await getStudentSectionsGrouped(studentId, groupId);
-      console.log('📡 API Response:', response);
 
       if (response.success && response.data) {
-        console.log('✅ Success! Surahs count:', response.data.surahs?.length);
-        console.log('✅ Surahs:', response.data.surahs);
-        console.log('✅ Summary:', response.data.summary);
         setSurahs(response.data.surahs);
         setSummary(response.data.summary);
       } else {
-        console.log('❌ API returned error:', response.error);
         setError(response.error || 'فشل في جلب المقاطع');
         setSurahs([]);
         setSummary(null);
       }
     } catch (err) {
-      console.error('❌ Error in useStudentGroupedSections:', err);
+      console.error('Error in useStudentGroupedSections:', err);
       setError('حدث خطأ غير متوقع');
       setSurahs([]);
       setSummary(null);

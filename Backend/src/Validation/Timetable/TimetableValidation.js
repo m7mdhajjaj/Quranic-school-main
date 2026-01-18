@@ -4,15 +4,14 @@
 // Validation middleware for timetable/session scheduling
 // ⚠️ التعارض يعتمد على التاريخ المحدد (sessionDate) وليس اليوم
 
-/**
- * تحديد إذا كان التوقيت صيفي أو شتوي (تلقائي)
- * الصيفي: من مايو (5) إلى سبتمبر (9)
- * الشتوي: من أكتوبر (10) إلى أبريل (4)
- */
-const isSummerTime = () => {
-  const now = new Date();
-  const month = now.getMonth() + 1; // 1-12
-  return month >= 5 && month <= 9;
+// ✅ أوقات العمل الموحدة: 11:00 AM - 8:00 PM
+// التحويل الصيفي/الشتوي يتم تلقائياً عبر timezone (Asia/Jerusalem)
+const WORKING_HOURS = {
+  start: 11, // 11:00 AM
+  end: 20,   // 8:00 PM
+  startTime: "11:00 AM",
+  endTime: "8:00 PM",
+  endTimeExtended: "9:00 PM" // للنهاية فقط
 };
 
 /**
@@ -89,7 +88,7 @@ const validateStartHour = (startHour) => {
     };
   }
 
-  // Check working hours (صيفي: 12:00 PM - 9:00 PM، شتوي: 11:00 AM - 8:00 PM)
+  // Check working hours (أوقات العمل الموحدة: 11:00 AM - 8:00 PM)
   const match = timeStr.match(/^([0-1]?[0-9]):[0-5][0-9]\s?(AM|PM|am|pm)$/i);
   if (match) {
     const hour = parseInt(match[1]);
@@ -98,17 +97,17 @@ const validateStartHour = (startHour) => {
     
     let isValidHour = false;
     if (isPM) {
-      // PM: 12:00 PM - 9:00 PM مسموح (صيفي وشتوي)
-      isValidHour = hour === 12 || (hour >= 1 && hour <= 9);
+      // PM: 12:00 PM - 8:00 PM مسموح
+      isValidHour = hour === 12 || (hour >= 1 && hour <= 8);
     } else if (isAM) {
-      // AM: 11:00 AM و 11:30 AM فقط (شتوي)
+      // AM: 11:00 AM فقط
       isValidHour = hour === 11;
     }
     
     if (!isValidHour) {
       return {
         isValid: false,
-        message: 'أوقات العمل: صيفي (12:00 PM - 9:00 PM) أو شتوي (11:00 AM - 8:00 PM)'
+        message: `أوقات العمل: ${WORKING_HOURS.startTime} - ${WORKING_HOURS.endTime}`
       };
     }
   }
@@ -134,43 +133,30 @@ const validateEndHour = (endHour) => {
     };
   }
 
-  // ✅ فحص الأوقات حسب التوقيت الحالي (تلقائي)
+  // ✅ فحص الأوقات - أوقات العمل الموحدة
   const match = timeStr.match(/^([0-1]?[0-9]):[0-5][0-9]\s?(AM|PM|am|pm)$/i);
   if (match) {
     const hour = parseInt(match[1]);
+    const minutes = parseInt(timeStr.split(':')[1]) || 0;
     const isPM = match[2].toLowerCase() === 'pm';
     const isAM = match[2].toLowerCase() === 'am';
-    const isSummer = isSummerTime();
     
     let isValidHour = false;
     
-    if (isSummer) {
-      // ☀️ صيفي: 12:00 PM - 9:00 PM فقط
-      if (isPM) {
-        isValidHour = hour === 12 || (hour >= 1 && hour <= 9);
-      } else if (isAM) {
-        // AM غير مسموح في الصيف
-        return {
-          isValid: false,
-          message: '⚠️ التوقيت الصيفي الحالي: 12:00 PM - 9:00 PM فقط'
-        };
-      }
-    } else {
-      // ❄️ شتوي: 11:00 AM - 9:00 PM (تمديد لتغطية نهاية الحلقات التي تبدأ 8:00 PM)
-      if (isPM) {
-        isValidHour = hour === 12 || (hour >= 1 && hour <= 9);
-      } else if (isAM) {
-        isValidHour = hour === 11;
-      }
+    // ✅ أوقات العمل الموحدة: 11:00 AM - 9:00 PM (تمديد للنهاية)
+    if (isPM) {
+      // 12:00 PM - 8:00 PM مسموح كبداية
+      if (hour === 12 || (hour >= 1 && hour <= 8)) isValidHour = true;
+      // 9:00 PM مسموح كنهاية فقط
+      if (hour === 9 && minutes === 0) isValidHour = true;
+    } else if (isAM) {
+      isValidHour = hour === 11;
     }
     
     if (!isValidHour) {
-      const seasonMsg = isSummer 
-        ? '☀️ التوقيت الصيفي: 12:00 PM - 9:00 PM'
-        : '❄️ التوقيت الشتوي: 11:00 AM - 9:00 PM';
       return {
         isValid: false,
-        message: `أوقات العمل الحالية: ${seasonMsg}`
+        message: `أوقات العمل: ${WORKING_HOURS.startTime} - ${WORKING_HOURS.endTime}`
       };
     }
   }
@@ -723,6 +709,5 @@ module.exports = {
   validateSessionType,
   validateSectionId,
   validateIsRecurring,
-  validateTimeLogic,
-  isSummerTime
+  validateTimeLogic
 };

@@ -14,7 +14,6 @@ const {
   updateMultipleStudentsMonthlyAverage,
   updateMultipleSectionsStatus,
   emitSocketEvent,
-  validateMarksArray,
   collectMarkIds,
 } = require("../utils/markHelpers");
 
@@ -25,7 +24,7 @@ const {
   sendCreated,
 } = require("../utils/responseHelpers");
 
-const { checkMarkEditWindow } = require("../utils/validationHelpers");
+const { checkMarkEditWindow, validateMarksArray } = require("../utils/validationHelpers");
 
 /**
  * Add or update marks for many students in one section

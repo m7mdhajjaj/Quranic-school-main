@@ -7,7 +7,6 @@
 
 import * as yup from 'yup';
 import { 
-  isSummerTime as isSummerTimeFromTimezone,
   getArabicDayFromDate,
   TIMEZONE
 } from '@/utils/timezone';
@@ -90,15 +89,9 @@ const DATE_FORMAT_REGEX = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d{3})?Z)?$/;
 // ============================================================================
 
 /**
- * تحديد إذا كان التوقيت صيفي أو شتوي (تلقائي)
- * ✅ يستخدم timezone.ts الموحد
- */
-export const isSummerTime = isSummerTimeFromTimezone;
-
-/**
- * التحقق من أن الوقت ضمن أوقات العمل حسب التوقيت الحالي (تلقائي)
- * صيفي: 12:00 PM - 9:00 PM
- * شتوي: 11:00 AM - 8:00 PM
+ * التحقق من أن الوقت ضمن أوقات العمل الموحدة
+ * ✅ 11:00 AM - 8:00 PM (البداية)
+ * ✅ 11:00 AM - 9:00 PM (النهاية - لتغطية الحلقات)
  */
 export const isValidWorkingHour = (timeStr: string): boolean => {
   const match = timeStr.match(/^([0-9]{1,2}):([0-5][0-9])\s?(AM|PM|am|pm)$/i);
@@ -106,23 +99,12 @@ export const isValidWorkingHour = (timeStr: string): boolean => {
 
   const hour = parseInt(match[1]);
   const period = match[3].toLowerCase();
-  const isSummer = isSummerTime();
 
-  if (isSummer) {
-    // ☀️ صيفي: 12:00 PM - 9:00 PM فقط
-    if (period === 'pm') {
-      return hour === 12 || (hour >= 1 && hour <= 9);
-    } else if (period === 'am') {
-      // AM غير مسموح في الصيف
-      return false;
-    }
-  } else {
-    // ❄️ شتوي: 11:00 AM - 9:00 PM
-    if (period === 'pm') {
-      return hour === 12 || (hour >= 1 && hour <= 9);
-    } else if (period === 'am') {
-      return hour === 11; // 11:00 AM و 11:30 AM فقط
-    }
+  // ✅ أوقات العمل الموحدة: 11:00 AM - 9:00 PM
+  if (period === 'pm') {
+    return hour === 12 || (hour >= 1 && hour <= 9);
+  } else if (period === 'am') {
+    return hour === 11; // 11:00 AM و 11:30 AM فقط
   }
 
   return false;
@@ -214,12 +196,7 @@ export const timetableValidationSchema = yup.object({
     .matches(TIME_FORMAT_REGEX, 'ساعة البداية يجب أن تكون بصيغة HH:MM AM/PM (مثل: 12:00 PM)')
     .test(
       'is-valid-working-hour',
-      () => {
-        const isSummer = isSummerTime();
-        return isSummer 
-          ? '☀️ التوقيت الصيفي: 12:00 PM - 9:00 PM فقط'
-          : '❄️ التوقيت الشتوي: 11:00 AM - 8:00 PM فقط';
-      },
+      'أوقات العمل: 11:00 AM - 8:00 PM',
       (value) => {
         if (!value) return false;
         return isValidWorkingHour(value);
@@ -234,12 +211,7 @@ export const timetableValidationSchema = yup.object({
     .matches(TIME_FORMAT_REGEX, 'ساعة النهاية يجب أن تكون بصيغة HH:MM AM/PM (مثل: 1:00 PM)')
     .test(
       'is-valid-working-hour',
-      () => {
-        const isSummer = isSummerTime();
-        return isSummer 
-          ? '☀️ التوقيت الصيفي: 12:00 PM - 9:00 PM فقط'
-          : '❄️ التوقيت الشتوي: 11:00 AM - 8:00 PM فقط';
-      },
+      'أوقات العمل: 11:00 AM - 8:00 PM',
       (value) => {
         if (!value) return false;
         return isValidWorkingHour(value);

@@ -151,7 +151,7 @@ const SessionCard: React.FC<{
 };
 
 /** رأس الجدول */
-const GridHeader: React.FC<{ isSummer: boolean; weekRangeFormatted: string }> = ({ isSummer, weekRangeFormatted }) => (
+const GridHeader: React.FC<{ weekRangeFormatted: string }> = ({ weekRangeFormatted }) => (
   <div className="bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-600 px-3 sm:px-4 md:px-6 py-3 md:py-4 shadow-md relative overflow-hidden">
     <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10" />
     <div className="flex flex-col sm:flex-row items-center justify-between relative z-10 gap-3">
@@ -167,13 +167,13 @@ const GridHeader: React.FC<{ isSummer: boolean; weekRangeFormatted: string }> = 
       
       <div className="flex flex-col items-center sm:items-end gap-1 bg-white/10 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl backdrop-blur-md border border-white/20 shadow-lg transform hover:scale-105 transition-transform duration-300">
         <div className="flex items-center gap-1.5 sm:gap-2">
-          <span className="text-base sm:text-lg animate-pulse">{isSummer ? '☀️' : '❄️'}</span>
+          <span className="text-base sm:text-lg">🕐</span>
           <span className="text-xs sm:text-sm font-bold text-white tracking-wide">
-            {isSummer ? 'التوقيت الصيفي' : 'التوقيت الشتوي'}
+            ساعات الدوام
           </span>
         </div>
         <span className="text-[9px] sm:text-[10px] text-white/90 font-mono bg-black/20 px-2 py-0.5 rounded-full">
-          {isSummer ? '12:00 PM - 09:00 PM' : '11:00 AM - 08:00 PM'}
+          11:00 AM - 08:00 PM
         </span>
       </div>
     </div>
@@ -226,7 +226,6 @@ export const WeeklyGridView: React.FC<WeeklyGridViewProps> = ({
   onDelete,
 }) => {
   const {
-    isSummer,
     hours,
     weekDates,
     weekRangeFormatted,
@@ -244,7 +243,7 @@ export const WeeklyGridView: React.FC<WeeklyGridViewProps> = ({
 
   return (
     <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden w-full transition-all duration-300 hover:shadow-emerald-100/50" dir="rtl">
-      <GridHeader isSummer={isSummer} weekRangeFormatted={weekRangeFormatted} />
+      <GridHeader weekRangeFormatted={weekRangeFormatted} />
 
       {/* الشبكة */}
       <div className="overflow-hidden w-full bg-gray-50/50">

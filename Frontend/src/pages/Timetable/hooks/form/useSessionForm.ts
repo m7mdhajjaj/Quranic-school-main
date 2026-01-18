@@ -212,24 +212,14 @@ export const useSessionForm = ({
   // 🔄 Fallback: توليد الأوقات محلياً - memoized
   // ============================================
   const generateFallbackHours = useCallback((): string[] => {
-    const now = new Date();
-    const month = now.getMonth() + 1;
-    const isSummer = month >= 5 && month <= 9;
+    // ✅ أوقات العمل الموحدة: 11:00 AM - 8:00 PM
     const fallbackHours: string[] = [];
     
-    if (isSummer) {
-      for (let h = 12; h <= 21; h++) {
-        const display12 = h === 12 ? 12 : h > 12 ? h - 12 : h;
-        fallbackHours.push(`${display12}:00 PM`);
-        if (h < 21) fallbackHours.push(`${display12}:30 PM`);
-      }
-    } else {
-      fallbackHours.push('11:00 AM', '11:30 AM');
-      for (let h = 12; h <= 20; h++) {
-        const display12 = h === 12 ? 12 : h > 12 ? h - 12 : h;
-        fallbackHours.push(`${display12}:00 PM`);
-        if (h < 20) fallbackHours.push(`${display12}:30 PM`);
-      }
+    fallbackHours.push('11:00 AM', '11:30 AM');
+    for (let h = 12; h <= 20; h++) {
+      const display12 = h === 12 ? 12 : h > 12 ? h - 12 : h;
+      fallbackHours.push(`${display12}:00 PM`);
+      if (h < 20) fallbackHours.push(`${display12}:30 PM`);
     }
     
     return fallbackHours;

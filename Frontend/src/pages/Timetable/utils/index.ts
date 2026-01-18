@@ -12,7 +12,6 @@ export {
   isTeacherMatch,
   getCurrentUser,
   getUserRole,
-  isSummerTime,
   isValidTime,
   timeToMinutes,
   isTimeInBookedRange,

@@ -1,5 +1,8 @@
 // Validation/DailyMarksValidation.js
 
+const { createLogger } = require("../../utils/logger");
+const logger = createLogger('DailyMarksValidation');
+
 /**
  * Daily Marks validation middleware
  * Validates mark data for daily marks (reviewMark and memorizationMark)
@@ -110,9 +113,6 @@ const sanitizeMarkData = (data) => {
  */
 const validateDailyMarksData = async (req, res, next) => {
   try {
-    console.log("🔍 بدء التحقق من بيانات العلامة اليومية...");
-    console.log("📦 البيانات المستلمة:", req.body);
-
     const rawData = req.body;
 
     // Sanitize input data
@@ -165,7 +165,7 @@ const validateDailyMarksData = async (req, res, next) => {
 
     // Check for validation errors
     if (errors.length > 0) {
-      console.log("❌ أخطاء في التحقق من بيانات العلامة:", errors);
+      logger.debug("أخطاء في التحقق من بيانات العلامة:", errors);
       return res.status(400).json({
         success: false,
         message: "بيانات العلامة غير صحيحة",
@@ -176,11 +176,9 @@ const validateDailyMarksData = async (req, res, next) => {
     // Add validated data to request
     req.validatedData = validatedData;
 
-    console.log("✅ تم التحقق من بيانات العلامة بنجاح");
-    console.log("✅ البيانات المتحقق منها:", validatedData);
     next();
   } catch (error) {
-    console.error("❌ خطأ في التحقق من بيانات العلامة:", error);
+    logger.error("خطأ في التحقق من بيانات العلامة:", error);
     res.status(500).json({
       success: false,
       message: "خطأ في خادم التحقق من البيانات",
@@ -195,9 +193,6 @@ const validateDailyMarksData = async (req, res, next) => {
  */
 const validateBulkMarks = async (req, res, next) => {
   try {
-    console.log("🔍 بدء التحقق من بيانات العلامات المتعددة...");
-    console.log(`📦 عدد العلامات: ${req.body.marks?.length || 0}`);
-
     const rawMarks = req.body.marks;
 
     if (!Array.isArray(rawMarks)) {
@@ -276,7 +271,6 @@ const validateBulkMarks = async (req, res, next) => {
     }
 
     if (errors.length > 0) {
-      console.log("❌ أخطاء في التحقق من العلامات المتعددة:", errors);
       return res.status(400).json({
         success: false,
         message: `أخطاء في التحقق من البيانات (${errors.length} خطأ)`,
@@ -285,10 +279,9 @@ const validateBulkMarks = async (req, res, next) => {
     }
 
     req.validatedData = validatedMarks;
-    console.log(`✅ تم التحقق من ${validatedMarks.length} علامة بنجاح`);
     next();
   } catch (error) {
-    console.error("❌ خطأ في التحقق من العلامات المتعددة:", error);
+    logger.error("خطأ في التحقق من العلامات المتعددة:", error);
     res.status(500).json({
       success: false,
       message: "خطأ في خادم التحقق من البيانات",
@@ -303,8 +296,6 @@ const validateBulkMarks = async (req, res, next) => {
  */
 const validateUpdateMark = async (req, res, next) => {
   try {
-    console.log("🔍 بدء التحقق من بيانات التحديث...");
-
     const data = req.body;
     const errors = [];
     const validatedData = {};
@@ -347,7 +338,7 @@ const validateUpdateMark = async (req, res, next) => {
     }
 
     if (errors.length > 0) {
-      console.log("❌ أخطاء في التحقق من بيانات التحديث:", errors);
+      logger.debug("أخطاء في التحقق من بيانات التحديث:", errors);
       return res.status(400).json({
         success: false,
         message: "بيانات التحديث غير صحيحة",
@@ -356,10 +347,9 @@ const validateUpdateMark = async (req, res, next) => {
     }
 
     req.validatedData = validatedData;
-    console.log("✅ تم التحقق من بيانات التحديث بنجاح");
     next();
   } catch (error) {
-    console.error("❌ خطأ في التحقق من بيانات التحديث:", error);
+    logger.error("خطأ في التحقق من بيانات التحديث:", error);
     res.status(500).json({
       success: false,
       message: "خطأ في خادم التحقق من البيانات",
@@ -374,8 +364,6 @@ const validateUpdateMark = async (req, res, next) => {
  */
 const validateBulkUpdateMarks = async (req, res, next) => {
   try {
-    console.log("🔍 بدء التحقق من بيانات التحديث المتعددة...");
-
     const rawMarks = req.body.marks;
 
     if (!Array.isArray(rawMarks)) {
@@ -458,7 +446,6 @@ const validateBulkUpdateMarks = async (req, res, next) => {
     }
 
     if (errors.length > 0) {
-      console.log("❌ أخطاء في التحقق من العلامات المتعددة:", errors);
       return res.status(400).json({
         success: false,
         message: `أخطاء في التحقق من البيانات (${errors.length} خطأ)`,
@@ -467,10 +454,9 @@ const validateBulkUpdateMarks = async (req, res, next) => {
     }
 
     req.validatedData = validatedMarks;
-    console.log(`✅ تم التحقق من ${validatedMarks.length} علامة بنجاح`);
     next();
   } catch (error) {
-    console.error("❌ خطأ في التحقق من العلامات المتعددة:", error);
+    logger.error("خطأ في التحقق من العلامات المتعددة:", error);
     res.status(500).json({
       success: false,
       message: "خطأ في خادم التحقق من البيانات",

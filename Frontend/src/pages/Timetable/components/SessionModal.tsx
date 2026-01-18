@@ -11,7 +11,7 @@ import type {
   SessionFormData,
   UserRole,
 } from "../types/timetable.types";
-import { isSummerTime, getTodayDate, isTimeInArray, findTimeIndex } from "../utils";
+import { getTodayDate, isTimeInArray, findTimeIndex } from "../utils";
 import { Calendar, Clock, UserCircle } from "lucide-react";
 import { useSessionModalController } from "../hooks";
 
@@ -163,13 +163,13 @@ export const SessionModal: React.FC<SessionModalProps> = (props) => {
                   <Calendar className="w-5 h-5" />
                   {role === "admin" ? "2️⃣ اختر التاريخ والأوقات" : "1️⃣ اختر التاريخ والأوقات"}
                 </h3>
-                {/* عرض التوقيت الحالي */}
+                {/* عرض ساعات الدوام */}
                 <div className="flex flex-col items-end gap-1 bg-white px-3 py-2 rounded-lg border-2 border-blue-300">
                   <span className="text-xs font-bold text-blue-900">
-                    {isSummerTime() ? '☀️ توقيت صيفي' : '❄️ توقيت شتوي'}
+                    🕐 ساعات الدوام
                   </span>
                   <span className="text-[10px] text-blue-600">
-                    {isSummerTime() ? '12:00 PM - 9:00 PM' : '11:00 AM - 8:00 PM'}
+                    11:00 AM - 8:00 PM
                   </span>
                 </div>
               </div>

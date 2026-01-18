@@ -2,13 +2,13 @@
 // useWeeklyGrid - منطق عرض الشبكة الأسبوعية
 // ============================================================================
 // ✅ يستخدم توقيت فلسطين (Asia/Jerusalem) الموحد
+// ✅ أوقات العمل الموحدة: 11:00 AM - 8:00 PM
 
 import { useMemo, useCallback } from "react";
 import type { Session } from "../../types/timetable.types";
 import { generateHours, findTimeIndex } from "../../utils";
 import { useWeekFilter } from "./useWeekFilter";
 import { 
-  isSummerTime, 
   getWeekDates, 
   formatDateForAPI, 
   toDateKey 
@@ -19,11 +19,8 @@ interface UseWeeklyGridProps {
 }
 
 export const useWeeklyGrid = ({ sessions }: UseWeeklyGridProps) => {
-  // التوقيت الحالي (صيفي/شتوي)
-  const isSummer = useMemo(() => isSummerTime(), []);
-  
-  // ساعات العمل
-  const hours = useMemo(() => generateHours(isSummer), [isSummer]);
+  // ساعات العمل الموحدة
+  const hours = useMemo(() => generateHours(), []);
 
   // فلترة الحصص حسب الأسبوع
   // ✅ البيانات جاهزة من الـ Backend
@@ -118,7 +115,6 @@ export const useWeeklyGrid = ({ sessions }: UseWeeklyGridProps) => {
 
   return {
     // البيانات
-    isSummer,
     hours,
     weekDates,
     weekRangeFormatted,

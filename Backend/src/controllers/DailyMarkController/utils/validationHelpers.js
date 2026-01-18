@@ -5,6 +5,9 @@
 const { TIMEZONE } = require('../../../config/timezone');
 const { EDIT_WINDOW_DAYS } = require('../../../config/constants');
 
+// Note: TIMEZONE is used in checkMarkEditWindow for date formatting
+// EDIT_WINDOW_DAYS is used for edit window calculation
+
 /**
  * Validate marks array
  * @param {Array} marks - Array of marks
@@ -207,7 +210,6 @@ module.exports = {
   isValidDate,
   validateMonthYear,
   // ⏰ Edit Window
-  EDIT_WINDOW_DAYS,
   checkMarkEditWindow,
   validateMarkEditWindow,
 };

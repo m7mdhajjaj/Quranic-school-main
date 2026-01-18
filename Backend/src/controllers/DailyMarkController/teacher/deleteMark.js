@@ -11,9 +11,7 @@ const logger = createLogger('DeleteMark');
 // استيراد الدوال المساعدة
 const {
   updateStudentMonthlyAverage,
-  updateMultipleStudentsMonthlyAverage,
   updateSingleSectionStatus,
-  updateMultipleSectionsStatus,
   emitSocketEvent,
 } = require("../utils/markHelpers");
 

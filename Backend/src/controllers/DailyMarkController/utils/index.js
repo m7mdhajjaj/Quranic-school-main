@@ -60,10 +60,12 @@ const {
   isValidDate,
   validateMonthYear,
   // Edit Window
-  EDIT_WINDOW_DAYS,
   checkMarkEditWindow,
   validateMarkEditWindow,
 } = require('./validationHelpers');
+
+// Import EDIT_WINDOW_DAYS directly from config
+const { EDIT_WINDOW_DAYS } = require('../../../config/constants');
 
 // ============================================================================
 // Exports - تصدير مجمّع

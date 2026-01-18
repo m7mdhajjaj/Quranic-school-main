@@ -2,6 +2,8 @@
 
 const mongoose = require("mongoose");
 const { parseSegment } = require("../../utils/Quran/dailyMarkSegmentParser");
+const { createLogger } = require("../../utils/logger");
+const logger = createLogger('SectionValidation');
 
 /**
  * ============================================================================
@@ -170,9 +172,6 @@ const sanitizeSectionData = (data) => {
  */
 const validateDailyMarksSectionData = async (req, res, next) => {
   try {
-    console.log("🔍 بدء التحقق من بيانات مقطع العلامات اليومية...");
-    console.log("📦 البيانات المستلمة:", req.body);
-
     const isUpdate = req.method === "PUT";
     const rawData = req.body;
 
@@ -282,7 +281,7 @@ const validateDailyMarksSectionData = async (req, res, next) => {
 
     // Check for validation errors
     if (errors.length > 0) {
-      console.log("❌ أخطاء في التحقق من بيانات المقطع:", errors);
+      logger.debug("أخطاء في التحقق من بيانات المقطع:", errors);
       return res.status(400).json({
         success: false,
         message: "بيانات المقطع غير صحيحة",
@@ -292,17 +291,10 @@ const validateDailyMarksSectionData = async (req, res, next) => {
 
     // Add validated data to request
     req.validatedData = validatedData;
-
-    console.log("✅ تم التحقق من بيانات المقطع بنجاح");
-    // Only log length of meta to avoid noise
-    console.log("✅ البيانات المتحقق منها (Meta info):", {
-       memMetaCount: validatedData.memorizationMeta.length,
-       revMetaCount: validatedData.reviewMeta.length
-    });
     
     next();
   } catch (error) {
-    console.error("❌ خطأ في التحقق من بيانات المقطع:", error);
+    logger.error("خطأ في التحقق من بيانات المقطع:", error);
     res.status(500).json({
       success: false,
       message: "خطأ في خادم التحقق من البيانات",

@@ -115,28 +115,11 @@ exports.getFilteredSections = async (req, res) => {
     // Initial date filter
     let dateFilter = buildDateFilter(month, year, day, startDate, endDate);
     
-    // ✅ V3: Weekly Filter Override (Current Week: Sat -> Fri) - Using UTC for consistency
+    // ✅ V3: Weekly Filter Override (Current Week: Sat -> Fri) - Using timezone.js
     if (period === 'week') {
-      const now = new Date();
-      // ✅ FIX: Use UTC-based date calculations
-      const todayKey = now.toISOString().split('T')[0];
-      const todayUTC = new Date(todayKey + 'T12:00:00.000Z'); // Noon UTC to avoid edge cases
-
-      // Calculate start of week (Saturday)
-      // dayIndex: 0 (Sun) ... 6 (Sat)
-      // distFromSat: Sun(0)->1, Mon(1)->2, ..., Fri(5)->6, Sat(6)->0
-      const dayIndex = todayUTC.getUTCDay();
-      const distFromSat = (dayIndex + 1) % 7;
+      const { startOfWeek, endOfWeek } = getWeekRange(new Date());
       
-      const startOfWeek = new Date(todayUTC);
-      startOfWeek.setUTCDate(todayUTC.getUTCDate() - distFromSat);
-      startOfWeek.setUTCHours(0, 0, 0, 0); // Start of Saturday (00:00:00)
-      
-      const endOfWeek = new Date(startOfWeek);
-      endOfWeek.setUTCDate(startOfWeek.getUTCDate() + 6); // End of Friday
-      endOfWeek.setUTCHours(23, 59, 59, 999); // End of Friday (23:59:59)
-
-      logger.debug(`Weekly Filter: ${startOfWeek.toISOString()} -> ${endOfWeek.toISOString()}`);
+      logger.debug(`Weekly Filter: ${toDateKey(startOfWeek)} -> ${toDateKey(endOfWeek)}`);
 
       // Override dateFilter to strict Range
       dateFilter = { 

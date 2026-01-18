@@ -167,17 +167,6 @@ export const isSameDay = (date1: Date | string, date2: Date | string): boolean =
   return toDateKey(d1) === toDateKey(d2);
 };
 
-/**
- * تحديد الموسم (صيفي/شتوي)
- * صيفي: مايو (5) - سبتمبر (9)
- */
-export const isSummerTime = (date: Date = new Date()): boolean => {
-  const options: Intl.DateTimeFormatOptions = { timeZone: TIMEZONE, month: 'numeric' };
-  const monthStr = new Intl.DateTimeFormat('en-US', options).format(date);
-  const month = parseInt(monthStr);
-  return month >= 5 && month <= 9;
-};
-
 // ============================================================================
 // 📅 دوال تنسيق التاريخ للعرض - موحدة
 // ============================================================================

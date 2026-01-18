@@ -3,12 +3,12 @@
 // ============================================================================
 // ⚠️ النظام الجديد: يعتمد على sessionDate (التاريخ المحدد) وليس day (اسم اليوم)
 // ✅ يستخدم توقيت فلسطين (Asia/Jerusalem) الموحد
+// ✅ أوقات العمل الموحدة: 11:00 AM - 8:00 PM
 
 import type { User } from "../types/timetable.types";
 import {
   WEEK_DAYS,
   type ArabicDay,
-  isSummerTime as isSummerTimeFromTimezone,
   getWeekDates as getWeekDatesFromTimezone,
   formatDateForAPI as formatDateForAPIFromTimezone,
   getTodayDate as getTodayDateFromTimezone,
@@ -23,39 +23,28 @@ import {
 export { WEEK_DAYS, TIMEZONE };
 export type { ArabicDay };
 
-/**
- * تحديد إذا كان التوقيت صيفي أو شتوي
- * ✅ يستخدم timezone.ts
- */
-export const isSummerTime = isSummerTimeFromTimezone;
+// ✅ أوقات العمل الموحدة
+export const WORKING_HOURS = {
+  start: 11, // 11:00 AM
+  end: 20,   // 8:00 PM
+  startTime: "11:00 AM",
+  endTime: "8:00 PM"
+};
 
 /**
- * توليد جميع الأوقات المتاحة حسب الموسم
- * الصيفي: 12:00 PM - 9:00 PM
- * الشتوي: 11:00 AM - 8:00 PM
+ * توليد جميع الأوقات المتاحة - موحدة 11:00 AM - 8:00 PM
+ * التحويل الصيفي/الشتوي يتم تلقائياً عبر timezone
  */
-export const generateHours = (isSummer?: boolean): string[] => {
+export const generateHours = (): string[] => {
   const hours: string[] = [];
-  const summer = isSummer !== undefined ? isSummer : isSummerTime();
   
-  if (summer) {
-    // التوقيت الصيفي: 12:00 PM - 9:00 PM
-    for (let h = 12; h <= 21; h++) {
-      const display12 = h === 12 ? 12 : h > 12 ? h - 12 : h;
-      hours.push(`${display12}:00 PM`);
-      if (h < 21) {
-        hours.push(`${display12}:30 PM`);
-      }
-    }
-  } else {
-    // التوقيت الشتوي: 11:00 AM - 8:00 PM
-    hours.push('11:00 AM', '11:30 AM');
-    for (let h = 12; h <= 20; h++) {
-      const display12 = h === 12 ? 12 : h > 12 ? h - 12 : h;
-      hours.push(`${display12}:00 PM`);
-      if (h < 20) {
-        hours.push(`${display12}:30 PM`);
-      }
+  // ✅ أوقات العمل الموحدة: 11:00 AM - 8:00 PM
+  hours.push('11:00 AM', '11:30 AM');
+  for (let h = 12; h <= 20; h++) {
+    const display12 = h === 12 ? 12 : h > 12 ? h - 12 : h;
+    hours.push(`${display12}:00 PM`);
+    if (h < 20) {
+      hours.push(`${display12}:30 PM`);
     }
   }
   
@@ -277,25 +266,21 @@ export const isTimeInBookedRange = (
 };
 
 /**
- * التحقق من صحة الوقت حسب التوقيت الحالي
+ * التحقق من صحة الوقت - أوقات العمل الموحدة 11:00 AM - 8:00 PM
  */
 export const isValidTime = (timeStr: string): boolean => {
   const cleanTime = timeStr.trim().toLowerCase();
   const hour = parseInt(timeStr.split(':')[0]);
   const isAM = cleanTime.includes('am');
   const isPM = cleanTime.includes('pm');
-  const summer = isSummerTime();
   
+  // ✅ أوقات العمل الموحدة: 11:00 AM - 8:00 PM
   if (isAM) {
-    return !summer && hour === 11;
+    return hour === 11; // 11:00 AM فقط
   }
   
   if (isPM) {
-    if (summer) {
-      return hour === 12 || (hour >= 1 && hour <= 9);
-    } else {
-      return hour === 12 || (hour >= 1 && hour <= 8);
-    }
+    return hour === 12 || (hour >= 1 && hour <= 8); // 12:00 PM - 8:00 PM
   }
   
   return false;

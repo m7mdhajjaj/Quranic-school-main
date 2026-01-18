@@ -19,16 +19,16 @@ const DAYS_MAP = {
   'الثلاثاء': 3, 'الأربعاء': 4, 'الخميس': 5, 'الجمعة': 6
 };
 
-// ========== SEASON DETECTION ==========
-/**
- * تحديد الموسم (صيفي/شتوي)
- * صيفي: مايو (5) - سبتمبر (9)
- * @param {Date} date - التاريخ (اختياري)
- * @returns {Boolean}
- */
-const isSummerTime = (date = new Date()) => {
-  const month = new Date(date).getMonth() + 1;
-  return month >= 5 && month <= 9;
+// ========== WORKING HOURS ==========
+// ✅ أوقات العمل الموحدة: 11:00 AM - 8:00 PM
+// التحويل الصيفي/الشتوي يتم تلقائياً عبر timezone (Asia/Jerusalem)
+// لا حاجة لمنطق isSummerTime بعد الآن
+
+const WORKING_HOURS = {
+  start: 11, // 11:00 AM
+  end: 20,   // 8:00 PM (20:00)
+  startTime: "11:00 AM",
+  endTime: "8:00 PM"
 };
 
 // ========== TIME CONVERSION (CORE) ==========
@@ -99,17 +99,6 @@ const normalizeTimeFormat = (timeStr) => {
 
 // ========== TIME COMPARISON ==========
 /**
- * ✅ مقارنة وقتين
- * @internal تستخدم داخلياً - محفوظة للاستخدام المستقبلي
- */
-const areTimesEqual = (time1, time2) => {
-  const m1 = timeToMinutes(time1);
-  const m2 = timeToMinutes(time2);
-  if (m1 < 0 || m2 < 0) return false;
-  return m1 === m2;
-};
-
-/**
  * ✅ البحث عن وقت في قائمة
  * @param {Array<String>} timeList - قائمة الأوقات
  * @param {String} time - الوقت للبحث عنه
@@ -119,14 +108,6 @@ const findTimeIndex = (timeList, time) => {
   const targetMin = timeToMinutes(time);
   if (targetMin < 0) return -1;
   return timeList.findIndex(t => timeToMinutes(t) === targetMin);
-};
-
-/**
- * ✅ التحقق من وجود وقت في قائمة
- * @internal تستخدم داخلياً - محفوظة للاستخدام المستقبلي
- */
-const isTimeInList = (time, timeList) => {
-  return findTimeIndex(timeList, time) !== -1;
 };
 
 /**
@@ -145,30 +126,16 @@ const hasTimeOverlap = (start1, end1, start2, end2) => {
   return s1 < e2 && e1 > s2;
 };
 
-/**
- * ✅ فحص إذا كان الوقت ضمن نطاق
- * @internal تستخدم داخلياً - محفوظة للاستخدام المستقبلي
- */
-const isTimeInRange = (time, start, end) => {
-  const t = timeToMinutes(time);
-  const s = timeToMinutes(start);
-  const e = timeToMinutes(end);
-  if (t < 0 || s < 0 || e < 0) return false;
-  return t >= s && t < e;
-};
-
 // ========== AVAILABLE HOURS GENERATION ==========
 /**
- * ✅ توليد الأوقات المتاحة حسب الموسم
- * @param {Date} date - التاريخ لتحديد الموسم
+ * ✅ توليد الأوقات المتاحة - موحدة 11:00 AM - 8:00 PM
+ * التحويل الصيفي/الشتوي يتم تلقائياً عبر timezone
  * @returns {Array<String>} - ["11:00 AM", "11:30 AM", ...]
  */
-const generateAvailableHours = (date = new Date()) => {
-  const summer = isSummerTime(date);
-  
-  // تحديد النطاق بالدقائق
-  const startMinutes = summer ? 12 * 60 : 11 * 60; // 12:00 PM or 11:00 AM
-  const endMinutes = summer ? 21 * 60 : 20 * 60;   // 9:00 PM or 8:00 PM
+const generateAvailableHours = () => {
+  // أوقات العمل الموحدة: 11:00 AM - 8:00 PM
+  const startMinutes = WORKING_HOURS.start * 60; // 11:00 AM = 660 دقيقة
+  const endMinutes = WORKING_HOURS.end * 60;     // 8:00 PM = 1200 دقيقة
   
   const hours = [];
   for (let m = startMinutes; m <= endMinutes; m += 30) {
@@ -264,33 +231,6 @@ const validateTimeRange = (startHour, endHour, options = {}) => {
     startNormalized: startVal.normalized,
     endNormalized: endVal.normalized
   };
-};
-
-/**
- * ✅ التحقق من ساعات العمل
- * @internal تستخدم داخلياً - محفوظة للاستخدام المستقبلي
- */
-const validateWorkingHours = (startHour, endHour, date = new Date()) => {
-  const availableHours = generateAvailableHours(date);
-  const startMin = timeToMinutes(startHour);
-  const endMin = timeToMinutes(endHour);
-  
-  if (startMin < 0 || endMin < 0) {
-    return { valid: false, error: "صيغة الوقت غير صحيحة" };
-  }
-  
-  const firstMin = timeToMinutes(availableHours[0]);
-  const lastMin = timeToMinutes(availableHours[availableHours.length - 1]) + 30;
-  
-  if (startMin < firstMin || startMin > lastMin) {
-    return { valid: false, error: `وقت البداية (${startHour}) خارج ساعات العمل` };
-  }
-  
-  if (endMin > lastMin) {
-    return { valid: false, error: `وقت النهاية (${endHour}) يتجاوز ساعات العمل` };
-  }
-  
-  return { valid: true };
 };
 
 // ========== DATE HELPERS ==========
@@ -392,9 +332,7 @@ module.exports = {
   ARABIC_DAYS: ARABIC_DAYS_SATURDAY_START, // السبت = 0 (لترتيب الأسبوع)
   ARABIC_DAYS_JS, // الأحد = 0 (لـ getDay())
   DAYS_MAP,
-  
-  // Season
-  isSummerTime,
+  WORKING_HOURS, // ✅ أوقات العمل الموحدة
   
   // Time conversion (core)
   timeToMinutes,
@@ -402,11 +340,8 @@ module.exports = {
   normalizeTimeFormat,
   
   // Time comparison
-  areTimesEqual,
   findTimeIndex,
-  isTimeInList,
   hasTimeOverlap,
-  isTimeInRange,
   
   // Available hours
   generateAvailableHours,
@@ -416,7 +351,6 @@ module.exports = {
   // Validation
   validateTimeFormat,
   validateTimeRange,
-  validateWorkingHours,
   
   // Date helpers
   getArabicDayFromDate,
