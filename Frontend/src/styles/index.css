@@ -308,6 +308,17 @@
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(to bottom, #059669, #0d9488);
 }
+
+/* إخفاء الـ scrollbar بالكامل */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
 input[type='password']::-ms-reveal,
 input[type='password']::-webkit-credentials-auto-fill-button {
   display: none !important;

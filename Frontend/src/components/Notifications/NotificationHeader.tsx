@@ -280,7 +280,7 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
             </div>
 
             {/* محتوى الإشعارات */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar bg-gradient-to-b from-white via-gray-50/50 to-gray-50 min-h-0">
+            <div className="flex-1 overflow-y-auto no-scrollbar bg-gradient-to-b from-white via-gray-50/50 to-gray-50 min-h-0">
               <NotificationList
                 notifications={notifications}
                 isLoading={isLoading}
