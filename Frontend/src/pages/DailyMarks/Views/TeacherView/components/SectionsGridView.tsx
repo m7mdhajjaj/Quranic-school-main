@@ -7,7 +7,6 @@ import { PeriodFilterToggle } from '../../../components/PeriodFilterToggle';
 import type { MarkStatus } from '../../../components/SectionStatusBadge';
 import type { Section } from '../../../types/types';
 import { SectionItem } from './SectionItem';
-import { AiRepairButton } from '../../../components/AiRepairButton';
 import { CompletedSurahsModal } from '../../../components/CompletedSurahsModal';
 import { useState } from 'react';
 
@@ -173,15 +172,6 @@ export const SectionsGridView = ({
             <BookOpen size={16} className="ml-1.5" />
             السور المكتملة
           </Button>
-
-          <AiRepairButton 
-            selectedGroup={selectedGroup} 
-            onSuccess={() => {
-              if (onRefreshData) onRefreshData();
-              else if (onGroupSelect) onGroupSelect(selectedGroup);
-            }}
-            className="h-9"
-          />
 
           {onBulkDelete && (
             <Button

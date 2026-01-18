@@ -9,13 +9,13 @@ const { protect } = require("../../../middleware/auth");
 router.use(protect);
 
 // ============================================================================
-// GET ROUTES - جلب المقاطع (V3: Date-Aware + Active Surah System)
+// GET ROUTES - جلب المقاطع (V7: Current Week + Flexible Review)
 // ============================================================================
 // 
-// V3 Updates:
-// - ✅ /last-segment now considers chronological order (not insertion order)
-// - ✅ Returns suggestedEnd for exact-match review validation
-// - ✅ Supports backfilling context
+// V7 Features:
+// - ✅ /last-segment considers chronological order (not insertion order)
+// - ✅ /check-quota enforces current week only
+// - ✅ Flexible review ranges (1-50 ayahs)
 // - ✅ Active Surah endpoints for group-level tracking
 
 // Get all sections
@@ -24,10 +24,10 @@ router.get("/", dailyMarkController.getSections);
 // Get last segment (for auto-increment) - MUST be before /:id
 router.get("/last-segment", dailyMarkController.getLastSegment);
 
-// ✅ V3: Get neighbor segments (for backfilling) - MUST be before /:id
+// ✅ V7: Get neighbor segments (for context) - MUST be before /:id
 router.get("/neighbor-segments", dailyMarkController.getNeighborSegments);
 
-// ✅ V3: Check Quota (Daily & Weekly)
+// ✅ V7: Check Quota (Daily & Weekly) - Current week only
 router.get("/check-quota", dailyMarkController.checkQuota);
 
 // ✅ NEW: Get Completed Surahs

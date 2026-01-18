@@ -80,6 +80,13 @@ exports.createSection = async (req, res) => {
     // ============================================
     if (sectionData.group) {
         
+        // ✅ V7: Current Week Only Check (أول فحص)
+        const currentWeekCheck = sequenceService.checkCurrentWeekOnly(sectionData.date);
+        if (!currentWeekCheck.isValid) {
+             logger.warn("currentWeekCheck failed:", currentWeekCheck.message);
+             return sendError(res, currentWeekCheck.message, 400);
+        }
+
         // 0. Daily Limit Check (One Section Per Day)
         const dailyCheck = await sequenceService.checkDailyQuota(
             sectionData.group,

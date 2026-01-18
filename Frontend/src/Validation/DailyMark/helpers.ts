@@ -82,6 +82,28 @@ export const validateGroupId = (groupId: string | null | undefined): {
 // DATE VALIDATION - التحقق من التاريخ
 // ============================================================================
 
+import * as yup from 'yup';
+
+/**
+ * Yup Schema for date format validation (YYYY-MM-DD)
+ */
+export const dateFormatSchema = yup.string().matches(
+  /^\d{4}-\d{2}-\d{2}$/,
+  'صيغة التاريخ غير صحيحة (YYYY-MM-DD)'
+);
+
+/**
+ * Validate date format (YYYY-MM-DD)
+ */
+export const validateDateFormat = async (date: string): Promise<boolean> => {
+  try {
+    await dateFormatSchema.validate(date);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 /**
  * Check if a value is a valid date
  */

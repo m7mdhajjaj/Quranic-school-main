@@ -1,11 +1,10 @@
 import { useMemo } from 'react';
-import type { QuranSegmentUI } from '../../types/types';
-import { validateSectionConsistency } from '../../utils/validationLogic';
+import { validateSectionConsistency, type QuranSegmentUI } from '@/Validation/DailyMark';
 
 /**
- * ✅ V3 Compatible - UI validation hook
+ * ✅ V7 Compatible - UI validation hook
  * Provides quick feedback for consistency errors
- * Backend handles deeper date-aware validation
+ * Backend handles deeper date-aware validation via SectionSequenceService
  */
 export const useSectionValidation = (
   memorizationMeta: QuranSegmentUI[] | undefined, 

@@ -10,8 +10,7 @@
 //    ├── updateSection()         → تعديل مقطع
 //    ├── deleteSection()         → حذف مقطع
 //    ├── bulkCreateSections()    → إنشاء مقاطع بالجملة
-//    ├── bulkDeleteSections()    → حذف مقاطع بالجملة
-//    └── repairSequence()        → إصلاح تسلسل المقاطع (AI)
+//    └── bulkDeleteSections()    → حذف مقاطع بالجملة
 //
 // 2️⃣ MARKS WRITE - تسجيل العلامات
 //    ├── setMarks()              → تسجيل علامات (Bulk)
@@ -51,7 +50,6 @@ const sectionCreateController = require("../SectionControllers/create.controller
 const sectionUpdateController = require("../SectionControllers/update.controller");
 const sectionDeleteController = require("../SectionControllers/delete.controller");
 const sectionBulkController = require("../SectionControllers/bulkCreate.controller");
-const sectionRepairController = require("../SectionControllers/repair.controller");
 const sectionGetController = require("../SectionControllers/get.controller");
 
 // ============================================================================
@@ -64,7 +62,6 @@ module.exports = {
   deleteSection: sectionDeleteController.deleteSection,
   bulkCreateSections: sectionBulkController.bulkCreateSections,
   bulkDeleteSections: sectionDeleteController.bulkDeleteSections,
-  repairSequence: sectionRepairController.repairSequence,
 
   // ========== MARKS WRITE (من ملفات محلية) ==========
   setMarks: setMarksController.setMarks,

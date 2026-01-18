@@ -1,11 +1,11 @@
 // ============================================================================
-// Delete Section Controller
+// Delete Section Controller (V7)
 // ============================================================================
 const Section = require("../../../schema/DailyMark/Section");
 const DailyMark = require("../../../schema/DailyMark/DailyMark");
 const TimeTable = require("../../../schema/TimeTable");
+const Group = require("../../../schema/Group");
 const { notifySectionDeleted } = require("../../../Notifications");
-const smartScheduler = require("../../../services/DailyMark/SmartSchedulerService");
 const { createLogger } = require("../../../utils/logger");
 const {
   sendSuccess,
@@ -16,7 +16,77 @@ const {
 const logger = createLogger('SectionDelete');
 
 /**
+ * ============================================================================
+ * إعادة حساب السورة الفعالة بعد حذف مقطع
+ * ============================================================================
+ * عند حذف مقطع، يجب إعادة حساب:
+ * 1. آخر آية تم الوصول إليها (lastAyahEnd)
+ * 2. حالة الإكمال (isCompleted)
+ * 3. إذا لم تعد هناك مقاطع للسورة، يتم مسحها
+ */
+async function recalculateActiveSurah(groupId, type) {
+  try {
+    const group = await Group.findById(groupId);
+    if (!group) return;
+
+    const activeSurah = type === 'memorization' 
+      ? group.activeMemorizationSurah 
+      : group.activeReviewSurah;
+
+    if (!activeSurah || !activeSurah.surahNumber) return;
+
+    const metaField = type === 'memorization' ? 'memorizationMeta' : 'reviewMeta';
+    
+    // البحث عن جميع المقاطع المتبقية لهذه السورة
+    const remainingSections = await Section.find({
+      groupId: groupId,
+      [`${metaField}.surahNumber`]: activeSurah.surahNumber
+    }).select(metaField);
+
+    // إذا لم تعد هناك مقاطع، مسح السورة الفعالة
+    if (remainingSections.length === 0) {
+      const updateField = type === 'memorization' 
+        ? 'activeMemorizationSurah' 
+        : 'activeReviewSurah';
+      
+      await Group.findByIdAndUpdate(groupId, {
+        [updateField]: {
+          surahNumber: null,
+          surahName: null,
+          startedAt: null,
+          lastAyahEnd: 0,
+          isCompleted: false,
+          completedAt: null,
+        }
+      });
+      
+      logger.success(`🧹 [${type}] تم مسح السورة ${activeSurah.surahNumber} - لا توجد مقاطع متبقية`);
+      return;
+    }
+
+    // حساب آخر آية من جميع المقاطع المتبقية
+    let maxAyahEnd = 0;
+    for (const section of remainingSections) {
+      const segments = section[metaField] || [];
+      for (const seg of segments) {
+        if (seg.surahNumber === activeSurah.surahNumber && seg.ayahEnd > maxAyahEnd) {
+          maxAyahEnd = seg.ayahEnd;
+        }
+      }
+    }
+
+    // تحديث lastAyahEnd
+    await Group.updateLastAyah(groupId, maxAyahEnd, type);
+    
+    logger.info(`📊 [${type}] تم تحديث السورة ${activeSurah.surahNumber} - آخر آية: ${maxAyahEnd}`);
+  } catch (error) {
+    logger.error(`❌ خطأ في إعادة حساب السورة الفعالة (${type}):`, error);
+  }
+}
+
+/**
  * Delete a section
+ * V7: يعيد حساب السورة الفعالة بعد الحذف
  */
 exports.deleteSection = async (req, res) => {
   try {
@@ -24,6 +94,10 @@ exports.deleteSection = async (req, res) => {
     if (!section) {
       return sendNotFound(res, "المقطع");
     }
+
+    const groupId = section.groupId;
+    const hasMemorization = section.memorizationMeta && section.memorizationMeta.length > 0;
+    const hasReview = section.reviewMeta && section.reviewMeta.length > 0;
 
     // ✅ حذف TimeTable المرتبط (إذا وجد)
     if (section.timetableId) {
@@ -45,6 +119,16 @@ exports.deleteSection = async (req, res) => {
       Section.findByIdAndDelete(req.params.id)
     ]);
 
+    // ✅ V7: إعادة حساب السور الفعالة بعد الحذف
+    if (groupId) {
+      if (hasMemorization) {
+        await recalculateActiveSurah(groupId, 'memorization');
+      }
+      if (hasReview) {
+        await recalculateActiveSurah(groupId, 'review');
+      }
+    }
+
     sendSuccess(res, { 
         deletedId: req.params.id
     }, "تم حذف المقطع بنجاح.");
@@ -57,6 +141,7 @@ exports.deleteSection = async (req, res) => {
  * Bulk delete sections
  * @route DELETE /api/daily-marks/sections/bulk
  * @body { sectionIds: string[] }
+ * V7: يعيد حساب السور الفعالة لكل حلقة متأثرة
  */
 exports.bulkDeleteSections = async (req, res) => {
   try {
@@ -68,8 +153,28 @@ exports.bulkDeleteSections = async (req, res) => {
 
     logger.debug(`بدء حذف ${sectionIds.length} مقطع...`);
 
-    // جلب المقاطع للحصول على timetableIds
-    const sections = await Section.find({ _id: { $in: sectionIds } }).select('timetableId group');
+    // جلب المقاطع للحصول على timetableIds و groupIds
+    const sections = await Section.find({ _id: { $in: sectionIds } })
+      .select('timetableId group groupId memorizationMeta reviewMeta');
+    
+    // جمع الحلقات المتأثرة
+    const affectedGroups = new Map(); // groupId -> { hasMemorization, hasReview }
+    
+    for (const section of sections) {
+      if (section.groupId) {
+        const groupId = section.groupId.toString();
+        const existing = affectedGroups.get(groupId) || { hasMemorization: false, hasReview: false };
+        
+        if (section.memorizationMeta && section.memorizationMeta.length > 0) {
+          existing.hasMemorization = true;
+        }
+        if (section.reviewMeta && section.reviewMeta.length > 0) {
+          existing.hasReview = true;
+        }
+        
+        affectedGroups.set(groupId, existing);
+      }
+    }
     
     // جمع timetableIds المرتبطة
     const timetableIds = sections
@@ -100,11 +205,22 @@ exports.bulkDeleteSections = async (req, res) => {
     const sectionsResult = await Section.deleteMany({ _id: { $in: sectionIds } });
     logger.success(`تم حذف ${sectionsResult.deletedCount} مقطع`);
 
+    // ✅ V7: إعادة حساب السور الفعالة لكل حلقة متأثرة
+    for (const [groupId, types] of affectedGroups) {
+      if (types.hasMemorization) {
+        await recalculateActiveSurah(groupId, 'memorization');
+      }
+      if (types.hasReview) {
+        await recalculateActiveSurah(groupId, 'review');
+      }
+    }
+
     sendSuccess(res, { 
       deletedCount: sectionsResult.deletedCount,
       deletedSectionIds: sectionIds,
       deletedTimeTables: timetableIds.length,
-      deletedMarks: marksResult.deletedCount
+      deletedMarks: marksResult.deletedCount,
+      recalculatedGroups: affectedGroups.size
     }, `تم حذف ${sectionsResult.deletedCount} مقطع بنجاح.`);
   } catch (error) {
     logger.error("Error in bulkDeleteSections:", error);

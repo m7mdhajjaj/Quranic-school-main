@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * Section Validation - Frontend UI Layer
+ * Section Validation - Frontend UI Layer (V7)
  * ============================================================================
  * 
  * تحقق المقاطع - يطابق Backend DailyMarksSectionValidation.js
@@ -11,10 +11,14 @@
  * - POST /api/daily-marks/sections/complete-surah    → validateActiveSurahData
  * - POST /api/daily-marks/sections/reset-active-surah → validateActiveSurahData
  * 
- * V3 Features:
- * ✅ Backfilling Support: No date restrictions
+ * V7 Features:
  * ✅ UI Validation Only: Quick feedback before API call
- * ✅ Backend validates: Sequence integrity, neighbor bridging, Active Surah
+ * ✅ Backend validates via SectionSequenceService:
+ *    - Current week only (Sat-Fri)
+ *    - Daily/Weekly quotas
+ *    - Flexible review ranges (1-50 ayahs)
+ *    - Review cannot exceed last memorized
+ *    - Active Surah enforcement
  */
 
 import * as yup from 'yup';
@@ -84,11 +88,10 @@ export const validateSectionData = (data: SectionFormData): {
   const errors: string[] = [];
   const sanitizedData = sanitizeSectionData(data);
 
-  // Check date
+  // ✅ V7: Date validation moved to useAutoValidateSchedule hook
+  // No need to duplicate here - just check if present
   if (!isRequired(data.date)) {
     errors.push('التاريخ مطلوب');
-  } else if (!/^\d{4}-\d{2}-\d{2}$/.test(data.date)) {
-    errors.push('صيغة التاريخ غير صحيحة (YYYY-MM-DD)');
   }
 
   // Check at least one section
@@ -139,20 +142,15 @@ export const quranSegmentSchema = yup.object<QuranSegmentData>({
  * Validation schema for creating/updating sections
  * Matches Backend validateDailyMarksSectionData middleware
  * 
- * ✅ V3: UI-layer validation only (format checks + basic UX)
- * - Date format validation (YYYY-MM-DD)
- * - No past-date restriction (backfilling allowed)
+ * ✅ V7: UI-layer validation only (format checks + basic UX)
+ * - Date format validation moved to useAutoValidateSchedule hook
  * - Basic consistency checks for immediate UX feedback
  */
 export const sectionValidationSchema = yup.object<SectionFormData>({
   date: yup
     .string()
-    .required('التاريخ مطلوب')
-    .matches(
-      /^\d{4}-\d{2}-\d{2}$/,
-      'صيغة التاريخ غير صحيحة (YYYY-MM-DD)'
-    ),
-    // ✅ V3: No .min(today) restriction - backfilling is allowed
+    .required('التاريخ مطلوب'),
+    // ✅ V7: Format validation handled by useAutoValidateSchedule hook
 
   memorizationMeta: yup.array().of(quranSegmentSchema).optional(),
   reviewMeta: yup.array().of(quranSegmentSchema).optional(),
@@ -247,3 +245,69 @@ export const activeSurahValidationSchema = yup.object<ActiveSurahFormData>({
     .required('نوع السورة مطلوب')
     .oneOf(['memorization', 'review'], 'النوع يجب أن يكون memorization أو review'),
 });
+
+// ============================================================================
+// CONSISTENCY VALIDATION - التحقق من الاتساق (V7)
+// ============================================================================
+
+/**
+ * UI Segment type (with error field)
+ */
+export interface QuranSegmentUI extends QuranSegmentData {
+  error?: string;
+}
+
+/**
+ * Validates the consistency between memorization and review segments.
+ * Uses the shared Yup schema but returns a clean array of error messages.
+ * 
+ * ✅ V7: This is UI-layer validation only (quick feedback)
+ * Backend performs deeper date-aware validation in SectionSequenceService
+ */
+export const validateSectionConsistency = (
+  memorizationMeta: QuranSegmentUI[] = [],
+  reviewMeta: QuranSegmentUI[] = []
+): string[] => {
+  const errors: string[] = [];
+
+  // 1. Run Yup Schema Validation for Consistency
+  try {
+    sectionValidationSchema.validateSync(
+      {
+        date: '2023-01-01', // Dummy date to clear the date check
+        memorizationMeta,
+        reviewMeta,
+      },
+      { abortEarly: false }
+    );
+  } catch (err: unknown) {
+    if (err instanceof yup.ValidationError) {
+      err.inner.forEach((validationError) => {
+        // We filter for reviewMeta errors or general consistency checks
+        if (
+          validationError.path === 'reviewMeta' ||
+          validationError.type === 'consistency-check'
+        ) {
+           // Avoid duplicates if possible
+           if (!errors.includes(validationError.message)) {
+               errors.push(validationError.message);
+           }
+        }
+      });
+    }
+  }
+
+  // 2. Aggregate internal segment-specific errors
+  const collectSegmentErrors = (segments: QuranSegmentUI[], label: string) => {
+    segments.forEach((seg, idx) => {
+        if (seg.error && !errors.includes(seg.error)) {
+            errors.push(`${label} (${idx + 1}): ${seg.error}`);
+        }
+    });
+  };
+
+  collectSegmentErrors(reviewMeta, 'المراجعة');
+  collectSegmentErrors(memorizationMeta, 'الحفظ');
+
+  return errors;
+};

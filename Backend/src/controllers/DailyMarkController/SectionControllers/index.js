@@ -2,7 +2,7 @@
 // SectionControllers/index.js - Section Controllers Entry Point
 // ============================================================================
 //
-// 📖 هيكل نظام المقاطع (Section System)
+// 📖 هيكل نظام المقاطع (Section System) - V7
 // ============================================================================
 //
 // 1️⃣ GET OPERATIONS - عمليات الجلب
@@ -28,13 +28,9 @@
 //    └── bulkDeleteSections()    → حذف مقاطع متعددة
 //
 // 5️⃣ BULK OPERATIONS - عمليات بالجملة
-//    ├── bulkCreateSections()    → إنشاء مقاطع متعددة
-//    └── bulkDeleteSections()    → حذف مقاطع متعددة (أيضاً في DELETE)
+//    └── bulkCreateSections()    → إنشاء مقاطع متعددة
 //
-// 6️⃣ REPAIR OPERATIONS - عمليات الإصلاح (AI)
-//    └── repairSequence()        → إصلاح تسلسل المقاطع
-//
-// 7️⃣ SURAH MANAGEMENT - إدارة السور
+// 6️⃣ SURAH MANAGEMENT - إدارة السور
 //    ├── completeSurah()         → إكمال سورة يدوياً
 //    └── resetActiveSurah()      → إعادة تعيين السورة الفعالة
 //
@@ -66,11 +62,6 @@ const deleteController = require("./delete.controller");
 const bulkCreateController = require("./bulkCreate.controller");
 
 // ============================================================================
-// REPAIR OPERATIONS - عمليات الإصلاح (AI)
-// ============================================================================
-const repairController = require("./repair.controller");
-
-// ============================================================================
 // EXPORTS - تصدير جميع الدوال
 // ============================================================================
 module.exports = {
@@ -88,7 +79,4 @@ module.exports = {
 
   // ========== BULK ==========
   ...bulkCreateController,
-
-  // ========== REPAIR (AI) ==========
-  ...repairController,
 };
