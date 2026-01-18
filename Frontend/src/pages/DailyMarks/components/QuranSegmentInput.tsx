@@ -17,6 +17,8 @@ interface QuranSegmentInputProps {
   type?: 'memorization' | 'review'; // For auto-suggestions
   excludeId?: string; // For correct suggestions during edit
   completedSurahs?: CompletedSurah[]; // New: For validation
+  date?: string; // ✅ V8: Pass date for context-aware suggestions
+  onValidationError?: (error: string | null) => void; // ✅ V8: Callback for validation errors
 }
 
 // Normalization Helper
@@ -39,16 +41,18 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
   groupName,
   type,
   excludeId,
-  completedSurahs = []
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  completedSurahs = [],
+  date, // ✅ Receive date from parent
+  onValidationError // ✅ V8: Callback for validation errors
 }) => {
   // استخدم الهوك لفصل المنطق
+  // ✅ V8: reviewLimit و expectedStart لم تعد تستخدم للـ validation (Backend handles it)
   const {
     surahInput,
     isFocused,
     setIsFocused,
     suggestions,
-    expectedStart,
-    reviewLimit,
     handleUpdate,
     handleInputChange,
     selectSurah,
@@ -57,7 +61,16 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
     currentSurah,
     maxAyah,
     segment,
-  } = useQuranSegmentInputLogic({ segments, groupName, type, onChange, excludeId });
+    reviewLimit, // ✅ Retrive reviewLimit for input constraints
+    noMemorizationError // ✅ V8: Error when no memorization exists
+  } = useQuranSegmentInputLogic({ segments, groupName, type, onChange, excludeId, date });
+
+  // ✅ V8: Notify parent of validation errors
+  React.useEffect(() => {
+    if (onValidationError) {
+      onValidationError(noMemorizationError);
+    }
+  }, [noMemorizationError, onValidationError]);
 
   // Dynamic border/ring colors based on colorClass prop
   const activeRing = colorClass === 'amber' ? 'focus:ring-amber-500' : 'focus:ring-emerald-500';
@@ -188,67 +201,54 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
           <input
             type="number"
             min={1}
-            max={type === 'review' && reviewLimit ? reviewLimit : maxAyah}
-            disabled={!segment.surahNumber || (type === 'review' && !!reviewLimit && !!expectedStart && expectedStart > reviewLimit)}
+            max={maxAyah}
+            disabled={!segment.surahNumber}
             className={`w-full rounded-lg border text-sm font-bold py-2 px-1 text-center transition-all outline-none 
                 disabled:bg-gray-50 disabled:border-gray-50 disabled:text-gray-400
                 ${
-                     (type === 'review' && reviewLimit && expectedStart && expectedStart > reviewLimit) ? 'bg-emerald-50 border-emerald-100 text-emerald-700 cursor-not-allowed opacity-80' : // Completed
-                     (type === 'review' && reviewLimit && segment.ayahStart && segment.ayahStart > reviewLimit) ? 'border-red-300 bg-red-50 text-red-900' :
-                     (expectedStart && segment.ayahStart && segment.ayahStart > expectedStart) ? 'border-amber-300 bg-amber-50 text-amber-900' : 
                      (!segment.ayahStart && segment.surahNumber) ? 'border-red-200 bg-red-50/30' : 
                      `border-gray-100 bg-white hover:border-gray-200 ${activeBorder} ${activeRing}`
             }`}
-            placeholder={type === 'review' && reviewLimit && expectedStart && expectedStart > reviewLimit ? "✓" : "1"}
-            value={type === 'review' && reviewLimit && expectedStart && expectedStart > reviewLimit ? "" : (segment.ayahStart || '')}
+            placeholder="1"
+            value={segment.ayahStart || ''}
             onChange={(e) => handleUpdate('ayahStart', e.target.value)}
           />
         </div>
 
         {/* Ayah End */}
-        <div className="w-[85px] shrink-0">
+        <div className="w-[85px] shrink-0 relative">
           <label className="block text-[11px] font-bold text-gray-500 mb-1.5 text-center">
             إلى <span className="text-red-500">*</span>
           </label>
           <input
             type="number"
             min={segment.ayahStart || 1}
+            // ✅ V8: Use reviewLimit if available (max encoded by backend logic), otherwise Surah max
             max={type === 'review' && reviewLimit ? reviewLimit : maxAyah}
-            disabled={!segment.surahNumber || (type === 'review' && !!reviewLimit && !!expectedStart && expectedStart > reviewLimit)}
+            disabled={!segment.surahNumber}
             className={`w-full rounded-lg border text-sm font-bold py-2 px-1 text-center transition-all outline-none 
                 disabled:bg-gray-50 disabled:border-gray-50 disabled:text-gray-400
                 ${
-                (type === 'review' && reviewLimit && expectedStart && expectedStart > reviewLimit) ? 'bg-emerald-50 border-emerald-100 text-emerald-700 cursor-not-allowed opacity-80' : // Completed
-                (type === 'review' && reviewLimit && segment.ayahEnd && segment.ayahEnd > reviewLimit) ? 'border-red-300 bg-red-50 text-red-900' :
                 !segment.ayahEnd && segment.surahNumber ? 'border-red-200 bg-red-50/30' : 
                 `border-gray-100 bg-white hover:border-gray-200 ${activeBorder} ${activeRing}`
             }`}
-            placeholder={type === 'review' && reviewLimit && expectedStart && expectedStart > reviewLimit ? "✓" : maxAyah.toString()}
-            value={type === 'review' && reviewLimit && expectedStart && expectedStart > reviewLimit ? "" : (segment.ayahEnd || '')}
+            placeholder={type === 'review' && reviewLimit ? reviewLimit.toString() : maxAyah.toString()}
+            value={segment.ayahEnd || ''}
             onChange={(e) => handleUpdate('ayahEnd', e.target.value)}
           />
+          
+          {/* Review Limit Hint */}
+          {type === 'review' && reviewLimit && segment.surahNumber && (
+             <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-1 w-max z-10">
+                 <span className="text-[9px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full border border-blue-100 shadow-sm whitespace-nowrap">
+                   حد المراجعة: {reviewLimit}
+                 </span>
+             </div>
+           )}
         </div>
       </div>
       
-      {/* Review Limit Warning */}
-      {type === 'review' && reviewLimit !== null && (
-          <div className="mt-2 text-center text-xs">
-              {reviewLimit === 0 ? (
-                  <span className="font-bold text-red-500 bg-red-50 py-1 px-3 rounded-lg inline-block border border-red-100">
-                      ⚠️ لم يتم حفظ هذه السورة بعد!
-                  </span>
-              ) : (segment.ayahStart && segment.ayahStart > reviewLimit) ? (
-                  <span className="font-bold text-emerald-600 bg-emerald-50 py-1 px-3 rounded-lg inline-block border border-emerald-100">
-                      🎉 تم مراجعة كل الحفظ (حتى آية {reviewLimit})
-                  </span>
-              ) : (
-                  <span className="text-gray-400">
-                      * أقصى حد للمراجعة هو آية {reviewLimit}
-                  </span>
-              )}
-          </div>
-      )}
-
+      {/* ✅ V8: Backend handles all review validation - removed frontend real-time validation */}
 
       
       {!segment.surahNumber && (

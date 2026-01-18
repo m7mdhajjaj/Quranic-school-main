@@ -27,6 +27,20 @@ exports.updateSection = async (req, res) => {
     // Use validated data from middleware
     const updateData = req.validatedData || req.body;
 
+    // 🔍 LOG: طباعة البيانات الواردة
+    console.log('\n========== UPDATE SECTION START ==========');
+    console.log('📥 Section ID:', req.params.id);
+    console.log('📥 Current Section Data:');
+    console.log('   - date:', section.date);
+    console.log('   - group:', section.group);
+    console.log('   - memorizationMeta:', JSON.stringify(section.memorizationMeta, null, 2));
+    console.log('   - reviewMeta:', JSON.stringify(section.reviewMeta, null, 2));
+    console.log('📥 Update Data:');
+    console.log('   - date:', updateData.date);
+    console.log('   - group:', updateData.group);
+    console.log('   - memorizationMeta:', JSON.stringify(updateData.memorizationMeta, null, 2));
+    console.log('   - reviewMeta:', JSON.stringify(updateData.reviewMeta, null, 2));
+
     // ✅ جلب groupId من اسم الحلقة (إذا تم تحديث اسم الحلقة)
     if (updateData.group && updateData.group !== section.group) {
       const groupDoc = await Group.findOne({ name: updateData.group.trim() });

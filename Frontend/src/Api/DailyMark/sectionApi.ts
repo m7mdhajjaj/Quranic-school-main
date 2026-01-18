@@ -201,14 +201,23 @@ export const updateSection = async (
   sectionData: Partial<CreateSectionData>
 ): Promise<(Section & { meta?: any }) | null> => {
   try {
+    // 🔍 LOG: طباعة البيانات قبل الإرسال للـ API
+    console.log('🌐 [sectionApi.updateSection] Sending update request:');
+    console.log('   - Section ID:', sectionId);
+    console.log('   - Payload:', JSON.stringify(sectionData, null, 2));
+    
     const response = await api.put(`/daily-marks/sections/${sectionId}`, sectionData);
+    
+    console.log('✅ [sectionApi.updateSection] Response:', JSON.stringify(response.data, null, 2));
+    
     const data = response.data.data || response.data;
     if (response.data.meta) {
         return { ...data, meta: response.data.meta };
     }
     return data;
-  } catch (error) {
-    console.error("Failed to update section:", error);
+  } catch (error: any) {
+    console.error("❌ [sectionApi.updateSection] Failed:", error);
+    console.error("   - Error Response:", error.response?.data);
     throw error;
   }
 };
@@ -279,11 +288,12 @@ export const getLastSegment = async (
   group: string, 
   surah: number, 
   type: 'memorization' | 'review',
-  excludeId?: string
+  excludeId?: string,
+  date?: string
 ): Promise<{ nextStart: number; lastSegment?: QuranSegment; suggestedEnd?: number; maxMemorized?: number } | null> => {
   try {
     const response = await api.get('/daily-marks/sections/last-segment', {
-      params: { group, surah, type, excludeId }
+      params: { group, surah, type, excludeId, date }
     });
     if (response.data.success) {
       return response.data.data;

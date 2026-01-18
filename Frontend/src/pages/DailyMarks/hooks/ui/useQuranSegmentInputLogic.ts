@@ -4,12 +4,13 @@ import { getLastSegment } from "@/Api/DailyMark/sectionApi";
 import { normalizeText } from "@/pages/DailyMarks/utils/normalizeText";
 import type { QuranSegmentUI } from "../types/types";
 
-export function useQuranSegmentInputLogic({ segments = [], groupName, type, onChange, excludeId }: {
+export function useQuranSegmentInputLogic({ segments = [], groupName, type, onChange, excludeId, date }: {
   segments?: QuranSegmentUI[];
   groupName?: string;
   type?: 'memorization' | 'review';
   onChange: (segments: QuranSegmentUI[]) => void;
   excludeId?: string;
+  date?: string;
 }) {
   const segment: QuranSegmentUI = segments[0] || { surahNumber: undefined, ayahStart: undefined, ayahEnd: undefined } as QuranSegmentUI;
   const [surahInput, setSurahInput] = useState('');
@@ -17,6 +18,7 @@ export function useQuranSegmentInputLogic({ segments = [], groupName, type, onCh
   const [suggestions, setSuggestions] = useState<typeof quranSurahs>([]);
   const [expectedStart, setExpectedStart] = useState<number | null>(null);
   const [reviewLimit, setReviewLimit] = useState<number | null>(null);
+  const [noMemorizationError, setNoMemorizationError] = useState<string | null>(null);
   const isInternalUpdate = useRef(false);
 
   useEffect(() => {
@@ -33,32 +35,52 @@ export function useQuranSegmentInputLogic({ segments = [], groupName, type, onCh
     if (groupName && (type === 'memorization' || type === 'review') && segment.surahNumber) {
       
       // Use the actual type to get specific suggestions (Strict Mode)
-      getLastSegment(groupName, segment.surahNumber, type, excludeId).then(suggestion => {
+      // ✅ V8: Pass date to ensure review suggestions respect the selected date (exclude same day)
+      getLastSegment(groupName, segment.surahNumber, type, excludeId, date).then(suggestion => {
         if (suggestion) {
           const nextStart = suggestion.nextStart || 1;
           
           if (type === 'memorization') {
               setExpectedStart(nextStart);
               setReviewLimit(null);
+              setNoMemorizationError(null);
           } else if (type === 'review') {
               // For review: nextStart is the start of the next review cycle
               setExpectedStart(nextStart); 
               // API now returns maxMemorized specifically for review context
-              setReviewLimit(suggestion.maxMemorized || null);
+              const maxMem = suggestion.maxMemorized || 0;
+              setReviewLimit(maxMem > 0 ? maxMem : null);
+              
+              // ✅ V8: Check if no memorization exists for this surah
+              if (maxMem === 0) {
+                const surahName = quranSurahs.find(s => s.number === segment.surahNumber)?.name || segment.surahNumber;
+                setNoMemorizationError(`⚠️ لا يوجد حفظ سابق لسورة ${surahName}. يجب حفظ السورة أولاً قبل مراجعتها.`);
+              } else {
+                setNoMemorizationError(null);
+              }
           }
         } else {
           setExpectedStart(1);
           setReviewLimit(null);
+          // ✅ V8: No suggestion means no memorization for review
+          if (type === 'review') {
+            const surahName = quranSurahs.find(s => s.number === segment.surahNumber)?.name || segment.surahNumber;
+            setNoMemorizationError(`⚠️ لا يوجد حفظ سابق لسورة ${surahName}. يجب حفظ السورة أولاً قبل مراجعتها.`);
+          } else {
+            setNoMemorizationError(null);
+          }
         }
       }).catch(() => {
         setExpectedStart(null);
         setReviewLimit(null);
+        setNoMemorizationError(null);
       });
     } else {
       setExpectedStart(null);
       setReviewLimit(null);
+      setNoMemorizationError(null);
     }
-  }, [segment.surahNumber, groupName, type, excludeId]);
+  }, [segment.surahNumber, groupName, type, excludeId, date]);
 
   const handleUpdate = (field: keyof QuranSegmentUI, value: number | string, surahData?: { number: number, name: string }) => {
     let newSegment: QuranSegmentUI = { ...segment };
@@ -111,11 +133,9 @@ export function useQuranSegmentInputLogic({ segments = [], groupName, type, onCh
                  updated = true;
             } else if (type === 'review' && !suggestion.suggestedEnd) {
                  if (suggestion.maxMemorized && suggestion.maxMemorized < 9999) {
-                     // Fallback: If starting from 1, suggest max
-                     if (updatedSegment.ayahStart === 1) {
-                         updatedSegment.ayahEnd = suggestion.maxMemorized;
-                         updated = true;
-                     }
+                     // ✅ V8: Always default to maxMemorized for easier bulk review
+                     updatedSegment.ayahEnd = suggestion.maxMemorized;
+                     updated = true;
                  }
             }
             
@@ -216,6 +236,7 @@ export function useQuranSegmentInputLogic({ segments = [], groupName, type, onCh
     setExpectedStart,
     reviewLimit,
     setReviewLimit,
+    noMemorizationError,
     handleUpdate,
     handleInputChange,
     selectSurah,

@@ -233,7 +233,7 @@ exports.getFilteredSections = async (req, res) => {
  */
 exports.getLastSegment = async (req, res) => {
   try {
-    const { group, surah, type, excludeId } = req.query;
+    const { group, surah, type, excludeId, date } = req.query;
     
     if (!group || !surah || !type) {
       return res.status(400).json({ success: false, message: "Missing required params: group, surah, type" });
@@ -252,8 +252,13 @@ exports.getLastSegment = async (req, res) => {
     const startPoint = result ? result.nextStart : 1;
 
     if (type === 'review') {
-        const memProgress = await sequenceService.getLastProgress(group, surahNum, 'memorization');
-        maxMemorized = memProgress ? memProgress.lastEnd : 0;
+        // ✅ Fix: Pass excludeId to ignore current section
+        // ✅ V8: Pass limitDateKey to ignore TODAY'S memorization (Review < Today rule)
+        const targetDate = date ? new Date(date) : new Date();
+        const limitDateKey = sequenceService.toDateKeyLocal(targetDate);
+
+        const memProgress = await sequenceService.getMaxProgress(group, surahNum, 'memorization', excludeId, limitDateKey);
+        maxMemorized = memProgress ? memProgress.maxEnd : 0;
 
         // Try to find the Exact Memorization Segment that starts at 'startPoint'
         suggestedEnd = await sequenceService.getMatchingMemorizationEnd(group, surahNum, startPoint);
@@ -404,6 +409,16 @@ exports.checkQuota = async (req, res) => {
         success: false, 
         message: "Missing required params: group, date" 
       });
+    }
+
+    // ✅ V8: Check Current Week Only FIRST
+    const weekCheck = sequenceService.checkCurrentWeekOnly(date);
+    if (!weekCheck.isValid) {
+        return sendSuccess(res, { 
+            allowed: false,
+            reason: 'week_limit',
+            message: weekCheck.message 
+        });
     }
 
     // 1. Check Weekly Quota

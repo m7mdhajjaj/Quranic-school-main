@@ -4,7 +4,7 @@
  * ============================================================================
  * 
  * V7: Backend handles all validation via SectionSequenceService
- * This hook now only validates date format on frontend
+ * Frontend no longer needs to validate - just return valid state
  * 
  * Full validation rules in Backend:
  * - Current week only (Sat-Fri)
@@ -13,8 +13,7 @@
  * - Review max boundary
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { validateDateFormat } from '@/Validation/DailyMark';
+import { useState, useCallback } from 'react';
 
 export interface SegmentData {
   surahNumber: number;
@@ -34,12 +33,13 @@ export interface AlternativeDateOption {
 export const useAutoValidateSchedule = (
   _groupId: string | undefined,
   _segments: SegmentData[],
-  date: string | undefined,
-  debounceMs: number = 600
+  _date: string | undefined,
+  _debounceMs: number = 600
 ) => {
-  const [isValidating, setIsValidating] = useState(false);
-  const [allValid, setAllValid] = useState(true);
-  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  // ✅ V7: Backend handles all validation - Frontend always returns valid
+  const [isValidating] = useState(false);
+  const [allValid] = useState(true);
+  const [validationErrors] = useState<string[]>([]);
   const [suggestedAlternatives] = useState<AlternativeDateOption[]>([]);
   const [suggestedAlternative] = useState<{
     date: string;
@@ -48,42 +48,9 @@ export const useAutoValidateSchedule = (
     weekNumber?: number;
     reason: string;
   } | null>(null);
-  
-  const debounceRef = useRef<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-
-    // ✅ لا تحقق إذا لم يكن هناك تاريخ
-    if (!date) {
-      setAllValid(true);
-      setValidationErrors([]);
-      setIsValidating(false);
-      return;
-    }
-
-    // ✅ فقط تحقق من صيغة التاريخ
-    debounceRef.current = setTimeout(async () => {
-      setIsValidating(true);
-
-      // V7: Just validate date format locally
-      const isValid = await validateDateFormat(date);
-      setAllValid(isValid);
-      setValidationErrors(isValid ? [] : ['صيغة التاريخ غير صحيحة (YYYY-MM-DD)']);
-      setIsValidating(false);
-    }, debounceMs);
-
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [date, debounceMs]);
 
   const clearValidation = useCallback(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    setAllValid(true);
-    setValidationErrors([]);
-    setIsValidating(false);
+    // No-op since we don't track validation state anymore
   }, []);
 
   return {

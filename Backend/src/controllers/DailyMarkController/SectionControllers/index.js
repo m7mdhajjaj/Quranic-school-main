@@ -62,6 +62,11 @@ const deleteController = require("./delete.controller");
 const bulkCreateController = require("./bulkCreate.controller");
 
 // ============================================================================
+// VALIDATE OPERATIONS - عمليات التحقق
+// ============================================================================
+const validateController = require("./validate.controller");
+
+// ============================================================================
 // EXPORTS - تصدير جميع الدوال
 // ============================================================================
 module.exports = {
@@ -79,4 +84,7 @@ module.exports = {
 
   // ========== BULK ==========
   ...bulkCreateController,
+
+  // ========== VALIDATE ==========
+  ...validateController,
 };

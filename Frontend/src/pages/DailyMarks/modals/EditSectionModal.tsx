@@ -1,8 +1,8 @@
 import { Modal, Button, DatePicker } from '@/components/UI';
-import { memo, useState, useEffect, useCallback } from 'react';
+import { memo, useState, useEffect } from 'react';
 import type { EditSectionModalProps } from '../types/types';
 import { useEditSectionModal } from '../hooks/modals';
-import { useSectionValidation, useAutoValidateSchedule } from '../hooks/teacher';
+import { useSectionValidation } from '../hooks/teacher';
 import { useCompletedSurahs } from '../hooks/data';
 import QuranSegmentInput from '../components/QuranSegmentInput';
 import ErrorMessageList from '../components/ErrorMessageList';
@@ -11,10 +11,11 @@ import { checkSectionQuota } from '@/Api/DailyMark/sectionApi';
 /**
  * Modal for editing an existing section
  * 
- * ✅ V3 Compatible:
+ * ✅ V7 Compatible:
  * - Date can be changed (with backend validation)
  * - Backend handles date-aware neighbor validation
  * - UI provides quick consistency feedback
+ * - Real-time review validation in QuranSegmentInput
  */
 const EditSectionModalComponent = ({
   isOpen,
@@ -36,22 +37,17 @@ const EditSectionModalComponent = ({
   // Fetch Completed Surahs for Validation
   const { completedList } = useCompletedSurahs(localSection?.group || "", isOpen);
 
-  // New: Quota Validation State
+  // Quota Validation State (includes week check from backend)
   const [quotaError, setQuotaError] = useState<string | null>(null);
+  const [reviewValidationError, setReviewValidationError] = useState<string | null>(null);
   const [isCheckingQuota, setIsCheckingQuota] = useState(false);
 
-  // New: Check Quota on Date Change
+  // Check Quota on Date Change (Backend handles week check too)
   useEffect(() => {
     if (!isOpen || !localSection?.date || !localSection?.group || !localSection?._id) return;
     
-    // Only check if date actually changed from original, OR regardless? 
-    // Always checking is safer if rules changed, but let's debounce.
-    
-    // Note: If date is same as original, backend returns true (valid).
-    
     const timer = setTimeout(async () => {
         setIsCheckingQuota(true);
-        // Pass ID to exclude itself from count
         const result = await checkSectionQuota(localSection.group, localSection.date, localSection._id); 
         setIsCheckingQuota(false);
         
@@ -72,25 +68,13 @@ const EditSectionModalComponent = ({
       localReviewMeta
   );
 
-  // 🆕 V8: Smart Scheduler Validation (Monotonic Order) with multiple alternatives
-  const {
-    isValidating: isSchedulerValidating,
-    allValid: isScheduleValid,
-    validationErrors: scheduleErrors,
-    suggestedAlternatives,
-    suggestedAlternative,
-  } = useAutoValidateSchedule(
-    localSection?.group,
-    localMemorizationMeta.filter(m => m.surahNumber && m.ayahStart && m.ayahEnd),
-    localSection?.date,
-    600 // 600ms debounce
-  );
-
-  const hasErrors = hasConsistencyErrors || !!quotaError || !isScheduleValid;
-  const allErrors = [
-    ...consistencyErrors,
-    ...scheduleErrors,
-  ];
+  // ✅ V8: hasErrors checks quota (which includes week check from backend)
+  const hasErrors = hasConsistencyErrors || !!quotaError || !!reviewValidationError;
+  const allErrors = [...consistencyErrors];
+  
+  if (reviewValidationError) {
+    allErrors.push(reviewValidationError);
+  }
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,6 +91,15 @@ const EditSectionModalComponent = ({
       // Ensure legacy fields if needed, or null them if using meta
       // For now we keep legacy fields as is or empty if not used
     };
+
+    // 🔍 LOG: طباعة البيانات قبل الإرسال
+    console.log('📤 [EditSectionModal] Submitting update:');
+    console.log('   - Section ID:', localSection._id);
+    console.log('   - Date:', localSection.date);
+    console.log('   - Group:', localSection.group);
+    console.log('   - MemorizationMeta:', JSON.stringify(localMemorizationMeta));
+    console.log('   - ReviewMeta:', JSON.stringify(localReviewMeta));
+    console.log('   - Full Payload:', JSON.stringify(payload, null, 2));
 
     // Sync with parent before submit (optional if we pass payload)
     syncWithParent(onChange);
@@ -138,13 +131,13 @@ const EditSectionModalComponent = ({
             ? 'bg-gray-400 cursor-not-allowed hover:bg-gray-400 hover:shadow-none hover:translate-y-0' 
             : 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700'
           }`}
-        disabled={isLoading || hasErrors || isCheckingQuota || isSchedulerValidating}
-        title={hasErrors ? 'يرجى تصحيح الأخطاء أولاً' : isSchedulerValidating ? 'جاري التحقق...' : 'حفظ التغييرات'}
+        disabled={isLoading || hasErrors || isCheckingQuota}
+        title={hasErrors ? 'يرجى تصحيح الأخطاء أولاً' : 'حفظ التغييرات'}
       >
-        {isLoading || isCheckingQuota || isSchedulerValidating ? (
+        {isLoading || isCheckingQuota ? (
           <span className="flex items-center justify-center gap-2">
             <span className="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-white"></span>
-            {isCheckingQuota ? 'جاري التحقق من الحصة...' : isSchedulerValidating ? 'جاري التحقق من الترتيب...' : 'جاري التحديث...'}
+            {isCheckingQuota ? 'جاري التحقق من الحصة...' : 'جاري التحديث...'}
           </span>
         ) : (
           'حفظ التغييرات'
@@ -170,11 +163,6 @@ const EditSectionModalComponent = ({
             onChange={handleDateChange}
             required
           />
-          <div className="mt-2">
-            <p className="text-xs text-slate-500 flex items-center gap-1">
-               ✅ V3: يمكن تغيير التاريخ - النظام سيتحقق من التسلسل الزمني تلقائياً
-            </p>
-          </div>
 
           {/* Quota Error Display */}
           {quotaError && (
@@ -182,44 +170,6 @@ const EditSectionModalComponent = ({
                   <span className="font-bold">⚠️ تنبيه:</span>
                   <span className="whitespace-pre-line">{quotaError}</span>
               </div>
-          )}
-
-          {/* تحذير التعارض + التاريخ المقترح */}
-          {!isScheduleValid && scheduleErrors.length > 0 && (
-            <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg text-sm">
-              <div className="flex items-start gap-2 mb-2">
-                <span className="text-lg">🔒</span>
-                <div className="flex-1">
-                  <p className="font-bold text-orange-800 mb-1">تعارض في ترتيب التواريخ:</p>
-                  {scheduleErrors.map((err, i) => (
-                    <p key={i} className="text-orange-700 text-xs whitespace-pre-line">{err}</p>
-                  ))}
-                </div>
-              </div>
-                  
-              {/* التاريخ المقترح */}
-              {suggestedAlternatives && suggestedAlternatives.length > 0 && (
-                <div className="mt-3 pt-3 border-t border-orange-200">
-                  <p className="text-emerald-700 text-xs font-medium mb-2">💡 تواريخ مقترحة:</p>
-                  <button
-                    type="button"
-                    onClick={() => handleDateChange(suggestedAlternatives[0].dateKey)}
-                    className="w-full px-4 py-3 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-all shadow-sm"
-                  >
-                    <span className="font-bold text-sm">{suggestedAlternatives[0].dateKey}</span>
-                    <span className="block text-xs mt-1 opacity-90">{suggestedAlternatives[0].dayName} - أسبوع {suggestedAlternatives[0].weekNumber}</span>
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Scheduler Validating Indicator */}
-          {isSchedulerValidating && (
-            <div className="mt-2 flex items-center gap-2 text-blue-600 text-xs">
-              <span className="inline-block animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></span>
-              جاري التحقق من صلاحية الترتيب...
-            </div>
           )}
         </div>
 
@@ -234,6 +184,7 @@ const EditSectionModalComponent = ({
              type="memorization"
              excludeId={localSection._id}
              completedSurahs={completedList.filter(s => (s.type || 'memorization') === 'memorization')}
+             date={localSection.date ? new Date(localSection.date).toISOString() : undefined}
            />
 
            <QuranSegmentInput 
@@ -245,6 +196,8 @@ const EditSectionModalComponent = ({
              type="review"
              excludeId={localSection._id}
              completedSurahs={completedList.filter(s => (s.type || 'memorization') === 'review')}
+             date={localSection.date ? new Date(localSection.date).toISOString() : undefined}
+             onValidationError={setReviewValidationError}
            />
         </div>
 

@@ -1,31 +1,29 @@
-import { useMemo } from 'react';
-import { validateSectionConsistency, type QuranSegmentUI } from '@/Validation/DailyMark';
-
 /**
- * ✅ V7 Compatible - UI validation hook
- * Provides quick feedback for consistency errors
- * Backend handles deeper date-aware validation via SectionSequenceService
+ * ============================================================================
+ * useSectionValidation Hook (V8 - Simplified)
+ * ============================================================================
+ * 
+ * V8: Backend handles ALL validation via SectionSequenceService
+ * Frontend no longer validates - just returns empty errors
+ * 
+ * All validation rules handled by Backend:
+ * - Consistency (same segment memorization + review)
+ * - Monotonic order
+ * - Quotas
+ * - Review limits
  */
+
+import { useMemo } from 'react';
+import { type QuranSegmentUI } from '@/Validation/DailyMark';
+
 export const useSectionValidation = (
-  memorizationMeta: QuranSegmentUI[] | undefined, 
-  reviewMeta: QuranSegmentUI[] | undefined
+  _memorizationMeta: QuranSegmentUI[] | undefined, 
+  _reviewMeta: QuranSegmentUI[] | undefined
 ) => {
   
-  const consistencyErrors = useMemo(() => {
-    // ✅ Don't show validation errors if both fields are empty
-    // (Prevents errors on initial modal open)
-    const hasMem = memorizationMeta && memorizationMeta.length > 0;
-    const hasRev = reviewMeta && reviewMeta.length > 0;
-    
-    // Only validate if user has entered data
-    if (!hasMem && !hasRev) {
-      return [];
-    }
-    
-    return validateSectionConsistency(memorizationMeta, reviewMeta);
-  }, [memorizationMeta, reviewMeta]);
-
-  const hasConsistencyErrors = consistencyErrors.length > 0;
+  // ✅ V8: Backend handles all validation - Frontend returns empty
+  const consistencyErrors = useMemo(() => [], []);
+  const hasConsistencyErrors = false;
 
   return {
     consistencyErrors,

@@ -43,7 +43,7 @@ const AddSectionModalComponent = ({
   // Fetch Completed Surahs for Validation
   const { completedList } = useCompletedSurahs(selectedGroup, isOpen);
 
-  // New: Quota Validation State
+  // New: Quota Validation State (includes week check from backend)
   const [quotaError, setQuotaError] = useState<string | null>(null);
   const [isCheckingQuota, setIsCheckingQuota] = useState(false);
 
@@ -55,7 +55,7 @@ const AddSectionModalComponent = ({
     }
   }, [isOpen, newSection, syncLocalState]);
 
-  // New: Check Quota on Date Change
+  // New: Check Quota on Date Change (Backend handles week check too)
   useEffect(() => {
     if (!isOpen || !newSection.date) return;
     
@@ -78,10 +78,17 @@ const AddSectionModalComponent = ({
     return () => clearTimeout(timer);
   }, [newSection.date, selectedGroup, newSection.group, isOpen]);
 
-  // Frontend Validation
-  const { consistencyErrors, hasConsistencyErrors } = useSectionValidation(
+  // ✅ V8: Review validation error (no memorization)
+  const [reviewValidationError, setReviewValidationError] = useState<string | null>(null);
+
+  // ✅ V8: Backend Real-time Validation
+  const { consistencyErrors, hasConsistencyErrors, isValidating: isValidatingSegments } = useSectionValidation(
       localMemorizationMeta, 
-      localReviewMeta
+      localReviewMeta,
+      {
+        groupName: newSection.group || selectedGroup,
+        date: newSection.date
+      }
   );
 
   // 🆕 V8: Smart Scheduler Validation (Monotonic Order) with multiple alternatives
@@ -98,10 +105,11 @@ const AddSectionModalComponent = ({
     600 // 600ms debounce
   );
 
-  const hasErrors = hasConsistencyErrors || !!quotaError || !isScheduleValid;
+  const hasErrors = hasConsistencyErrors || !!quotaError || !isScheduleValid || !!reviewValidationError;
   const allErrors = [
     ...consistencyErrors,
     ...scheduleErrors,
+    ...(reviewValidationError ? [reviewValidationError] : []),
   ];
 
   const handleFormSubmit = (e: React.FormEvent) => {
@@ -252,6 +260,7 @@ const AddSectionModalComponent = ({
              groupName={newSection.group || selectedGroup}
              type="memorization"
              completedSurahs={completedList.filter(s => (s.type || 'memorization') === 'memorization')}
+             date={newSection.date ? new Date(newSection.date).toISOString() : undefined}
            />
 
            <QuranSegmentInput 
@@ -262,6 +271,8 @@ const AddSectionModalComponent = ({
              groupName={newSection.group || selectedGroup}
              type="review"
              completedSurahs={completedList.filter(s => (s.type || 'memorization') === 'review')}
+             date={newSection.date ? new Date(newSection.date).toISOString() : undefined}
+             onValidationError={setReviewValidationError}
            />
         </div>
 
