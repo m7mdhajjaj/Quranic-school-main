@@ -24,9 +24,12 @@ export const useTestData = () => {
       setSurahsLoading(true);
       try {
         const surahsData = await getAllSurahs();
+        console.log("📚 Surahs loaded:", surahsData);
+        console.log("📚 Number of surahs:", surahsData?.length);
+        console.log("📚 Is Array?", Array.isArray(surahsData));
         setSurahs(surahsData);
       } catch (error) {
-        console.error("خطأ في جلب السور:", error);
+        console.error("❌ خطأ في جلب السور:", error);
       } finally {
         setSurahsLoading(false);
       }

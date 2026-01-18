@@ -44,13 +44,26 @@ export const getAllSurahs = async (): Promise<Surah[]> => {
   try {
     // Try to fetch from our backend first
     const response = await api.get('/quran/surahs');
-    return response.data;
-  } catch {
-    console.log('Fallback to external API for surahs');
+    console.log('🔍 Backend Response:', response.data);
+    
+    // ✅ Extract data array from backend response
+    const data = response.data?.data || response.data;
+    console.log('🔍 Extracted data:', data, 'Length:', data?.length);
+    
+    // ✅ إذا كان الـ backend فاضي، نستخدم الـ External API
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      console.log('⚠️ Backend data is empty, using external API');
+      throw new Error('Backend data is empty');
+    }
+    
+    return data;
+  } catch (error) {
+    console.log('📡 Fallback to external API for surahs');
     // Fallback to external API
     const response = await fetch('https://api.alquran.cloud/v1/surah');
-    const data = await response.json();
-    return data.data;
+    const result = await response.json();
+    console.log('✅ External API data:', result.data?.length, 'surahs');
+    return result.data;
   }
 };
 
@@ -62,7 +75,28 @@ export const getSurahWithAyahs = async (surahNumber: number): Promise<{
   try {
     // Try to fetch from our backend first
     const response = await api.get(`/quran/surah/${surahNumber}`);
-    return response.data;
+    // ✅ Extract data from backend response
+    const data = response.data?.data || response.data;
+    
+    // ✅ If backend returns formatted data directly
+    if (data.surah && data.ayahs) {
+      return data;
+    }
+    
+    // ✅ If backend returns formatted surah with ayahs array
+    if (data.ayahs) {
+      return {
+        surah: {
+          number: data.number,
+          name: data.name,
+          englishName: data.englishName,
+          numberOfAyahs: data.numberOfAyahs || data.ayahs.length,
+        },
+        ayahs: data.ayahs,
+      };
+    }
+    
+    throw new Error('Invalid response format');
   } catch {
     console.log('Fallback to external API for surah', surahNumber);
     // Fallback to external API

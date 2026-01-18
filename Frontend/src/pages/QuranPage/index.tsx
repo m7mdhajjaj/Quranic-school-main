@@ -9,7 +9,7 @@ import { useReadingSettingsSync } from "./hooks/useReadingSettingsSync";
 import { useQuranState } from "./hooks/useQuranState";
 
 const QuranPage = () => {
-  const { surahs, settings, error } = useQuranInit();
+  const { surahs, settings, loading: initLoading, error } = useQuranInit();
   const [fontSize, setFontSize] = useState(settings.fontSize);
 
   const paginationData = usePagination([], 10);
@@ -61,7 +61,14 @@ const QuranPage = () => {
           </Alert>
         )}
 
-        {!selectedSurah ? (
+        {initLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">جاري تحميل قائمة السور...</p>
+            </div>
+          </div>
+        ) : !selectedSurah ? (
           <QuranListView surahs={surahs} onSelectSurah={handleSelectSurah} />
         ) : (
           <QuranReaderView
