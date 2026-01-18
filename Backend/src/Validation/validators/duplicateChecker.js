@@ -2,6 +2,7 @@ const Student = require("../../schema/Student");
 const Teacher = require("../../schema/Teacher");
 const Admin = require("../../schema/Admin");
 const Secretary = require("../../schema/Secretary");
+const TeacherAssistant = require("../../schema/TeacherAssistant");
 const Group = require("../../schema/Group");
 
 /**
@@ -28,11 +29,12 @@ async function checkDuplicateFields(data, excludeId = null, excludeType = null) 
   try {
     // فحص رقم الهوية
     if (idNumber) {
-      const [existingStudent, existingTeacher, existingAdmin, existingSecretary] = await Promise.all([
+      const [existingStudent, existingTeacher, existingAdmin, existingSecretary, existingAssistant] = await Promise.all([
         Student.findOne({ idNumber, ...getExcludeQuery('student') }),
         Teacher.findOne({ idNumber, ...getExcludeQuery('teacher') }),
         Admin.findOne({ idNumber, ...getExcludeQuery('admin') }),
-        Secretary.findOne({ idNumber, ...getExcludeQuery('secretary') })
+        Secretary.findOne({ idNumber, ...getExcludeQuery('secretary') }),
+        TeacherAssistant.findOne({ idNumber, ...getExcludeQuery('teacherAssistant') })
       ]);
 
       if (existingStudent) {
@@ -78,15 +80,27 @@ async function checkDuplicateFields(data, excludeId = null, excludeType = null) 
           existingUserName: `${existingSecretary.firstName} ${existingSecretary.lastName}`
         };
       }
+
+      if (existingAssistant) {
+        return {
+          success: false,
+          message: `رقم الهوية "${idNumber}" مُستخدم بالفعل لمساعد مدرس في النظام`,
+          field: "idNumber",
+          duplicateValue: idNumber,
+          existingUserType: "مساعد مدرس",
+          existingUserName: `${existingAssistant.firstName} ${existingAssistant.lastName}`
+        };
+      }
     }
 
     // فحص البريد الإلكتروني
     if (email) {
-      const [existingStudent, existingTeacher, existingAdmin, existingSecretary] = await Promise.all([
+      const [existingStudent, existingTeacher, existingAdmin, existingSecretary, existingAssistant] = await Promise.all([
         Student.findOne({ email, ...getExcludeQuery('student') }),
         Teacher.findOne({ email, ...getExcludeQuery('teacher') }),
         Admin.findOne({ email, ...getExcludeQuery('admin') }),
-        Secretary.findOne({ email, ...getExcludeQuery('secretary') })
+        Secretary.findOne({ email, ...getExcludeQuery('secretary') }),
+        TeacherAssistant.findOne({ email, ...getExcludeQuery('teacherAssistant') })
       ]);
 
       if (existingStudent) {
@@ -132,15 +146,27 @@ async function checkDuplicateFields(data, excludeId = null, excludeType = null) 
           existingUserName: `${existingSecretary.firstName} ${existingSecretary.lastName}`
         };
       }
+
+      if (existingAssistant) {
+        return {
+          success: false,
+          message: `البريد الإلكتروني "${email}" مُستخدم بالفعل لمساعد مدرس في النظام`,
+          field: "email",
+          duplicateValue: email,
+          existingUserType: "مساعد مدرس",
+          existingUserName: `${existingAssistant.firstName} ${existingAssistant.lastName}`
+        };
+      }
     }
 
     // فحص رقم الهاتف
     if (phoneNumber) {
-      const [existingStudent, existingTeacher, existingAdmin, existingSecretary] = await Promise.all([
+      const [existingStudent, existingTeacher, existingAdmin, existingSecretary, existingAssistant] = await Promise.all([
         Student.findOne({ phoneNumber, ...getExcludeQuery('student') }),
         Teacher.findOne({ phoneNumber, ...getExcludeQuery('teacher') }),
         Admin.findOne({ phoneNumber, ...getExcludeQuery('admin') }),
-        Secretary.findOne({ phoneNumber, ...getExcludeQuery('secretary') })
+        Secretary.findOne({ phoneNumber, ...getExcludeQuery('secretary') }),
+        TeacherAssistant.findOne({ phoneNumber, ...getExcludeQuery('teacherAssistant') })
       ]);
 
       if (existingStudent) {
@@ -184,6 +210,17 @@ async function checkDuplicateFields(data, excludeId = null, excludeType = null) 
           duplicateValue: phoneNumber,
           existingUserType: "سكرتير",
           existingUserName: `${existingSecretary.firstName} ${existingSecretary.lastName}`
+        };
+      }
+
+      if (existingAssistant) {
+        return {
+          success: false,
+          message: `رقم الهاتف "${phoneNumber}" مُستخدم بالفعل لمساعد مدرس في النظام`,
+          field: "phoneNumber",
+          duplicateValue: phoneNumber,
+          existingUserType: "مساعد مدرس",
+          existingUserName: `${existingAssistant.firstName} ${existingAssistant.lastName}`
         };
       }
     }

@@ -1,12 +1,14 @@
 /**
  * Avatar Management Controller (Universal)
- * Handles avatar upload/get/delete for all user types (Student, Teacher, Admin)
+ * Handles avatar upload/get/delete for all user types (Student, Teacher, Admin, Secretary, TeacherAssistant)
  * Can be used by ID or by current user
  */
 
 const Student = require("../../schema/Student");
 const Teacher = require("../../schema/Teacher");
 const Admin = require("../../schema/Admin");
+const Secretary = require("../../schema/Secretary");
+const TeacherAssistant = require("../../schema/TeacherAssistant");
 const { cloudinary } = require("../../config/cloudinary");
 
 /**
@@ -20,41 +22,83 @@ const getUserModel = (role) => {
       return Teacher;
     case "admin":
       return Admin;
+    case "secretary":
+      return Secretary;
+    case "teacherAssistant":
+      return TeacherAssistant;
     default:
       return Student;
   }
 };
 
 /**
+ * Helper function to get role from baseUrl
+ */
+const getRoleFromBaseUrl = (baseUrl) => {
+  // Check teacher-assistant FIRST (before teacher to avoid false match)
+  if (baseUrl.includes("teacher-assistant")) return "teacherAssistant";
+  if (baseUrl.includes("student")) return "student";
+  if (baseUrl.includes("teacher")) return "teacher";
+  if (baseUrl.includes("secretar")) return "secretary";
+  if (baseUrl.includes("admin")) return "admin";
+  return "student";
+};
+
+/**
+ * Helper function to get Arabic role name
+ */
+const getArabicRoleName = (role) => {
+  switch (role) {
+    case "student": return "الطالب";
+    case "teacher": return "المعلم";
+    case "admin": return "المدير";
+    case "secretary": return "السكرتير";
+    case "teacherAssistant": return "مساعد المدرس";
+    default: return "المستخدم";
+  }
+};
+
+/**
  * @desc    Upload avatar by user ID
- * @route   POST /api/students/:id/avatar OR /api/teachers/:id/avatar
+ * @route   POST /api/students/:id/avatar OR /api/teachers/:id/avatar OR /api/teacher-assistants/:id/avatar
  * @access  Private
  */
 const uploadAvatarById = async (req, res) => {
   try {
     const userId = req.params.id;
-    const userRole = req.baseUrl.includes("student")
-      ? "student"
-      : req.baseUrl.includes("teacher")
-      ? "teacher"
-      : "admin";
+    const userRole = getRoleFromBaseUrl(req.baseUrl);
+    
+    console.log(`📸 Avatar upload request: baseUrl=${req.baseUrl}, role=${userRole}, userId=${userId}`);
 
     const UserModel = getUserModel(userRole);
+    
+    if (!UserModel) {
+      console.error(`❌ No model found for role: ${userRole}`);
+      return res.status(500).json({
+        success: false,
+        message: "خطأ في تحديد نوع المستخدم",
+      });
+    }
+    
     const user = await UserModel.findById(userId);
 
     if (!user) {
+      console.log(`❌ User not found: ${userId} (role: ${userRole})`);
       return res.status(404).json({
         success: false,
-        message: `${userRole === "student" ? "الطالب" : userRole === "teacher" ? "المعلم" : "المدير"} غير موجود`,
+        message: `${getArabicRoleName(userRole)} غير موجود`,
       });
     }
 
     if (!req.file) {
+      console.log(`❌ No file uploaded for user: ${userId}`);
       return res.status(400).json({
         success: false,
         message: "الرجاء اختيار صورة للرفع",
       });
     }
+    
+    console.log(`✅ File received: ${req.file.filename}, path: ${req.file.path}`);
 
     // Delete old avatar from Cloudinary if exists
     if (user.avatar && user.avatar.publicId) {
@@ -120,17 +164,13 @@ const uploadAvatarById = async (req, res) => {
 
 /**
  * @desc    Get avatar by user ID
- * @route   GET /api/students/:id/avatar OR /api/teachers/:id/avatar
+ * @route   GET /api/students/:id/avatar OR /api/teachers/:id/avatar OR /api/teacher-assistants/:id/avatar
  * @access  Private
  */
 const getAvatarById = async (req, res) => {
   try {
     const userId = req.params.id;
-    const userRole = req.baseUrl.includes("student")
-      ? "student"
-      : req.baseUrl.includes("teacher")
-      ? "teacher"
-      : "admin";
+    const userRole = getRoleFromBaseUrl(req.baseUrl);
 
     const UserModel = getUserModel(userRole);
     const user = await UserModel.findById(userId).select("avatar");
@@ -138,7 +178,7 @@ const getAvatarById = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: `${userRole === "student" ? "الطالب" : userRole === "teacher" ? "المعلم" : "المدير"} غير موجود`,
+        message: `${getArabicRoleName(userRole)} غير موجود`,
       });
     }
 
@@ -159,17 +199,13 @@ const getAvatarById = async (req, res) => {
 
 /**
  * @desc    Delete avatar by user ID
- * @route   DELETE /api/students/:id/avatar OR /api/teachers/:id/avatar
+ * @route   DELETE /api/students/:id/avatar OR /api/teachers/:id/avatar OR /api/teacher-assistants/:id/avatar
  * @access  Private
  */
 const deleteAvatarById = async (req, res) => {
   try {
     const userId = req.params.id;
-    const userRole = req.baseUrl.includes("student")
-      ? "student"
-      : req.baseUrl.includes("teacher")
-      ? "teacher"
-      : "admin";
+    const userRole = getRoleFromBaseUrl(req.baseUrl);
 
     const UserModel = getUserModel(userRole);
     const user = await UserModel.findById(userId);
@@ -177,7 +213,7 @@ const deleteAvatarById = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: `${userRole === "student" ? "الطالب" : userRole === "teacher" ? "المعلم" : "المدير"} غير موجود`,
+        message: `${getArabicRoleName(userRole)} غير موجود`,
       });
     }
 

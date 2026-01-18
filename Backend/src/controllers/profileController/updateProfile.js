@@ -7,6 +7,7 @@ const Student = require("../../schema/Student");
 const Teacher = require("../../schema/Teacher");
 const Admin = require("../../schema/Admin");
 const Secretary = require("../../schema/Secretary");
+const TeacherAssistant = require("../../schema/TeacherAssistant");
 
 /**
  * @desc    Update user profile
@@ -26,6 +27,7 @@ const updateUserProfile = async (req, res) => {
     delete updateData.teacherId;
     delete updateData.adminId;
     delete updateData.secretaryId;
+    delete updateData.assistantId;
     // منع تعديل رقم الهوية - لا يمكن تغييره بعد الإنشاء
     delete updateData.idNumber;
 
@@ -43,6 +45,10 @@ const updateUserProfile = async (req, res) => {
         );
       } else if (userType === "secretary") {
         currentUser = await Secretary.findById(userId).select(
+          "birthDate birthDateEditHistory"
+        );
+      } else if (userType === "teacherAssistant") {
+        currentUser = await TeacherAssistant.findById(userId).select(
           "birthDate birthDateEditHistory"
         );
       } else {
@@ -130,6 +136,13 @@ const updateUserProfile = async (req, res) => {
         new: true,
         runValidators: true,
       }).select("-password");
+    } else if (userType === "teacherAssistant") {
+      updatedUser = await TeacherAssistant.findByIdAndUpdate(userId, updateData, {
+        new: true,
+        runValidators: true,
+      }).select("-password")
+        .populate('assignedTeacher', 'firstName lastName teacherId')
+        .populate('allowedGroups', 'name');
     } else {
       updatedUser = await Teacher.findByIdAndUpdate(userId, updateData, {
         new: true,
@@ -170,6 +183,11 @@ const updateUserProfile = async (req, res) => {
           updatedUser.birthDateEditHistory = cleanedHistory;
         } else if (userType === "secretary") {
           await Secretary.findByIdAndUpdate(userId, {
+            birthDateEditHistory: cleanedHistory,
+          });
+          updatedUser.birthDateEditHistory = cleanedHistory;
+        } else if (userType === "teacherAssistant") {
+          await TeacherAssistant.findByIdAndUpdate(userId, {
             birthDateEditHistory: cleanedHistory,
           });
           updatedUser.birthDateEditHistory = cleanedHistory;

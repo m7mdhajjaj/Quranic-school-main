@@ -18,7 +18,7 @@ export interface UserProfile {
   email?: string;
   phoneNumber?: string;
   groups?: string[];
-  role?: 'student' | 'teacher' | 'admin' | 'secretary';
+  role?: 'student' | 'teacher' | 'admin' | 'secretary' | 'teacherAssistant';
   createdAt?: string;
   updatedAt?: string;
   age?: number;
@@ -38,7 +38,7 @@ export interface UserProfile {
   };
 }
 
-type Endpoint = 'students' | 'teachers' | 'admins' | 'secretaries';
+type Endpoint = 'students' | 'teachers' | 'admins' | 'secretaries' | 'teacher-assistants';
 
 export interface ChangePasswordRequest {
   currentPassword: string;
@@ -133,7 +133,9 @@ export const deleteUserAvatar = async (
 // Helper function to determine user endpoint based on role
 export const getUserEndpoint = (role?: string): Endpoint => {
   if (role === 'admin' || role?.includes('admin')) return 'admins';
-  if (role === 'teacher' || role?.includes('teacher')) return 'teachers';
+  // Check teacherAssistant BEFORE teacher to avoid false match
+  if (role === 'teacherAssistant') return 'teacher-assistants';
+  if (role === 'teacher') return 'teachers';
   if (role === 'secretary' || role?.includes('secretary')) return 'secretaries';
   return 'students';
 };
@@ -159,7 +161,7 @@ export const getUserWithFallback = async (userId: string, userRole?: string): Pr
     const user = await getProfile();
     
     // تحديد الـ endpoint بناءً على الـ role
-    const role = user.role ?? userRole as 'student' | 'teacher' | 'admin' | 'secretary';
+    const role = user.role ?? userRole as 'student' | 'teacher' | 'admin' | 'secretary' | 'teacherAssistant';
     const endpoint = getUserEndpoint(role);
     
     return { user: { ...user, role }, endpoint };

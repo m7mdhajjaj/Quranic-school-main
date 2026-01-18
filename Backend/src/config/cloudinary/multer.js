@@ -82,11 +82,27 @@ const avatarStorage = new CloudinaryStorage({
         userSubFolder = 'Teachers';
       } else if (req.user.role === 'secretary') {
         userSubFolder = 'Secretaries';
+      } else if (req.user.role === 'teacherAssistant') {
+        userSubFolder = 'TeacherAssistants';
       }
     }
 
     if (!userSubFolder) {
-      throw new Error('نوع المستخدم غير محدد أو غير صالح');
+      // Fallback: try to determine from URL
+      const url = req.originalUrl || req.url || '';
+      if (url.includes('teacher-assistant')) {
+        userSubFolder = 'TeacherAssistants';
+      } else if (url.includes('teacher')) {
+        userSubFolder = 'Teachers';
+      } else if (url.includes('student')) {
+        userSubFolder = 'Students';
+      } else if (url.includes('admin')) {
+        userSubFolder = 'Admin';
+      } else if (url.includes('secretar')) {
+        userSubFolder = 'Secretaries';
+      } else {
+        throw new Error('نوع المستخدم غير محدد أو غير صالح');
+      }
     }
 
     return {
