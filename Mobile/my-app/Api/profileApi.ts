@@ -18,7 +18,7 @@ export interface UserProfile {
   email?: string;
   phoneNumber?: string;
   groups?: string[];
-  role?: "student" | "teacher" | "admin";
+  role?: "student" | "teacher" | "admin" | "teacherAssistant";
   createdAt?: string;
   updatedAt?: string;
   age?: number;
@@ -34,7 +34,7 @@ export interface UserProfile {
     | string;
 }
 
-type Endpoint = "students" | "teachers" | "admins";
+type Endpoint = "students" | "teachers" | "admins" | "teacher-assistants";
 
 export interface ChangePasswordRequest {
   currentPassword: string;
@@ -152,6 +152,8 @@ export const deleteUserAvatar = async (
 // Helper function to determine user endpoint based on role
 export const getUserEndpoint = (role?: string): Endpoint => {
   if (role === "admin" || role?.includes("admin")) return "admins";
+  // Check teacherAssistant BEFORE teacher
+  if (role === "teacherAssistant" || role?.includes("Assistant")) return "teacher-assistants";
   if (role === "teacher" || role?.includes("teacher")) return "teachers";
   return "students";
 };
@@ -182,11 +184,15 @@ export const getUserWithFallback = async (
 
   // Try primary endpoint based on role first
   if (userRole === "admin") endpoints.push("admins");
+  // Check teacherAssistant BEFORE teacher
+  if (userRole === "teacherAssistant" || userRole?.includes("Assistant"))
+    endpoints.push("teacher-assistants");
   if (userRole === "teacher" || userRole?.includes("teacher"))
     endpoints.push("teachers");
   endpoints.push("students");
 
   // Add remaining endpoints as fallbacks
+  if (!endpoints.includes("teacher-assistants")) endpoints.push("teacher-assistants");
   if (!endpoints.includes("teachers")) endpoints.push("teachers");
   if (!endpoints.includes("admins")) endpoints.push("admins");
 
@@ -197,11 +203,13 @@ export const getUserWithFallback = async (
         user.role ??
         (endpoint === "admins"
           ? "admin"
-          : endpoint === "teachers"
-            ? "teacher"
-            : "student");
+          : endpoint === "teacher-assistants"
+            ? "teacherAssistant"
+            : endpoint === "teachers"
+              ? "teacher"
+              : "student");
       return {
-        user: { ...user, role: role as "student" | "teacher" | "admin" },
+        user: { ...user, role: role as "student" | "teacher" | "admin" | "teacherAssistant" },
         endpoint,
       };
     } catch (error: unknown) {

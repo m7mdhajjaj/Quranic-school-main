@@ -2,7 +2,7 @@
 // Use UserProfile from API to avoid type conflicts
 export type { UserProfile } from "@/Api/profileApi";
 
-export type Endpoint = "students" | "teachers" | "admins";
+export type Endpoint = "students" | "teachers" | "admins" | "teacher-assistants";
 
 export type FetchState =
   | { status: "idle" }

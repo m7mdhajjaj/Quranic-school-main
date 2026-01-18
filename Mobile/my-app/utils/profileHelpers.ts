@@ -119,7 +119,7 @@ export const getFullName = (user: UserProfile | null): string => {
  * Get role configuration (label and icon only)
  */
 export const getRoleConfig = (
-  role?: "student" | "teacher" | "admin"
+  role?: "student" | "teacher" | "admin" | "teacherAssistant"
 ): RoleConfig => {
   const configs: Record<string, RoleConfig> = {
     student: {
@@ -134,6 +134,10 @@ export const getRoleConfig = (
       label: "مدير",
       icon: "⚡",
     },
+    teacherAssistant: {
+      label: "مساعد مدرس",
+      icon: "🤝",
+    },
   };
-  return configs[role || "student"];
+  return configs[role || "student"] || configs["student"];
 };

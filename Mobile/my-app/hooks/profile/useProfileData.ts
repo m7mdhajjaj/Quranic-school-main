@@ -28,9 +28,11 @@ export const useProfileData = () => {
       setEndpoint(
         role === "student"
           ? "students"
-          : role === "teacher"
-            ? "teachers"
-            : "admins"
+          : role === "teacherAssistant"
+            ? "teacher-assistants"
+            : role === "teacher"
+              ? "teachers"
+              : "admins"
       );
 
       setFetchState({ status: "ok" });
