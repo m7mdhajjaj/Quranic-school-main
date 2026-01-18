@@ -1,16 +1,20 @@
 import React from "react";
-import { FaUserPlus, FaChalkboardTeacher, FaUsers } from "react-icons/fa";
+import { FaUserPlus, FaChalkboardTeacher, FaUsers, FaUserTie, FaClipboardList } from "react-icons/fa";
 
 interface QuickActionsProps {
   onAddStudent: () => void;
   onAddTeacher: () => void;
   onAddGroup: () => void;
+  onAddAssistant: () => void;
+  onAddSecretary: () => void;
 }
 
 export const QuickActions: React.FC<QuickActionsProps> = ({
   onAddStudent,
   onAddTeacher,
   onAddGroup,
+  onAddAssistant,
+  onAddSecretary,
 }) => {
   const actions = [
     {
@@ -28,6 +32,20 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
       onClick: onAddTeacher,
     },
     {
+      icon: FaUserTie,
+      label: "إضافة مساعد",
+      color: "from-blue-500 to-blue-600",
+      hoverColor: "hover:from-blue-600 hover:to-blue-700",
+      onClick: onAddAssistant,
+    },
+    {
+      icon: FaClipboardList,
+      label: "إضافة سكرتير",
+      color: "from-purple-500 to-purple-600",
+      hoverColor: "hover:from-purple-600 hover:to-purple-700",
+      onClick: onAddSecretary,
+    },
+    {
       icon: FaUsers,
       label: "إضافة حلقة",
       color: "from-teal-500 to-teal-600",
@@ -37,7 +55,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
       {actions.map((action, index) => (
         <button
           key={index}

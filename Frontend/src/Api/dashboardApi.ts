@@ -9,6 +9,8 @@ export interface GroupData {
 export interface DashboardStats {
   totalStudents: number;
   totalTeachers: number;
+  totalAssistants: number;
+  totalSecretaries: number;
   totalExams: number;
   totalGroups: number;
   totalActivities: number;

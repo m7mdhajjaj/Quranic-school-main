@@ -4,6 +4,8 @@ import {
   FaChalkboardTeacher,
   FaUsers,
   FaChartLine,
+  FaUserTie,
+  FaClipboardList,
 } from 'react-icons/fa';
 import {
   StatCardSkeleton,
@@ -22,6 +24,8 @@ import { useDashboardData } from './hooks';
 import AddStudentForm from '../StudentsManagement/Model/StudentForm';
 import TeacherForm from '../TeachersManagement/Model/TeacherForm';
 import AddGroupForm from '../GroupManagement/Model/GroupForm';
+import { AssistantForm } from '../TeacherAssistantManagement/Model/AssistantForm';
+import SecretaryForm from '../SecretaryManagement/Model/SecretaryForm';
 
 const AdminDashboard = () => {
 
@@ -44,6 +48,8 @@ const AdminDashboard = () => {
   const [showAddStudentForm, setShowAddStudentForm] = useState(false);
   const [showAddTeacherForm, setShowAddTeacherForm] = useState(false);
   const [showAddGroupForm, setShowAddGroupForm] = useState(false);
+  const [showAddAssistantForm, setShowAddAssistantForm] = useState(false);
+  const [showAddSecretaryForm, setShowAddSecretaryForm] = useState(false);
 
 
   // Loading state - استخدام Skeleton بدلاً من Spinner
@@ -100,9 +106,11 @@ const AdminDashboard = () => {
         </div>
 
         {/* Statistics Cards - Priority for LCP */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-6 sm:mb-8 lg:mb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6 lg:gap-8 mb-6 sm:mb-8 lg:mb-12">
           {isLoadingStats ? (
             <>
+              <StatCardSkeleton />
+              <StatCardSkeleton />
               <StatCardSkeleton />
               <StatCardSkeleton />
               <StatCardSkeleton />
@@ -126,6 +134,22 @@ const AdminDashboard = () => {
               />
 
               <StatCard
+                icon={<FaUserTie className="text-3xl text-white" />}
+                title="المساعدين"
+                value={stats.totalAssistants}
+                color="bg-gradient-to-br from-blue-500 to-blue-600"
+                bgColor="bg-white"
+              />
+
+              <StatCard
+                icon={<FaClipboardList className="text-3xl text-white" />}
+                title="السكرتيرات"
+                value={stats.totalSecretaries}
+                color="bg-gradient-to-br from-purple-500 to-purple-600"
+                bgColor="bg-white"
+              />
+
+              <StatCard
                 icon={<FaUsers className="text-3xl text-white" />}
                 title="عدد الحلقات"
                 value={stats.totalGroups}
@@ -145,6 +169,8 @@ const AdminDashboard = () => {
             onAddStudent={() => setShowAddStudentForm(true)}
             onAddTeacher={() => setShowAddTeacherForm(true)}
             onAddGroup={() => setShowAddGroupForm(true)}
+            onAddAssistant={() => setShowAddAssistantForm(true)}
+            onAddSecretary={() => setShowAddSecretaryForm(true)}
           />
         </div>
 
@@ -321,6 +347,28 @@ const AdminDashboard = () => {
             onSuccess={() => {
               setShowAddGroupForm(false);
               fetchStats(true); // إعادة تحميل البيانات بعد إضافة حلقة
+            }}
+          />
+        )}
+
+        {showAddAssistantForm && (
+          <AssistantForm
+            isOpen={showAddAssistantForm}
+            onClose={() => setShowAddAssistantForm(false)}
+            onSubmit={async () => {
+              setShowAddAssistantForm(false);
+              fetchStats(true); // إعادة تحميل البيانات بعد إضافة مساعد
+            }}
+            isLoading={false}
+          />
+        )}
+
+        {showAddSecretaryForm && (
+          <SecretaryForm
+            onClose={() => setShowAddSecretaryForm(false)}
+            onSuccess={() => {
+              setShowAddSecretaryForm(false);
+              fetchStats(true); // إعادة تحميل البيانات بعد إضافة سكرتير
             }}
           />
         )}

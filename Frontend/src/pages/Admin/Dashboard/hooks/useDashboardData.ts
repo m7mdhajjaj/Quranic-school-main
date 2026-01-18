@@ -18,6 +18,8 @@ export const useDashboardData = () => {
   const [stats, setStats] = useState<DashboardStats>({
     totalStudents: 0,
     totalTeachers: 0,
+    totalAssistants: 0,
+    totalSecretaries: 0,
     totalGroups: 0,
     totalExams: 0,
     averageExamMarks: 0,
@@ -66,6 +68,8 @@ export const useDashboardData = () => {
         setStats({
           totalStudents: statsResponse.value.stats.totalStudents || 0,
           totalTeachers: statsResponse.value.stats.totalTeachers || 0,
+          totalAssistants: statsResponse.value.stats.totalAssistants || 0,
+          totalSecretaries: statsResponse.value.stats.totalSecretaries || 0,
           totalGroups: statsResponse.value.stats.totalGroups || 0,
           totalExams: statsResponse.value.stats.totalExams || 0,
           averageExamMarks: statsResponse.value.stats.averageExamMarks || 0,

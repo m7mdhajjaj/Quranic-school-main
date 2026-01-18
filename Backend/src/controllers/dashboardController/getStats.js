@@ -1,5 +1,7 @@
 const Student = require("../../schema/Student");
 const Teacher = require("../../schema/Teacher");
+const TeacherAssistant = require("../../schema/TeacherAssistant");
+const Secretary = require("../../schema/Secretary");
 const ExamSchedule = require("../../schema/ExamShedule/ExamSchedule");
 const Group = require("../../schema/Group");
 const News = require("../../schema/News");
@@ -17,6 +19,8 @@ const getDashboardStats = async (req, res) => {
     const [
       studentsCount,
       teachersCount,
+      assistantsCount,
+      secretariesCount,
       examsCount,
       groupsCount,
       newsCount,
@@ -32,6 +36,12 @@ const getDashboardStats = async (req, res) => {
 
       // Count total teachers
       Teacher.countDocuments(),
+
+      // Count total teacher assistants
+      TeacherAssistant.countDocuments(),
+
+      // Count total secretaries
+      Secretary.countDocuments(),
 
       // Count total exams
       ExamSchedule.countDocuments(),
@@ -130,6 +140,8 @@ const getDashboardStats = async (req, res) => {
     const stats = {
       totalStudents: studentsCount,
       totalTeachers: teachersCount,
+      totalAssistants: assistantsCount,
+      totalSecretaries: secretariesCount,
       totalExams: examsCount,
       totalGroups: groupsCount,
       totalActivities: 0,
