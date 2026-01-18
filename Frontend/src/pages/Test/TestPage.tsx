@@ -16,6 +16,7 @@ const TestPage = () => {
     surahs,
     questions,
     selectedSurahs,
+    surahsLoading,
     handleSurahSelection,
     clearSelectedSurahs,
     startTest: fetchQuestions,
@@ -186,6 +187,7 @@ const TestPage = () => {
       onSurahSelect={handleSurahSelection}
       onStartTest={handleStartTest}
       onClearAll={clearSelectedSurahs}
+      loading={surahsLoading}
     />
   );
 };

@@ -26,6 +26,7 @@ export interface SurahSelectionViewProps {
   onSurahSelect: (surahNumber: number) => void;
   onStartTest: () => void;
   onClearAll: () => void;
+  loading?: boolean;
 }
 
 export interface TestViewProps {
