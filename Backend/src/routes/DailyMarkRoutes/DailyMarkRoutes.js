@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const dailyMarkController = require("../../controllers/DailyMarkController");
 const groupController = require("../../controllers/basicController/groupController");
+const { protect, teacherProtect } = require("../../middleware/auth");
 const {
   validateDailyMarksData,
   validateBulkMarks,
@@ -11,6 +12,11 @@ const {
 } = require("../../Validation/DailyMark/DailyMarksValidation");
 const { validateActiveGroupsQuery } = require("../../Validation/Group/ActiveGroupsValidation");
 const { validateGroupStats } = require("../../Validation/DailyMark/GroupStatsValidation");
+
+// ============================================================================
+// MIDDLEWARE - حماية جميع الـ routes
+// ============================================================================
+router.use(protect);
 
 // Import Section Routes (part of DailyMark system)
 const sectionRoutes = require("./SectionRoutes");
@@ -66,47 +72,49 @@ router.get("/student/:studentId/stats", dailyMarkController.getStudentMarkStats)
 router.get("/section/:sectionId", dailyMarkController.getSectionMarks);
 
 // ============================================================================
-// POST ROUTES - إضافة/إنشاء العلامات
+// POST ROUTES - إضافة/إنشاء العلامات (المعلم فقط)
 // ============================================================================
 
 // Create or update a single mark
 // POST /api/daily-marks
 router.post(
   "/",
+  teacherProtect,
   validateDailyMarksData,
   dailyMarkController.createOrUpdateMark
 );
 
 // Add marks for multiple students (bulk operation)
 // POST /api/daily-marks/bulk
-router.post("/bulk", validateBulkMarks, dailyMarkController.setMarks);
+router.post("/bulk", teacherProtect, validateBulkMarks, dailyMarkController.setMarks);
 
 // Add marks for a specific section
 // POST /api/daily-marks/section/:sectionId
 router.post(
   "/section/:sectionId",
+  teacherProtect,
   validateBulkMarks,
   dailyMarkController.setMarksForSection
 );
 
 // ============================================================================
-// PUT ROUTES - تعديل العلامات
+// PUT ROUTES - تعديل العلامات (المعلم فقط)
 // ============================================================================
 
 // Update a mark by ID
 // PUT /api/daily-marks/:id
-router.put("/:id", validateUpdateMark, dailyMarkController.updateMarkById);
+router.put("/:id", teacherProtect, validateUpdateMark, dailyMarkController.updateMarkById);
 
 // Update multiple marks at once (bulk update)
 // PUT /api/daily-marks/bulk
-router.put("/bulk", validateBulkUpdateMarks, dailyMarkController.updateMultipleMarks);
+router.put("/bulk", teacherProtect, validateBulkUpdateMarks, dailyMarkController.updateMultipleMarks);
 
 // ============================================================================
-// DELETE ROUTES - حذف العلامات
+// DELETE ROUTES - حذف العلامات (المعلم فقط)
 // ============================================================================
 
 // Delete a mark by ID
 // DELETE /api/daily-marks/:id
-router.delete("/:id", validateDeleteMark, dailyMarkController.deleteMark);
+router.delete("/:id", teacherProtect, validateDeleteMark, dailyMarkController.deleteMark);
 
 module.exports = router;

@@ -350,7 +350,9 @@ class SectionSequenceService {
               };
           }
 
-          // فحص التسلسل الزمني للمراجعة (Cycles) - اختياري وتحذيري
+          // ====================================================
+          // ✅ V6: التسلسل الإجباري للمراجعة (مثل الحفظ)
+          // ====================================================
           const lastReview = await this.getLastProgress(groupId, seg.surahNumber, 'review', newSectionDate, excludeSectionId);
           let expectedStart = 1;
           
@@ -365,9 +367,28 @@ class SectionSequenceService {
             s.ayahEnd === seg.ayahStart - 1
           );
 
+          // ✅ V6: منع الفجوات في المراجعة (إجباري الآن)
           if (!hasLocalPredecessor && seg.ayahStart !== expectedStart && seg.ayahStart !== 1) {
-              // تحذير فقط (لا نمنع، لكن نعلم المستخدم)
-              logger.warn(`تنبيه: المراجعة [${seg.surahNumber}:${seg.ayahStart}-${seg.ayahEnd}] لا تتبع التسلسل المتوقع (كان متوقع من ${expectedStart}).`);
+              return {
+                  isValid: false,
+                  message: this.formatErrorMessage(
+                      "فجوة في المراجعة (غير متصل)",
+                      `تحاول مراجعة الآيات ${seg.ayahStart}-${seg.ayahEnd} من سورة ${seg.surahNumber}، بينما آخر مراجعة توقفت عند الآية ${lastReview ? lastReview.lastEnd : 0}.`,
+                      `يجب أن تكمل المراجعة بالتسلسل. ابدأ من الآية ${expectedStart}.`
+                  )
+              };
+          }
+
+          // ✅ V6: أول مراجعة في السورة يجب أن تبدأ من 1
+          if (!lastReview && !hasLocalPredecessor && seg.ayahStart !== 1) {
+              return {
+                  isValid: false,
+                  message: this.formatErrorMessage(
+                      "بداية المراجعة غير صحيحة",
+                      `تحاول بدء مراجعة سورة ${seg.surahNumber} من الآية ${seg.ayahStart}.`,
+                      "يجب أن تبدأ أول مراجعة للسورة دائماً من الآية رقم 1."
+                  )
+              };
           }
       }
 
@@ -608,6 +629,10 @@ class SectionSequenceService {
   /**
    * (Consistency Check) التحقق من الاتساق الداخلي للطلب
    * التأكد من أن المراجعة لا تسبق الحفظ في نفس اللحظة (منطقياً)
+   * 
+   * ✅ V6: قواعد جديدة:
+   * 1. لا يمكن حفظ ومراجعة نفس المقطع من نفس السورة في نفس الطلب
+   * 2. المراجعة تكون للمقاطع المحفوظة سابقاً فقط (الحفظ يسبق المراجعة بمقطع على الأقل)
    */
   validateConsistency(memorizationMeta, reviewMeta) {
     if (!memorizationMeta || !reviewMeta || memorizationMeta.length === 0 || reviewMeta.length === 0) {
@@ -621,26 +646,39 @@ class SectionSequenceService {
         
         for (const mem of memSegments) {
             
-            // لا يمكنك مراجعة سورة بدأت حفظها للتو
+            // ✅ V6: لا يمكنك مراجعة سورة بدأت حفظها للتو (أول مقطع)
             if (mem.ayahStart === 1) {
                  return {
                      isValid: false,
                      message: this.formatErrorMessage(
                          "ترتيب غير منطقي",
-                         `تحاول مراجعة سورة ${mem.surahNumber} بينما تقوم ببدء حفظها في نفس الطلب.`,
-                         "لا يمكن مراجعة سورة لم تكتمل حفظاً بعد، أو على الأقل لم تحفظ جزءاً كافياً منها سابقاً."
+                         `تحاول مراجعة سورة ${rev.surahNumber} بينما تقوم ببدء حفظها في نفس الطلب.`,
+                         "لا يمكن مراجعة سورة لم تحفظ جزءاً منها سابقاً. يجب أن يسبق الحفظ المراجعة بمقطع واحد على الأقل."
                      )
                  };
             }
 
-            // لا يمكن للمراجعة أن تتقاطع مع الحفظ الجديد (المراجعة للماضي فقط)
+            // ✅ V6: لا يمكن مراجعة نفس المقطع الذي يتم حفظه الآن (تطابق تام)
+            if (rev.ayahStart === mem.ayahStart && rev.ayahEnd === mem.ayahEnd) {
+                 return {
+                     isValid: false,
+                     message: this.formatErrorMessage(
+                         "لا يمكن حفظ ومراجعة نفس المقطع معاً",
+                         `تحاول حفظ ومراجعة نفس المقطع (${rev.ayahStart}-${rev.ayahEnd}) من سورة ${rev.surahNumber} في نفس الطلب.`,
+                         "يجب أن يسبق الحفظ المراجعة. راجع المقاطع المحفوظة سابقاً فقط."
+                     )
+                 };
+            }
+
+            // ✅ V6: لا يمكن للمراجعة أن تتقاطع مع الحفظ الجديد (المراجعة للماضي فقط)
+            // المراجعة يجب أن تنتهي قبل بداية الحفظ الجديد
             if (rev.ayahEnd >= mem.ayahStart) {
                  return {
                      isValid: false,
                      message: this.formatErrorMessage(
-                         "تداخل زمني بين الحفظ والمراجعة",
+                         "المراجعة تتداخل مع الحفظ الجديد",
                          `المراجعة (${rev.ayahStart}-${rev.ayahEnd}) تتداخل مع نطاق الحفظ الجديد (${mem.ayahStart}-${mem.ayahEnd}).`,
-                         "المراجعة تكون للمحفوظات القديمة فقط، ولا يمكن مراجعة ما يتم حفظه الآن."
+                         "المراجعة تكون للمحفوظات السابقة فقط. يجب أن تنتهي المراجعة قبل الآية ${mem.ayahStart}."
                      )
                  };
             }

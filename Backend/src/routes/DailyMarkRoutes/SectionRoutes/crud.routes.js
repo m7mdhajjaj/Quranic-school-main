@@ -1,12 +1,19 @@
 const express = require("express");
 const router = express.Router();
 const dailyMarkController = require("../../../controllers/DailyMarkController");
+const { protect, teacherProtect } = require("../../../middleware/auth");
 const {
   validateDailyMarksSectionData,
   validateRepairSequenceData,
   validateSectionId,
   validateActiveSurahData,
 } = require("../../../Validation/DailyMark/DailyMarksSectionValidation");
+
+// ============================================================================
+// MIDDLEWARE - حماية routes الكتابة (المعلم فقط)
+// ============================================================================
+router.use(protect);
+router.use(teacherProtect);
 
 // ============================================================================
 // POST/PUT/DELETE ROUTES - إدارة المقاطع (V3: Date-Aware + Active Surah)
