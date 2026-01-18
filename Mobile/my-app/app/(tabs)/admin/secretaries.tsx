@@ -112,12 +112,12 @@ export default function SecretaryManagementScreen() {
   return (
     <View className="flex-1 bg-gray-50">
       {/* Header */}
-      <View className="bg-purple-600 pt-12 pb-6 px-6">
-        <Text className="text-white text-3xl font-bold mb-2">
+      <View className="bg-white-600 pt-12 pb-6 px-6">
+        <Text className="text-black text-3xl font-bold mb-2">
           إدارة السكرتارية
         </Text>
-        <Text className="text-purple-200 text-sm">
-          إدارة حسابات وصلاحيات السكرتيرين
+        <Text className="text-blue-400 text-sm">
+          إدارة وتنظيم بيانات السكرتارية
         </Text>
       </View>
 
@@ -153,7 +153,7 @@ export default function SecretaryManagementScreen() {
                 {/* Add Button */}
                 <TouchableOpacity
                   onPress={handleAddSecretary}
-                  className="bg-purple-500 rounded-xl px-6 py-3 justify-center">
+                  className="bg-blue-500 rounded-xl px-6 py-3 justify-center">
                   <Text className="text-white font-bold text-lg">+ إضافة</Text>
                 </TouchableOpacity>
               </View>

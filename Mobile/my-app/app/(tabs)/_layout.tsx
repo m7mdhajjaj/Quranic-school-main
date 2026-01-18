@@ -149,6 +149,12 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
+          name="admin"
+          options={{
+            href: null,
+          }}
+        />
+        <Tabs.Screen
           name="notifications"
           options={{
             href: null,

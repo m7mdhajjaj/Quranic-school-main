@@ -13,6 +13,8 @@ export interface DashboardStats {
   totalGroups: number;
   totalActivities: number;
   totalNews: number;
+  totalAssistants: number;
+  totalSecretaries: number;
   averageMarks: number;
   averageExamMarks: number;
   activeStudents: number;

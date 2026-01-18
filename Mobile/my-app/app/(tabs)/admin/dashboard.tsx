@@ -39,6 +39,8 @@ export default function AdminDashboardScreen() {
     totalExams: 0,
     totalActivities: 0,
     totalNews: 0,
+    totalAssistants: 0,
+    totalSecretaries: 0,
     averageMarks: 0,
     averageExamMarks: 0,
     activeStudents: 0,
@@ -213,6 +215,28 @@ export default function AdminDashboardScreen() {
             <Text style={styles.statValue}>{stats.totalGroups}</Text>
           </View>
         </View>
+
+        {/* Total Assistants */}
+        <View style={[styles.statCard, styles.statCard4]}>
+          <View style={styles.statIconContainer}>
+            <Users size={28} color="#ffffff" />
+          </View>
+          <View style={styles.statContent}>
+            <Text style={styles.statLabel}>مساعدي المدرس</Text>
+            <Text style={styles.statValue}>{stats.totalAssistants}</Text>
+          </View>
+        </View>
+
+        {/* Total Secretaries */}
+        <View style={[styles.statCard, styles.statCard5]}>
+          <View style={styles.statIconContainer}>
+            <UserCheck size={28} color="#ffffff" />
+          </View>
+          <View style={styles.statContent}>
+            <Text style={styles.statLabel}>السكرتير</Text>
+            <Text style={styles.statValue}>{stats.totalSecretaries}</Text>
+          </View>
+        </View>
       </View>
 
       {/* Quick Actions */}
@@ -244,6 +268,24 @@ export default function AdminDashboardScreen() {
               <BookOpen size={24} color="#10b981" />
             </View>
             <Text style={styles.quickActionText}>إضافة حلقة</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.quickActionButton}
+            onPress={() => router.push('/admin/assistants')}>
+            <View style={styles.quickActionIcon}>
+              <Users size={24} color="#10b981" />
+            </View>
+            <Text style={styles.quickActionText}>إضافة مساعد</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.quickActionButton}
+            onPress={() => router.push('/admin/secretaries')}>
+            <View style={styles.quickActionIcon}>
+              <UserCheck size={24} color="#10b981" />
+            </View>
+            <Text style={styles.quickActionText}>إضافة سكرتير</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -506,6 +548,14 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
     borderLeftColor: "#047857",
   },
+  statCard4: {
+    borderLeftWidth: 4,
+    borderLeftColor: "#3b82f6",
+  },
+  statCard5: {
+    borderLeftWidth: 4,
+    borderLeftColor: "#8b5cf6",
+  },
   statIconContainer: {
     width: 56,
     height: 56,
@@ -545,10 +595,11 @@ const styles = StyleSheet.create({
   // Quick Actions
   quickActionsGrid: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: 12,
   },
   quickActionButton: {
-    flex: 1,
+    width: "48%",
     backgroundColor: "#ffffff",
     borderRadius: 12,
     padding: 16,
