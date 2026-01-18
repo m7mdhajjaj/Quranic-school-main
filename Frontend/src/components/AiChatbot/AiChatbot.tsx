@@ -232,7 +232,7 @@ export const AiChatbot: React.FC = () => {
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(true)}
-        className={`fixed bottom-6 right-6 z-50 group transition-all duration-300 ${
+        className={`fixed bottom-6 right-6 z-50 group transition-all duration-300 hidden sm:flex ${
           isOpen ? 'translate-y-24 opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'
         }`}
         aria-label="فتح المساعد الذكي"

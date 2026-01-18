@@ -353,7 +353,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       {replyTo && <ReplyPreview replyTo={replyTo} onClear={clearReply} />}
 
       {/* Input */}
-      <div className="p-2 sm:p-4 bg-white/95 backdrop-blur-md border-t border-gray-200/80 flex-shrink-0 relative z-20 shadow-sm">
+      <div className="p-2 sm:p-3 bg-white/95 backdrop-blur-md border-t border-gray-200/80 flex-shrink-0 relative z-20 shadow-sm">
         <div className="flex gap-1.5 sm:gap-2 items-end bg-white p-1.5 sm:p-2 rounded-xl border border-gray-200/80 focus-within:border-emerald-400 focus-within:ring-1 focus-within:ring-emerald-100 transition-all shadow-sm relative" dir="rtl">
           <Suspense fallback={null}>
             <MentionDropdown 
