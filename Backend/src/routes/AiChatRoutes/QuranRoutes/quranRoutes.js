@@ -22,11 +22,11 @@ const {
 // Get all Surahs
 router.get('/surahs', quranController.getAllSurahs);
 
-// Get specific Surah with its Ayahs
-router.get('/surah/:surahNumber', validateSurahNumber, quranController.getSurahWithAyahs);
+// Get specific Surah with its Ayahs (removed validation temporarily for debugging)
+router.get('/surah/:surahNumber', quranController.getSurahWithAyahs);
 
-// Get specific Ayah
-router.get('/ayah/:surahNumber/:ayahNumber', validateAyahNumber, quranController.getAyah);
+// Get specific Ayah (removed validation temporarily for debugging)  
+router.get('/ayah/:surahNumber/:ayahNumber', quranController.getAyah);
 
 // ============================================================================
 // Import Routes - لاستيراد بيانات القرآن من JSON

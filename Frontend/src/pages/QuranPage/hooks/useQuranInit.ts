@@ -23,12 +23,19 @@ export const useQuranInit = () => {
     const initialize = async () => {
       try {
         setLoading(true);
-        const [surahsData, settingsData] = await Promise.all([
-          getAllSurahs(),
-          getReadingSettings(),
-        ]);
+        
+        // Load surahs first (critical)
+        const surahsData = await getAllSurahs();
         setSurahs(surahsData);
-        setSettings(settingsData);
+        
+        // Load settings separately (non-critical, with fallback)
+        try {
+          const settingsData = await getReadingSettings();
+          setSettings(settingsData);
+        } catch (settingsErr) {
+          console.log("Using default settings:", settingsErr);
+          // Keep default settings if backend fails
+        }
       } catch (err) {
         setError("خطأ في تحميل قائمة السور");
         console.error("Error initializing Quran data:", err);

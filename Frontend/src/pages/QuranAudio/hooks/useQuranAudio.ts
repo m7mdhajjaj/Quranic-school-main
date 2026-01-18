@@ -29,19 +29,23 @@ export const useQuranAudio = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Fetch all surahs
-  const fetchSurahs = useCallback(async () => {
-    setLoading(true);
-    try {
-      const surahsData = await getAllSurahs();
-      setSurahs(surahsData);
-    } catch (error) {
-      console.error("Error fetching surahs:", error);
-      setAudioError(
-        error instanceof Error ? error.message : "فشل في تحميل قائمة السور"
-      );
-    } finally {
-      setLoading(false);
-    }
+  useEffect(() => {
+    const fetchSurahs = async () => {
+      setLoading(true);
+      try {
+        const surahsData = await getAllSurahs();
+        setSurahs(surahsData);
+      } catch (error) {
+        console.error("Error fetching surahs:", error);
+        setAudioError(
+          error instanceof Error ? error.message : "فشل في تحميل قائمة السور"
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchSurahs();
   }, []);
 
   // Fetch surah with audio
@@ -78,19 +82,11 @@ export const useQuranAudio = () => {
     [reciter]
   );
 
-  // Initialize component with optimized loading
-  const initializeComponent = useCallback(async () => {
-    try {
-      // Load reciters synchronously (fast, local data)
-      const availableReciters = getReciters();
-      setReciters(availableReciters);
-
-      // Load surahs
-      await fetchSurahs();
-    } catch (error) {
-      console.error("Error initializing component:", error);
-    }
-  }, [fetchSurahs]);
+  // Initialize reciters on mount
+  useEffect(() => {
+    const availableReciters = getReciters();
+    setReciters(availableReciters);
+  }, []);
 
   // Play full surah
   const playFullSurah = useCallback(async () => {
@@ -232,11 +228,6 @@ export const useQuranAudio = () => {
       audio.removeEventListener('timeupdate', updateCurrentAyah);
     };
   }, [isPlaying, ayahTimings, ayahs, currentAyahIndex]);
-
-  // Initialize on mount
-  useEffect(() => {
-    initializeComponent();
-  }, [initializeComponent]);
 
   // Fetch surah when selected
   useEffect(() => {

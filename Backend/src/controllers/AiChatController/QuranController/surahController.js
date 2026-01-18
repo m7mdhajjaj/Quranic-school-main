@@ -15,10 +15,19 @@ exports.getAllSurahs = async (req, res) => {
       .select('number nameArabic nameEnglish ayahCount revelationType')
       .lean();
 
+    // ✅ تحويل البيانات لتكون متوافقة مع external API format
+    const formattedSurahs = surahs.map(surah => ({
+      number: surah.number,
+      name: surah.nameArabic,
+      englishName: surah.nameEnglish,
+      numberOfAyahs: surah.ayahCount,
+      revelationType: surah.revelationType
+    }));
+
     res.json({
       success: true,
-      count: surahs.length,
-      data: surahs
+      count: formattedSurahs.length,
+      data: formattedSurahs
     });
   } catch (error) {
     console.error('Error fetching surahs:', error.message);
@@ -48,10 +57,15 @@ exports.getSurahWithAyahs = async (req, res) => {
 
     // جلب السورة
     const surah = await QuranSurah.findOne({ number: num }).lean();
+    
+    // ✅ إذا لم نجد السورة في القاعدة، نرجع رسالة واضحة
     if (!surah) {
+      console.log(`❌ Surah ${num} not found in database. Database might be empty.`);
       return res.status(404).json({
         success: false,
-        message: 'السورة غير موجودة'
+        message: 'السورة غير موجودة في قاعدة البيانات. يرجى استيراد بيانات القرآن أولاً.',
+        hint: 'استخدم POST /api/quran/import لاستيراد البيانات',
+        fallbackToExternalAPI: true
       });
     }
 
@@ -60,11 +74,30 @@ exports.getSurahWithAyahs = async (req, res) => {
       .sort({ ayahNumber: 1 })
       .lean();
 
+    // ✅ تحويل البيانات لتكون متوافقة مع external API format
+    const formattedData = {
+      number: surah.number,
+      name: surah.nameArabic,
+      englishName: surah.nameEnglish,
+      englishNameTranslation: surah.englishNameTranslation || surah.nameEnglish,
+      numberOfAyahs: surah.ayahCount,
+      revelationType: surah.revelationType,
+      ayahs: ayahs.map(ayah => ({
+        number: ayah.globalAyahNumber || ayah.ayahNumber,
+        numberInSurah: ayah.ayahNumber,
+        text: ayah.text,
+        juz: ayah.juz,
+        manzil: ayah.manzil,
+        page: ayah.page,
+        ruku: ayah.ruku,
+        hizbQuarter: ayah.hizbQuarter,
+        sajda: ayah.sajda || false
+      }))
+    };
+
     res.json({
       success: true,
-      surah,
-      ayahs,
-      count: ayahs.length
+      data: formattedData
     });
   } catch (error) {
     console.error(`Error fetching surah ${req.params.surahNumber}:`, error.message);

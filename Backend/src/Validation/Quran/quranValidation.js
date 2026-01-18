@@ -179,7 +179,8 @@ const validate = (schema, property = 'query') => {
     
     const { error, value } = schema.validate(data, { 
       abortEarly: false,
-      stripUnknown: true 
+      stripUnknown: true,
+      convert: true // ✅ Enable automatic type conversion (string to number)
     });
     
     if (error) {

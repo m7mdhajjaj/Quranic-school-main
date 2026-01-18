@@ -131,7 +131,15 @@ export const getAllSurahs = async (): Promise<Surah[]> => {
   try {
     // Try backend first
     const backendResponse = await api.get('/quran/surahs');
-    return backendResponse.data?.data || backendResponse.data;
+    const backendData = backendResponse.data?.data || backendResponse.data;
+    
+    // ✅ إذا كان الـ backend يُعيد مصفوفة فارغة، نستخدم الـ external API
+    if (Array.isArray(backendData) && backendData.length > 0) {
+      return backendData;
+    }
+    
+    console.log('Backend returned empty data, using external API');
+    throw new Error('Backend data is empty');
   } catch (backendError) {
     console.log('Backend not available, using external API:', backendError);
     
