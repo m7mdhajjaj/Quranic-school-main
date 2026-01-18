@@ -151,15 +151,21 @@ class ConversationService {
    * Get All Conversations for User
    */
   async getConversations(userId, role, search) {
-    const normalizedRole = role.charAt(0).toUpperCase() + role.slice(1);
+    // Normalize role - handle camelCase like "teacherAssistant"
+    let normalizedRole = role;
+    if (role === 'teacherAssistant') {
+      normalizedRole = 'TeacherAssistant';
+    } else {
+      normalizedRole = role.charAt(0).toUpperCase() + role.slice(1);
+    }
     
     let query = { 
       "participants.userId": userId,
       deletedFor: { $ne: userId }
     };
 
-    // ✅ Admin/Secretary sees ONLY DMs (No Groups)
-    if (normalizedRole === 'Admin' || normalizedRole === 'Secretary') {
+    // ✅ Admin/Secretary/TeacherAssistant sees ONLY DMs (No Groups)
+    if (normalizedRole === 'Admin' || normalizedRole === 'Secretary' || normalizedRole === 'TeacherAssistant') {
       query = {
         "participants.userId": userId,
         type: "DM",

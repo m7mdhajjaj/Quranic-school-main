@@ -13,7 +13,7 @@ const conversationSchema = new mongoose.Schema(
     participants: [
       {
         userId: { type: mongoose.Schema.Types.ObjectId, required: true, refPath: "participants.userModel" },
-        userModel: { type: String, required: true, enum: ["Teacher", "Student", "Admin", "Secretary"] },
+        userModel: { type: String, required: true, enum: ["Teacher", "Student", "Admin", "Secretary", "TeacherAssistant"] },
         mutedUntil: { type: Date, default: null }
       },
     ],

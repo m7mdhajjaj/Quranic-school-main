@@ -20,7 +20,7 @@ const chatSchema = new mongoose.Schema(
     senderModel: {
       type: String,
       required: true,
-      enum: ["Teacher", "Student", "Admin", "Secretary"],
+      enum: ["Teacher", "Student", "Admin", "Secretary", "TeacherAssistant"],
     },
 
     // ============ DM ============
@@ -35,7 +35,7 @@ const chatSchema = new mongoose.Schema(
     },
     recipientModel: {
       type: String,
-      enum: ["Teacher", "Student", "Admin", "Secretary"],
+      enum: ["Teacher", "Student", "Admin", "Secretary", "TeacherAssistant"],
       required: function () {
         return this.chatType === "DM";
       },
@@ -87,7 +87,7 @@ const chatSchema = new mongoose.Schema(
         },
         userModel: {
           type: String,
-          enum: ["Student", "Teacher", "Admin", "Secretary"],
+          enum: ["Student", "Teacher", "Admin", "Secretary", "TeacherAssistant"],
         }
       },
     ],

@@ -61,7 +61,7 @@ export const nv = (v?: string | number) =>
  * Get role configuration (label and icon only)
  */
 export const getRoleConfig = (
-  role?: "student" | "teacher" | "admin" | "secretary"
+  role?: "student" | "teacher" | "admin" | "secretary" | "teacherAssistant"
 ): RoleConfig => {
   const configs: Record<string, RoleConfig> = {
     student: {
@@ -80,6 +80,10 @@ export const getRoleConfig = (
       label: "سكرتير",
       icon: "📋",
     },
+    teacherAssistant: {
+      label: "مساعد مدرس",
+      icon: "🤝",
+    },
   };
-  return configs[role || "student"];
+  return configs[role || "student"] || configs["student"];
 };

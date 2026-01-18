@@ -6,6 +6,8 @@
 const Student = require("../../schema/Student");
 const Teacher = require("../../schema/Teacher");
 const Admin = require("../../schema/Admin");
+const Secretary = require("../../schema/Secretary");
+const TeacherAssistant = require("../../schema/TeacherAssistant");
 const { cloudinary } = require("../../config/cloudinary");
 
 /**
@@ -94,6 +96,40 @@ const uploadAvatar = async (req, res) => {
         { avatar: avatarData },
         { new: true }
       ).select("-password");
+    } else if (userType === "secretary") {
+      // Delete old avatar from Cloudinary if exists
+      const existingUser = await Secretary.findById(userId);
+      if (existingUser && existingUser.avatar && existingUser.avatar.publicId) {
+        try {
+          await cloudinary.uploader.destroy(existingUser.avatar.publicId);
+        } catch (error) {
+          console.warn("Could not delete old avatar:", error);
+        }
+      }
+
+      user = await Secretary.findByIdAndUpdate(
+        userId,
+        { avatar: avatarData },
+        { new: true }
+      ).select("-password");
+    } else if (userType === "teacherAssistant") {
+      // Delete old avatar from Cloudinary if exists
+      const existingUser = await TeacherAssistant.findById(userId);
+      if (existingUser && existingUser.avatar && existingUser.avatar.publicId) {
+        try {
+          await cloudinary.uploader.destroy(existingUser.avatar.publicId);
+        } catch (error) {
+          console.warn("Could not delete old avatar:", error);
+        }
+      }
+
+      user = await TeacherAssistant.findByIdAndUpdate(
+        userId,
+        { avatar: avatarData },
+        { new: true }
+      ).select("-password")
+        .populate('assignedTeacher', 'firstName lastName teacherId')
+        .populate('allowedGroups', 'name');
     } else {
       // Delete old avatar from Cloudinary if exists
       const existingUser = await Teacher.findById(userId);
@@ -188,6 +224,42 @@ const deleteAvatar = async (req, res) => {
         { $set: { avatar: defaultAvatar } },
         { new: true }
       ).select("-password");
+    } else if (userType === "secretary") {
+      const existingUser = await Secretary.findById(userId);
+
+      // Delete from Cloudinary if exists
+      if (existingUser && existingUser.avatar && existingUser.avatar.publicId) {
+        try {
+          await cloudinary.uploader.destroy(existingUser.avatar.publicId);
+        } catch (error) {
+          console.warn("Could not delete avatar from Cloudinary:", error);
+        }
+      }
+
+      user = await Secretary.findByIdAndUpdate(
+        userId,
+        { $set: { avatar: defaultAvatar } },
+        { new: true }
+      ).select("-password");
+    } else if (userType === "teacherAssistant") {
+      const existingUser = await TeacherAssistant.findById(userId);
+
+      // Delete from Cloudinary if exists
+      if (existingUser && existingUser.avatar && existingUser.avatar.publicId) {
+        try {
+          await cloudinary.uploader.destroy(existingUser.avatar.publicId);
+        } catch (error) {
+          console.warn("Could not delete avatar from Cloudinary:", error);
+        }
+      }
+
+      user = await TeacherAssistant.findByIdAndUpdate(
+        userId,
+        { $set: { avatar: defaultAvatar } },
+        { new: true }
+      ).select("-password")
+        .populate('assignedTeacher', 'firstName lastName teacherId')
+        .populate('allowedGroups', 'name');
     } else {
       const existingUser = await Teacher.findById(userId);
 

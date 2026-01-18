@@ -114,6 +114,7 @@ import StudentChatView from "./pages/chat/Views/StudentChatView";
 import TeacherChatView from "./pages/chat/Views/TeacherChatView";
 import AdminChatView from "./pages/chat/Views/AdminChatView";
 import SecretaryChatView from "./pages/chat/Views/SecretaryChatView";
+import TeacherAssistantChatView from "./pages/chat/Views/TeacherAssistantChatView";
 
 // ============================================================================
 // Other Components
@@ -647,6 +648,11 @@ const TeacherAssistantRoutes: React.FC = () => {
             </React.Suspense>
           } 
         />
+
+        {/* ============================================
+            المحادثة مع المعلم - Chat with Teacher
+            ============================================ */}
+        <Route path="/chat" element={<TeacherAssistantChatView />} />
 
         {/* ============================================
             الإعدادات الشخصية - User Settings

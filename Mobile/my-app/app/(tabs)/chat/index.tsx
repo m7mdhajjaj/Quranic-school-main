@@ -189,6 +189,8 @@ export default function ChatScreen() {
         return "مدير";
       case "secretary":
         return "سكرتير";
+      case "teacherAssistant":
+        return "مساعد معلم";
       default:
         return role;
     }

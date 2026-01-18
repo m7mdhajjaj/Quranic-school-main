@@ -6,6 +6,12 @@ const TeacherAssistant = require('../../schema/TeacherAssistant');
 const Student = require('../../schema/Student');
 const { protect } = require('../../middleware/auth/protect.middleware');
 const { adminProtect } = require('../../middleware/auth/role.middleware');
+const { uploadAvatar } = require('../../config/cloudinary');
+const {
+  uploadAvatarById,
+  getAvatarById,
+  deleteAvatarById,
+} = require('../../controllers/uploadController/avatarManagementController');
 
 /**
  * @route   GET /api/teacher-assistants/my-groups
@@ -285,6 +291,31 @@ router.get('/', adminProtect, async (req, res) => {
   }
 });
 
+// ============================================================================
+// Avatar Routes - يجب أن تكون قبل /:id
+// ============================================================================
+
+/**
+ * @route   POST /api/teacher-assistants/:id/avatar
+ * @desc    رفع صورة مساعد المدرس
+ * @access  Admin or Self
+ */
+router.post('/:id/avatar', protect, uploadAvatar.single('avatar'), uploadAvatarById);
+
+/**
+ * @route   GET /api/teacher-assistants/:id/avatar
+ * @desc    الحصول على صورة مساعد المدرس
+ * @access  Admin or Self
+ */
+router.get('/:id/avatar', protect, getAvatarById);
+
+/**
+ * @route   DELETE /api/teacher-assistants/:id/avatar
+ * @desc    حذف صورة مساعد المدرس
+ * @access  Admin or Self
+ */
+router.delete('/:id/avatar', protect, deleteAvatarById);
+
 /**
  * @route   GET /api/teacher-assistants/:id
  * @desc    الحصول على مساعد مدرس بواسطة ID
@@ -441,14 +472,38 @@ router.post('/', adminProtect, async (req, res) => {
 /**
  * @route   PUT /api/teacher-assistants/:id
  * @desc    تحديث بيانات مساعد مدرس
- * @access  Admin only
+ * @access  Admin or Self (المساعد يمكنه تعديل بياناته الخاصة)
  */
-router.put('/:id', adminProtect, async (req, res) => {
+router.put('/:id', protect, async (req, res) => {
   try {
-    const { password, birthDate, ...updateData } = req.body;
+    const assistantId = req.params.id;
+    const currentUserId = req.user._id.toString();
+    const isAdmin = req.user.role === 'admin';
+    const isSelf = currentUserId === assistantId;
 
-    // إذا تم إرسال كلمة مرور جديدة، قم بتشفيرها
-    if (password) {
+    // التحقق من الصلاحية - أدمن أو المساعد نفسه
+    if (!isAdmin && !isSelf) {
+      return res.status(403).json({
+        success: false,
+        message: 'غير مصرح لك بتعديل بيانات هذا المساعد',
+      });
+    }
+
+    const { password, birthDate, assignedTeacher, allowedGroups, ...updateData } = req.body;
+
+    // فقط الأدمن يمكنه تعديل المعلم والحلقات المسموحة
+    if (!isAdmin) {
+      // المساعد لا يمكنه تعديل هذه الحقول
+      delete updateData.assignedTeacher;
+      delete updateData.allowedGroups;
+    } else {
+      // الأدمن يمكنه تعديل كل شيء
+      if (assignedTeacher !== undefined) updateData.assignedTeacher = assignedTeacher;
+      if (allowedGroups !== undefined) updateData.allowedGroups = allowedGroups;
+    }
+
+    // إذا تم إرسال كلمة مرور جديدة، قم بتشفيرها (للأدمن فقط)
+    if (password && isAdmin) {
       updateData.password = await bcrypt.hash(password, 10);
     }
 
@@ -466,10 +521,13 @@ router.put('/:id', adminProtect, async (req, res) => {
     }
 
     const assistant = await TeacherAssistant.findByIdAndUpdate(
-      req.params.id,
+      assistantId,
       updateData,
       { new: true, runValidators: true }
-    ).select('-password');
+    )
+      .select('-password')
+      .populate('assignedTeacher', 'firstName lastName teacherId')
+      .populate('allowedGroups', 'name');
 
     if (!assistant) {
       return res.status(404).json({
