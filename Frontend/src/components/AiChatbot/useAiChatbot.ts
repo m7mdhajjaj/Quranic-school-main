@@ -235,7 +235,7 @@ export const useAiChatbot = () => {
 
   // Clear chat history
   const handleClearChat = () => {
-    setMessages([initialMessage]);
+    setMessages([]);
   };
 
   // Copy message to clipboard
