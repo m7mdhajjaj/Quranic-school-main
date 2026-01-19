@@ -24,9 +24,18 @@ import {
   X,
   BookOpen,
   RotateCcw,
+  Grid3x3,
+  List,
+  User,
+  Edit,
+  Trash2,
 } from "lucide-react-native";
 import { useAuth } from "@/Context/AuthContext";
-import { getMonthlyPlan, Timetable } from "@/Api/TimeTable.Api";
+import {
+  getMonthlyPlan,
+  deleteTimetable,
+  Timetable,
+} from "@/Api/TimeTable.Api";
 import { useLocalSearchParams } from "expo-router";
 import WeeklyView from "./WeeklyView"; // تأكد من مسار الاستيراد الصحيح لمكون العرض الأسبوعي
 
@@ -57,6 +66,7 @@ interface Session {
     reviewSection?: string;
     marksStatus?: string;
   };
+  teacherId?: string | { _id: string; firstName: string; lastName: string };
 }
 
 interface CalendarDay {
@@ -65,6 +75,9 @@ interface CalendarDay {
   isCurrentMonth: boolean;
   isToday: boolean;
 }
+
+// ✅ نوع العرض - أسبوعي أو شهري
+type ViewMode = "weekly" | "monthly";
 
 // ============================================================================
 // Constants
@@ -151,6 +164,9 @@ const TimetablePage = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
 
+  // ✅ وضع العرض - أسبوعي أو شهري (مثل الويب)
+  const [viewMode, setViewMode] = useState<ViewMode>("weekly");
+
   // Handle incoming parameters from DailyMarks
   useEffect(() => {
     if (searchParams.addSession === "true") {
@@ -171,7 +187,7 @@ const TimetablePage = () => {
             text: "تم",
             style: "default",
           },
-        ]
+        ],
       );
 
       // TODO: Here you can add logic to open add session modal
@@ -223,13 +239,13 @@ const TimetablePage = () => {
 
   const nextMonth = () => {
     setCurrentDate(
-      new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)
+      new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1),
     );
   };
 
   const prevMonth = () => {
     setCurrentDate(
-      new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)
+      new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1),
     );
   };
 
@@ -308,7 +324,7 @@ const TimetablePage = () => {
         return sessionDateStr === dateStr;
       });
     },
-    [sessions]
+    [sessions],
   );
 
   const selectedDaySessions = useMemo(() => {
@@ -328,6 +344,55 @@ const TimetablePage = () => {
   const closeDayModal = () => {
     setModalVisible(false);
     setSelectedDate(null);
+  };
+
+  // ============================================
+  // ✅ دوال التعديل والحذف - للمعلم فقط
+  // ============================================
+
+  const handleEditSession = (session: Session) => {
+    closeDayModal();
+    // TODO: فتح صفحة التعديل أو Modal للتعديل
+    Alert.alert(
+      "تعديل الموعد",
+      `هل تريد تعديل موعد "${session.groupName || session.note}"؟`,
+      [
+        { text: "إلغاء", style: "cancel" },
+        {
+          text: "تعديل",
+          onPress: () => {
+            // يمكن إضافة navigation للصفحة التعديل لاحقاً
+            Alert.alert("قريباً", "سيتم إضافة صفحة التعديل قريباً");
+          },
+        },
+      ],
+    );
+  };
+
+  const handleDeleteSession = (session: Session) => {
+    Alert.alert(
+      "حذف الموعد",
+      `هل أنت متأكد من حذف موعد "${session.groupName || session.note}"؟\n\nالوقت: ${session.startHour} - ${session.endHour}`,
+      [
+        { text: "إلغاء", style: "cancel" },
+        {
+          text: "حذف",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteTimetable(session._id);
+              closeDayModal();
+              Alert.alert("تم الحذف", "تم حذف الموعد بنجاح");
+              // إعادة تحميل البيانات
+              fetchMonthlyData();
+            } catch (error) {
+              Alert.alert("خطأ", "حدث خطأ أثناء حذف الموعد");
+              console.error("Delete error:", error);
+            }
+          },
+        },
+      ],
+    );
   };
 
   // ============================================
@@ -386,18 +451,58 @@ const TimetablePage = () => {
             tintColor="#10b981"
           />
         }>
-        {/* Weekly View */}
-        <WeeklyView sessions={sessions} currentDate={currentDate} />
-
         {/* Page Header */}
         <View style={styles.pageHeader}>
           <View style={styles.headerIconContainer}>
             <Calendar size={28} color="#ffffff" />
           </View>
           <View style={styles.headerTextContainer}>
-            <Text style={styles.pageTitle}>جدول الحصص الشهري</Text>
-            <Text style={styles.pageSubtitle}>عرض مواعيد حلقتك</Text>
+            <Text style={styles.pageTitle}>جدول الحصص</Text>
+            <Text style={styles.pageSubtitle}>
+              عرض مواعيد حلقتك والمقاطع المطلوبة
+            </Text>
           </View>
+        </View>
+
+        {/* ✅ أزرار التبديل بين العروض - مثل الويب */}
+        <View style={styles.viewModeContainer}>
+          <TouchableOpacity
+            style={[
+              styles.viewModeButton,
+              viewMode === "weekly" && styles.viewModeButtonActive,
+            ]}
+            onPress={() => setViewMode("weekly")}>
+            <Grid3x3
+              size={18}
+              color={viewMode === "weekly" ? "#ffffff" : "#6b7280"}
+            />
+            <Text
+              style={[
+                styles.viewModeButtonText,
+                viewMode === "weekly" && styles.viewModeButtonTextActive,
+              ]}>
+              الجدول الأسبوعي
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.viewModeButton,
+              viewMode === "monthly" && styles.viewModeButtonActive,
+            ]}
+            onPress={() => setViewMode("monthly")}>
+            <List
+              size={18}
+              color={viewMode === "monthly" ? "#ffffff" : "#6b7280"}
+            />
+            <Text
+              style={[
+                styles.viewModeButtonText,
+                viewMode === "monthly" && styles.viewModeButtonTextActive,
+              ]}>
+              التقويم الشهري
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {/* Error Message */}
@@ -410,129 +515,161 @@ const TimetablePage = () => {
           </View>
         )}
 
-        {/* Calendar Header */}
-        <View style={styles.calendarHeader}>
-          <View style={styles.calendarTitleSection}>
-            <View style={styles.calendarIconContainer}>
-              <Calendar size={20} color="#10b981" />
-              {loading && <View style={styles.loadingDot} />}
-            </View>
-            <View>
-              <Text style={styles.calendarTitle}>
-                {ARABIC_MONTHS[currentDate.getMonth()]}{" "}
-                {currentDate.getFullYear()}
-              </Text>
-              <Text style={styles.calendarSubtitle}>عرض الخطة الشهرية</Text>
-            </View>
-          </View>
-
-          <View style={styles.navigationButtons}>
-            <TouchableOpacity style={styles.navButton} onPress={prevMonth}>
-              <ChevronRight size={20} color="#6b7280" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.todayButton} onPress={goToToday}>
-              <Text style={styles.todayButtonText}>اليوم</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.navButton} onPress={nextMonth}>
-              <ChevronLeft size={20} color="#6b7280" />
-            </TouchableOpacity>
-            <View style={styles.navDivider} />
-          </View>
-        </View>
-
-        {/* Calendar Grid */}
-        <View style={styles.calendarContainer}>
-          {/* Week Days Header */}
-          <View style={styles.weekDaysHeader}>
-            {WEEK_DAYS.map((day) => (
-              <View key={day} style={styles.weekDayCell}>
-                <Text style={styles.weekDayText}>{day}</Text>
+        {/* ✅ العرض حسب الوضع المختار */}
+        {viewMode === "weekly" ? (
+          <WeeklyView sessions={sessions} currentDate={currentDate} />
+        ) : (
+          <>
+            {/* Calendar Header */}
+            <View style={styles.calendarHeader}>
+              <View style={styles.calendarTitleSection}>
+                <View style={styles.calendarIconContainer}>
+                  <Calendar size={20} color="#10b981" />
+                  {loading && <View style={styles.loadingDot} />}
+                </View>
+                <View>
+                  <Text style={styles.calendarTitle}>
+                    {ARABIC_MONTHS[currentDate.getMonth()]}{" "}
+                    {currentDate.getFullYear()}
+                  </Text>
+                  <Text style={styles.calendarSubtitle}>عرض الخطة الشهرية</Text>
+                </View>
               </View>
-            ))}
-          </View>
 
-          {/* Calendar Days */}
-          <View style={styles.calendarGrid}>
-            {calendarDays.map((dayInfo, index) => {
-              const daySessions = getSessionsForDay(dayInfo.date);
-              const hasSession = daySessions.length > 0;
-
-              return (
+              <View style={styles.navigationButtons}>
+                <TouchableOpacity style={styles.navButton} onPress={prevMonth}>
+                  <ChevronRight size={20} color="#6b7280" />
+                </TouchableOpacity>
                 <TouchableOpacity
-                  key={index}
-                  style={[
-                    styles.dayCell,
-                    !dayInfo.isCurrentMonth && styles.dayCellInactive,
-                    dayInfo.isToday && styles.dayCellToday,
-                    hasSession && styles.dayCellWithSession,
-                  ]}
-                  onPress={() => openDayModal(dayInfo.date)}
-                  activeOpacity={0.7}>
-                  {/* Day Number */}
-                  <View style={styles.dayHeader}>
-                    <View
-                      style={[
-                        styles.dayNumber,
-                        dayInfo.isToday && styles.dayNumberToday,
-                      ]}>
-                      <Text
-                        style={[
-                          styles.dayNumberText,
-                          !dayInfo.isCurrentMonth && styles.dayNumberInactive,
-                          dayInfo.isToday && styles.dayNumberTextToday,
-                        ]}>
-                        {dayInfo.day}
-                      </Text>
-                    </View>
-                    {hasSession && dayInfo.isCurrentMonth && (
-                      <View style={styles.sessionCountBadge}>
-                        <Text style={styles.sessionCountText}>
-                          {daySessions.length}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
+                  style={styles.todayButton}
+                  onPress={goToToday}>
+                  <Text style={styles.todayButtonText}>اليوم</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.navButton} onPress={nextMonth}>
+                  <ChevronLeft size={20} color="#6b7280" />
+                </TouchableOpacity>
+                <View style={styles.navDivider} />
+              </View>
+            </View>
 
-                  {/* Session Preview */}
-                  {hasSession && dayInfo.isCurrentMonth && (
-                    <View style={styles.sessionPreviewContainer}>
-                      {daySessions.slice(0, 2).map((session) => {
-                        const typeStyle = getSessionTypeStyle(
-                          session.sessionType
-                        );
-                        return (
-                          <View
-                            key={session._id}
+            {/* Calendar Grid */}
+            <View style={styles.calendarContainer}>
+              {/* Week Days Header */}
+              <View style={styles.weekDaysHeader}>
+                {WEEK_DAYS.map((day) => (
+                  <View key={day} style={styles.weekDayCell}>
+                    <Text style={styles.weekDayText}>{day}</Text>
+                  </View>
+                ))}
+              </View>
+
+              {/* Calendar Days */}
+              <View style={styles.calendarGrid}>
+                {calendarDays.map((dayInfo, index) => {
+                  const daySessions = getSessionsForDay(dayInfo.date);
+                  const hasSession = daySessions.length > 0;
+
+                  return (
+                    <TouchableOpacity
+                      key={index}
+                      style={[
+                        styles.dayCell,
+                        !dayInfo.isCurrentMonth && styles.dayCellInactive,
+                        dayInfo.isToday && styles.dayCellToday,
+                        hasSession && styles.dayCellWithSession,
+                      ]}
+                      onPress={() => openDayModal(dayInfo.date)}
+                      activeOpacity={0.7}>
+                      {/* Day Number */}
+                      <View style={styles.dayHeader}>
+                        <View
+                          style={[
+                            styles.dayNumber,
+                            dayInfo.isToday && styles.dayNumberToday,
+                          ]}>
+                          <Text
                             style={[
-                              styles.sessionPreview,
-                              {
-                                backgroundColor: typeStyle.bg,
-                                borderColor: typeStyle.border,
-                              },
+                              styles.dayNumberText,
+                              !dayInfo.isCurrentMonth &&
+                                styles.dayNumberInactive,
+                              dayInfo.isToday && styles.dayNumberTextToday,
                             ]}>
-                            <Text
-                              style={[
-                                styles.sessionPreviewText,
-                                { color: typeStyle.text },
-                              ]}
-                              numberOfLines={1}>
-                              {session.groupName || session.note || "حلقة"}
+                            {dayInfo.day}
+                          </Text>
+                        </View>
+                        {hasSession && dayInfo.isCurrentMonth && (
+                          <View style={styles.sessionCountBadge}>
+                            <Text style={styles.sessionCountText}>
+                              {daySessions.length}
                             </Text>
                           </View>
-                        );
-                      })}
-                      {daySessions.length > 2 && (
-                        <Text style={styles.moreSessionsText}>
-                          +{daySessions.length - 2}
-                        </Text>
+                        )}
+                      </View>
+
+                      {/* Session Preview */}
+                      {hasSession && dayInfo.isCurrentMonth && (
+                        <View style={styles.sessionPreviewContainer}>
+                          {daySessions.slice(0, 2).map((session) => {
+                            const typeStyle = getSessionTypeStyle(
+                              session.sessionType,
+                            );
+                            return (
+                              <View
+                                key={session._id}
+                                style={[
+                                  styles.sessionPreview,
+                                  {
+                                    backgroundColor: typeStyle.bg,
+                                    borderColor: typeStyle.border,
+                                  },
+                                ]}>
+                                <Text
+                                  style={[
+                                    styles.sessionPreviewText,
+                                    { color: typeStyle.text },
+                                  ]}
+                                  numberOfLines={1}>
+                                  {session.groupName || session.note || "حلقة"}
+                                </Text>
+                              </View>
+                            );
+                          })}
+                          {daySessions.length > 2 && (
+                            <Text style={styles.moreSessionsText}>
+                              +{daySessions.length - 2}
+                            </Text>
+                          )}
+                        </View>
                       )}
-                    </View>
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+
+            {/* ✅ Legend/دليل الألوان - مثل الويب */}
+            <View style={styles.legendContainer}>
+              <View style={styles.legendItem}>
+                <View
+                  style={[styles.legendDot, { backgroundColor: "#3b82f6" }]}
+                />
+                <Text style={styles.legendText}>حفظ</Text>
+              </View>
+              <View style={styles.legendItem}>
+                <View
+                  style={[styles.legendDot, { backgroundColor: "#f59e0b" }]}
+                />
+                <Text style={styles.legendText}>مراجعة</Text>
+              </View>
+              <View style={styles.legendItem}>
+                <View
+                  style={[styles.legendDot, { backgroundColor: "#a855f7" }]}
+                />
+                <Text style={styles.legendText}>شامل</Text>
+              </View>
+            </View>
+          </>
+        )}
 
         {/* Empty State */}
         {sessions.length === 0 && !loading && !error && (
@@ -585,6 +722,17 @@ const TimetablePage = () => {
                           <Text style={styles.sessionTitle}>
                             {session.groupName || session.note || "حلقة"}
                           </Text>
+                          {/* ✅ اسم المعلم - مثل الويب */}
+                          {session.teacherId &&
+                            typeof session.teacherId === "object" && (
+                              <View style={styles.teacherInfo}>
+                                <User size={12} color="#6b7280" />
+                                <Text style={styles.teacherInfoText}>
+                                  {session.teacherId.firstName}{" "}
+                                  {session.teacherId.lastName}
+                                </Text>
+                              </View>
+                            )}
                           <View style={styles.sessionTime}>
                             <Clock size={14} color="#10b981" />
                             <Text style={styles.sessionTimeText}>
@@ -649,6 +797,25 @@ const TimetablePage = () => {
                         <Text style={styles.sessionDescription}>
                           {session.description}
                         </Text>
+                      )}
+
+                      {/* ✅ أزرار التعديل والحذف - للمعلم فقط */}
+                      {user?.role === "teacher" && (
+                        <View style={styles.actionButtons}>
+                          <TouchableOpacity
+                            style={styles.editButton}
+                            onPress={() => handleEditSession(session)}>
+                            <Edit size={16} color="#3b82f6" />
+                            <Text style={styles.editButtonText}>تعديل</Text>
+                          </TouchableOpacity>
+
+                          <TouchableOpacity
+                            style={styles.deleteButton}
+                            onPress={() => handleDeleteSession(session)}>
+                            <Trash2 size={16} color="#ef4444" />
+                            <Text style={styles.deleteButtonText}>حذف</Text>
+                          </TouchableOpacity>
+                        </View>
                       )}
                     </View>
                   );
@@ -730,6 +897,43 @@ const styles = StyleSheet.create({
     color: "rgba(255, 255, 255, 0.9)",
     marginTop: 4,
     textAlign: "right",
+  },
+
+  // ✅ أزرار التبديل بين العروض
+  viewModeContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 16,
+  },
+  viewModeButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: "#ffffff",
+    borderWidth: 2,
+    borderColor: "#e5e7eb",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  viewModeButtonActive: {
+    backgroundColor: "#10b981",
+    borderColor: "#10b981",
+  },
+  viewModeButtonText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#6b7280",
+  },
+  viewModeButtonTextActive: {
+    color: "#ffffff",
   },
 
   // Error
@@ -954,6 +1158,41 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 
+  // ✅ Legend/دليل الألوان
+  legendContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 20,
+    backgroundColor: "#ffffff",
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+  },
+  legendItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#f9fafb",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+  },
+  legendDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  legendText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#374151",
+  },
+
   // Empty State
   emptyState: {
     alignItems: "center",
@@ -1032,8 +1271,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
     color: "#1f2937",
-    marginBottom: 8,
+    marginBottom: 4,
     textAlign: "right",
+  },
+  // ✅ اسم المعلم
+  teacherInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginBottom: 8,
+  },
+  teacherInfoText: {
+    fontSize: 12,
+    color: "#6b7280",
+    fontWeight: "500",
   },
   sessionTime: {
     flexDirection: "row",
@@ -1090,6 +1341,49 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 10,
     textAlign: "right",
+  },
+  // ✅ أزرار التعديل والحذف
+  actionButtons: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 12,
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#e5e7eb",
+  },
+  editButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#eff6ff",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#bfdbfe",
+  },
+  editButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#3b82f6",
+  },
+  deleteButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#fef2f2",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#fecaca",
+  },
+  deleteButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#ef4444",
   },
   modalEmpty: {
     alignItems: "center",
