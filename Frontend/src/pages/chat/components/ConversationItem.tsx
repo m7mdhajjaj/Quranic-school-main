@@ -7,6 +7,7 @@ import type { Conversation } from '../types';
 interface ConversationItemProps {
   conversation: Conversation;
   isSelected: boolean;
+  isTyping?: boolean;
   currentUserId: string;
   onSelect: (conv: Conversation) => void;
   onDelete: (e: React.MouseEvent, id: string) => void;
@@ -15,6 +16,7 @@ interface ConversationItemProps {
 const ConversationItem: React.FC<ConversationItemProps> = memo(({ 
   conversation, 
   isSelected, 
+  isTyping,
   currentUserId, 
   onSelect, 
   onDelete 
@@ -79,12 +81,13 @@ const ConversationItem: React.FC<ConversationItemProps> = memo(({
         <div className="flex justify-between items-center gap-2">
           <div className={`text-xs sm:text-sm truncate flex-1 ${
             isSelected ? 'text-emerald-700/80 font-medium' : 
+            isTyping ? 'text-emerald-600 font-bold animate-pulse' :
             showUnreadBadge ? 'text-gray-800 font-semibold' : 'text-gray-500'
           }`}>
-            {lastMessageText}
+            {isTyping ? '✍️ يكتب الآن...' : lastMessageText}
           </div>
           
-          {showUnreadBadge && (
+          {showUnreadBadge && !isTyping && (
             <div className="min-w-[16px] sm:min-w-[18px] h-[16px] sm:h-[18px] flex items-center justify-center bg-emerald-500 text-white text-[9px] sm:text-[10px] font-bold rounded-full shadow-sm flex-shrink-0">
               {unreadCountText}
             </div>
