@@ -85,22 +85,32 @@ export const getSurahWithAyahs = async (surahNumber: number): Promise<{
     }
     
     throw new Error('Invalid response format');
-  } catch {
-    console.log('Fallback to external API for surah', surahNumber);
-    const response = await fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}`);
-    const data = await response.json();
-    return {
-      surah: {
-        number: data.data.number,
-        name: data.data.name,
-        englishName: data.data.englishName,
-        numberOfAyahs: data.data.numberOfAyahs,
-      },
-      ayahs: data.data.ayahs.map((ayah: Ayah) => ({
-        ...ayah,
-        surahNumber: surahNumber,
-      }))
-    };
+  } catch (error: any) {
+    // Silently fallback to external API - this is expected behavior
+    // Don't log errors for 404s when falling back to external API
+    if (error?.response?.status !== 404) {
+      console.log('📡 Fallback to external API for surah', surahNumber);
+    }
+    
+    try {
+      const response = await fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}`);
+      const data = await response.json();
+      return {
+        surah: {
+          number: data.data.number,
+          name: data.data.name,
+          englishName: data.data.englishName,
+          numberOfAyahs: data.data.numberOfAyahs,
+        },
+        ayahs: data.data.ayahs.map((ayah: Ayah) => ({
+          ...ayah,
+          surahNumber: surahNumber,
+        }))
+      };
+    } catch (fetchError) {
+      console.error('❌ Error fetching from external API:', fetchError);
+      throw fetchError;
+    }
   }
 };
 

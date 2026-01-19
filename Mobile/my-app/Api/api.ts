@@ -42,7 +42,11 @@ api.interceptors.response.use(
 
     // Don't log errors for verify endpoint (it's expected when token expires)
     // Don't log errors for login endpoint (we handle them in the UI)
-    if (!(isVerifyEndpoint && error.response?.status === 401) && !isLoginEndpoint) {
+    // Don't log 404 errors for quran endpoints (fallback to external API is expected)
+    const isQuranEndpoint = error.config?.url?.includes("/quran/");
+    const isQuran404 = isQuranEndpoint && error.response?.status === 404;
+    
+    if (!(isVerifyEndpoint && error.response?.status === 401) && !isLoginEndpoint && !isQuran404) {
       console.error("❌ API Error:", {
         url: error.config?.url,
         method: error.config?.method,
