@@ -174,7 +174,8 @@ const FilterSection = memo<{
 FilterSection.displayName = 'FilterSection';
 
 /**
- * Active Surah Banner - بانر السورة الفعالة (مختصر)
+ * Active Surah Banner - بانر السورة الفعالة (مختصر مع التقدم)
+ * ✅ V8: Added progress bar and remaining ayahs display
  */
 const ActiveSurahBanner = memo<{
   activeSurahs: ActiveSurahsResponse | null;
@@ -194,11 +195,39 @@ const ActiveSurahBanner = memo<{
   // إذا نفس السورة للحفظ والمراجعة
   const isSameSurah = hasMemorization && hasReview && memActive.surahNumber === revActive.surahNumber;
 
+  // Helper to render progress bar
+  const renderProgressBar = (surah: typeof memActive, colorClass: string, textColorClass: string) => {
+    if (!surah?.totalAyahs || surah.totalAyahs === 0) return null;
+    const progress = surah.progressPercent ?? Math.round((surah.lastAyahEnd / surah.totalAyahs) * 100);
+    const remaining = surah.remainingAyahs ?? (surah.totalAyahs - surah.lastAyahEnd);
+    
+    return (
+      <div className="mt-2 w-full">
+        <div className="flex justify-between text-[10px] text-gray-500 mb-1">
+          <span>{surah.lastAyahEnd}/{surah.totalAyahs} آية</span>
+          <span>متبقي {remaining} آية</span>
+        </div>
+        <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+          {/* Progress bar with inline width - necessary for dynamic progress */}
+          <div 
+            className={`h-full ${colorClass} transition-all duration-300`}
+            // eslint-disable-next-line react/forbid-component-props
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+        <p className={`text-[11px] font-bold text-center mt-1 ${textColorClass}`}>
+          {progress}% مكتمل
+        </p>
+      </div>
+    );
+  };
+
   return (
     <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-4 mb-6">
       <div className="flex items-center gap-2 mb-3">
         <Sparkles className="w-5 h-5 text-amber-500" />
         <span className="font-bold text-amber-800">السورة الفعالة الآن</span>
+        <span className="text-xs text-amber-600 mr-auto">🔒 يجب إكمالها قبل البدء بسورة جديدة</span>
       </div>
 
       <div className="flex flex-wrap gap-3">
@@ -206,19 +235,22 @@ const ActiveSurahBanner = memo<{
           // نفس السورة للحفظ والمراجعة
           <button
             onClick={() => onSurahClick?.(memActive.surahNumber)}
-            className="flex items-center gap-3 bg-white rounded-xl p-3 border border-amber-200 hover:border-amber-400 hover:shadow-md transition-all flex-1 min-w-[200px]"
+            className="flex flex-col items-stretch bg-white rounded-xl p-3 border border-amber-200 hover:border-amber-400 hover:shadow-md transition-all flex-1 min-w-[200px]"
           >
-            <div className="bg-gradient-to-br from-purple-500 to-indigo-500 p-2 rounded-lg">
-              <BookOpen className="w-5 h-5 text-white" />
-            </div>
-            <div className="text-right flex-1">
-              <p className="font-bold text-gray-900 text-lg">{memActive.surahName}</p>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">حفظ</span>
-                <span className="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full">مراجعة</span>
+            <div className="flex items-center gap-3">
+              <div className="bg-gradient-to-br from-purple-500 to-indigo-500 p-2 rounded-lg">
+                <BookOpen className="w-5 h-5 text-white" />
               </div>
+              <div className="text-right flex-1">
+                <p className="font-bold text-gray-900 text-lg">{memActive.surahName}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">حفظ</span>
+                  <span className="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full">مراجعة</span>
+                </div>
+              </div>
+              <ChevronLeft className="w-5 h-5 text-gray-400" />
             </div>
-            <ChevronLeft className="w-5 h-5 text-gray-400" />
+            {renderProgressBar(memActive, 'bg-gradient-to-r from-purple-500 to-indigo-500', 'text-purple-700')}
           </button>
         ) : (
           <>
@@ -226,16 +258,19 @@ const ActiveSurahBanner = memo<{
             {hasMemorization && (
               <button
                 onClick={() => onSurahClick?.(memActive.surahNumber)}
-                className="flex items-center gap-3 bg-white rounded-xl p-3 border border-emerald-200 hover:border-emerald-400 hover:shadow-md transition-all flex-1 min-w-[180px]"
+                className="flex flex-col bg-white rounded-xl p-3 border border-emerald-200 hover:border-emerald-400 hover:shadow-md transition-all flex-1 min-w-[180px]"
               >
-                <div className="bg-gradient-to-br from-emerald-500 to-green-500 p-2 rounded-lg">
-                  <BookMarked className="w-5 h-5 text-white" />
+                <div className="flex items-center gap-3">
+                  <div className="bg-gradient-to-br from-emerald-500 to-green-500 p-2 rounded-lg">
+                    <BookMarked className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="text-right flex-1">
+                    <p className="font-bold text-gray-900">{memActive.surahName}</p>
+                    <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">حفظ</span>
+                  </div>
+                  <ChevronLeft className="w-4 h-4 text-gray-400" />
                 </div>
-                <div className="text-right flex-1">
-                  <p className="font-bold text-gray-900">{memActive.surahName}</p>
-                  <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">حفظ</span>
-                </div>
-                <ChevronLeft className="w-4 h-4 text-gray-400" />
+                {renderProgressBar(memActive, 'bg-gradient-to-r from-emerald-500 to-green-500', 'text-emerald-700')}
               </button>
             )}
 
@@ -243,16 +278,19 @@ const ActiveSurahBanner = memo<{
             {hasReview && (
               <button
                 onClick={() => onSurahClick?.(revActive.surahNumber)}
-                className="flex items-center gap-3 bg-white rounded-xl p-3 border border-blue-200 hover:border-blue-400 hover:shadow-md transition-all flex-1 min-w-[180px]"
+                className="flex flex-col bg-white rounded-xl p-3 border border-blue-200 hover:border-blue-400 hover:shadow-md transition-all flex-1 min-w-[180px]"
               >
-                <div className="bg-gradient-to-br from-blue-500 to-cyan-500 p-2 rounded-lg">
-                  <Target className="w-5 h-5 text-white" />
+                <div className="flex items-center gap-3">
+                  <div className="bg-gradient-to-br from-blue-500 to-cyan-500 p-2 rounded-lg">
+                    <Target className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="text-right flex-1">
+                    <p className="font-bold text-gray-900">{revActive.surahName}</p>
+                    <span className="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full">مراجعة</span>
+                  </div>
+                  <ChevronLeft className="w-4 h-4 text-gray-400" />
                 </div>
-                <div className="text-right flex-1">
-                  <p className="font-bold text-gray-900">{revActive.surahName}</p>
-                  <span className="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full">مراجعة</span>
-                </div>
-                <ChevronLeft className="w-4 h-4 text-gray-400" />
+                {renderProgressBar(revActive, 'bg-gradient-to-r from-blue-500 to-cyan-500', 'text-blue-700')}
               </button>
             )}
           </>

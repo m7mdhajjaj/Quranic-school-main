@@ -214,11 +214,27 @@ const QUOTA_ERRORS = {
 // ============================================================================
 const ACTIVE_SURAH_ERRORS = {
   // يجب إكمال السورة الحالية أولاً
-  MUST_COMPLETE_CURRENT: (activeSurahName, newSurahName) => formatErrorMessage(
-    "يجب إكمال السورة الحالية أولاً",
-    `لا يمكنك البدء بسورة ${newSurahName} قبل إكمال سورة ${activeSurahName}.`,
-    "أكمل السورة الحالية أولاً أو احذف التسجيلات السابقة."
-  )
+  MUST_COMPLETE_CURRENT: (activeSurahName, newSurahName, progress = null) => {
+    let detailsText = `لا يمكنك البدء بسورة ${newSurahName} قبل إكمال سورة ${activeSurahName}.`;
+    let solutionText = "أكمل السورة الحالية أولاً أو احذف التسجيلات السابقة.";
+    
+    if (progress) {
+      detailsText = `لا يمكنك البدء بسورة ${newSurahName} قبل إكمال سورة ${activeSurahName}.\n\n📊 التقدم الحالي: ${progress.lastAyahEnd}/${progress.totalAyahs} آية (${progress.progressPercent}%)\n⏳ المتبقي: ${progress.remainingAyahs} آية`;
+      solutionText = `أكمل الحفظ/المراجعة حتى الآية ${progress.totalAyahs} من سورة ${activeSurahName}، ثم يمكنك البدء بسورة جديدة.`;
+    }
+    
+    return formatErrorMessage(
+      "يجب إكمال السورة الحالية أولاً",
+      detailsText,
+      solutionText
+    );
+  },
+  
+  // السورة مكتملة بنجاح
+  SURAH_COMPLETED_SUCCESS: (surahName, ayahCount, type) => {
+    const typeLabel = type === 'memorization' ? 'الحفظ' : 'المراجعة';
+    return `🎉 تهانينا! سورة ${surahName} (${ayahCount} آية) مكتملة ${typeLabel}! يمكنك الآن البدء بسورة جديدة.`;
+  }
 };
 
 // ============================================================================

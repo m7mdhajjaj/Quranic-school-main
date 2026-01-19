@@ -137,17 +137,19 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
                   <div className={`absolute top-full text-right left-0 w-full bg-white rounded-xl shadow-2xl border border-gray-100 mt-2 max-h-60 overflow-y-auto divide-y divide-gray-50 z-[100] animate-in fade-in zoom-in-95 duration-100 scrollbar-thin ${colorClass === 'amber' ? 'scrollbar-thumb-amber-500' : 'scrollbar-thumb-emerald-500'} scrollbar-track-transparent`}>
                       {suggestions.map(s => {
                           const isCompleted = completedSurahs.some(c => c.surahNumber === s.number);
+                          // ✅ V13 FIX: للمراجعة يمكن تكرار السور المكتملة، للحفظ فقط ممنوع
+                          const isBlockedForSelection = type === 'memorization' && isCompleted;
                           return (
                           <div 
                             key={s.number}
                             className={`px-4 py-3 border-b border-gray-50 last:border-0 transition-colors flex items-center justify-between group/item
-                                ${isCompleted ? 'bg-gray-50/50 cursor-not-allowed opacity-70' : 'cursor-pointer hover:bg-gray-50 bg-white'}
+                                ${isBlockedForSelection ? 'bg-gray-50/50 cursor-not-allowed opacity-70' : 'cursor-pointer hover:bg-gray-50 bg-white'}
                             `}
                             onMouseDown={(e) => {
                                 e.preventDefault(); // Prevent blur before click
-                                if (isCompleted) {
+                                if (isBlockedForSelection) {
                                    import('@/utils/toastUtils').then(({ showWarningToast }) => {
-                                      showWarningToast(`⚠️ سورة ${s.name} مكتملة بالفعل في ${type === 'memorization' ? 'الحفظ' : 'المراجعة'}`);
+                                      showWarningToast(`⚠️ سورة ${s.name} مكتملة بالفعل في الحفظ`);
                                    });
                                    return;
                                 }
@@ -157,19 +159,25 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
                               <div className="flex items-center gap-3">
                                 <div className="relative">
                                     <span className={`flex items-center justify-center w-6 h-6 rounded-full text-[10px] font-bold 
-                                        ${isCompleted 
+                                        ${isBlockedForSelection 
                                             ? 'bg-gray-200 text-gray-500' 
+                                            : isCompleted && type === 'review'
+                                            ? 'bg-green-100 text-green-700'
                                             : (colorClass === 'emerald' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700')
                                         }`}>
                                     {s.number}
                                     </span>
-                                    {isCompleted && <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white"></div>}
+                                    {isCompleted && <div className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border-2 border-white ${type === 'review' ? 'bg-blue-500' : 'bg-green-500'}`}></div>}
                                 </div>
                                 <div className="flex flex-col">
-                                    <span className={`font-bold ${isCompleted ? 'text-gray-500' : 'text-gray-700 group-hover/item:text-black'}`}>
+                                    <span className={`font-bold ${isBlockedForSelection ? 'text-gray-500' : 'text-gray-700 group-hover/item:text-black'}`}>
                                         {s.name}
                                     </span>
-                                    {isCompleted && <span className="text-[9px] text-green-600 font-bold">تم الختم ✓</span>}
+                                    {isCompleted && (
+                                      <span className={`text-[9px] font-bold ${type === 'review' ? 'text-blue-600' : 'text-green-600'}`}>
+                                        {type === 'review' ? '✓ يمكن إعادة المراجعة' : 'تم الختم ✓'}
+                                      </span>
+                                    )}
                                 </div>
                               </div>
                               <span className="text-[10px] font-medium text-gray-400 bg-gray-100 px-2 py-1 rounded-full group-hover/item:bg-white">
@@ -269,17 +277,14 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
       {activeSurahError && (
         <div className="mt-4 p-4 bg-red-50 border-2 border-red-300 rounded-xl shadow-lg animate-in fade-in duration-300">
           <div className="flex items-start gap-3">
-            <div className="flex-shrink-0 w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-              <span className="text-xl">❌</span>
+            <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+              <span className="text-2xl">🔒</span>
             </div>
             <div className="flex-1 space-y-2">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-red-700 bg-yellow-100 px-2 py-0.5 rounded">⚠️ تنبيه:</span>
+                <span className="text-sm font-bold text-red-700 bg-red-100 px-3 py-1 rounded-full">⛔ سورة غير مكتملة</span>
               </div>
-              <p className="text-sm font-bold text-red-800 whitespace-pre-line leading-relaxed">{activeSurahError}</p>
-              <p className="text-xs text-red-600 bg-red-100 px-2 py-1 rounded-lg">
-                💡 الحل: أكمل السورة الحالية أولاً أو اختر نفس السورة للمتابعة
-              </p>
+              <p className="text-sm text-red-800 whitespace-pre-line leading-relaxed">{activeSurahError}</p>
             </div>
           </div>
         </div>

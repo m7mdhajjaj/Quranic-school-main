@@ -575,6 +575,7 @@ exports.getSurahHistory = async (req, res) => {
  * @description
  * يجلب السور الفعالة والمكتملة للحلقة
  * السورة الفعالة = السورة الحالية التي يجب إكمالها قبل البدء بسورة جديدة
+ * ✅ V8: إضافة totalAyahs و progressPercent لعرض التقدم
  */
 exports.getActiveSurahs = async (req, res) => {
   try {
@@ -586,6 +587,7 @@ exports.getActiveSurahs = async (req, res) => {
 
     // البحث عن المجموعة باستخدام ID أو الاسم
     const mongoose = require('mongoose');
+    const { getSurahByNumber } = require('../../../utils/Quran/dailyMarkQuranMetadata');
     const isValidObjectId = mongoose.Types.ObjectId.isValid(groupId);
     
     let group;
@@ -604,27 +606,37 @@ exports.getActiveSurahs = async (req, res) => {
       return sendNotFound(res, "الحلقة");
     }
 
+    // ✅ V8: Helper function to add progress info
+    const buildActiveSurahData = (activeSurah) => {
+      if (!activeSurah?.surahNumber) return null;
+      
+      const surahInfo = getSurahByNumber(activeSurah.surahNumber);
+      const totalAyahs = surahInfo?.ayahCount || 0;
+      const lastAyahEnd = activeSurah.lastAyahEnd || 0;
+      const remainingAyahs = Math.max(0, totalAyahs - lastAyahEnd);
+      const progressPercent = totalAyahs > 0 ? Math.round((lastAyahEnd / totalAyahs) * 100) : 0;
+      
+      return {
+        surahNumber: activeSurah.surahNumber,
+        surahName: activeSurah.surahName,
+        lastAyahEnd,
+        totalAyahs,
+        remainingAyahs,
+        progressPercent,
+        isCompleted: activeSurah.isCompleted,
+        startedAt: activeSurah.startedAt,
+      };
+    };
+
     // إحصائيات إضافية
     const memorizationStats = {
-      activeSurah: group.activeMemorizationSurah?.surahNumber ? {
-        surahNumber: group.activeMemorizationSurah.surahNumber,
-        surahName: group.activeMemorizationSurah.surahName,
-        lastAyahEnd: group.activeMemorizationSurah.lastAyahEnd,
-        isCompleted: group.activeMemorizationSurah.isCompleted,
-        startedAt: group.activeMemorizationSurah.startedAt,
-      } : null,
+      activeSurah: buildActiveSurahData(group.activeMemorizationSurah),
       completedCount: group.completedSurahs?.memorization?.length || 0,
       completedSurahs: group.completedSurahs?.memorization || [],
     };
 
     const reviewStats = {
-      activeSurah: group.activeReviewSurah?.surahNumber ? {
-        surahNumber: group.activeReviewSurah.surahNumber,
-        surahName: group.activeReviewSurah.surahName,
-        lastAyahEnd: group.activeReviewSurah.lastAyahEnd,
-        isCompleted: group.activeReviewSurah.isCompleted,
-        startedAt: group.activeReviewSurah.startedAt,
-      } : null,
+      activeSurah: buildActiveSurahData(group.activeReviewSurah),
       completedCount: group.completedSurahs?.review?.length || 0,
       completedSurahs: group.completedSurahs?.review || [],
     };

@@ -5,6 +5,7 @@ const Teacher = require("../../../schema/Teacher");
 const { notifySectionUpdated } = require("../../../Notifications");
 const sequenceService = require("../../../services/DailyMark/SectionSequenceService");
 const { createLogger } = require("../../../utils/logger");
+const { getSurahByNumber } = require("../../../utils/Quran/dailyMarkQuranMetadata");
 const {
   sendSuccess,
   sendError,
@@ -281,6 +282,48 @@ exports.updateSection = async (req, res) => {
     const completedMem = sequenceService.detectCompletedSurahs(updateData.memorizationMeta, 'memorization');
     const completedRev = sequenceService.detectCompletedSurahs(updateData.reviewMeta, 'review');
     const allCompleted = [...completedMem, ...completedRev];
+
+    // ============================================
+    // 🔄 UPDATE ACTIVE SURAH - تحديث السورة الفعالة بعد التحديث
+    // ============================================
+    if (targetGroupId) {
+      // تحديث السورة الفعالة للحفظ
+      const memMetaToUpdate = updateData.memorizationMeta || section.memorizationMeta;
+      if (memMetaToUpdate && memMetaToUpdate.length > 0) {
+        const memSegment = memMetaToUpdate[0];
+        const maxAyahEnd = Math.max(...memMetaToUpdate.map(s => s.ayahEnd));
+        const surahInfo = getSurahByNumber(memSegment.surahNumber);
+        const totalAyahs = surahInfo?.ayahCount || 0;
+        
+        // تحديث آخر آية
+        await Group.updateLastAyah(targetGroupId, maxAyahEnd, 'memorization');
+        
+        // ✅ التحقق من إكمال السورة تلقائياً
+        if (totalAyahs > 0 && maxAyahEnd >= totalAyahs) {
+          await Group.checkAndCompleteSurah(targetGroupId, maxAyahEnd, totalAyahs, 'memorization');
+          logger.info(`🎉 سورة ${surahInfo.name} مكتملة الحفظ! (${maxAyahEnd}/${totalAyahs})`);
+        }
+      }
+
+      // تحديث السورة الفعالة للمراجعة
+      const revMetaToUpdate = updateData.reviewMeta || section.reviewMeta;
+      if (revMetaToUpdate && revMetaToUpdate.length > 0) {
+        const revSegment = revMetaToUpdate[0];
+        const maxRevAyahEnd = Math.max(...revMetaToUpdate.map(s => s.ayahEnd));
+        const revSurahInfo = getSurahByNumber(revSegment.surahNumber);
+        const revTotalAyahs = revSurahInfo?.ayahCount || 0;
+        
+        // تحديث آخر آية
+        await Group.updateLastAyah(targetGroupId, maxRevAyahEnd, 'review');
+        
+        // ✅ التحقق من إكمال السورة تلقائياً
+        if (revTotalAyahs > 0 && maxRevAyahEnd >= revTotalAyahs) {
+          await Group.checkAndCompleteSurah(targetGroupId, maxRevAyahEnd, revTotalAyahs, 'review');
+          logger.info(`🎉 سورة ${revSurahInfo.name} مكتملة المراجعة! (${maxRevAyahEnd}/${revTotalAyahs})`);
+        }
+      }
+    }
+    // ============================================
 
     // manual sendSuccess to include meta
     res.status(200).json({

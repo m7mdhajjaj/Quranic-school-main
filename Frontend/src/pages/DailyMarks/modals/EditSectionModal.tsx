@@ -40,6 +40,8 @@ const EditSectionModalComponent = ({
   // Quota Validation State (includes week check from backend)
   const [quotaError, setQuotaError] = useState<string | null>(null);
   const [reviewValidationError, setReviewValidationError] = useState<string | null>(null);
+  // ✅ V13: Memorization validation error (Active Surah)
+  const [memorizationValidationError, setMemorizationValidationError] = useState<string | null>(null);
   const [isCheckingQuota, setIsCheckingQuota] = useState(false);
 
   // Check Quota on Date Change (Backend handles week check too)
@@ -98,9 +100,12 @@ const EditSectionModalComponent = ({
   }, [localMemorizationMeta]);
 
   // ✅ V8: hasErrors checks quota (which includes week check from backend)
-  const hasErrors = hasConsistencyErrors || !!quotaError || !!reviewValidationError;
+  const hasErrors = hasConsistencyErrors || !!quotaError || !!reviewValidationError || !!memorizationValidationError;
   const allErrors = [...consistencyErrors];
   
+  if (memorizationValidationError) {
+    allErrors.push(memorizationValidationError);
+  }
   if (reviewValidationError) {
     allErrors.push(reviewValidationError);
   }
@@ -224,6 +229,7 @@ const EditSectionModalComponent = ({
              completedSurahs={completedList.filter(s => (s.type || 'memorization') === 'memorization')}
              date={localSection.date ? new Date(localSection.date).toISOString() : undefined}
              groupId={localSection.group}
+             onValidationError={setMemorizationValidationError}
            />
 
            <QuranSegmentInput 
