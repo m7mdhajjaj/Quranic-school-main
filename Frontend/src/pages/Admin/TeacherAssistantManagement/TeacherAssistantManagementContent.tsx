@@ -152,6 +152,7 @@ export const TeacherAssistantManagementContent: React.FC = () => {
     assistants,
     stats,
     error,
+    isLoading,
     refetch,
     refetchStats,
     isSubmitting,

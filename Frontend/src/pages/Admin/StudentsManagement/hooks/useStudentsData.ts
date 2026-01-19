@@ -7,7 +7,7 @@ import type { Student, ApiStats } from "../types";
 
 export const useStudentsData = (hasPermission: boolean) => {
   const [students, setStudents] = useState<Student[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const [apiStats, setApiStats] = useState<ApiStats | null>(null);

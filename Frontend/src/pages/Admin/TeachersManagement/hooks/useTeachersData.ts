@@ -4,7 +4,7 @@ import type { Teacher, ApiStats, TeacherFiltersParams } from "../types";
 
 export const useTeachersData = (hasPermission: boolean) => {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const [apiStats, setApiStats] = useState<ApiStats | null>(null);

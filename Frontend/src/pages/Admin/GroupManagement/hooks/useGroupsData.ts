@@ -4,7 +4,7 @@ import { getAllGroups, type Group, type GroupsQueryParams, type PaginationInfo }
 export const useGroupsData = () => {
   const [groups, setGroups] = useState<Group[]>([]);
   const [pagination, setPagination] = useState<PaginationInfo | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const initialLoadDone = useRef(false);
 

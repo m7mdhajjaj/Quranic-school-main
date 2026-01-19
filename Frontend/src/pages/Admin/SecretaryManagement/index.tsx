@@ -1,6 +1,7 @@
 import React, { memo } from "react";
 import { Shield } from "lucide-react";
 import { EmptyState } from "@/components/UI/EmptyState";
+import { MotionPageSkeleton } from "@/components/skeletons/MotionSkeleton";
 
 // Components
 import {
@@ -145,6 +146,7 @@ const SecretaryManagement: React.FC = () => {
     // Data
     secretaries,
     stats,
+    isLoading,
     error,
     refetch,
     
@@ -201,6 +203,19 @@ const SecretaryManagement: React.FC = () => {
     // Export
     handleExport,
   } = useSecretaryManagement();
+
+  // Loading State
+  if (isLoading) {
+    return (
+      <MotionPageSkeleton
+        showStats={true}
+        showToolbar={true}
+        showTable={true}
+        statsCount={4}
+        rowsCount={8}
+      />
+    );
+  }
 
   // Error State
   if (error) {
