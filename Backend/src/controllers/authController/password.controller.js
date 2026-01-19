@@ -280,6 +280,36 @@ exports.resetPassword = async (req, res) => {
       }
     }
 
+    // إذا لم نجد في السكرتيرين، ابحث في مساعدي المدرسين
+    if (!user) {
+      const teacherAssistant = await TeacherAssistant.findOne({
+        $or: [{ idNumber: idNumber }, { assistantId: parseInt(idNumber) }],
+      });
+
+      if (teacherAssistant) {
+        const birthDateMatch = teacherAssistant.birthDate
+          ? new Date(teacherAssistant.birthDate).toISOString().split("T")[0] === birthDate
+          : false;
+
+        if (
+          teacherAssistant.firstName.trim().toLowerCase() === firstName.toLowerCase() &&
+          teacherAssistant.fatherName &&
+          teacherAssistant.fatherName.trim().toLowerCase() === fatherName.toLowerCase() &&
+          teacherAssistant.grandFatherName &&
+          teacherAssistant.grandFatherName.trim().toLowerCase() ===
+            grandFatherName.toLowerCase() &&
+          teacherAssistant.lastName.trim().toLowerCase() === lastName.toLowerCase() &&
+          teacherAssistant.motherName &&
+          teacherAssistant.motherName.trim().toLowerCase() === motherName.toLowerCase() &&
+          (teacherAssistant.idNumber === idNumber || teacherAssistant.assistantId === parseInt(idNumber)) &&
+          birthDateMatch
+        ) {
+          user = teacherAssistant;
+          userType = "teacherAssistant";
+        }
+      }
+    }
+
     if (!user) {
       return res.status(400).json({
         success: false,
@@ -306,6 +336,10 @@ exports.resetPassword = async (req, res) => {
       });
     } else if (userType === "secretary") {
       await Secretary.findByIdAndUpdate(user._id, {
+        password: hashedPassword,
+      });
+    } else if (userType === "teacherAssistant") {
+      await TeacherAssistant.findByIdAndUpdate(user._id, {
         password: hashedPassword,
       });
     }
