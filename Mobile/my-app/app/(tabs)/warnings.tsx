@@ -68,8 +68,8 @@ export default function WarningsScreen() {
   // عرض واجهة الطالب
   if (isStudent) {
     return (
-      <ScrollView className="flex-1 bg-gray-50">
-        <View className="px-4 pt-6 pb-12">
+      <View className="flex-1 bg-gray-50">
+        <View className="px-4 pt-6">
           {/* العنوان */}
           <View className="bg-gradient-to-r from-red-500 to-orange-600 rounded-2xl p-6 mb-6 shadow-lg">
             <View className="flex-row items-center gap-4 mb-2">
@@ -84,17 +84,19 @@ export default function WarningsScreen() {
               تابع إنذاراتك والتزم بالقوانين
             </Text>
           </View>
-
-          {loading ? (
-            <View className="flex-1 items-center justify-center py-20">
-              <ActivityIndicator size="large" color="#ef4444" />
-              <Text className="text-gray-500 mt-4">جاري التحميل...</Text>
-            </View>
-          ) : (
-            <StudentView warnings={warnings} />
-          )}
         </View>
-      </ScrollView>
+
+        {loading ? (
+          <View className="flex-1 items-center justify-center py-20">
+            <ActivityIndicator size="large" color="#ef4444" />
+            <Text className="text-gray-500 mt-4">جاري التحميل...</Text>
+          </View>
+        ) : (
+          <View className="flex-1 px-4">
+            <StudentView warnings={warnings} />
+          </View>
+        )}
+      </View>
     );
   }
 

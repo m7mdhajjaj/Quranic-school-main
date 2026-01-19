@@ -12,6 +12,7 @@ import {
   Alert,
 } from "react-native";
 import { useAuth } from "@/Context/AuthContext";
+import { useLocalSearchParams } from "expo-router";
 import {
   getAllTeacherAssistants,
   deleteTeacherAssistant,
@@ -25,6 +26,7 @@ import { AddAssistantModal } from "@/components/assistants/AddAssistantModal";
 
 export default function TeacherAssistantsAdminScreen() {
   const { user } = useAuth();
+  const params = useLocalSearchParams();
   const [assistants, setAssistants] = useState<TeacherAssistant[]>([]);
   const [stats, setStats] = useState<TeacherAssistantStats>({
     total: 0,
@@ -43,6 +45,13 @@ export default function TeacherAssistantsAdminScreen() {
   >();
 
   const hasPermission = user?.role === "admin";
+
+  // Open modal if add=true in URL
+  useEffect(() => {
+    if (params.add === 'true') {
+      setShowAddModal(true);
+    }
+  }, [params.add]);
 
   // Load assistants
   const fetchAssistants = useCallback(async () => {

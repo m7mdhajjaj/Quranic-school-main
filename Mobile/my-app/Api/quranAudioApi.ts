@@ -131,7 +131,15 @@ export const getAllSurahs = async (): Promise<Surah[]> => {
   try {
     // Try backend first
     const backendResponse = await api.get("/quran/surahs");
-    return backendResponse.data?.data || backendResponse.data;
+    const backendData = backendResponse.data?.data || backendResponse.data;
+    
+    // ✅ إذا كان الـ backend يُعيد مصفوفة فارغة، نستخدم الـ external API
+    if (Array.isArray(backendData) && backendData.length > 0) {
+      return backendData;
+    }
+    
+    console.log('Backend returned empty data, using external API');
+    throw new Error('Backend data is empty');
   } catch (backendError) {
     console.log("Backend not available, using external API:", backendError);
 
@@ -158,34 +166,27 @@ export const getAllSurahs = async (): Promise<Surah[]> => {
 
 // Get specific Surah with Ayahs
 export const getSurah = async (surahNumber: number): Promise<SurahData> => {
+  // Always use external API since backend database is empty
+  // This avoids unnecessary backend calls and error logs
   try {
-    // Try backend first
-    const backendResponse = await api.get(`/quran/surah/${surahNumber}`);
-    return backendResponse.data?.data || backendResponse.data;
-  } catch (backendError) {
-    console.log("Backend not available, using external API:", backendError);
+    const response = await fetch(
+      `https://api.alquran.cloud/v1/surah/${surahNumber}`
+    );
 
-    // Fallback to external API
-    try {
-      const response = await fetch(
-        `https://api.alquran.cloud/v1/surah/${surahNumber}`
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data: QuranResponse<SurahData> = await response.json();
-
-      if (data.code !== 200) {
-        throw new Error(`API error: ${data.status}`);
-      }
-
-      return data.data;
-    } catch (externalError) {
-      console.error("External API also failed:", externalError);
-      throw new Error("فشل في تحميل السورة. يرجى المحاولة مرة أخرى.");
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
+
+    const data: QuranResponse<SurahData> = await response.json();
+
+    if (data.code !== 200) {
+      throw new Error(`API error: ${data.status}`);
+    }
+
+    return data.data;
+  } catch (error) {
+    console.error("Failed to load surah:", error);
+    throw new Error("فشل في تحميل السورة. يرجى المحاولة مرة أخرى.");
   }
 };
 

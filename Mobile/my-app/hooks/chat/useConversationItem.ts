@@ -32,10 +32,10 @@ export const useConversationItem = ({
     }
 
     const otherParticipant = conversation.participants.find(
-      (p) => p.userId._id !== currentUserId
+      (p) => p?.userId?._id && p.userId._id !== currentUserId
     );
 
-    if (otherParticipant) {
+    if (otherParticipant?.userId) {
       return {
         name: `${otherParticipant.userId.firstName} ${otherParticipant.userId.lastName}`,
         avatar: otherParticipant.userId.avatar?.url,

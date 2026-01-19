@@ -12,6 +12,7 @@ import {
   Alert,
   RefreshControl,
 } from "react-native";
+import { useLocalSearchParams } from "expo-router";
 import {
   useSecretaryData,
   useSecretaryStats,
@@ -25,12 +26,20 @@ import {
 import type { Secretary } from "@/types/secretary.types";
 
 export default function SecretaryManagementScreen() {
+  const params = useLocalSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedSecretary, setSelectedSecretary] = useState<
     Secretary | undefined
   >();
   const [refreshing, setRefreshing] = useState(false);
+
+  // Open modal if add=true in URL
+  useEffect(() => {
+    if (params.add === 'true') {
+      setShowAddModal(true);
+    }
+  }, [params.add]);
 
   // Hooks
   const {

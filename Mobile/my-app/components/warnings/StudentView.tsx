@@ -126,30 +126,30 @@ export const StudentView: React.FC<StudentViewProps> = ({ warnings }) => {
     );
   }
 
-  return (
-    <View className="flex-1">
-      {/* التحذير */}
-      <View className="bg-red-50 border-2 border-red-200 rounded-2xl p-4 mb-4">
-        <View className="flex-row items-center gap-3">
-          <Text className="text-3xl">⚠️</Text>
-          <View className="flex-1">
-            <Text className="text-red-800 font-bold text-lg mb-1">
-              لديك {warnings.length} إنذار
-            </Text>
-            <Text className="text-red-600 text-sm">
-              الوصول لـ 3 إنذارات يؤدي للفصل من الحلقة
-            </Text>
-          </View>
+  const ListHeader = () => (
+    <View className="bg-red-50 border-2 border-red-200 rounded-2xl p-4 mb-4">
+      <View className="flex-row items-center gap-3">
+        <Text className="text-3xl">⚠️</Text>
+        <View className="flex-1">
+          <Text className="text-red-800 font-bold text-lg mb-1">
+            لديك {warnings.length} إنذار
+          </Text>
+          <Text className="text-red-600 text-sm">
+            الوصول لـ 3 إنذارات يؤدي للفصل من الحلقة
+          </Text>
         </View>
       </View>
-
-      <FlatList
-        data={warnings}
-        renderItem={renderWarning}
-        keyExtractor={(item) => item._id}
-        contentContainerStyle={{ paddingBottom: 20 }}
-        showsVerticalScrollIndicator={false}
-      />
     </View>
+  );
+
+  return (
+    <FlatList
+      data={warnings}
+      renderItem={renderWarning}
+      keyExtractor={(item) => item._id}
+      ListHeaderComponent={ListHeader}
+      contentContainerStyle={{ paddingBottom: 20 }}
+      showsVerticalScrollIndicator={false}
+    />
   );
 };
