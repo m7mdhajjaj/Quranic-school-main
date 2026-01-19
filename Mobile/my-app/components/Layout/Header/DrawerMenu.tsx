@@ -34,6 +34,7 @@ import {
   Calendar,
   BookMarked,
   Sparkles,
+  ClipboardCheck,
 } from "lucide-react-native";
 
 interface MenuItem {
@@ -169,6 +170,7 @@ export const DrawerMenu: React.FC<DrawerMenuProps> = ({ isOpen, onClose }) => {
       { to: "/(tabs)/warnings", label: "الإنذارات", icon: AlertTriangle },
       { to: "/(tabs)/points-game", label: "لعبة النقاط", icon: Trophy },
       { to: "/(tabs)/prayer-times", label: "مواقيت الصلاة", icon: Clock },
+      { to: "/(tabs)/test", label: "اختبر نفسك", icon: ClipboardCheck },
       { to: "/(tabs)/ai-chat", label: "المساعد الذكي", icon: Sparkles },
       {
         to: "/(tabs)/quran",

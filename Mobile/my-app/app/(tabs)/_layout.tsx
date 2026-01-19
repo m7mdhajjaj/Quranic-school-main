@@ -139,6 +139,12 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
+          name="test/index"
+          options={{
+            href: null,
+          }}
+        />
+        <Tabs.Screen
           name="timetable/index"
           options={{
             href: null,
