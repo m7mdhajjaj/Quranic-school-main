@@ -60,9 +60,12 @@ async function sendRealTimeNotification(io, notification) {
     // Send to user's room (by userId)
     io.to(recipientId).emit("newNotification", notificationPayload);
     
-    if (global.onlineUsers && global.onlineUsers.has(recipientId)) {
-      const userData = global.onlineUsers.get(recipientId);
-      console.log(`📱 Real-time notification sent to ${userData.firstName} (${notification.type}/${notificationPayload.category})`);
+    // Check if user is online using onlineUsersManager
+    const isOnline = global.onlineUsersManager?.isUserOnline(recipientId) || false;
+    if (isOnline) {
+      const userData = global.onlineUsersManager?.getUserData(recipientId);
+      const userName = userData?.firstName || 'User';
+      console.log(`📱 Real-time notification sent to ${userName} (${notification.type}/${notificationPayload.category})`);
     } else {
       console.log(`📡 User ${recipientId} offline, notification queued in room`);
     }
