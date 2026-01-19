@@ -1,11 +1,12 @@
 // hooks/useProfileEdit.ts
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { showSuccessToast } from "@/utils/toastUtils";
+import { showSuccessToast, showInfoToast } from "@/utils/toastUtils";
 import { showErrorMessage } from "@/utils/sweetalertUtils";
 import { updateUserById } from "@/Api/profileApi";
 import { validateProfileData, type FieldErrors } from "@/Validation/profileValidation";
 import { canEditFieldLocal } from "../utils/editLimits";
+import { isEqual } from "@/utils/objectUtils";
 import type { UserProfile, Endpoint } from "../types/profile.types";
 
 export const useProfileEdit = (
@@ -52,6 +53,51 @@ export const useProfileEdit = (
     // إذا المستخدم بس بدو يرفع صورة بدون تعديل البيانات
     if (!edited) {
       // ما في شي لازم نحفظه، الصورة رح ترفع بشكل منفصل
+      return;
+    }
+
+    // مقارنة البيانات الأصلية مع المعدلة
+    const fieldsToCompare: (keyof UserProfile)[] = [
+      'firstName',
+      'fatherName',
+      'grandFatherName',
+      'motherName',
+      'lastName',
+      'birthDate',
+      'residence',
+      'idNumber',
+      'phoneNumber',
+    ];
+
+    // إضافة مجموعات المعلم إذا كان الدور معلم
+    if (user.role === "teacher") {
+      fieldsToCompare.push('groups');
+    }
+
+    // بناء كائنات للمقارنة
+    const originalData: Partial<UserProfile> = {};
+    const editedData: Partial<UserProfile> = {};
+
+    for (const field of fieldsToCompare) {
+      // تطبيع التواريخ للمقارنة
+      if (field === 'birthDate') {
+        const normalizeForCompare = (date: string | Date | undefined | null): string | null => {
+          if (!date) return null;
+          if (typeof date === "string") return date.split("T")[0].trim();
+          if (date instanceof Date) return date.toISOString().split("T")[0];
+          return null;
+        };
+        originalData[field] = normalizeForCompare(user[field] as string | Date | undefined) as any;
+        editedData[field] = normalizeForCompare(edited[field] as string | Date | undefined) as any;
+      } else {
+        originalData[field] = user[field];
+        editedData[field] = edited[field];
+      }
+    }
+
+    // مقارنة البيانات
+    if (isEqual(originalData, editedData) && !avatarFile) {
+      showInfoToast("لم يتم إجراء أي تغييرات على البيانات");
       return;
     }
 

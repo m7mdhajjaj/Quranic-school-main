@@ -119,6 +119,9 @@ export const getAllTeacherAssistants = async (filters?: TeacherAssistantFiltersP
     if (filters?.maxAge !== undefined && filters.maxAge < 100) {
       params.maxAge = filters.maxAge;
     }
+    if (filters?.hasGroups && filters.hasGroups !== 'all') {
+      params.hasGroups = filters.hasGroups;
+    }
     if (filters?.sortBy) {
       params.sortBy = filters.sortBy;
     }

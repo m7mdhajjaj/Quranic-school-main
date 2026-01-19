@@ -65,21 +65,18 @@ export const assistantValidationSchema = yup.object({
     
   fatherName: yup
     .string()
-    .nullable()
-    .trim()
-    .transform((value) => value === '' ? null : value),
+    .required('اسم الأب مطلوب')
+    .trim(),
     
   grandFatherName: yup
     .string()
-    .nullable()
-    .trim()
-    .transform((value) => value === '' ? null : value),
+    .required('اسم الجد مطلوب')
+    .trim(),
     
   motherName: yup
     .string()
-    .nullable()
-    .trim()
-    .transform((value) => value === '' ? null : value),
+    .required('اسم الأم مطلوب')
+    .trim(),
     
   // رقم الهوية - مطلوب وفريد لمساعد المدرس
   idNumber: yup
@@ -202,16 +199,6 @@ export const assistantValidationSchema = yup.object({
   lastSeen: yup
     .date()
     .default(() => new Date()),
-
-  // كلمة المرور - مطلوبة عند الإنشاء فقط
-  password: yup
-    .string()
-    .when('$isNewAssistant', {
-      is: true,
-      then: (schema) => schema.required('كلمة المرور مطلوبة')
-        .min(6, 'كلمة المرور يجب أن تحتوي على 6 أحرف على الأقل'),
-      otherwise: (schema) => schema.nullable()
-    }),
     
 }).transform((data) => ({
   ...data,

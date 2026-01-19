@@ -11,21 +11,21 @@ const { protect } = require("../../middleware/auth");
  */
 
 // Get all admins
-// router.get("/", protect, controller.getAllAdmins);
+router.get("/", protect, controller.getAllAdmins);
 
 // Get admin statistics
-// router.get("/stats", protect, controller.getAdminStats);
+router.get("/stats", protect, controller.getAdminStats);
 
 // Get admin by ID
-// router.get("/:id", protect, controller.getAdminById);
+router.get("/:id", protect, controller.getAdminById);
 
 // Create new admin (with validation)
-// router.post("/", protect, validateAdminData, controller.createAdmin);
+router.post("/", protect, validateAdminData, controller.createAdmin);
 
 // Update admin (with validation)
-// router.put("/:id", protect, validateAdminData, controller.updateAdmin);
+router.put("/:id", protect, validateAdminData, controller.updateAdmin);
 
 // Delete admin
-// router.delete("/:id", protect, controller.deleteAdmin);
+router.delete("/:id", protect, controller.deleteAdmin);
 
 module.exports = router;

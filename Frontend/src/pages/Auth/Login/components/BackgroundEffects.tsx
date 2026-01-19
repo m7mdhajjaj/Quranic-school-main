@@ -26,36 +26,27 @@ export const AuroraEffect = () => (
 );
 
 // ============================================================================
-// Mesh Gradient - شبكة متدرجة
+// Mesh Gradient - شبكة متدرجة (مخففة للأداء)
 // ============================================================================
 export const MeshGradient = () => (
-  <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-60">
+  <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-40">
     <motion.div
       className="absolute top-0 left-0 w-[500px] h-[500px] rounded-full"
       style={{
-        background: "radial-gradient(circle, rgba(52, 211, 153, 0.3) 0%, transparent 70%)",
-        filter: "blur(60px)",
+        background: "radial-gradient(circle, rgba(52, 211, 153, 0.2) 0%, transparent 70%)",
+        // filter: "blur(60px)", // Removed heavy blur
       }}
-      animate={{ x: [0, 100, 50, 0], y: [0, 50, 100, 0] }}
+      animate={{ x: [0, 50, 0], y: [0, 30, 0] }} // Reduced movement range
       transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
     />
     <motion.div
       className="absolute bottom-0 right-0 w-[400px] h-[400px] rounded-full"
       style={{
-        background: "radial-gradient(circle, rgba(45, 212, 191, 0.25) 0%, transparent 70%)",
-        filter: "blur(50px)",
+        background: "radial-gradient(circle, rgba(45, 212, 191, 0.15) 0%, transparent 70%)",
+        // filter: "blur(50px)", // Removed heavy blur
       }}
-      animate={{ x: [0, -80, -40, 0], y: [0, -60, -120, 0] }}
+      animate={{ x: [0, -40, 0], y: [0, -30, 0] }} // Reduced movement range
       transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-    />
-    <motion.div
-      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] rounded-full"
-      style={{
-        background: "radial-gradient(circle, rgba(16, 185, 129, 0.2) 0%, transparent 70%)",
-        filter: "blur(40px)",
-      }}
-      animate={{ scale: [1, 1.5, 1], opacity: [0.3, 0.6, 0.3] }}
-      transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
     />
   </div>
 );

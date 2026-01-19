@@ -91,6 +91,18 @@ export const DEFAULT_QUICK_LINKS: QuickLink[] = [
 ];
 
 /**
+ * الروابط السريعة لمساعد المعلم
+ */
+export const TEACHER_ASSISTANT_QUICK_LINKS: QuickLink[] = [
+  { name: 'الرئيسية', path: '/' },
+  { name: 'العلامات اليومية', path: '/daily-marks' },
+  { name: 'الأهداف', path: '/goals' },
+  { name: 'المحادثة', path: '/chat' },
+  { name: 'الملف الشخصي', path: '/profile', icon: FaUser },
+  { name: 'تواصل معنا', path: '/contact' },
+];
+
+/**
  * الروابط السريعة للضيوف (غير مسجلين)
  */
 export const GUEST_QUICK_LINKS: QuickLink[] = [

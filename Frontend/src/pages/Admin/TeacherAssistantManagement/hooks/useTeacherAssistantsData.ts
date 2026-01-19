@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { getAllTeacherAssistants, type TeacherAssistantFiltersParams } from "@/Api/teacherAssistantApi";
 import { socketManager } from "@/Socket/SocketManager";
+import { DEBOUNCE_TIME, MESSAGES } from "../constants";
 import type { TeacherAssistant } from "../types";
 
 export const useTeacherAssistantsData = (filters?: TeacherAssistantFiltersParams) => {
@@ -40,20 +41,22 @@ export const useTeacherAssistantsData = (filters?: TeacherAssistantFiltersParams
       if (response.success && Array.isArray(response.data)) {
         setAssistants(response.data as TeacherAssistant[]);
       } else {
-        throw new Error(response.message || "فشل في جلب بيانات مساعدي المدرسين");
+        throw new Error(response.message || MESSAGES.ERROR.FETCH_DATA);
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "حدث خطأ غير متوقع";
+      const errorMessage = err instanceof Error ? err.message : MESSAGES.ERROR.UNEXPECTED;
       setError(errorMessage);
+      console.error('Error fetching assistants:', err);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
+  // Debounced fetch with configurable delay
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       fetchAssistants(filters);
-    }, 500);
+    }, DEBOUNCE_TIME.FILTERS);
 
     return () => clearTimeout(timeoutId);
   }, [fetchAssistants, filters]);

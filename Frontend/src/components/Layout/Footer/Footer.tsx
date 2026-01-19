@@ -33,6 +33,7 @@ import {
   SOCIAL_LINKS,
   ADMIN_QUICK_LINKS,
   SECRETARY_QUICK_LINKS,
+  TEACHER_ASSISTANT_QUICK_LINKS,
   DEFAULT_QUICK_LINKS,
   GUEST_QUICK_LINKS,
   FOUNDING_DATE,
@@ -53,6 +54,7 @@ export const Footer: React.FC<FooterProps> = ({
   const auth = useAuth();
   const isAdminUser = !isGuest && auth?.isAdmin ? auth.isAdmin() : false;
   const isSecretaryUser = !isGuest && auth?.user?.role === 'secretary';
+  const isTeacherAssistantUser = !isGuest && auth?.user?.role === 'teacherAssistant';
   const isLoggedIn = !isGuest && auth?.isAuthenticated ? auth.isAuthenticated : false;
 
   // Determine which links to use based on user role
@@ -68,6 +70,9 @@ export const Footer: React.FC<FooterProps> = ({
   } else if (isSecretaryUser) {
     // Secretary user
     quickLinks = SECRETARY_QUICK_LINKS;
+  } else if (isTeacherAssistantUser) {
+    // Teacher Assistant user
+    quickLinks = TEACHER_ASSISTANT_QUICK_LINKS;
   } else {
     // Regular user (teacher/student)
     quickLinks = DEFAULT_QUICK_LINKS;

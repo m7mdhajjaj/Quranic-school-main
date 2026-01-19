@@ -1,80 +1,42 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback } from "react";
 import { showSuccessToast } from "@/utils/toastUtils";
 import { showErrorMessage } from "@/utils/sweetalertUtils";
-import type { TeacherAssistantFiltersParams } from "@/Api/teacherAssistantApi";
+import { MESSAGES } from "../constants";
 import {
   useTeacherAssistantsData,
   useTeacherAssistantsActions,
   useTeacherAssistantsStats,
+  useTeacherAssistantFilters,
+  useTeacherAssistantSelection,
+  useTeacherAssistantExport,
 } from "./";
-import type { TeacherAssistant, ViewMode, SortField, SortOrder, GenderFilter, GroupsAssignmentFilter } from "../types";
+import type { TeacherAssistant, ViewMode } from "../types";
 import type { TeacherAssistantFormData } from "./useTeacherAssistantForm";
 
 export const useTeacherAssistantManagement = () => {
-  // State للفلاتر
-  const [searchQuery, setSearchQuery] = useState("");
-  const [genderFilter, setGenderFilter] = useState<GenderFilter>("all");
-  const [groupsAssignmentFilter, setGroupsAssignmentFilter] = useState<GroupsAssignmentFilter>("all");
-  const [ageRange, setAgeRange] = useState<[number, number]>([0, 100]);
-  const [sortField, setSortField] = useState<SortField>("assistantId");
-  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
-  const [viewMode, setViewMode] = useState<ViewMode>("table");
-  const [showFilters, setShowFilters] = useState(false);
+  // استخدام الـ hooks المنفصلة
+  const filters = useTeacherAssistantFilters();
+  const selection = useTeacherAssistantSelection();
+  const { handleExport } = useTeacherAssistantExport();
 
-  // State أخرى
+  // State للـ view mode
+  const [viewMode, setViewMode] = useState<ViewMode>("table");
+
+  // State للنموذج
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedAssistant, setSelectedAssistant] = useState<TeacherAssistant | null>(null);
+
+  // State للحذف
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
     isOpen: boolean;
     assistant: TeacherAssistant | null;
   }>({ isOpen: false, assistant: null });
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleteConfirmation, setBulkDeleteConfirmation] = useState(false);
 
-  // حساب عدد الفلاتر النشطة
-  const activeFiltersCount = useMemo(() => {
-    let count = 0;
-    if (genderFilter !== "all") count++;
-    if (groupsAssignmentFilter !== "all") count++;
-    if (ageRange[0] !== 0 || ageRange[1] !== 100) count++;
-    return count;
-  }, [genderFilter, groupsAssignmentFilter, ageRange]);
-
-  // بناء كائن الفلاتر للباك إند
-  const filtersParams: TeacherAssistantFiltersParams = useMemo(() => ({
-    search: searchQuery || undefined,
-    gender: genderFilter !== "all" ? genderFilter : undefined,
-    minAge: ageRange[0] > 0 ? ageRange[0] : undefined,
-    maxAge: ageRange[1] < 100 ? ageRange[1] : undefined,
-    hasGroups: groupsAssignmentFilter !== "all" ? groupsAssignmentFilter : undefined,
-    sortBy: sortField,
-    sortOrder: sortOrder,
-  }), [searchQuery, genderFilter, groupsAssignmentFilter, ageRange, sortField, sortOrder]);
-
-  // Hooks
-  const { assistants, error, refetch } = useTeacherAssistantsData(filtersParams);
+  // Data Hooks
+  const { assistants, error, refetch } = useTeacherAssistantsData(filters.filtersParams);
   const { createTeacherAssistant, updateTeacherAssistant, deleteTeacherAssistant, bulkDeleteTeacherAssistants, isSubmitting } = useTeacherAssistantsActions();
   const { refetch: refetchStats, ...stats } = useTeacherAssistantsStats();
-
-  // Filter Handlers
-  const resetFilters = useCallback(() => {
-    setGenderFilter("all");
-    setGroupsAssignmentFilter("all");
-    setAgeRange([0, 100]);
-  }, []);
-
-  const toggleFilters = useCallback(() => {
-    setShowFilters((prev) => !prev);
-  }, []);
-
-  const handleSort = useCallback((field: SortField) => {
-    if (sortField === field) {
-      setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
-    } else {
-      setSortField(field);
-      setSortOrder("asc");
-    }
-  }, [sortField]);
 
   // Assistant Handlers
   const handleAddAssistant = useCallback(() => {
@@ -96,13 +58,13 @@ export const useTeacherAssistantManagement = () => {
 
     try {
       await deleteTeacherAssistant(deleteConfirmation.assistant._id);
-      showSuccessToast("تم حذف مساعد المدرس بنجاح");
+      showSuccessToast(MESSAGES.SUCCESS.DELETE);
       setDeleteConfirmation({ isOpen: false, assistant: null });
       refetch();
       refetchStats();
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "حدث خطأ غير متوقع";
-      showErrorMessage("فشل حذف مساعد المدرس", errorMessage);
+      const errorMessage = error instanceof Error ? error.message : MESSAGES.ERROR.UNEXPECTED;
+      showErrorMessage(MESSAGES.ERROR.DELETE, errorMessage);
     }
   }, [deleteConfirmation.assistant, deleteTeacherAssistant, refetch, refetchStats]);
 
@@ -110,48 +72,28 @@ export const useTeacherAssistantManagement = () => {
     setDeleteConfirmation({ isOpen: false, assistant: null });
   }, []);
 
-  // Selection Handlers
-  const handleToggleSelection = useCallback((id: string) => {
-    setSelectedIds(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
-      } else {
-        newSet.add(id);
-      }
-      return newSet;
-    });
-  }, []);
-
-  const handleToggleSelectAll = useCallback(() => {
-    if (selectedIds.size === assistants.length) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(assistants.map((a: TeacherAssistant) => a._id)));
-    }
-  }, [selectedIds.size, assistants]);
-
+  // Bulk Delete Handlers
   const handleBulkDelete = useCallback(() => {
-    if (selectedIds.size === 0) return;
+    if (selection.selectedCount === 0) return;
     setBulkDeleteConfirmation(true);
-  }, [selectedIds.size]);
+  }, [selection.selectedCount]);
 
   const handleConfirmBulkDelete = useCallback(async () => {
-    if (selectedIds.size === 0) return;
+    if (selection.selectedCount === 0) return;
 
     try {
-      const ids = Array.from(selectedIds);
+      const ids = Array.from(selection.selectedIds);
       await bulkDeleteTeacherAssistants(ids);
-      showSuccessToast(`تم حذف ${selectedIds.size} مساعد مدرس بنجاح`);
-      setSelectedIds(new Set());
+      showSuccessToast(MESSAGES.SUCCESS.BULK_DELETE(selection.selectedCount));
+      selection.clearSelection();
       setBulkDeleteConfirmation(false);
       refetch();
       refetchStats();
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "حدث خطأ غير متوقع";
-      showErrorMessage("فشل حذف مساعدي المدرسين", errorMessage);
+      const errorMessage = error instanceof Error ? error.message : MESSAGES.ERROR.UNEXPECTED;
+      showErrorMessage(MESSAGES.ERROR.BULK_DELETE, errorMessage);
     }
-  }, [selectedIds, bulkDeleteTeacherAssistants, refetch, refetchStats]);
+  }, [selection, bulkDeleteTeacherAssistants, refetch, refetchStats]);
 
   const closeBulkDeleteConfirmation = useCallback(() => {
     setBulkDeleteConfirmation(false);
@@ -163,19 +105,20 @@ export const useTeacherAssistantManagement = () => {
       try {
         if (selectedAssistant) {
           await updateTeacherAssistant(selectedAssistant._id, data);
-          showSuccessToast("تم تحديث بيانات مساعد المدرس بنجاح");
+          showSuccessToast(MESSAGES.SUCCESS.UPDATE);
         } else {
           await createTeacherAssistant(data);
-          showSuccessToast("تم إضافة مساعد المدرس بنجاح");
+          showSuccessToast(MESSAGES.SUCCESS.CREATE);
         }
         setIsFormOpen(false);
         setSelectedAssistant(null);
         refetch();
         refetchStats();
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : "حدث خطأ غير متوقع";
+        console.error('❌ Error in handleFormSubmit:', error);
+        const errorMessage = error instanceof Error ? error.message : MESSAGES.ERROR.UNEXPECTED;
         showErrorMessage(
-          selectedAssistant ? "فشل تحديث مساعد المدرس" : "فشل إضافة مساعد المدرس",
+          selectedAssistant ? MESSAGES.ERROR.UPDATE : MESSAGES.ERROR.CREATE,
           errorMessage
         );
       }
@@ -189,35 +132,9 @@ export const useTeacherAssistantManagement = () => {
   }, []);
 
   // Export Handler
-  const handleExport = useCallback(async () => {
-    try {
-      const { utils, writeFile } = await import("xlsx");
-      
-      const exportData = assistants.map((assistant: TeacherAssistant, index: number) => ({
-        "م": index + 1,
-        "الاسم الكامل": [assistant.firstName, assistant.fatherName, assistant.grandFatherName, assistant.lastName].filter(Boolean).join(" "),
-        "رقم المساعد": assistant.assistantId || "-",
-        "حالة الاتصال": assistant.lastSeen && new Date(assistant.lastSeen).getTime() > Date.now() - 5 * 60 * 1000 ? "متصل" : "غير متصل",
-        "الجنس": assistant.gender === 'male' || assistant.gender === 'ذكر' ? 'ذكر' : 'أنثى',
-        "العمر": assistant.age ? `${assistant.age} سنة` : "-",
-        "رقم الهوية": assistant.idNumber || "-",
-        "رقم الهاتف": assistant.phoneNumber || "-",
-        "البريد الإلكتروني": assistant.email || "-",
-        "مكان السكن": assistant.residence || "-",
-        "الحلقات": assistant.allowedGroups?.map((g: { _id: string; name: string }) => g.name).join(" | ") || "-",
-      }));
-
-      const ws = utils.json_to_sheet(exportData);
-      const wb = utils.book_new();
-      utils.book_append_sheet(wb, ws, "مساعدي المدرسين");
-      writeFile(wb, "teacher_assistants_export.xlsx");
-      
-      showSuccessToast("تم تصدير البيانات بنجاح");
-    } catch (error) {
-      console.error("Export error:", error);
-      showErrorMessage("فشل التصدير", "حدث خطأ أثناء تصدير البيانات");
-    }
-  }, [assistants]);
+  const handleExportClick = useCallback(() => {
+    handleExport(assistants);
+  }, [assistants, handleExport]);
 
   return {
     // Data
@@ -226,27 +143,12 @@ export const useTeacherAssistantManagement = () => {
     error,
     refetch,
     
-    // Filter State
-    searchQuery,
-    setSearchQuery,
-    genderFilter,
-    setGenderFilter,
-    groupsAssignmentFilter,
-    setGroupsAssignmentFilter,
-    ageRange,
-    setAgeRange,
-    sortField,
-    sortOrder,
+    // Filter State & Actions (من useTeacherAssistantFilters)
+    ...filters,
+    
+    // View State
     viewMode,
     setViewMode,
-    showFilters,
-    setShowFilters,
-    activeFiltersCount,
-    
-    // Filter Handlers
-    resetFilters,
-    toggleFilters,
-    handleSort,
     
     // Form State
     isFormOpen,
@@ -267,18 +169,18 @@ export const useTeacherAssistantManagement = () => {
     handleConfirmDelete,
     closeDeleteConfirmation,
     
-    // Selection State
-    selectedIds,
+    // Selection State & Actions (من useTeacherAssistantSelection)
+    ...selection,
+    
+    // Bulk Delete State
     bulkDeleteConfirmation,
     
-    // Selection Handlers
-    handleToggleSelection,
-    handleToggleSelectAll,
+    // Bulk Delete Handlers
     handleBulkDelete,
     handleConfirmBulkDelete,
     closeBulkDeleteConfirmation,
     
     // Export
-    handleExport,
+    handleExport: handleExportClick,
   };
 };

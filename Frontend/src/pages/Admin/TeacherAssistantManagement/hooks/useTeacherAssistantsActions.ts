@@ -5,27 +5,44 @@ import {
   updateTeacherAssistant as updateTeacherAssistantApi,
   bulkDeleteTeacherAssistants as bulkDeleteTeacherAssistantsApi
 } from "@/Api/teacherAssistantApi";
-import type { TeacherAssistant } from "../types";
+import { MESSAGES } from "../constants";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type TeacherAssistantFormData = any;
 
+// Custom Error Class for better error handling
+class TeacherAssistantError extends Error {
+  constructor(message: string, public code?: string) {
+    super(message);
+    this.name = 'TeacherAssistantError';
+  }
+}
+
 export const useTeacherAssistantsActions = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Helper function to extract error message
+  const extractErrorMessage = (response: any, defaultMessage: string): string => {
+    return response.message || 
+      (response.errors && Array.isArray(response.errors) ? response.errors.join('\n') : null) ||
+      defaultMessage;
+  };
 
   const createTeacherAssistant = useCallback(async (data: TeacherAssistantFormData) => {
     setIsSubmitting(true);
     try {
       const response = await createTeacherAssistantApi(data);
       if (!response.success) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const res = response as any;
-        const errorMsg = res.message || 
-          (res.errors && Array.isArray(res.errors) ? res.errors.join('\n') : null) ||
-          "فشل في إنشاء مساعد المدرس";
-        throw new Error(errorMsg);
+        const errorMsg = extractErrorMessage(response, MESSAGES.ERROR.CREATE);
+        throw new TeacherAssistantError(errorMsg, 'CREATE_ERROR');
       }
       return response;
+    } catch (error) {
+      if (error instanceof TeacherAssistantError) throw error;
+      throw new TeacherAssistantError(
+        error instanceof Error ? error.message : MESSAGES.ERROR.UNEXPECTED,
+        'CREATE_ERROR'
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -36,14 +53,16 @@ export const useTeacherAssistantsActions = () => {
     try {
       const response = await updateTeacherAssistantApi(id, data);
       if (!response.success) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const res = response as any;
-        const errorMsg = res.message || 
-          (res.errors && Array.isArray(res.errors) ? res.errors.join('\n') : null) ||
-          "فشل في تحديث مساعد المدرس";
-        throw new Error(errorMsg);
+        const errorMsg = extractErrorMessage(response, MESSAGES.ERROR.UPDATE);
+        throw new TeacherAssistantError(errorMsg, 'UPDATE_ERROR');
       }
       return response;
+    } catch (error) {
+      if (error instanceof TeacherAssistantError) throw error;
+      throw new TeacherAssistantError(
+        error instanceof Error ? error.message : MESSAGES.ERROR.UNEXPECTED,
+        'UPDATE_ERROR'
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -54,12 +73,16 @@ export const useTeacherAssistantsActions = () => {
     try {
       const response = await deleteTeacherAssistantApi(id);
       if (!response.success) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const res = response as any;
-        const errorMsg = res.message || "فشل في حذف مساعد المدرس";
-        throw new Error(errorMsg);
+        const errorMsg = extractErrorMessage(response, MESSAGES.ERROR.DELETE);
+        throw new TeacherAssistantError(errorMsg, 'DELETE_ERROR');
       }
       return response;
+    } catch (error) {
+      if (error instanceof TeacherAssistantError) throw error;
+      throw new TeacherAssistantError(
+        error instanceof Error ? error.message : MESSAGES.ERROR.UNEXPECTED,
+        'DELETE_ERROR'
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -70,41 +93,19 @@ export const useTeacherAssistantsActions = () => {
     try {
       const response = await bulkDeleteTeacherAssistantsApi(ids);
       if (!response.success) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const res = response as any;
-        const errorMsg = res.message || "فشل في حذف مساعدي المدرسين";
-        throw new Error(errorMsg);
+        const errorMsg = extractErrorMessage(response, MESSAGES.ERROR.BULK_DELETE);
+        throw new TeacherAssistantError(errorMsg, 'BULK_DELETE_ERROR');
       }
       return response;
+    } catch (error) {
+      if (error instanceof TeacherAssistantError) throw error;
+      throw new TeacherAssistantError(
+        error instanceof Error ? error.message : MESSAGES.ERROR.UNEXPECTED,
+        'BULK_DELETE_ERROR'
+      );
     } finally {
       setIsSubmitting(false);
     }
-  }, []);
-
-  // Handle export
-  const handleExport = useCallback((assistants: TeacherAssistant[]) => {
-    const csvContent = [
-      ["رقم المساعد", "الاسم الأول", "الاسم الأخير", "البريد الإلكتروني", "رقم الهاتف", "الجنس", "العمر", "الحلقات"].join(","),
-      ...assistants.map((a) =>
-        [
-          a.assistantId,
-          a.firstName,
-          a.lastName,
-          a.email,
-          a.phoneNumber,
-          a.gender,
-          a.age || "",
-          a.allowedGroups?.map(g => g.name).join(" - ") || "",
-        ].join(",")
-      ),
-    ].join("\n");
-
-    const BOM = "\uFEFF";
-    const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "teacher_assistants.csv";
-    link.click();
   }, []);
 
   return {
@@ -112,7 +113,6 @@ export const useTeacherAssistantsActions = () => {
     updateTeacherAssistant,
     deleteTeacherAssistant,
     bulkDeleteTeacherAssistants,
-    handleExport,
     isSubmitting,
   };
 };

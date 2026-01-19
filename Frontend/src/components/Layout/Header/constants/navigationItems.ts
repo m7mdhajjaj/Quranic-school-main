@@ -299,6 +299,12 @@ export const getPrimaryNavItems = (
     return [
       homeItem,
       {
+        to: '/news',
+        label: 'الأخبار',
+        icon: Newspaper,
+        color: 'from-purple-500 to-pink-500',
+      },
+      {
         to: '/daily-marks',
         label: 'العلامات اليومية',
         icon: Award,
@@ -311,8 +317,46 @@ export const getPrimaryNavItems = (
         color: 'from-green-500 to-emerald-500',
       },
       {
+        to: '/timetable',
+        label: 'مواعيد الحلقات',
+        icon: CalendarDays,
+        color: 'from-indigo-500 to-purple-500',
+      },
+      {
+        to: '#religious',
+        label: 'القرآن والأذكار',
+        icon: BookOpen,
+        color: 'from-teal-500 to-cyan-500',
+        subItems: [
+          {
+            to: '/quran',
+            label: 'قرآن شفهي',
+            icon: BookOpen,
+            color: 'from-teal-500 to-cyan-500',
+          },
+          {
+            to: '/quran-audio',
+            label: 'قرآن صوتي',
+            icon: Headphones,
+            color: 'from-blue-500 to-indigo-500',
+          },
+          {
+            to: '/azkar',
+            label: 'الأذكار',
+            icon: BookOpenCheck,
+            color: 'from-green-500 to-emerald-500',
+          },
+          {
+            to: '/prayer-times',
+            label: 'مواقيت الصلاة',
+            icon: Clock,
+            color: 'from-cyan-500 to-blue-500',
+          },
+        ],
+      },
+      {
         to: '/chat',
-        label: 'المحادثة مع المعلم',
+        label: 'المحادثة',
         icon: MessageSquare,
         color: 'from-blue-500 to-cyan-500',
       },
