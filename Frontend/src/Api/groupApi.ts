@@ -6,8 +6,29 @@ export interface Group {
   _id: string;
   name: string;
   number?: number; // رقم الحلقة
-  teacher: string;
+  teacher: string | {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    fatherName?: string;
+    teacherId: number;
+  };
   teacherName?: string; // حقل إضافي للاسم
+  teacherInfo?: {
+    _id: string;
+    firstName: string;
+    fatherName?: string;
+    lastName: string;
+    teacherId: number;
+    email?: string;
+    phoneNumber?: string;
+  } | null; // معلومات المعلم الكاملة
+  teacherAssistant?: string | {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    assistantId: number;
+  } | null;
   description?: string;
   capacity?: number;
   schedule?: string;

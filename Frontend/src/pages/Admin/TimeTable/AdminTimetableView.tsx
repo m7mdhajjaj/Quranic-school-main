@@ -4,7 +4,6 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
-import { useDisableBodyScroll } from "@/hooks/useDisableBodyScroll";
 import type { Session, SessionFormData } from "../../Timetable/types/timetable.types";
 import { useViewMode } from "../../Timetable/hooks";
 import { AdvancedTimetableView } from "../../Timetable/DisplayType/AdvancedTimetableView";
@@ -92,9 +91,6 @@ export const AdminTimetableView: React.FC<AdminTimetableViewProps> = ({
       openAddModal();
     }
   }, [searchParams, openAddModal, sessions, openEditModal, loading]);
-
-  // تعطيل scroll الصفحة عند فتح الـ Modal
-  useDisableBodyScroll(showModal);
 
   // التعامل مع إضافة/تعديل موعد - with useCallback for performance
   const handleSubmitSession = useCallback(async (formData: SessionFormData, sessionId?: string) => {

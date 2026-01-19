@@ -1,5 +1,6 @@
 // controllers/basicController/teacherAssistantController/crud.controller.js
 const TeacherAssistant = require("../../../schema/TeacherAssistant");
+const Group = require("../../../schema/Group");
 const bcrypt = require("bcryptjs");
 const { calculateAge, generateAssistantId } = require("./utils.controller");
 
@@ -14,7 +15,8 @@ const getAllAssistants = async (req, res) => {
       search, 
       gender, 
       minAge, 
-      maxAge, 
+      maxAge,
+      hasGroups, // فلتر الحلقات: 'all', 'with-groups', 'without-groups'
       sortBy = 'assistantId', 
       sortOrder = 'desc',
       page = 1,
@@ -53,6 +55,19 @@ const getAllAssistants = async (req, res) => {
     // Gender filter
     if (gender && gender !== 'all') {
       query.gender = { $in: [gender, gender === 'ذكر' ? 'male' : 'female'] };
+    }
+    
+    // Groups filter - فلتر الحلقات
+    if (hasGroups && hasGroups !== 'all') {
+      if (hasGroups === 'with-groups') {
+        query.allowedGroups = { $exists: true, $ne: [], $not: { $size: 0 } };
+      } else if (hasGroups === 'without-groups') {
+        query.$or = [
+          { allowedGroups: { $exists: false } },
+          { allowedGroups: { $eq: [] } },
+          { allowedGroups: { $size: 0 } }
+        ];
+      }
     }
     
     // Age filter
@@ -208,8 +223,49 @@ const createAssistant = async (req, res) => {
       }
     }
 
-    // تشفير كلمة المرور
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // التحقق من أن كل حلقة لها مساعد واحد فقط
+    if (allowedGroups && Array.isArray(allowedGroups) && allowedGroups.length > 0) {
+      // التحقق من الحد الأقصى (حلقتين)
+      if (allowedGroups.length > 2) {
+        return res.status(400).json({
+          success: false,
+          message: 'يمكن للمساعد أن يشرف على حلقتين كحد أقصى',
+        });
+      }
+
+      // التحقق من أن الحلقات ليس لها مساعد آخر
+      const groupsWithAssistant = await TeacherAssistant.find({
+        allowedGroups: { $in: allowedGroups }
+      }).select('_id firstName lastName allowedGroups').populate('allowedGroups', 'name');
+
+      if (groupsWithAssistant.length > 0) {
+        // جمع أسماء الحلقات المحجوزة
+        const takenGroups = [];
+        for (const assistant of groupsWithAssistant) {
+          for (const group of assistant.allowedGroups) {
+            if (allowedGroups.includes(group._id.toString())) {
+              takenGroups.push({
+                groupName: group.name,
+                assistantName: `${assistant.firstName} ${assistant.lastName}`
+              });
+            }
+          }
+        }
+        
+        if (takenGroups.length > 0) {
+          const groupNames = takenGroups.map(g => `"${g.groupName}" (${g.assistantName})`).join('، ');
+          return res.status(400).json({
+            success: false,
+            message: `الحلقات التالية لها مساعد بالفعل: ${groupNames}`,
+            field: 'allowedGroups',
+          });
+        }
+      }
+    }
+
+    // كلمة السر الافتراضية = رقم الهوية (يغيرها المساعد لاحقاً)
+    const defaultPassword = idNumber;
+    const hashedPassword = await bcrypt.hash(defaultPassword, 10);
 
     const assistant = await TeacherAssistant.create({
       assistantId,
@@ -229,6 +285,14 @@ const createAssistant = async (req, res) => {
       assignedTeacher,
       allowedGroups,
     });
+
+    // تحديث الحلقات لربطها بالمساعد
+    if (allowedGroups && Array.isArray(allowedGroups) && allowedGroups.length > 0) {
+      await Group.updateMany(
+        { _id: { $in: allowedGroups } },
+        { $set: { teacherAssistant: assistant._id } }
+      );
+    }
 
     // جلب البيانات مع populate
     const populatedAssistant = await TeacherAssistant.findById(assistant._id)
@@ -296,7 +360,50 @@ const updateAssistant = async (req, res) => {
     } else {
       // الأدمن يمكنه تعديل كل شيء
       if (assignedTeacher !== undefined) updateData.assignedTeacher = assignedTeacher;
-      if (allowedGroups !== undefined) updateData.allowedGroups = allowedGroups;
+      
+      // التحقق من الحلقات قبل التحديث
+      if (allowedGroups !== undefined) {
+        // التحقق من الحد الأقصى (حلقتين)
+        if (Array.isArray(allowedGroups) && allowedGroups.length > 2) {
+          return res.status(400).json({
+            success: false,
+            message: 'يمكن للمساعد أن يشرف على حلقتين كحد أقصى',
+          });
+        }
+
+        // التحقق من أن الحلقات ليس لها مساعد آخر (باستثناء المساعد الحالي)
+        if (Array.isArray(allowedGroups) && allowedGroups.length > 0) {
+          const groupsWithAssistant = await TeacherAssistant.find({
+            _id: { $ne: assistantId }, // استثناء المساعد الحالي
+            allowedGroups: { $in: allowedGroups }
+          }).select('_id firstName lastName allowedGroups').populate('allowedGroups', 'name');
+
+          if (groupsWithAssistant.length > 0) {
+            const takenGroups = [];
+            for (const assistant of groupsWithAssistant) {
+              for (const group of assistant.allowedGroups) {
+                if (allowedGroups.includes(group._id.toString())) {
+                  takenGroups.push({
+                    groupName: group.name,
+                    assistantName: `${assistant.firstName} ${assistant.lastName}`
+                  });
+                }
+              }
+            }
+            
+            if (takenGroups.length > 0) {
+              const groupNames = takenGroups.map(g => `"${g.groupName}" (${g.assistantName})`).join('، ');
+              return res.status(400).json({
+                success: false,
+                message: `الحلقات التالية لها مساعد بالفعل: ${groupNames}`,
+                field: 'allowedGroups',
+              });
+            }
+          }
+        }
+
+        updateData.allowedGroups = allowedGroups;
+      }
     }
 
     // إذا تم إرسال كلمة مرور جديدة، قم بتشفيرها (للأدمن فقط)
@@ -309,6 +416,10 @@ const updateAssistant = async (req, res) => {
       updateData.birthDate = birthDate;
       updateData.age = calculateAge(birthDate);
     }
+
+    // جلب الحلقات القديمة قبل التحديث
+    const oldAssistant = await TeacherAssistant.findById(assistantId).select('allowedGroups');
+    const oldGroups = oldAssistant?.allowedGroups?.map(g => g.toString()) || [];
 
     const assistant = await TeacherAssistant.findByIdAndUpdate(
       assistantId,
@@ -324,6 +435,29 @@ const updateAssistant = async (req, res) => {
         success: false,
         message: 'مساعد المدرس غير موجود',
       });
+    }
+
+    // تحديث الحلقات - إزالة المساعد من الحلقات القديمة وإضافته للجديدة
+    if (updateData.allowedGroups !== undefined) {
+      const newGroups = Array.isArray(updateData.allowedGroups) ? updateData.allowedGroups.map(g => g.toString()) : [];
+      
+      // إزالة المساعد من الحلقات التي لم يعد فيها
+      const removedGroups = oldGroups.filter(g => !newGroups.includes(g));
+      if (removedGroups.length > 0) {
+        await Group.updateMany(
+          { _id: { $in: removedGroups } },
+          { $set: { teacherAssistant: null } }
+        );
+      }
+      
+      // إضافة المساعد للحلقات الجديدة
+      const addedGroups = newGroups.filter(g => !oldGroups.includes(g));
+      if (addedGroups.length > 0) {
+        await Group.updateMany(
+          { _id: { $in: addedGroups } },
+          { $set: { teacherAssistant: assistantId } }
+        );
+      }
     }
 
     res.status(200).json({
@@ -360,7 +494,7 @@ const updateAssistant = async (req, res) => {
  */
 const deleteAssistant = async (req, res) => {
   try {
-    const assistant = await TeacherAssistant.findByIdAndDelete(req.params.id);
+    const assistant = await TeacherAssistant.findById(req.params.id);
 
     if (!assistant) {
       return res.status(404).json({
@@ -368,6 +502,16 @@ const deleteAssistant = async (req, res) => {
         message: 'مساعد المدرس غير موجود',
       });
     }
+
+    // إزالة المساعد من الحلقات المرتبطة به
+    if (assistant.allowedGroups && assistant.allowedGroups.length > 0) {
+      await Group.updateMany(
+        { _id: { $in: assistant.allowedGroups } },
+        { $set: { teacherAssistant: null } }
+      );
+    }
+
+    await TeacherAssistant.findByIdAndDelete(req.params.id);
 
     res.status(200).json({
       success: true,
@@ -397,6 +541,12 @@ const bulkDeleteAssistants = async (req, res) => {
         message: 'يجب تحديد المساعدين المراد حذفهم',
       });
     }
+
+    // إزالة المساعدين من الحلقات المرتبطة بهم
+    await Group.updateMany(
+      { teacherAssistant: { $in: ids } },
+      { $set: { teacherAssistant: null } }
+    );
 
     const result = await TeacherAssistant.deleteMany({ _id: { $in: ids } });
 

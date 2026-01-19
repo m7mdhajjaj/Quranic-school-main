@@ -277,6 +277,9 @@ setInterval(async () => {
       } else if (role === 'secretary') {
         const Secretary = require('./schema/Secretary');
         await Secretary.findByIdAndUpdate(userId, { lastSeen: now });
+      } else if (role === 'teacherassistant' || role === 'teacherAssistant') {
+        const TeacherAssistant = require('./schema/TeacherAssistant');
+        await TeacherAssistant.findByIdAndUpdate(userId, { lastSeen: now });
       }
     } catch (err) {
       console.error(`Error updating heartbeat lastSeen for ${userId}:`, err);
@@ -426,6 +429,13 @@ io.on('connection', (socket) => {
       } else if (role === 'teacher') {
         const Teacher = require('./schema/Teacher');
         updateResult = await Teacher.findByIdAndUpdate(
+          userId,
+          { lastSeen: new Date() },
+          { new: true, upsert: false }
+        );
+      } else if (role === 'teacherAssistant' || role === 'teacherassistant') {
+        const TeacherAssistant = require('./schema/TeacherAssistant');
+        updateResult = await TeacherAssistant.findByIdAndUpdate(
           userId,
           { lastSeen: new Date() },
           { new: true, upsert: false }

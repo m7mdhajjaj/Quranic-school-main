@@ -1,5 +1,6 @@
 // controllers/basicController/teacherAssistantController/utils.controller.js
 const TeacherAssistant = require("../../../schema/TeacherAssistant");
+const { checkDuplicateFields } = require("../../../Validation/validators/duplicateChecker");
 
 /**
  * حساب العمر من تاريخ الميلاد
@@ -56,7 +57,7 @@ const getNextAssistantId = async (req, res) => {
 };
 
 /**
- * التحقق من تكرار القيم
+ * التحقق من تكرار القيم عبر جميع المستخدمين في النظام
  * @route GET /api/teacher-assistants/check-duplicate
  * @access Admin only
  */
@@ -71,16 +72,28 @@ const checkDuplicate = async (req, res) => {
       });
     }
 
-    const query = { [field]: value };
-    if (excludeId) {
-      query._id = { $ne: excludeId };
-    }
+    // بناء كائن البيانات للتحقق
+    const dataToCheck = {};
+    dataToCheck[field] = value;
 
-    const exists = await TeacherAssistant.findOne(query);
+    // استخدام duplicateChecker للتحقق عبر جميع المستخدمين
+    const duplicateError = await checkDuplicateFields(dataToCheck, excludeId, 'teacherAssistant');
+
+    if (duplicateError) {
+      return res.status(200).json({
+        success: true,
+        data: { 
+          isDuplicate: true,
+          message: duplicateError.message,
+          existingUserType: duplicateError.existingUserType,
+          existingUserName: duplicateError.existingUserName,
+        },
+      });
+    }
 
     res.status(200).json({
       success: true,
-      data: { isDuplicate: !!exists },
+      data: { isDuplicate: false },
     });
   } catch (error) {
     console.error('Error checking duplicate:', error);

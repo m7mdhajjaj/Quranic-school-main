@@ -11,7 +11,6 @@ import {
   GraduationCap,
   CheckCircle2,
 } from "lucide-react";
-import { useDisableBodyScroll } from "@/hooks/useDisableBodyScroll";
 import { useTeacherForm } from "../hooks/useTeacherForm";
 import TeacherFormStep1 from "./TeacherFormStep1";
 import TeacherFormStep2 from "./TeacherFormStep2";
@@ -50,9 +49,6 @@ const TeacherForm: React.FC<Props> = memo(({ onClose, onSuccess, teacher }) => {
   } = useTeacherForm({ teacher, onSuccess, onClose });
 
   const isEditMode = !!teacher;
-
-  // منع scroll الصفحة عند فتح المودل
-  useDisableBodyScroll(true);
 
   const handleClose = useCallback(() => {
     onClose();

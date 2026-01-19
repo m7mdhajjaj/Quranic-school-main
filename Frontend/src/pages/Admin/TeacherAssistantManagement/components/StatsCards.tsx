@@ -1,79 +1,112 @@
-import React from "react";
-import { Users, Calendar } from "lucide-react";
-import { FaMale, FaFemale } from "react-icons/fa";
+import React, { memo } from "react";
+import { Users, UserCheck, User, Activity } from "lucide-react";
 import type { TeacherAssistantStats } from "../types";
 
-interface StatsCardsProps {
-  stats: TeacherAssistantStats;
+interface AssistantsStatsCardsProps {
+  stats: TeacherAssistantStats & { isLoading?: boolean };
+  isLoading?: boolean;
 }
 
-export const StatsCards: React.FC<StatsCardsProps> = ({ stats }) => {
+export const AssistantsStatsCards: React.FC<AssistantsStatsCardsProps> = memo(({
+  stats,
+  isLoading = false,
+}) => {
   const cards = [
     {
       title: "إجمالي المساعدين",
       value: stats.total,
       icon: Users,
-      gradient: "from-purple-500 to-indigo-600",
-      bgGradient: "from-purple-50 to-indigo-50",
-      borderColor: "border-purple-200",
+      subtitle: "جميع المساعدين",
+      percentage: null,
     },
     {
-      title: "الذكور",
+      title: "ذكور",
       value: stats.male,
-      subtitle: `${stats.malePercentage}%`,
-      icon: FaMale,
-      gradient: "from-blue-500 to-cyan-600",
-      bgGradient: "from-blue-50 to-cyan-50",
-      borderColor: "border-blue-200",
+      icon: User,
+      subtitle: `${stats.malePercentage || 0}% من الإجمالي`,
+      percentage: stats.malePercentage || 0,
     },
     {
-      title: "الإناث",
+      title: "إناث",
       value: stats.female,
-      subtitle: `${stats.femalePercentage}%`,
-      icon: FaFemale,
-      gradient: "from-pink-500 to-rose-600",
-      bgGradient: "from-pink-50 to-rose-50",
-      borderColor: "border-pink-200",
+      icon: UserCheck,
+      subtitle: `${stats.femalePercentage || 0}% من الإجمالي`,
+      percentage: stats.femalePercentage || 0,
     },
     {
       title: "متوسط العمر",
       value: stats.avgAge,
-      subtitle: "سنة",
-      icon: Calendar,
-      gradient: "from-amber-500 to-orange-600",
-      bgGradient: "from-amber-50 to-orange-50",
-      borderColor: "border-amber-200",
+      icon: Activity,
+      subtitle: "متوسط الأعمار",
+      suffix: "سنة",
+      percentage: null,
     },
   ];
 
-  return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      {cards.map((card, index) => (
-        <div
-          key={index}
-          className={`relative overflow-hidden bg-gradient-to-br ${card.bgGradient} rounded-2xl p-4 border ${card.borderColor} shadow-sm hover:shadow-md transition-all`}
-        >
-          {/* Background decoration */}
-          <div className="absolute -top-4 -left-4 w-20 h-20 bg-white/30 rounded-full blur-2xl" />
-          
-          <div className="relative">
-            <div className="flex items-center justify-between mb-3">
-              <div className={`p-2.5 bg-gradient-to-br ${card.gradient} rounded-xl shadow-lg`}>
-                <card.icon className="w-5 h-5 text-white" />
+  if (isLoading || stats.isLoading) {
+    return (
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4 mb-4 sm:mb-6">
+        {[1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className="bg-white rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-sm animate-pulse"
+          >
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-200 rounded-lg" />
+              <div className="flex-1">
+                <div className="h-3 sm:h-4 bg-gray-200 rounded w-16 sm:w-20 mb-2" />
+                <div className="h-5 sm:h-6 bg-gray-300 rounded w-10 sm:w-12" />
               </div>
             </div>
-            
-            <div className="flex items-baseline gap-1">
-              <span className="text-2xl font-bold text-gray-900">{card.value}</span>
-              {card.subtitle && (
-                <span className="text-sm text-gray-500">{card.subtitle}</span>
-              )}
-            </div>
-            
-            <p className="text-sm text-gray-600 mt-1">{card.title}</p>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4 mb-4 sm:mb-6">
+      {cards.map((card, index) => {
+        const Icon = card.icon;
+        return (
+          <div
+            key={index}
+            className="bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-lg sm:rounded-xl shadow-md p-3 sm:p-4 hover:shadow-lg transition-shadow"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] sm:text-xs font-medium text-white/90 mb-0.5 sm:mb-1 truncate">{card.title}</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
+                  {card.value}
+                  {card.suffix && (
+                    <span className="text-[10px] sm:text-sm font-normal mr-1">{card.suffix}</span>
+                  )}
+                </p>
+                <p className="text-[9px] sm:text-xs text-white/80 mt-0.5 sm:mt-1 truncate hidden xs:block">{card.subtitle}</p>
+                {/* شريط النسبة */}
+                {card.percentage !== null && card.percentage > 0 && (
+                  <div className="mt-1.5 sm:mt-2">
+                    <div className="w-full bg-white/20 rounded-full h-1 sm:h-1.5">
+                      <div
+                        className="bg-white rounded-full h-1 sm:h-1.5 transition-all duration-500"
+                        style={{ width: `${card.percentage}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center flex-shrink-0">
+                <Icon className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-white" />
+              </div>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
-};
+});
+
+AssistantsStatsCards.displayName = "AssistantsStatsCards";
+
+// Backward compatibility alias
+export const StatsCards = AssistantsStatsCards;

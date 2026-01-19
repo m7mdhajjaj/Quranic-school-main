@@ -2,7 +2,7 @@ import React, { memo, useCallback } from "react";
 import { 
   X, HandHelping, User, Mail, Phone, MapPin,
   Lock, AlertCircle, Calendar, Users,
-  CreditCard, Eye, EyeOff
+  CreditCard
 } from "lucide-react";
 import { FaMale, FaFemale } from "react-icons/fa";
 import { DatePicker } from "@/components/UI/DatePicker";
@@ -29,12 +29,9 @@ export const AssistantForm: React.FC<AssistantFormProps> = memo(({
   const {
     formData,
     errors,
-    showPassword,
     isEditMode,
     groups,
-    isLoadingGroups,
-    setShowPassword,
-    handleChange,
+    isLoadingGroups,    handleChange,
     handleGroupsChange,
     handleSubmit,
   } = useTeacherAssistantForm({ assistant, isOpen, onSubmit, onClose });
@@ -45,21 +42,27 @@ export const AssistantForm: React.FC<AssistantFormProps> = memo(({
 
   if (!isOpen) return null;
 
+  // Use Portal or high z-index to ensure visibility
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overflow-y-auto" dir="rtl">
+    <div 
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overflow-y-auto w-full h-full"
+      dir="rtl"
+      aria-modal="true"
+      role="dialog"
+    >
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity z-[9998]"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
         onClick={handleClose}
       />
 
       {/* Modal */}
       <div 
-        className="relative w-full max-w-4xl max-h-[90vh] bg-white rounded-2xl shadow-2xl transform transition-all animate-in fade-in zoom-in duration-200 flex flex-col overflow-hidden z-[9999]"
+        className="relative w-full max-w-4xl max-h-[90vh] bg-white rounded-2xl shadow-2xl transform transition-all flex flex-col overflow-hidden z-[9999]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="relative bg-gradient-to-l from-purple-600 via-indigo-600 to-purple-700 rounded-t-2xl p-4 overflow-hidden flex-shrink-0">
+        <div className="relative bg-gradient-to-l from-emerald-600 via-teal-600 to-cyan-600 rounded-t-2xl p-4 overflow-hidden flex-shrink-0">
           <div className="absolute -top-10 -left-10 w-40 h-40 bg-white/10 rounded-full" />
           <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-white/10 rounded-full" />
           
@@ -93,9 +96,9 @@ export const AssistantForm: React.FC<AssistantFormProps> = memo(({
         <form id="assistant-form" onSubmit={handleSubmit} className="p-4 space-y-4 flex-1 overflow-y-auto overscroll-contain">
           
           {/* =================== Section: الأسماء =================== */}
-          <div className="bg-gradient-to-br from-purple-50 via-indigo-50 to-purple-50 rounded-xl p-5 border border-purple-200">
-            <div className="flex items-center gap-2 text-purple-700 mb-4">
-              <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-lg">
+          <div className="bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 rounded-xl p-5 border border-emerald-200">
+            <div className="flex items-center gap-2 text-emerald-700 mb-4">
+              <div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-lg">
                 <User className="w-5 h-5 text-white" />
               </div>
               <h3 className="font-bold text-base">الأسماء</h3>
@@ -112,7 +115,7 @@ export const AssistantForm: React.FC<AssistantFormProps> = memo(({
                   name="firstName"
                   value={formData.firstName}
                   onChange={handleChange}
-                  className={`w-full px-4 py-2.5 border-2 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all ${
+                  className={`w-full px-4 py-2.5 border-2 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all ${
                     errors.firstName ? "border-red-400 bg-red-50" : "border-gray-200 hover:border-gray-300"
                   }`}
                   placeholder="أدخل الاسم الأول"
@@ -135,7 +138,7 @@ export const AssistantForm: React.FC<AssistantFormProps> = memo(({
                   name="fatherName"
                   value={formData.fatherName || ""}
                   onChange={handleChange}
-                  className={`w-full px-4 py-2.5 border-2 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all ${
+                  className={`w-full px-4 py-2.5 border-2 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all ${
                     errors.fatherName ? "border-red-400 bg-red-50" : "border-gray-200 hover:border-gray-300"
                   }`}
                   placeholder="أدخل اسم الأب"
@@ -158,7 +161,7 @@ export const AssistantForm: React.FC<AssistantFormProps> = memo(({
                   name="grandFatherName"
                   value={formData.grandFatherName || ""}
                   onChange={handleChange}
-                  className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl hover:border-gray-300 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                  className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl hover:border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
                   placeholder="أدخل اسم الجد"
                 />
               </div>
@@ -173,7 +176,7 @@ export const AssistantForm: React.FC<AssistantFormProps> = memo(({
                   name="lastName"
                   value={formData.lastName}
                   onChange={handleChange}
-                  className={`w-full px-4 py-2.5 border-2 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all ${
+                  className={`w-full px-4 py-2.5 border-2 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all ${
                     errors.lastName ? "border-red-400 bg-red-50" : "border-gray-200 hover:border-gray-300"
                   }`}
                   placeholder="أدخل اسم العائلة"
@@ -196,7 +199,7 @@ export const AssistantForm: React.FC<AssistantFormProps> = memo(({
                   name="motherName"
                   value={formData.motherName || ""}
                   onChange={handleChange}
-                  className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl hover:border-gray-300 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                  className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl hover:border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
                   placeholder="أدخل اسم الأم"
                 />
               </div>
@@ -204,31 +207,15 @@ export const AssistantForm: React.FC<AssistantFormProps> = memo(({
           </div>
 
           {/* =================== Section: بيانات الهوية والتواصل =================== */}
-          <div className="bg-gradient-to-br from-blue-50 via-cyan-50 to-blue-50 rounded-xl p-5 border border-blue-200">
-            <div className="flex items-center gap-2 text-blue-700 mb-4">
-              <div className="p-2 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg">
+          <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-5 border border-emerald-200">
+            <div className="flex items-center gap-2 text-emerald-700 mb-4">
+              <div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-lg">
                 <CreditCard className="w-5 h-5 text-white" />
               </div>
               <h3 className="font-bold text-base">بيانات الهوية والتواصل</h3>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              {/* Assistant ID */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  رقم المساعد
-                </label>
-                <input
-                  type="number"
-                  name="assistantId"
-                  value={formData.assistantId || ""}
-                  onChange={handleChange}
-                  disabled={isEditMode}
-                  className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl bg-gray-50 text-gray-500 cursor-not-allowed"
-                  placeholder="يتم توليده تلقائياً"
-                />
-              </div>
-
               {/* ID Number */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -240,7 +227,7 @@ export const AssistantForm: React.FC<AssistantFormProps> = memo(({
                   value={formData.idNumber}
                   onChange={handleChange}
                   maxLength={9}
-                  className={`w-full px-4 py-2.5 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
+                  className={`w-full px-4 py-2.5 border-2 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all ${
                     errors.idNumber ? "border-red-400 bg-red-50" : "border-gray-200 hover:border-gray-300"
                   }`}
                   placeholder="أدخل رقم الهوية (9 أرقام)"
@@ -267,7 +254,7 @@ export const AssistantForm: React.FC<AssistantFormProps> = memo(({
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className={`w-full px-4 py-2.5 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
+                  className={`w-full px-4 py-2.5 border-2 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all ${
                     errors.email ? "border-red-400 bg-red-50" : "border-gray-200 hover:border-gray-300"
                   }`}
                   placeholder="example@email.com"
@@ -295,7 +282,7 @@ export const AssistantForm: React.FC<AssistantFormProps> = memo(({
                   value={formData.phoneNumber}
                   onChange={handleChange}
                   maxLength={10}
-                  className={`w-full px-4 py-2.5 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
+                  className={`w-full px-4 py-2.5 border-2 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all ${
                     errors.phoneNumber ? "border-red-400 bg-red-50" : "border-gray-200 hover:border-gray-300"
                   }`}
                   placeholder="05XXXXXXXX"
@@ -309,48 +296,24 @@ export const AssistantForm: React.FC<AssistantFormProps> = memo(({
                 )}
               </div>
 
-              {/* Password */}
-              <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  <div className="flex items-center gap-1">
-                    <Lock className="w-4 h-4" />
-                    كلمة المرور {!isEditMode && "*"}
+              {/* Password Note - للمساعدين الجدد فقط */}
+              {!isEditMode && (
+                <div className="col-span-2">
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center gap-2">
+                    <Lock className="w-5 h-5 text-amber-600 flex-shrink-0" />
+                    <p className="text-sm text-amber-700">
+                      <span className="font-bold">ملاحظة:</span> كلمة المرور الافتراضية هي رقم الهوية. يمكن للمساعد تغييرها لاحقاً من حسابه.
+                    </p>
                   </div>
-                </label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    name="password"
-                    value={formData.password || ""}
-                    onChange={handleChange}
-                    className={`w-full px-4 py-2.5 pl-12 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
-                      errors.password ? "border-red-400 bg-red-50" : "border-gray-200 hover:border-gray-300"
-                    }`}
-                    placeholder={isEditMode ? "اتركها فارغة للإبقاء على كلمة المرور الحالية" : "أدخل كلمة المرور (6 أحرف على الأقل)"}
-                    dir="ltr"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
                 </div>
-                {errors.password && (
-                  <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
-                    <AlertCircle className="w-3.5 h-3.5" />
-                    {errors.password}
-                  </p>
-                )}
-              </div>
+              )}
             </div>
           </div>
 
           {/* =================== Section: البيانات الشخصية =================== */}
-          <div className="bg-gradient-to-br from-amber-50 via-orange-50 to-amber-50 rounded-xl p-5 border border-amber-200">
-            <div className="flex items-center gap-2 text-amber-700 mb-4">
-              <div className="p-2 bg-gradient-to-br from-amber-500 to-orange-500 rounded-lg">
+          <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-5 border border-emerald-200">
+            <div className="flex items-center gap-2 text-emerald-700 mb-4">
+              <div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-lg">
                 <Calendar className="w-5 h-5 text-white" />
               </div>
               <h3 className="font-bold text-base">البيانات الشخصية</h3>
@@ -378,7 +341,7 @@ export const AssistantForm: React.FC<AssistantFormProps> = memo(({
                   <label
                     className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border-2 rounded-xl cursor-pointer transition-all ${
                       formData.gender === "ذكر"
-                        ? "bg-blue-50 border-blue-400 text-blue-700"
+                        ? "bg-emerald-50 border-emerald-400 text-emerald-700"
                         : "border-gray-200 hover:border-gray-300 text-gray-600"
                     }`}
                   >
@@ -427,7 +390,7 @@ export const AssistantForm: React.FC<AssistantFormProps> = memo(({
                   name="residence"
                   value={formData.residence}
                   onChange={handleChange}
-                  className={`w-full px-4 py-2.5 border-2 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all ${
+                  className={`w-full px-4 py-2.5 border-2 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all ${
                     errors.residence ? "border-red-400 bg-red-50" : "border-gray-200 hover:border-gray-300"
                   }`}
                   placeholder="أدخل مكان السكن"
@@ -443,52 +406,94 @@ export const AssistantForm: React.FC<AssistantFormProps> = memo(({
           </div>
 
           {/* =================== Section: الحلقات المسموحة =================== */}
-          <div className="bg-gradient-to-br from-green-50 via-emerald-50 to-green-50 rounded-xl p-5 border border-green-200">
-            <div className="flex items-center gap-2 text-green-700 mb-4">
-              <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg">
-                <Users className="w-5 h-5 text-white" />
+          <div className="bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 rounded-xl p-5 border border-emerald-200">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2 text-emerald-700">
+                <div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-lg">
+                  <Users className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="font-bold text-base">الحلقات المسموحة *</h3>
               </div>
-              <h3 className="font-bold text-base">الحلقات المسموحة *</h3>
+              <span className="text-xs text-emerald-600 bg-emerald-100 px-2 py-1 rounded-full">
+                الحد الأقصى: 2 حلقات
+              </span>
             </div>
 
             {isLoadingGroups ? (
               <div className="flex items-center justify-center py-8">
-                <div className="w-8 h-8 border-4 border-green-200 border-t-green-600 rounded-full animate-spin" />
+                <div className="w-8 h-8 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin" />
               </div>
             ) : groups.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
-                لا توجد حلقات متاحة
+                <Users className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                <p>لا توجد حلقات متاحة</p>
+                <p className="text-xs text-gray-400 mt-1">جميع الحلقات لها مساعدين</p>
               </div>
             ) : (
               <>
                 <p className="text-sm text-gray-600 mb-3">
-                  اختر الحلقات التي يمكن لمساعد المدرس الوصول إليها:
+                  اختر الحلقات التي يشرف عليها المساعد (حد أقصى 2):
                 </p>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-2 bg-white rounded-xl border border-gray-200">
-                  {groups.map((group) => (
-                    <label
-                      key={group._id}
-                      className={`flex items-center gap-2 p-3 rounded-lg cursor-pointer transition-all ${
-                        formData.allowedGroups.includes(group._id)
-                          ? "bg-green-100 border-2 border-green-400"
-                          : "bg-gray-50 border-2 border-transparent hover:bg-gray-100"
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={formData.allowedGroups.includes(group._id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            handleGroupsChange([...formData.allowedGroups, group._id]);
-                          } else {
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-64 overflow-y-auto p-2">
+                  {groups.map((group) => {
+                    const isSelected = formData.allowedGroups.includes(group._id);
+                    const isDisabled = !isSelected && formData.allowedGroups.length >= 2;
+                    // استخدام teacherInfo للاسم الثلاثي الكامل، أو teacher كـ fallback
+                    const teacherName = group.teacherInfo 
+                      ? `${group.teacherInfo.firstName} ${group.teacherInfo.fatherName || ''} ${group.teacherInfo.lastName}`.replace(/\s+/g, ' ').trim()
+                      : typeof group.teacher === 'string' 
+                        ? group.teacher 
+                        : 'غير محدد';
+                    
+                    return (
+                      <div
+                        key={group._id}
+                        onClick={() => {
+                          if (isDisabled) return;
+                          if (isSelected) {
                             handleGroupsChange(formData.allowedGroups.filter(id => id !== group._id));
+                          } else {
+                            handleGroupsChange([...formData.allowedGroups, group._id]);
                           }
                         }}
-                        className="w-4 h-4 text-green-600 bg-white border-gray-300 rounded focus:ring-green-500"
-                      />
-                      <span className="text-sm font-medium text-gray-700">{group.name}</span>
-                    </label>
-                  ))}
+                        className={`relative p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                          isSelected
+                            ? "bg-gradient-to-br from-emerald-100 to-teal-100 border-emerald-400 shadow-md"
+                            : isDisabled
+                              ? "bg-gray-100 border-gray-200 opacity-50 cursor-not-allowed"
+                              : "bg-white border-gray-200 hover:border-emerald-300 hover:shadow-sm"
+                        }`}
+                      >
+                        {/* Selection indicator */}
+                        <div className={`absolute top-3 left-3 w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                          isSelected 
+                            ? "bg-emerald-500 border-emerald-500" 
+                            : "border-gray-300"
+                        }`}>
+                          {isSelected && (
+                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                        </div>
+
+                        {/* Group info */}
+                        <div className="pr-2">
+                          <h4 className="font-bold text-gray-800 text-sm mb-2">{group.name}</h4>
+                          <div className="flex items-center gap-1 text-xs text-gray-500">
+                            <User className="w-3.5 h-3.5 text-emerald-500" />
+                            <span className="text-gray-600">{teacherName}</span>
+                          </div>
+                          {group.currentStudents !== undefined && (
+                            <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
+                              <Users className="w-3.5 h-3.5 text-teal-500" />
+                              <span>{group.currentStudents || 0} طالب</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
                 {errors.allowedGroups && (
                   <p className="mt-2 text-sm text-red-500 flex items-center gap-1">
@@ -497,8 +502,8 @@ export const AssistantForm: React.FC<AssistantFormProps> = memo(({
                   </p>
                 )}
                 {formData.allowedGroups.length > 0 && (
-                  <p className="mt-2 text-sm text-green-600">
-                    تم اختيار {formData.allowedGroups.length} حلقة
+                  <p className="mt-3 text-sm text-emerald-600 font-medium">
+                    ✓ تم اختيار {formData.allowedGroups.length} من 2 حلقات
                   </p>
                 )}
               </>
@@ -521,7 +526,7 @@ export const AssistantForm: React.FC<AssistantFormProps> = memo(({
               type="submit"
               form="assistant-form"
               disabled={isLoading}
-              className="px-6 py-2.5 bg-gradient-to-l from-purple-600 to-indigo-600 text-white rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-all shadow-lg shadow-purple-500/25 flex items-center gap-2 disabled:opacity-50"
+              className="px-6 py-2.5 bg-gradient-to-l from-emerald-600 to-teal-600 text-white rounded-xl hover:from-emerald-700 hover:to-teal-700 transition-all shadow-lg shadow-emerald-500/25 flex items-center gap-2 disabled:opacity-50"
             >
               {isLoading ? (
                 <>

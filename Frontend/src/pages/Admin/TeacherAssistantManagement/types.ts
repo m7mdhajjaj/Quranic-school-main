@@ -47,6 +47,7 @@ export type SortField = "assistantId" | "firstName" | "age" | "email";
 export type SortOrder = "asc" | "desc";
 export type ViewMode = "table" | "grid";
 export type GenderFilter = "all" | "ذكر" | "أنثى";
+export type GroupsAssignmentFilter = "all" | "with-groups" | "without-groups";
 
 export interface TeacherAssistantFiltersParams {
   gender?: string;

@@ -124,10 +124,10 @@ export const assistantValidationSchema = yup.object({
       if (!value) return true;
       return new Date(value) <= new Date();
     })
-    .test('min-age', 'يجب أن يكون العمر 18 سنة على الأقل', (value) => {
+    .test('min-age', 'يجب أن يكون العمر 16 سنة على الأقل', (value) => {
       if (!value) return true;
       const age = calculateAge(value);
-      return age >= 18;
+      return age >= 16;
     }),
     
   // البريد الإلكتروني - مطلوب وفريد
@@ -147,22 +147,21 @@ export const assistantValidationSchema = yup.object({
     .nullable()
     .transform((value) => isNaN(value) ? null : value),
     
-  // الجنس - اختياري مع تطبيع القيم
+  // الجنس - مطلوب مع تطبيع القيم
   gender: yup
     .string()
-    .nullable()
-    .oneOf([null, 'ذكر', 'أنثى', 'male', 'female', 'Male', 'Female'], 
+    .required('الجنس مطلوب')
+    .oneOf(['ذكر', 'أنثى', 'male', 'female', 'Male', 'Female'], 
            'الجنس يجب أن يكون ذكر أو أنثى')
-    .transform((value) => value ? normalizeGender(value) : null),
+    .transform((value) => value ? normalizeGender(value) : value),
     
-  // مكان السكن - اختياري
+  // مكان السكن - مطلوب
   residence: yup
     .string()
-    .nullable()
-    .trim()
-    .transform((value) => value === '' ? null : value),
+    .required('مكان السكن مطلوب')
+    .trim(),
     
-  // الحلقات المسموح بها - مصفوفة من كائنات الحلقات
+  // الحلقات المسموح بها - مصفوفة من كائنات الحلقات (حد أقصى حلقتين)
   allowedGroups: yup
     .array()
     .of(
@@ -175,6 +174,7 @@ export const assistantValidationSchema = yup.object({
           .transform((value) => value === null || value === undefined || isNaN(value) ? null : value)
       })
     )
+    .max(2, 'يمكن اختيار حلقتين كحد أقصى')
     .default([])
     .nullable()
     .transform((value) => value === null || value === undefined ? [] : value),
@@ -325,7 +325,7 @@ export const commonAssistantValidationErrors = {
   birthDateFormat: 'صيغة التاريخ يجب أن تكون YYYY-MM-DD',
   idNumberFormat: 'رقم الهوية يجب أن يتكون من 9 أرقام فقط',
   passwordMinLength: 'كلمة المرور يجب أن تحتوي على 6 أحرف على الأقل',
-  minAge: 'يجب أن يكون العمر 18 سنة على الأقل',
+  minAge: 'يجب أن يكون العمر 16 سنة على الأقل',
   uniqueConstraints: {
     phone: 'رقم الهاتف موجود بالفعل',
     email: 'البريد الإلكتروني موجود بالفعل',

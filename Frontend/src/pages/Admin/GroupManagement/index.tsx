@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { FaUsers } from 'react-icons/fa';
 import { useAuth } from '@/hooks/useAuth';
-import { useDisableBodyScroll } from '@/hooks/useDisableBodyScroll';
 import ResponsivePagination from '@/components/UI/ResponsivePagination';
 import StatCardSkeleton from '@/components/skeletons/StatCardSkeleton';
 import { LoadingSpinner } from '@/components/UI/LoadingSpinner';
@@ -78,9 +77,6 @@ const GroupManagement: React.FC = () => {
     refetch: refetchStats,
   } = useGroupsStats();
   const actions = useGroupsActions(setGroups, fetchGroups);
-
-  // تعطيل scroll عند فتح Modal
-  useDisableBodyScroll(actions.isFormVisible);
 
   // تحميل المعلمين مرة واحدة عند تحميل الصفحة
   useEffect(() => {

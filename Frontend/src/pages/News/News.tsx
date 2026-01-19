@@ -1,6 +1,5 @@
 import { lazy, Suspense, useMemo, startTransition } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useDisableBodyScroll } from '@/hooks/useDisableBodyScroll';
 import { useNewsData } from './hooks/useNewsData';
 import { useNewsFilter } from './hooks/useNewsFilter';
 import {
@@ -53,9 +52,6 @@ const News = () => {
     handleFilterTypeChange,
     handleClearFilters,
   } = useNewsFilter(newsItems);
-
-  // تعطيل scroll الصفحة عند فتح الـ Modal
-  useDisableBodyScroll(isModalOpen);
 
   // ترتيب العرض حسب المطلوب:
   // 1. عند mount: يبدأ التحميل ويظهر Skeleton فقط

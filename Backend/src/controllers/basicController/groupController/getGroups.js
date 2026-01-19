@@ -56,7 +56,17 @@ exports.getAllGroups = async (req, res) => {
       },
     });
 
-    // 2. إضافة حقول متعددة للبحث عن المعلم
+    // 1.1 Join مع TeacherAssistant collection للحصول على معلومات مساعد المعلم
+    pipeline.push({
+      $lookup: {
+        from: "teacherassistants",
+        localField: "teacherAssistant",
+        foreignField: "_id",
+        as: "teacherAssistantData",
+      },
+    });
+
+    // 2. إضافة حقول متعددة للبحث عن المعلم ومساعد المعلم
     pipeline.push({
       $addFields: {
         teacherFirstName: { $arrayElemAt: ["$teacherData.firstName", 0] },
@@ -103,6 +113,19 @@ exports.getAllGroups = async (req, res) => {
                 },
               ],
             },
+          },
+        },
+        // معلومات مساعد المعلم
+        teacherAssistantInfo: {
+          $cond: {
+            if: { $gt: [{ $size: "$teacherAssistantData" }, 0] },
+            then: {
+              _id: { $arrayElemAt: ["$teacherAssistantData._id", 0] },
+              firstName: { $arrayElemAt: ["$teacherAssistantData.firstName", 0] },
+              lastName: { $arrayElemAt: ["$teacherAssistantData.lastName", 0] },
+              assistantId: { $arrayElemAt: ["$teacherAssistantData.assistantId", 0] },
+            },
+            else: null,
           },
         },
       },
@@ -219,6 +242,9 @@ exports.getAllGroups = async (req, res) => {
           teacher: teacherName, // استخدام الاسم من aggregation
           teacherInfo,
           teacherData: undefined, // إزالة teacherData من النتيجة النهائية
+          teacherAssistantData: undefined, // إزالة teacherAssistantData الزائد
+          teacherAssistant: group.teacherAssistantInfo || null, // معلومات مساعد المعلم
+          teacherAssistantInfo: undefined, // إزالة الحقل المؤقت
           teacherName: undefined, // إزالة teacherName الزائد
           description: group.description || "",
           schedule: group.schedule || "غير محدد",

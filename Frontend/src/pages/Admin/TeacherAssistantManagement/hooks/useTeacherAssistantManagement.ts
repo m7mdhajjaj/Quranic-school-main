@@ -7,13 +7,14 @@ import {
   useTeacherAssistantsActions,
   useTeacherAssistantsStats,
 } from "./";
-import type { TeacherAssistant, ViewMode, SortField, SortOrder, GenderFilter } from "../types";
+import type { TeacherAssistant, ViewMode, SortField, SortOrder, GenderFilter, GroupsAssignmentFilter } from "../types";
 import type { TeacherAssistantFormData } from "./useTeacherAssistantForm";
 
 export const useTeacherAssistantManagement = () => {
   // State للفلاتر
   const [searchQuery, setSearchQuery] = useState("");
   const [genderFilter, setGenderFilter] = useState<GenderFilter>("all");
+  const [groupsAssignmentFilter, setGroupsAssignmentFilter] = useState<GroupsAssignmentFilter>("all");
   const [ageRange, setAgeRange] = useState<[number, number]>([0, 100]);
   const [sortField, setSortField] = useState<SortField>("assistantId");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
@@ -34,9 +35,10 @@ export const useTeacherAssistantManagement = () => {
   const activeFiltersCount = useMemo(() => {
     let count = 0;
     if (genderFilter !== "all") count++;
+    if (groupsAssignmentFilter !== "all") count++;
     if (ageRange[0] !== 0 || ageRange[1] !== 100) count++;
     return count;
-  }, [genderFilter, ageRange]);
+  }, [genderFilter, groupsAssignmentFilter, ageRange]);
 
   // بناء كائن الفلاتر للباك إند
   const filtersParams: TeacherAssistantFiltersParams = useMemo(() => ({
@@ -44,9 +46,10 @@ export const useTeacherAssistantManagement = () => {
     gender: genderFilter !== "all" ? genderFilter : undefined,
     minAge: ageRange[0] > 0 ? ageRange[0] : undefined,
     maxAge: ageRange[1] < 100 ? ageRange[1] : undefined,
+    hasGroups: groupsAssignmentFilter !== "all" ? groupsAssignmentFilter : undefined,
     sortBy: sortField,
     sortOrder: sortOrder,
-  }), [searchQuery, genderFilter, ageRange, sortField, sortOrder]);
+  }), [searchQuery, genderFilter, groupsAssignmentFilter, ageRange, sortField, sortOrder]);
 
   // Hooks
   const { assistants, error, refetch } = useTeacherAssistantsData(filtersParams);
@@ -56,6 +59,7 @@ export const useTeacherAssistantManagement = () => {
   // Filter Handlers
   const resetFilters = useCallback(() => {
     setGenderFilter("all");
+    setGroupsAssignmentFilter("all");
     setAgeRange([0, 100]);
   }, []);
 
@@ -227,6 +231,8 @@ export const useTeacherAssistantManagement = () => {
     setSearchQuery,
     genderFilter,
     setGenderFilter,
+    groupsAssignmentFilter,
+    setGroupsAssignmentFilter,
     ageRange,
     setAgeRange,
     sortField,

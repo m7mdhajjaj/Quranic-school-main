@@ -4,7 +4,6 @@
 
 import React, { useState } from 'react';
 import { X, AlertTriangle, UserX, CheckCircle, Calendar, History, RotateCcw } from 'lucide-react';
-import { useDisableBodyScroll } from '@/hooks/useDisableBodyScroll';
 import { useStudentHistory } from '../hooks/useStudentHistory';
 import Avatar from '@/components/Avatar/Avatar';
 import { Badge } from '@/components/UI/Badge';
@@ -210,7 +209,6 @@ export const StudentFullHistorySidebar: React.FC<StudentFullHistorySidebarProps>
   onStudentRestored,
   canRestore = true,
 }) => {
-  useDisableBodyScroll(isOpen);
   const [showRestoreModal, setShowRestoreModal] = useState(false);
   const [reason, setReason] = useState('');
   const [restoring, setRestoring] = useState(false);

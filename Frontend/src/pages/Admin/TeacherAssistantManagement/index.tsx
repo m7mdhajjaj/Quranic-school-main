@@ -149,6 +149,8 @@ const TeacherAssistantManagement: React.FC = () => {
     setSearchQuery,
     genderFilter,
     setGenderFilter,
+    groupsAssignmentFilter,
+    setGroupsAssignmentFilter,
     ageRange,
     setAgeRange,
     sortField,
@@ -240,6 +242,8 @@ const TeacherAssistantManagement: React.FC = () => {
         onSearchChange={setSearchQuery}
         genderFilter={genderFilter}
         onGenderFilterChange={setGenderFilter}
+        groupsAssignmentFilter={groupsAssignmentFilter}
+        onGroupsAssignmentFilterChange={setGroupsAssignmentFilter}
         viewMode={viewMode}
         onViewModeChange={setViewMode}
         totalCount={assistants.length}

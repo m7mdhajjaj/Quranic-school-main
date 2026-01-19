@@ -6,6 +6,7 @@ import {
   ChevronDown,
   CheckCircle2,
   XCircle,
+  UserCheck,
 } from "lucide-react";
 import type { Group, SortField, SortOrder } from "../types";
 
@@ -97,6 +98,7 @@ export const GroupsTableView: React.FC<GroupsTableViewProps> = ({
                 <th className="px-3 sm:px-6 py-3 sm:py-4 text-right font-bold text-xs sm:text-sm whitespace-nowrap">اسم الحلقة</th>
                 <th className="px-3 sm:px-6 py-3 sm:py-4 text-center font-bold text-xs sm:text-sm whitespace-nowrap hidden sm:table-cell">حالة النشاط</th>
                 <th className="px-3 sm:px-6 py-3 sm:py-4 text-center font-bold text-xs sm:text-sm whitespace-nowrap hidden md:table-cell">المعلم</th>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-center font-bold text-xs sm:text-sm whitespace-nowrap hidden lg:table-cell">مساعد المعلم</th>
                 <th className="px-3 sm:px-6 py-3 sm:py-4 text-center font-bold text-xs sm:text-sm whitespace-nowrap">الطلاب</th>
                 <th className="px-3 sm:px-6 py-3 sm:py-4 text-center font-bold text-xs sm:text-sm whitespace-nowrap w-20 sm:w-28">الإجراءات</th>
                 <th className="px-2 sm:px-3 py-3 sm:py-4 text-center font-bold text-xs sm:text-sm whitespace-nowrap w-10 sm:w-12"></th>
@@ -105,7 +107,7 @@ export const GroupsTableView: React.FC<GroupsTableViewProps> = ({
             <tbody className="divide-y divide-gray-100">
               {isLoading ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center">
+                  <td colSpan={9} className="px-4 py-8 text-center">
                     <div className="flex justify-center">
                       <div className="animate-spin rounded-full h-10 w-10 border-3 border-emerald-600 border-t-transparent"></div>
                     </div>
@@ -155,8 +157,15 @@ export const GroupsTableView: React.FC<GroupsTableViewProps> = ({
                             {activeStatus ? "فعالة" : "غير فعالة"}
                           </span>
                         </td>
-                        <td className="px-5 py-3 text-center">
+                        <td className="px-5 py-3 text-center hidden md:table-cell">
                           <span className="text-sm font-medium text-gray-900">{group.teacher}</span>
+                        </td>
+                        <td className="px-5 py-3 text-center hidden lg:table-cell">
+                          <span className="text-sm font-medium text-gray-700">
+                            {group.teacherAssistant && typeof group.teacherAssistant === 'object'
+                              ? `${group.teacherAssistant.firstName} ${group.teacherAssistant.lastName}`
+                              : <span className="text-gray-400 text-xs">لا يوجد</span>}
+                          </span>
                         </td>
                         <td className="px-4 py-3 text-center">
                           <div className="inline-flex items-center gap-1 px-3 py-1 bg-gray-50 rounded-lg">
@@ -198,7 +207,7 @@ export const GroupsTableView: React.FC<GroupsTableViewProps> = ({
                       {/* Expanded Details Row */}
                       {isExpanded && (
                         <tr>
-                          <td colSpan={8} className="px-6 py-6 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 border-t-2 border-emerald-300">
+                          <td colSpan={9} className="px-6 py-6 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 border-t-2 border-emerald-300">
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                               {/* معلومات الحلقة */}
                               <div className="bg-white rounded-xl border-2 border-emerald-200 p-5 shadow-md">

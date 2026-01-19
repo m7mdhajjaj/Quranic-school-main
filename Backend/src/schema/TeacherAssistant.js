@@ -35,6 +35,7 @@ const teacherAssistantSchema = new mongoose.Schema(
     idNumber: { 
       type: String, 
       required: [true, 'رقم الهوية مطلوب'],
+      unique: true,
       trim: true,
       match: [idNumberRegex, 'رقم الهوية يجب أن يتكون من 9 أرقام بالضبط'],
     },
@@ -60,7 +61,7 @@ const teacherAssistantSchema = new mongoose.Schema(
     },
     age: { 
       type: Number, 
-      min: [18, 'يجب أن يكون عمر مساعد المدرس 18 عام على الأقل'] 
+      min: [16, 'يجب أن يكون عمر مساعد المدرس 16 عام على الأقل'] 
     },
     gender: {
       type: String,
@@ -85,11 +86,20 @@ const teacherAssistantSchema = new mongoose.Schema(
       ref: 'Teacher',
     },
 
-    // الحلقات المسموح له بالوصول إليها
-    allowedGroups: [{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Group',
-    }],
+    // الحلقات المسموح له بالوصول إليها (حد أقصى حلقتين)
+    allowedGroups: {
+      type: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Group',
+      }],
+      validate: {
+        validator: function(groups) {
+          return !groups || groups.length <= 2;
+        },
+        message: 'يمكن للمساعد أن يكون مرتبطاً بحلقتين كحد أقصى'
+      },
+      default: [],
+    },
 
     // حالة الحساب
     lastSeen: { type: Date, default: Date.now },
@@ -110,7 +120,7 @@ const teacherAssistantSchema = new mongoose.Schema(
 teacherAssistantSchema.index({ assistantId: 1 }, { unique: true });
 teacherAssistantSchema.index({ email: 1 }, { unique: true });
 teacherAssistantSchema.index({ phoneNumber: 1 }, { unique: true });
-teacherAssistantSchema.index({ idNumber: 1 });
+teacherAssistantSchema.index({ idNumber: 1 }, { unique: true });
 teacherAssistantSchema.index({ assignedTeacher: 1 });
 
 module.exports = mongoose.model('TeacherAssistant', teacherAssistantSchema);

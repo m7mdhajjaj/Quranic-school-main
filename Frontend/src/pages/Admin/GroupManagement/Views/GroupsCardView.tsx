@@ -5,6 +5,7 @@ import {
   Users,
   Clock,
   User,
+  UserCheck,
   MoreVertical,
 } from "lucide-react";
 import type { Group } from "../types";
@@ -191,6 +192,17 @@ export const GroupsCardView: React.FC<GroupsCardViewProps> = ({
                 <User className="w-4 h-4 text-emerald-500/70" />
                 <span className="text-gray-400 text-xs text-nowrap">المعلم:</span>
                 <span className="font-medium truncate">{group.teacher || "غير محدد"}</span>
+              </div>
+
+              {/* Teacher Assistant */}
+              <div className="flex items-center gap-2 text-sm text-gray-600 pb-3 border-b border-gray-100">
+                <UserCheck className="w-4 h-4 text-teal-500/70" />
+                <span className="text-gray-400 text-xs text-nowrap">مساعد المعلم:</span>
+                <span className="font-medium truncate">
+                  {group.teacherAssistant && typeof group.teacherAssistant === 'object'
+                    ? `${group.teacherAssistant.firstName} ${group.teacherAssistant.lastName}`
+                    : "لا يوجد"}
+                </span>
               </div>
 
               {/* Stats Row */}

@@ -13,6 +13,12 @@ const groupSchema = new mongoose.Schema(
       ref: 'Teacher',
       required: [true, "معرف المعلم مطلوب"],
     },
+    // مساعد المدرس المرتبط بالحلقة (اختياري - حلقة واحدة لمساعد واحد فقط)
+    teacherAssistant: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'TeacherAssistant',
+      default: null,
+    },
     description: {
       type: String,
       trim: true,
@@ -116,6 +122,8 @@ const groupSchema = new mongoose.Schema(
 // فهرس للمعلم للبحث السريع عن حلقاته
 // ملاحظة: الفهرس على name تم إنشاؤه تلقائياً عبر unique: true
 groupSchema.index({ teacher: 1 });
+// فهرس لمساعد المدرس للبحث السريع
+groupSchema.index({ teacherAssistant: 1 });
 
 // middleware للتحقق من تفرد اسم الحلقة قبل الحفظ
 groupSchema.pre("save", async function (next) {
@@ -556,6 +564,47 @@ groupSchema.statics.resetActiveSurah = async function (groupId, type) {
   
   console.log(`🔄 [resetActiveSurah] Group ${groupId}: Reset ${type} active surah`);
 };
+
+// ============================================================================
+// Middleware لإزالة الحلقة من allowedGroups عند حذفها
+// ============================================================================
+
+/**
+ * عند حذف حلقة - إزالتها من allowedGroups لجميع مساعدي المدرسين
+ */
+groupSchema.pre('findOneAndDelete', async function(next) {
+  try {
+    const groupId = this.getQuery()._id;
+    if (groupId) {
+      const TeacherAssistant = mongoose.model('TeacherAssistant');
+      await TeacherAssistant.updateMany(
+        { allowedGroups: groupId },
+        { $pull: { allowedGroups: groupId } }
+      );
+      console.log(`🔄 [Group Delete] Removed group ${groupId} from all teacher assistants' allowedGroups`);
+    }
+  } catch (error) {
+    console.error('Error in Group pre-delete middleware:', error);
+  }
+  next();
+});
+
+groupSchema.pre('deleteOne', { document: false, query: true }, async function(next) {
+  try {
+    const groupId = this.getQuery()._id;
+    if (groupId) {
+      const TeacherAssistant = mongoose.model('TeacherAssistant');
+      await TeacherAssistant.updateMany(
+        { allowedGroups: groupId },
+        { $pull: { allowedGroups: groupId } }
+      );
+      console.log(`🔄 [Group Delete] Removed group ${groupId} from all teacher assistants' allowedGroups`);
+    }
+  } catch (error) {
+    console.error('Error in Group pre-delete middleware:', error);
+  }
+  next();
+});
 
 const Group = mongoose.model("Group", groupSchema);
 

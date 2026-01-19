@@ -313,7 +313,7 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
                                 avatar: student.avatar,
                               });
                             }}
-                            className="p-2 text-purple-600 hover:bg-purple-100 rounded-lg transition-colors"
+                            className="p-2 text-teal-600 hover:bg-teal-100 rounded-lg transition-colors"
                             title="تاريخ الطالب"
                           >
                             <History className="w-4 h-4" />

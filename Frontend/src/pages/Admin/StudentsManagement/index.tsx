@@ -6,7 +6,6 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { FaUserGraduate } from 'react-icons/fa';
 
 import { useAuth } from '@/hooks/useAuth';
-import { useDisableBodyScroll } from '@/hooks/useDisableBodyScroll';
 
 import { AddStudentFormWithYup } from './Model';
 import { StudentStatsCards, StudentToolbar } from './components';
@@ -203,8 +202,6 @@ const StudentsManagement: React.FC = () => {
   } = useStudentsActions(students, setStudents, fetchStudents);
 
   const stats = useStudentsStats(students, apiStats);
-
-  useDisableBodyScroll(isFormVisible);
 
   const toggleStudent = useCallback(
     (studentId: string) => {

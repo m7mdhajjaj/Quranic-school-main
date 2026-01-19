@@ -11,7 +11,6 @@ import {
   WARNING_TYPE_KEYS 
 } from '../../types/Constans';
 import type { GroupStatisticsModalProps } from '../../types/warnings';
-import { useDisableBodyScroll } from '@/hooks/useDisableBodyScroll';
 
 // ✅ Icon mapping
 const WARNING_ICONS = {
@@ -27,9 +26,6 @@ export const GroupStatisticsModal: React.FC<GroupStatisticsModalProps> = React.m
   statistics,
   loading = false,
 }) => {
-  // ✅ تعطيل سكرول الصفحة الخلفية عند فتح المودال
-  useDisableBodyScroll(isOpen);
-
   // ✅ Memoize check for top students
   const hasTopStudents = useMemo(() => 
     statistics?.topStudents && statistics.topStudents.length > 0,

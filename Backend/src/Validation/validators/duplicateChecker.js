@@ -40,7 +40,7 @@ async function checkDuplicateFields(data, excludeId = null, excludeType = null) 
       if (existingStudent) {
         return {
           success: false,
-          message: `رقم الهوية "${idNumber}" مُستخدم بالفعل لطالب في النظام`,
+          message: `رقم الهوية "${idNumber}" مُستخدم بالفعل لطالب في النظام (${existingStudent.firstName} ${existingStudent.lastName})`,
           field: "idNumber",
           duplicateValue: idNumber,
           existingUserType: "طالب",
@@ -51,7 +51,7 @@ async function checkDuplicateFields(data, excludeId = null, excludeType = null) 
       if (existingTeacher) {
         return {
           success: false,
-          message: `رقم الهوية "${idNumber}" مُستخدم بالفعل لمعلم في النظام`,
+          message: `رقم الهوية "${idNumber}" مُستخدم بالفعل لمعلم في النظام (${existingTeacher.firstName} ${existingTeacher.lastName})`,
           field: "idNumber",
           duplicateValue: idNumber,
           existingUserType: "معلم",
@@ -62,7 +62,7 @@ async function checkDuplicateFields(data, excludeId = null, excludeType = null) 
       if (existingAdmin) {
         return {
           success: false,
-          message: `رقم الهوية "${idNumber}" مُستخدم بالفعل لمدير في النظام`,
+          message: `رقم الهوية "${idNumber}" مُستخدم بالفعل لمدير في النظام (${existingAdmin.firstName} ${existingAdmin.lastName})`,
           field: "idNumber",
           duplicateValue: idNumber,
           existingUserType: "مدير",
@@ -73,7 +73,7 @@ async function checkDuplicateFields(data, excludeId = null, excludeType = null) 
       if (existingSecretary) {
         return {
           success: false,
-          message: `رقم الهوية "${idNumber}" مُستخدم بالفعل لسكرتير في النظام`,
+          message: `رقم الهوية "${idNumber}" مُستخدم بالفعل لسكرتير في النظام (${existingSecretary.firstName} ${existingSecretary.lastName})`,
           field: "idNumber",
           duplicateValue: idNumber,
           existingUserType: "سكرتير",
@@ -84,7 +84,7 @@ async function checkDuplicateFields(data, excludeId = null, excludeType = null) 
       if (existingAssistant) {
         return {
           success: false,
-          message: `رقم الهوية "${idNumber}" مُستخدم بالفعل لمساعد مدرس في النظام`,
+          message: `رقم الهوية "${idNumber}" مُستخدم بالفعل لمساعد مدرس في النظام (${existingAssistant.firstName} ${existingAssistant.lastName})`,
           field: "idNumber",
           duplicateValue: idNumber,
           existingUserType: "مساعد مدرس",
@@ -106,7 +106,7 @@ async function checkDuplicateFields(data, excludeId = null, excludeType = null) 
       if (existingStudent) {
         return {
           success: false,
-          message: `البريد الإلكتروني "${email}" مُستخدم بالفعل لطالب في النظام`,
+          message: `البريد الإلكتروني "${email}" مُستخدم بالفعل لطالب في النظام (${existingStudent.firstName} ${existingStudent.lastName})`,
           field: "email",
           duplicateValue: email,
           existingUserType: "طالب",
@@ -117,7 +117,7 @@ async function checkDuplicateFields(data, excludeId = null, excludeType = null) 
       if (existingTeacher) {
         return {
           success: false,
-          message: `البريد الإلكتروني "${email}" مُستخدم بالفعل لمعلم في النظام`,
+          message: `البريد الإلكتروني "${email}" مُستخدم بالفعل لمعلم في النظام (${existingTeacher.firstName} ${existingTeacher.lastName})`,
           field: "email",
           duplicateValue: email,
           existingUserType: "معلم",
@@ -128,7 +128,7 @@ async function checkDuplicateFields(data, excludeId = null, excludeType = null) 
       if (existingAdmin) {
         return {
           success: false,
-          message: `البريد الإلكتروني "${email}" مُستخدم بالفعل لمدير في النظام`,
+          message: `البريد الإلكتروني "${email}" مُستخدم بالفعل لمدير في النظام (${existingAdmin.firstName} ${existingAdmin.lastName})`,
           field: "email",
           duplicateValue: email,
           existingUserType: "مدير",
@@ -139,7 +139,7 @@ async function checkDuplicateFields(data, excludeId = null, excludeType = null) 
       if (existingSecretary) {
         return {
           success: false,
-          message: `البريد الإلكتروني "${email}" مُستخدم بالفعل لسكرتير في النظام`,
+          message: `البريد الإلكتروني "${email}" مُستخدم بالفعل لسكرتير في النظام (${existingSecretary.firstName} ${existingSecretary.lastName})`,
           field: "email",
           duplicateValue: email,
           existingUserType: "سكرتير",
@@ -150,7 +150,7 @@ async function checkDuplicateFields(data, excludeId = null, excludeType = null) 
       if (existingAssistant) {
         return {
           success: false,
-          message: `البريد الإلكتروني "${email}" مُستخدم بالفعل لمساعد مدرس في النظام`,
+          message: `البريد الإلكتروني "${email}" مُستخدم بالفعل لمساعد مدرس في النظام (${existingAssistant.firstName} ${existingAssistant.lastName})`,
           field: "email",
           duplicateValue: email,
           existingUserType: "مساعد مدرس",
@@ -172,7 +172,7 @@ async function checkDuplicateFields(data, excludeId = null, excludeType = null) 
       if (existingStudent) {
         return {
           success: false,
-          message: `رقم الهاتف "${phoneNumber}" مُستخدم بالفعل لطالب في النظام`,
+          message: `رقم الهاتف "${phoneNumber}" مُستخدم بالفعل لطالب في النظام (${existingStudent.firstName} ${existingStudent.lastName})`,
           field: "phoneNumber",
           duplicateValue: phoneNumber,
           existingUserType: "طالب",
@@ -183,7 +183,7 @@ async function checkDuplicateFields(data, excludeId = null, excludeType = null) 
       if (existingTeacher) {
         return {
           success: false,
-          message: `رقم الهاتف "${phoneNumber}" مُستخدم بالفعل لمعلم في النظام`,
+          message: `رقم الهاتف "${phoneNumber}" مُستخدم بالفعل لمعلم في النظام (${existingTeacher.firstName} ${existingTeacher.lastName})`,
           field: "phoneNumber",
           duplicateValue: phoneNumber,
           existingUserType: "معلم",
@@ -194,7 +194,7 @@ async function checkDuplicateFields(data, excludeId = null, excludeType = null) 
       if (existingAdmin) {
         return {
           success: false,
-          message: `رقم الهاتف "${phoneNumber}" مُستخدم بالفعل لمدير في النظام`,
+          message: `رقم الهاتف "${phoneNumber}" مُستخدم بالفعل لمدير في النظام (${existingAdmin.firstName} ${existingAdmin.lastName})`,
           field: "phoneNumber",
           duplicateValue: phoneNumber,
           existingUserType: "مدير",
@@ -205,7 +205,7 @@ async function checkDuplicateFields(data, excludeId = null, excludeType = null) 
       if (existingSecretary) {
         return {
           success: false,
-          message: `رقم الهاتف "${phoneNumber}" مُستخدم بالفعل لسكرتير في النظام`,
+          message: `رقم الهاتف "${phoneNumber}" مُستخدم بالفعل لسكرتير في النظام (${existingSecretary.firstName} ${existingSecretary.lastName})`,
           field: "phoneNumber",
           duplicateValue: phoneNumber,
           existingUserType: "سكرتير",
@@ -216,7 +216,7 @@ async function checkDuplicateFields(data, excludeId = null, excludeType = null) 
       if (existingAssistant) {
         return {
           success: false,
-          message: `رقم الهاتف "${phoneNumber}" مُستخدم بالفعل لمساعد مدرس في النظام`,
+          message: `رقم الهاتف "${phoneNumber}" مُستخدم بالفعل لمساعد مدرس في النظام (${existingAssistant.firstName} ${existingAssistant.lastName})`,
           field: "phoneNumber",
           duplicateValue: phoneNumber,
           existingUserType: "مساعد مدرس",

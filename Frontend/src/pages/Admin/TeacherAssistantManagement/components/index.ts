@@ -1,3 +1,3 @@
-export { PageHeader } from './PageHeader';
-export { StatsCards } from './StatsCards';
-export { Toolbar } from './Toolbar';
+export { AssistantsHeader, PageHeader } from './PageHeader';
+export { AssistantsStatsCards, StatsCards } from './StatsCards';
+export { AssistantsToolbar, Toolbar } from './Toolbar';

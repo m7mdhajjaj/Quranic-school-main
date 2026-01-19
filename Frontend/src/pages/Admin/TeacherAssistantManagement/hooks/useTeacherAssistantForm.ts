@@ -7,7 +7,6 @@ import { showInfoToast } from "@/utils/toastUtils";
 import {
   validateAssistantFieldWithYup,
   validateAssistantWithYup,
-  type AssistantFormData,
 } from "@/Validation/assistantValidation";
 
 // =================== Types ===================
@@ -42,11 +41,9 @@ export interface UseTeacherAssistantFormProps {
 export interface UseTeacherAssistantFormReturn {
   formData: TeacherAssistantFormData;
   errors: Record<string, string>;
-  showPassword: boolean;
   isEditMode: boolean;
   groups: Group[];
   isLoadingGroups: boolean;
-  setShowPassword: (show: boolean) => void;
   handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
   handleGroupsChange: (groupIds: string[]) => void;
   handleSubmit: (e: React.FormEvent) => Promise<void>;
@@ -98,7 +95,7 @@ export const useTeacherAssistantForm = ({
 
   const isEditMode = !!assistant;
 
-  // Fetch groups
+  // Fetch groups - only active groups without assistant OR with current assistant
   useEffect(() => {
     const fetchGroups = async () => {
       if (!isOpen) return;
@@ -107,7 +104,27 @@ export const useTeacherAssistantForm = ({
       try {
         const response = await getAllGroups();
         if (response.success && response.data) {
-          setGroups(response.data);
+          // فلترة الحلقات النشطة فقط
+          // والتي ليس لها مساعد، أو التي المساعد الحالي مشرف عليها
+          const availableGroups = response.data.filter((group: Group) => {
+            // الحلقة يجب أن تكون نشطة
+            if (!group.activeStatus) return false;
+            
+            // إذا الحلقة ليس لها مساعد - متاحة
+            if (!group.teacherAssistant) return true;
+            
+            // في وضع التعديل: إذا المساعد الحالي هو المشرف - متاحة
+            if (isEditMode && assistant?._id) {
+              const assistantId = typeof group.teacherAssistant === 'object' 
+                ? group.teacherAssistant._id 
+                : group.teacherAssistant;
+              return assistantId === assistant._id;
+            }
+            
+            // غير متاحة
+            return false;
+          });
+          setGroups(availableGroups);
         }
       } catch (error) {
         console.error('Error fetching groups:', error);
@@ -117,7 +134,7 @@ export const useTeacherAssistantForm = ({
     };
 
     fetchGroups();
-  }, [isOpen]);
+  }, [isOpen, isEditMode, assistant?._id]);
 
   // Fetch next assistant ID for new assistants
   useEffect(() => {
@@ -168,7 +185,7 @@ export const useTeacherAssistantForm = ({
     }
   }, [isOpen, assistant]);
 
-  // التحقق من التكرار
+  // التحقق من التكرار عبر جميع المستخدمين
   const checkDuplicateField = useCallback(
     async (field: 'email' | 'phoneNumber' | 'idNumber', value: string) => {
       if (!value.trim()) return;
@@ -176,12 +193,11 @@ export const useTeacherAssistantForm = ({
       try {
         const response = await checkDuplicate(field, value, assistant?._id);
         if (response.success && response.isDuplicate) {
-          const fieldNames: Record<string, string> = {
-            email: 'البريد الإلكتروني',
-            phoneNumber: 'رقم الهاتف',
-            idNumber: 'رقم الهوية',
-          };
-          setErrors(prev => ({ ...prev, [field]: `${fieldNames[field]} مستخدم بالفعل` }));
+          // عرض رسالة تفصيلية مع نوع المستخدم واسمه
+          const message = response.message || 
+            `${response.existingUserType ? `مستخدم بالفعل لـ ${response.existingUserType}` : 'مستخدم بالفعل'}` +
+            (response.existingUserName ? ` (${response.existingUserName})` : '');
+          setErrors(prev => ({ ...prev, [field]: message }));
         }
       } catch (error) {
         console.error('Error checking duplicate:', error);
@@ -190,6 +206,19 @@ export const useTeacherAssistantForm = ({
     [assistant?._id]
   );
 
+  // Debounced duplicate checks helper
+  const debouncedCheck = useCallback((
+    field: 'email' | 'phoneNumber' | 'idNumber', 
+    value: string, 
+    regex: RegExp, 
+    timerRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>
+  ) => {
+    if (value && regex.test(value)) {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => checkDuplicateField(field, value), 500);
+    }
+  }, [checkDuplicateField]);
+
   // Handle form change with Yup validation
   const handleChange = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -197,7 +226,7 @@ export const useTeacherAssistantForm = ({
       
       setFormData(prev => ({ ...prev, [name]: value }));
       
-      // Clear error when user types
+      // Clear error immediately
       if (errors[name]) {
         setErrors(prev => {
           const newErrors = { ...prev };
@@ -206,29 +235,18 @@ export const useTeacherAssistantForm = ({
         });
       }
 
-      // Validate field with Yup
+      // Validate field
       const error = await validateAssistantFieldWithYup(name, value, formData, !isEditMode);
       if (error) {
         setErrors(prev => ({ ...prev, [name]: error }));
       }
 
-      // Debounced duplicate checks
-      if (name === 'email' && value && /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(value)) {
-        if (emailCheckRef.current) clearTimeout(emailCheckRef.current);
-        emailCheckRef.current = setTimeout(() => checkDuplicateField('email', value), 500);
-      }
-      
-      if (name === 'phoneNumber' && value && /^05\d{8}$/.test(value)) {
-        if (phoneCheckRef.current) clearTimeout(phoneCheckRef.current);
-        phoneCheckRef.current = setTimeout(() => checkDuplicateField('phoneNumber', value), 500);
-      }
-      
-      if (name === 'idNumber' && value && /^\d{9}$/.test(value)) {
-        if (idCheckRef.current) clearTimeout(idCheckRef.current);
-        idCheckRef.current = setTimeout(() => checkDuplicateField('idNumber', value), 500);
-      }
+      // Check duplicates using optimized helper
+      if (name === 'email') debouncedCheck('email', value, EMAIL_REGEX, emailCheckRef);
+      if (name === 'phoneNumber') debouncedCheck('phoneNumber', value, PHONE_REGEX, phoneCheckRef);
+      if (name === 'idNumber') debouncedCheck('idNumber', value, ID_REGEX, idCheckRef);
     },
-    [errors, formData, isEditMode, checkDuplicateField]
+    [errors, formData, isEditMode, debouncedCheck]
   );
 
   // Handle groups change
@@ -315,11 +333,10 @@ export const useTeacherAssistantForm = ({
   return {
     formData,
     errors,
-    showPassword,
+    
     isEditMode,
     groups,
     isLoadingGroups,
-    setShowPassword,
     handleChange,
     handleGroupsChange,
     handleSubmit,

@@ -124,12 +124,21 @@ const validateAssistantData = async (req, res, next) => {
       }
     }
 
-    // التحقق من الجنس إذا تم تمريره
-    if (gender !== undefined && gender !== null) {
+    // التحقق من الجنس - مطلوب
+    if (isNewAssistant && (!gender || typeof gender !== 'string')) {
+      errors.gender = 'الجنس مطلوب';
+    } else if (gender !== undefined && gender !== null) {
       const allowedGenders = ['ذكر', 'أنثى', 'male', 'female', 'Male', 'Female'];
       if (!allowedGenders.includes(gender)) {
         errors.gender = 'الجنس يجب أن يكون ذكر أو أنثى';
       }
+    }
+
+    // التحقق من مكان السكن - مطلوب
+    if (isNewAssistant && (!residence || typeof residence !== 'string' || residence.trim().length === 0)) {
+      errors.residence = 'مكان السكن مطلوب';
+    } else if (residence !== undefined && (typeof residence !== 'string' || residence.trim().length === 0)) {
+      errors.residence = 'مكان السكن يجب أن يكون نصاً غير فارغ';
     }
 
     // إذا وجدت أخطاء، إرجاعها

@@ -1,60 +1,69 @@
-import React from "react";
-import { UserPlus, Download, Trash2, HandHelping } from "lucide-react";
+import React, { memo } from "react";
+import { FaHandsHelping, FaPlus, FaDownload, FaTrash } from "react-icons/fa";
 
-interface PageHeaderProps {
+interface AssistantsHeaderProps {
   onAddAssistant: () => void;
   onExport: () => void;
-  selectedCount: number;
-  onBulkDelete: () => void;
+  selectedCount?: number;
+  onBulkDelete?: () => void;
 }
 
-export const PageHeader: React.FC<PageHeaderProps> = ({
+export const AssistantsHeader: React.FC<AssistantsHeaderProps> = memo(({
   onAddAssistant,
   onExport,
-  selectedCount,
+  selectedCount = 0,
   onBulkDelete,
-}) => {
-  return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-      {/* Title */}
-      <div className="flex items-center gap-3">
-        <div className="p-3 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl shadow-lg">
-          <HandHelping className="w-6 h-6 text-white" />
+}) => (
+  <div className="bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-xl shadow-md p-3 sm:p-4 lg:p-5 mb-4 sm:mb-6">
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
+      <div className="flex items-center gap-2 sm:gap-3">
+        <div className="p-2 sm:p-2.5 bg-emerald-700 rounded-lg shadow-sm">
+          <FaHandsHelping className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">إدارة مساعدي المدرسين</h1>
-          <p className="text-gray-500 text-sm">إضافة وتعديل وحذف مساعدي المدرسين</p>
+          <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
+            إدارة مساعدي المدرسين
+          </h1>
+          <p className="text-white/90 text-xs sm:text-sm mt-0.5 hidden xs:block">
+            {selectedCount > 0 ? `تم تحديد ${selectedCount} مساعد` : "نظام متكامل لإدارة بيانات مساعدي المدرسين"}
+          </p>
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center gap-2">
-        {selectedCount > 0 && (
+      <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+        {selectedCount > 0 && onBulkDelete && (
           <button
             onClick={onBulkDelete}
-            className="flex items-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors shadow-sm"
+            className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-red-500/90 backdrop-blur-sm text-white rounded-lg hover:bg-red-600 transition-colors border border-red-400/30 text-xs sm:text-sm font-medium flex-1 sm:flex-none"
           >
-            <Trash2 className="w-4 h-4" />
-            <span>حذف ({selectedCount})</span>
+            <FaTrash className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="hidden xs:inline">حذف ({selectedCount})</span>
+            <span className="xs:hidden">{selectedCount}</span>
           </button>
         )}
 
         <button
           onClick={onExport}
-          className="flex items-center gap-2 px-4 py-2.5 bg-white text-gray-700 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors shadow-sm"
+          className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-white/20 backdrop-blur-sm text-white rounded-lg hover:bg-white/30 transition-colors border border-white/30 text-xs sm:text-sm font-medium flex-1 sm:flex-none"
         >
-          <Download className="w-4 h-4" />
+          <FaDownload className="w-3 h-3 sm:w-4 sm:h-4" />
           <span className="hidden sm:inline">تصدير</span>
         </button>
 
         <button
           onClick={onAddAssistant}
-          className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-l from-purple-600 to-indigo-600 text-white rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-all shadow-lg shadow-purple-500/25"
+          className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-white text-emerald-600 rounded-lg hover:bg-white/90 transition-colors shadow-sm text-xs sm:text-sm font-medium font-semibold flex-1 sm:flex-none"
         >
-          <UserPlus className="w-4 h-4" />
-          <span>إضافة مساعد</span>
+          <FaPlus className="w-3 h-3 sm:w-4 sm:h-4" />
+          <span className="hidden sm:inline">إضافة مساعد</span>
+          <span className="sm:hidden">إضافة</span>
         </button>
       </div>
     </div>
-  );
-};
+  </div>
+));
+
+AssistantsHeader.displayName = "AssistantsHeader";
+
+// Backward compatibility alias
+export const PageHeader = AssistantsHeader;

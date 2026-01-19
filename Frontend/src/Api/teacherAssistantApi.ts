@@ -91,6 +91,7 @@ export interface TeacherAssistantFiltersParams {
   gender?: string;
   minAge?: number;
   maxAge?: number;
+  hasGroups?: string; // 'all' | 'with-groups' | 'without-groups'
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
 }
@@ -317,23 +318,43 @@ export const getNextAssistantId = async (): Promise<{ success: boolean; nextId?:
 };
 
 /**
- * Check for duplicate values
+ * Check for duplicate values across all users
  */
 export const checkDuplicate = async (
   field: 'email' | 'phoneNumber' | 'idNumber' | 'assistantId',
   value: string,
   excludeId?: string
-): Promise<{ success: boolean; isDuplicate?: boolean; message?: string }> => {
+): Promise<{ 
+  success: boolean; 
+  isDuplicate?: boolean; 
+  message?: string;
+  existingUserType?: string;
+  existingUserName?: string;
+}> => {
   try {
     const params: Record<string, string> = { field, value };
     if (excludeId) {
       params.excludeId = excludeId;
     }
     
-    const response = await api.get<{ success: boolean; data: { isDuplicate: boolean } }>('/teacher-assistants/check-duplicate', { params });
+    const response = await api.get<{ 
+      success: boolean; 
+      data: { 
+        isDuplicate: boolean;
+        message?: string;
+        existingUserType?: string;
+        existingUserName?: string;
+      } 
+    }>('/teacher-assistants/check-duplicate', { params });
     
     if (response.data.success) {
-      return { success: true, isDuplicate: response.data.data.isDuplicate };
+      return { 
+        success: true, 
+        isDuplicate: response.data.data.isDuplicate,
+        message: response.data.data.message,
+        existingUserType: response.data.data.existingUserType,
+        existingUserName: response.data.data.existingUserName,
+      };
     }
     return { success: false };
   } catch (error) {

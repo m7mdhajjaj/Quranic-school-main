@@ -43,10 +43,13 @@ const getActiveGroups = async (req, res) => {
       // جلب البيانات الأساسية فقط
       query = query.select("_id name");
     } else if (type === "detailed") {
-      // جلب جميع البيانات مع populate للمعلم
+      // جلب جميع البيانات مع populate للمعلم ومساعد المعلم
       query = query.populate({
         path: "teacher",
         select: "firstName fatherName lastName email phoneNumber",
+      }).populate({
+        path: "teacherAssistant",
+        select: "firstName lastName assistantId",
       });
     }
 

@@ -238,6 +238,8 @@ class OnlineUsersManager {
       student: this.getUsersByRole('student').length,
       teacher: this.getUsersByRole('teacher').length,
       admin: this.getUsersByRole('admin').length,
+      secretary: this.getUsersByRole('secretary').length,
+      teacherAssistant: this.getUsersByRole('teacherAssistant').length,
       unknown: this.getUsersByRole('unknown').length,
     };
 

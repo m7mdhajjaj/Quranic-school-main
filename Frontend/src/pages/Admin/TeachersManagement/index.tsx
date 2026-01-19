@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { FaUserTie } from "react-icons/fa";
 import { useAuth } from "@/hooks/useAuth";
-import { useDisableBodyScroll } from "@/hooks/useDisableBodyScroll";
 
 import TeacherForm from "./Model/TeacherForm";
 import { EmptyState } from "@/components/UI/EmptyState";
@@ -138,9 +137,6 @@ const TeachersManagement: React.FC = () => {
 
   // Statistics
   const stats = useTeachersStats(teachers, apiStats);
-
-  // تعطيل scroll الصفحة عند فتح الـ Modal
-  useDisableBodyScroll(isFormVisible);
 
   // إذا لم يكن لديه أي صلاحية (none)، نظهر رسالة
   if (!hasPermission) {

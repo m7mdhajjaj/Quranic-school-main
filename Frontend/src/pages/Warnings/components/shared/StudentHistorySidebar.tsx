@@ -4,7 +4,6 @@
 
 import React from 'react';
 import { X, AlertTriangle, UserX, CheckCircle, ArrowRight } from 'lucide-react';
-import { useDisableBodyScroll } from '@/hooks/useDisableBodyScroll';
 import { useStudentHistory } from '../../hooks/useStudentHistory';
 import { getEventLabel, getEventColor, getEventIconColor } from '../../types/Constans';
 import type { StudentHistorySidebarProps, StudentEventType } from '../../types/warnings';
@@ -25,8 +24,6 @@ export const StudentHistorySidebar: React.FC<StudentHistorySidebarProps> = React
   onClose,
   groupId,
 }) => {
-  useDisableBodyScroll(isOpen);
-  
   // ✅ Custom hook لإدارة البيانات والمنطق
   const {
     selectedStudentId,

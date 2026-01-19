@@ -104,12 +104,40 @@ class CounterService {
   }
 
   // ============================================================================
+  // TEACHER ASSISTANT IDs
+  // ============================================================================
+
+  /**
+   * الحصول على الرقم التالي لمساعد المعلم
+   * @returns {Promise<number>}
+   */
+  static async getNextTeacherAssistantId() {
+    return await Counter.getNextId("teacherAssistant");
+  }
+
+  /**
+   * إعادة رقم مساعد معلم للتدوير
+   * @param {number} id
+   */
+  static async recycleTeacherAssistantId(id) {
+    await Counter.recycleId("teacherAssistant", id);
+  }
+
+  /**
+   * إعادة عدة أرقام مساعدي معلمين للتدوير
+   * @param {number[]} ids
+   */
+  static async recycleTeacherAssistantIds(ids) {
+    await Counter.recycleMultipleIds("teacherAssistant", ids);
+  }
+
+  // ============================================================================
   // GENERIC METHODS
   // ============================================================================
 
   /**
    * الحصول على حالة عداد معين
-   * @param {"student"|"teacher"|"admin"} type
+   * @param {"student"|"teacher"|"admin"|"teacherAssistant"} type
    * @returns {Promise<Object>}
    */
   static async getCounterStatus(type) {
@@ -121,13 +149,14 @@ class CounterService {
    * @returns {Promise<Object>}
    */
   static async getAllCountersStatus() {
-    const [student, teacher, admin] = await Promise.all([
+    const [student, teacher, admin, teacherAssistant] = await Promise.all([
       Counter.getStatus("student"),
       Counter.getStatus("teacher"),
       Counter.getStatus("admin"),
+      Counter.getStatus("teacherAssistant"),
     ]);
 
-    return { student, teacher, admin };
+    return { student, teacher, admin, teacherAssistant };
   }
 
   /**
@@ -173,12 +202,20 @@ class CounterService {
     const maxAdminId = adminIds.length > 0 ? Math.max(...adminIds) : 0;
     await Counter.initializeFromExisting("admin", maxAdminId, adminIds);
 
+    // تهيئة عداد مساعدي المعلمين
+    const TeacherAssistant = require("../../schema/TeacherAssistant");
+    const teacherAssistants = await TeacherAssistant.find({}, { assistantId: 1 }).lean();
+    const teacherAssistantIds = teacherAssistants.map((ta) => ta.assistantId).filter((id) => id);
+    const maxTeacherAssistantId = teacherAssistantIds.length > 0 ? Math.max(...teacherAssistantIds) : 600;
+    await Counter.initializeFromExisting("teacherAssistant", maxTeacherAssistantId, teacherAssistantIds);
+
     console.log("✅ [CounterService] All counters initialized successfully");
 
     return {
       student: { max: maxStudentId, count: studentIds.length },
       teacher: { max: maxTeacherId, count: teacherIds.length },
       admin: { max: maxAdminId, count: adminIds.length },
+      teacherAssistant: { max: maxTeacherAssistantId, count: teacherAssistantIds.length },
     };
   }
 
@@ -188,7 +225,7 @@ class CounterService {
    */
   static async areCountersInitialized() {
     const counters = await Counter.find({});
-    return counters.length === 3;
+    return counters.length === 4; // student, teacher, admin, teacherAssistant
   }
 
   /**
