@@ -272,7 +272,7 @@ export default function AdminDashboardScreen() {
 
           <TouchableOpacity
             style={styles.quickActionButton}
-            onPress={() => router.push('/admin/assistants')}>
+            onPress={() => router.push('/admin/assistants?add=true')}>
             <View style={styles.quickActionIcon}>
               <Users size={24} color="#10b981" />
             </View>
@@ -281,7 +281,7 @@ export default function AdminDashboardScreen() {
 
           <TouchableOpacity
             style={styles.quickActionButton}
-            onPress={() => router.push('/admin/secretaries')}>
+            onPress={() => router.push('/admin/secretaries?add=true')}>
             <View style={styles.quickActionIcon}>
               <UserCheck size={24} color="#10b981" />
             </View>

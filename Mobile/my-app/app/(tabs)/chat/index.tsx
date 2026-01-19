@@ -109,9 +109,9 @@ export default function ChatScreen() {
     if (conv.unreadCount > 0) {
       if (conv.type === "DM") {
         const otherParticipant = conv.participants.find(
-          (p) => p.userId._id !== user?._id
+          (p) => p?.userId?._id && p.userId._id !== user?._id
         );
-        if (otherParticipant) {
+        if (otherParticipant?.userId) {
           await resetUnreadCount("DM", otherParticipant.userId._id);
         }
       } else if (conv.type === "GROUP" && conv.groupId) {
@@ -142,10 +142,10 @@ export default function ChatScreen() {
       };
     } else {
       const otherParticipant = conv.participants.find(
-        (p) => p.userId._id !== user?._id
+        (p) => p?.userId?._id && p.userId._id !== user?._id
       );
 
-      if (otherParticipant) {
+      if (otherParticipant?.userId) {
         return {
           chatType: "DM",
           targetId: otherParticipant.userId._id,
