@@ -142,13 +142,14 @@ class ScheduleReminderJob {
 
         // Create notification
         try {
+          const groupName = section.group || "الحلقة";
           await this.notificationManager.createNotification({
              recipient: recipientId,
              recipientModel: "Teacher",
-             title: "تذكير: تحديد موعد للحلقة",
-             message: "يرجى تحديد موعد لهذه الحلقة في الجدول.",
-             type: "system", 
-             link: "/daily-marks",
+             title: `تذكير: تحديد موعد ل${groupName}`,
+             message: `يرجى تحديد موعد لحلقة "${groupName}" في الجدول.`,
+             type: "timetable", 
+             link: "/timetable",
              relatedId: section._id,
              isRead: false,
              createdAt: new Date()

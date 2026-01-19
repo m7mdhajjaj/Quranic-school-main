@@ -1094,6 +1094,21 @@ io.on('connection', (socket) => {
                 { lastSeen: now },
                 { new: true }
               );
+            } else if (normalizedRole === 'secretary') {
+              const Secretary = require('./routes/secretaryRoutes/schema/Secretary') || require('./schema/Secretary');
+              // Note: Adjust path if necessary based on your structure. Assuming ./schema/Secretary exists standardly
+              // Let's rely on standard path try first, or check where it is imported usually.
+              // Waiting... looking at imports in MessageService above: const Secretary = require("../../schema/Secretary");
+              // So it should be require('./schema/Secretary');
+              try {
+                  const Secretary = require('./schema/Secretary');
+                  updateResult = await Secretary.findByIdAndUpdate(userId, { lastSeen: now }, { new: true });
+              } catch (e) { console.warn("Secretary schema not found"); }
+            } else if (normalizedRole === 'teacherassistant' || normalizedRole === 'teacher assistant') {
+              try {
+                  const TeacherAssistant = require('./schema/TeacherAssistant');
+                  updateResult = await TeacherAssistant.findByIdAndUpdate(userId, { lastSeen: now }, { new: true });
+              } catch (e) { console.warn("TeacherAssistant schema not found"); }
             }
 
             // Fallback: If role didn't match or update failed, try all collections

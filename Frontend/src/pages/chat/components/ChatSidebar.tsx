@@ -7,6 +7,7 @@ import { ROLE_COLORS } from '../types';
 import type { Contact, Group } from '../hooks/useChatContacts';
 import ConversationItem from './ConversationItem';
 import { useChatSidebar } from '../hooks/useChatSidebar';
+import { useConversationsTyping } from '../hooks/useConversationsTyping';
 
 // Role display names (Arabic)
 const ROLE_DISPLAY: Record<string, string> = {
@@ -51,6 +52,18 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
     isContactSelected,
     isGroupSelected,
   } = useChatSidebar(conversations, selectedId, onDeleteConversation);
+
+  const typingStatus = useConversationsTyping();
+
+  const getIsTyping = (conv: Conversation) => {
+    if (conv.type === 'GROUP') {
+      return typingStatus[conv.groupId?._id || ''] || false;
+    } else {
+      // For DM, find the other participant
+      const otherParticipant = conv.participants.find(p => p.userId._id !== currentUserId);
+      return otherParticipant ? (typingStatus[otherParticipant.userId._id] || false) : false;
+    }
+  };
 
   if (loading) {
     return (
@@ -129,6 +142,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
                   <ConversationItem
                     key={conv._id}
                     conversation={conv}
+                    isTyping={getIsTyping(conv)}
                     isSelected={selectedId === conv._id}
                     currentUserId={currentUserId}
                     onSelect={onSelect}

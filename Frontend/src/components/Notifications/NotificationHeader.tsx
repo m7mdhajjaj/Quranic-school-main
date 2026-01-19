@@ -82,17 +82,92 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
   const handleNotificationClick = (notification: Notification) => {
     // إغلاق القائمة المنسدلة مباشرةً عند النقر على أي إشعار
     setShowDropdown(false);
+
+    // تسجيل الإشعار كمقروء عند النقر
+    if (!notification.isRead) {
+      markNotificationAsRead(notification._id);
+    }
     
-    // التنقل حسب النوع
-    if (notification.type === 'message') {
-      localStorage.setItem(
-        'chatNotification',
-        JSON.stringify(notification.data)
-      );
-      window.dispatchEvent(new Event('chat-notification-click'));
-      navigate('/chat');
-    } else if (notification.type === 'news') {
-      navigate('/news');
+    // 1. التحقق من وجود رابط مباشر في الإشعار
+    if (notification.link) {
+      // تصحيح ذكي للروابط
+      // إذا كان الإشعار يخص الجدول ولكنه يوجه للخلاصة اليومية، نوجهه لصفحة الجدول
+      if (
+        (notification.link === '/daily-marks' || notification.link === '/daily-marks/') && 
+        (notification.title.includes('تحديد موعد') || notification.title.includes('جدول') || notification.type === 'timetable')
+      ) {
+        navigate('/timetable');
+      } else {
+        navigate(notification.link);
+      }
+      return;
+    }
+
+    // 2. التنقل حسب النوع (Fallback logic)
+    switch (notification.type) {
+      case 'message':
+      case 'chat':
+        if (notification.data) {
+          localStorage.setItem('chatNotification', JSON.stringify(notification.data));
+          window.dispatchEvent(new Event('chat-notification-click'));
+        }
+        navigate('/chat');
+        break;
+
+      case 'news':
+        navigate('/news');
+        break;
+
+      case 'timetable':
+      case 'reminder':
+        navigate('/timetable');
+        break;
+
+      case 'daily_marks':
+      case 'grade':
+      case 'quran_progress':
+      case 'memorization':
+      case 'review':
+        navigate('/daily-marks');
+        break;
+
+      case 'exam':
+      case 'test_result':
+        navigate('/exam-schedule');
+        break;
+
+      case 'attendance':
+        navigate('/attendance');
+        break;
+        
+      case 'points':
+      case 'ranking':
+        navigate('/points-game');
+        break;
+
+      case 'warning':
+      case 'alert':
+        // تحديد الوجهة بناءً على المحتوى
+        if (notification.title.includes('غياب') || notification.title.includes('تأخر')) {
+          navigate('/attendance');
+        } else {
+          navigate('/warnings');
+        }
+        break;
+
+      case 'system':
+        // معالجة خاصة لإشعارات النظام
+        if (notification.title.includes('جدول') || notification.title.includes('موعد')) {
+           navigate('/timetable');
+        } else {
+           navigate('/');
+        }
+        break;
+
+      default:
+        // الافتراضي لنوع غير معروف
+        console.log('No specific route for notification:', notification);
+        break;
     }
   };
 

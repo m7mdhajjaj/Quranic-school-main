@@ -20,6 +20,7 @@ export { useChatWindow } from './useChatWindow';
 export { useOnlineStatus } from './useOnlineStatus';
 export { useChatHeader } from './useChatHeader';
 export { useDateDividers } from './useDateDividers';
+export { useConversationsTyping } from './useConversationsTyping';
 
 // Re-export types from types/index.ts for convenience
 export type {
