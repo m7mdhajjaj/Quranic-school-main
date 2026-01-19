@@ -4,7 +4,6 @@
 
 import React from "react";
 import { View, Text, ActivityIndicator } from "react-native";
-import { Users, UserCheck, User } from "lucide-react-native";
 import type { SecretaryStats } from "@/types/secretary.types";
 
 interface SecretaryStatsCardsProps {
@@ -16,57 +15,58 @@ export const SecretaryStatsCards: React.FC<SecretaryStatsCardsProps> = ({
   stats,
   loading = false,
 }) => {
-  if (loading) {
-    return (
-      <View className="flex-row flex-wrap gap-3">
-        {[1, 2, 3].map((i) => (
-          <View
-            key={i}
-            className="flex-1 min-w-[100px] bg-white rounded-xl p-4 items-center justify-center border border-gray-200">
-            <ActivityIndicator size="small" color="#3b82f6" />
-          </View>
-        ))}
-      </View>
-    );
-  }
-
   const statsData = [
     {
-      label: "الإجمالي",
+      label: "إجمالي السكرتيرين",
       value: stats?.total || 0,
-      icon: Users,
-      color: "#3b82f6",
+      icon: "👥",
       bgColor: "bg-blue-50",
+      textColor: "text-blue-700",
+      iconBg: "bg-blue-500",
     },
     {
       label: "ذكور",
       value: stats?.male || 0,
-      icon: User,
-      color: "#10b981",
-      bgColor: "bg-emerald-50",
+      icon: "👨",
+      bgColor: "bg-cyan-50",
+      textColor: "text-cyan-700",
+      iconBg: "bg-cyan-600",
     },
     {
       label: "إناث",
       value: stats?.female || 0,
-      icon: UserCheck,
-      color: "#f59e0b",
-      bgColor: "bg-amber-50",
+      icon: "👩",
+      bgColor: "bg-pink-50",
+      textColor: "text-pink-700",
+      iconBg: "bg-pink-500",
     },
   ];
+
+  if (loading) {
+    return (
+      <View className="flex-row justify-center py-8">
+        <ActivityIndicator size="large" color="#3b82f6" />
+      </View>
+    );
+  }
 
   return (
     <View className="flex-row flex-wrap gap-3">
       {statsData.map((stat, index) => (
         <View
           key={index}
-          className={`flex-1 min-w-[100px] ${stat.bgColor} rounded-xl p-4 border border-gray-100`}>
-          <View className="flex-row items-center justify-between mb-2">
-            <stat.icon size={20} color={stat.color} />
-            <Text className="text-2xl font-bold" style={{ color: stat.color }}>
-              {stat.value}
-            </Text>
+          className={`${stat.bgColor} rounded-2xl p-4 shadow-md border border-gray-100 flex-1 min-w-[45%]`}>
+          <View className="flex-row items-center justify-between mb-3">
+            <View className={`${stat.iconBg} rounded-xl p-2`}>
+              <Text className="text-2xl">{stat.icon}</Text>
+            </View>
+            <View className="flex-1 items-end mr-2">
+              <Text className={`${stat.textColor} font-bold text-2xl`}>
+                {stat.value}
+              </Text>
+            </View>
           </View>
-          <Text className="text-gray-600 text-xs text-center">
+          <Text className={`${stat.textColor} font-semibold text-sm`}>
             {stat.label}
           </Text>
         </View>

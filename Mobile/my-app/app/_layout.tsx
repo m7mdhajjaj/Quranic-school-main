@@ -36,8 +36,8 @@ function RootLayoutNav() {
     if (!isAuthenticated && !inAuthGroup && !inWelcome && !inHome) {
       // Redirect to welcome page if not authenticated
       router.replace("/welcome");
-    } else if (isAuthenticated && (inAuthGroup || inWelcome || inHome)) {
-      // Redirect to tabs if authenticated
+    } else if (isAuthenticated && (inAuthGroup || inWelcome)) {
+      // Redirect to tabs if authenticated (but allow /home page for everyone)
       router.replace("/(tabs)");
     }
   }, [isAuthenticated, segments, isLoading]);

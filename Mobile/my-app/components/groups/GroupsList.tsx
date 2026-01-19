@@ -16,6 +16,7 @@ interface GroupsListProps {
   teachers?: Teacher[];
   ListHeaderComponent?: React.ReactElement;
   readOnly?: boolean;
+  loading?: boolean;
 }
 
 export const GroupsList: React.FC<GroupsListProps> = ({
@@ -27,6 +28,7 @@ export const GroupsList: React.FC<GroupsListProps> = ({
   teachers = [],
   ListHeaderComponent,
   readOnly = false,
+  loading = false,
 }) => {
   const getTeacherName = (teacherValue: string): string => {
     // إذا كانت القيمة "غير محدد" أو فارغة

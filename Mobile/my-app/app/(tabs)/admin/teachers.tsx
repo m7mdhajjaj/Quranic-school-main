@@ -7,8 +7,8 @@ import {
   View,
   Text,
   TouchableOpacity,
-  ActivityIndicator,
   TextInput,
+  FlatList,
 } from "react-native";
 import { useAuth } from "@/Context/AuthContext";
 import {
@@ -79,120 +79,77 @@ export default function TeachersAdminScreen() {
 
   return (
     <View className="flex-1 bg-gray-50">
-      {/* Loading State */}
-      {isLoading && (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#10b981" />
-          <Text className="text-center text-gray-500 mt-4">
-            جاري تحميل المعلمين...
-          </Text>
-        </View>
-      )}
+      {/* Header */}
+      <View className="bg-white-600 pt-12 pb-6 px-6">
+        <Text className="text-black text-3xl font-bold mb-2">
+          إدارة المعلمين
+        </Text>
+        <Text className="text-blue-400 text-sm">
+          إدارة وتنظيم بيانات المعلمين
+        </Text>
+      </View>
 
-      {/* Error State */}
-      {error && !isLoading && (
-        <View className="flex-1 items-center justify-center px-4">
-          <View className="bg-red-50 border-2 border-red-200 rounded-xl p-8 text-center shadow-sm">
-            <Text className="text-6xl mb-4">⚠️</Text>
-            <Text className="text-xl font-bold text-red-800 mb-2">
-              حدث خطأ في تحميل البيانات
-            </Text>
-            <Text className="text-red-600 text-sm mb-4">{error}</Text>
-            <TouchableOpacity
-              onPress={() => {
-                Promise.all([fetchTeachers(), refetchStats()]).catch(() => {});
-              }}
-              className="bg-red-600 px-6 py-3 rounded-lg">
-              <Text className="text-white font-semibold text-center">
-                إعادة المحاولة
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
+      {/* Content */}
+      <FlatList
+        ListHeaderComponent={
+          <>
+            {/* Stats Cards */}
+            <View className="px-6 py-4">
+              <TeachersStatsCards stats={stats} loading={statsLoading} />
+            </View>
 
-      {/* Teachers List with Header */}
-      {!isLoading && !error && (
-        <TeachersList
-          teachers={teachers}
-          selectedTeachers={actions.selectedTeachers}
-          onToggleSelection={actions.toggleTeacherSelection}
-          onEdit={actions.handleEdit}
-          onDelete={actions.handleDelete}
-          ListHeaderComponent={
-            <>
-              {/* Header */}
-              <View className="bg-white rounded-2xl p-6 mb-6 shadow-lg border border-gray-200 mt-6">
-                <View className="flex-row items-center justify-between mb-4">
-                  <View className="flex-1">
-                    <Text className="text-2xl font-bold text-gray-900">
-                      إدارة المعلمين
-                    </Text>
-                    <Text className="text-gray-600 text-sm mt-1">
-                      إضافة وتعديل وحذف المعلمين
-                    </Text>
-                  </View>
-                  <TouchableOpacity
-                    onPress={() => {
-                      actions.setSelectedTeacher(null);
-                      actions.setIsEditMode(false);
-                      actions.setIsFormVisible(true);
-                    }}
-                    className="bg-emerald-500 rounded-xl px-6 py-3 shadow-md"
-                    style={{ elevation: 4 }}>
-                    <Text className="text-white font-bold text-base">
-                      + إضافة معلم
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
+            {/* Search & Add */}
+            <View className="px-6 pb-4">
+              <View className="flex-row gap-3">
                 {/* Search */}
-                <View className="relative">
+                <View className="flex-1 bg-white rounded-xl px-4 py-3 border border-gray-200 flex-row items-center">
+                  <Text className="text-gray-400 mr-2">🔍</Text>
                   <TextInput
                     value={searchTerm}
                     onChangeText={setSearchTerm}
-                    placeholder="🔍 ابحث عن معلم..."
-                    className="bg-gray-50 rounded-xl px-4 py-3 text-gray-800 border border-gray-200"
+                    placeholder="ابحث عن معلم..."
+                    className="flex-1 text-gray-800"
                   />
                 </View>
+
+                {/* Add Button */}
+                <TouchableOpacity
+                  onPress={() => {
+                    actions.setSelectedTeacher(null);
+                    actions.setIsEditMode(false);
+                    actions.setIsFormVisible(true);
+                  }}
+                  className="bg-blue-500 rounded-xl px-6 py-3 justify-center">
+                  <Text className="text-white font-bold text-lg">+ إضافة</Text>
+                </TouchableOpacity>
               </View>
+            </View>
 
-              {/* Statistics Cards */}
-              {statsLoading ? (
-                <View className="mb-6">
-                  <ActivityIndicator size="large" color="#10b981" />
-                </View>
-              ) : (
-                <TeachersStatsCards stats={stats} />
-              )}
-
-              {/* Empty State */}
-              {teachers.length === 0 && (
-                <View className="bg-white rounded-xl border-2 border-dashed border-gray-300 p-12">
-                  <Text className="text-6xl text-center mb-4">👨‍🏫</Text>
-                  <Text className="text-gray-900 font-bold text-xl text-center mb-2">
-                    لا يوجد معلمين
-                  </Text>
-                  <Text className="text-gray-600 text-center mb-6">
-                    ابدأ بإضافة معلم جديد
-                  </Text>
-                  <TouchableOpacity
-                    onPress={() => {
-                      actions.setSelectedTeacher(null);
-                      actions.setIsEditMode(false);
-                      actions.setIsFormVisible(true);
-                    }}
-                    className="bg-emerald-500 px-6 py-3 rounded-xl">
-                    <Text className="text-white font-bold text-center">
-                      إضافة معلم جديد
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-            </>
-          }
-        />
-      )}
+            {/* Teachers List Header */}
+            <View className="px-6 pb-2">
+              <Text className="text-gray-700 font-bold text-lg">
+                قائمة المعلمين ({teachers.length})
+              </Text>
+            </View>
+          </>
+        }
+        data={teachers}
+        renderItem={({ item }) => null}
+        keyExtractor={(item) => item._id}
+        ListFooterComponent={
+          <View className="px-6">
+            <TeachersList
+              teachers={teachers}
+              selectedTeachers={actions.selectedTeachers}
+              onToggleSelection={actions.toggleTeacherSelection}
+              onEdit={actions.handleEdit}
+              onDelete={actions.handleDelete}
+              loading={isLoading}
+            />
+          </View>
+        }
+        showsVerticalScrollIndicator={false}
+      />
 
       {/* Add/Edit Modal */}
       {actions.isFormVisible && (

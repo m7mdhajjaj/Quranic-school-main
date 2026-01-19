@@ -13,6 +13,7 @@ interface TeachersListProps {
   onEdit: (teacher: Teacher) => void;
   onDelete: (teacherId: string) => void;
   ListHeaderComponent?: React.ReactElement;
+  loading?: boolean;
 }
 
 export const TeachersList: React.FC<TeachersListProps> = ({
@@ -22,6 +23,7 @@ export const TeachersList: React.FC<TeachersListProps> = ({
   onEdit,
   onDelete,
   ListHeaderComponent,
+  loading = false,
 }) => {
   const renderTeacher = ({ item }: { item: Teacher }) => {
     const isSelected = selectedTeachers.has(item._id || "");
