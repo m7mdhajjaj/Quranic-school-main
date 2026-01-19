@@ -9,9 +9,10 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Switch,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { ArrowRight, Eye, EyeOff } from "lucide-react-native";
+import { ArrowRight, Eye, EyeOff, Info } from "lucide-react-native";
 import { useLoginLogic } from "./hooks";
 import ForgotPasswordModal from "../../../components/ForgotPasswordModal";
 
@@ -23,7 +24,9 @@ const Login = () => {
     isLoading,
     logoUrl,
     logoLoading,
+    rememberMe,
     handleChange,
+    handleRememberMeChange,
     handleSubmit,
   } = useLoginLogic();
 
@@ -114,12 +117,29 @@ const Login = () => {
               </View>
             </View>
 
-            {/* Forgot Password */}
-            <TouchableOpacity
-              style={styles.forgotPassword}
-              onPress={() => setShowForgotPasswordModal(true)}>
-              <Text style={styles.forgotPasswordText}>نسيت كلمة المرور؟</Text>
-            </TouchableOpacity>
+            {/* Remember Me & Forgot Password */}
+            <View style={styles.optionsContainer}>
+              <View style={styles.rememberMeContainer}>
+                <Switch
+                  value={rememberMe}
+                  onValueChange={handleRememberMeChange}
+                  trackColor={{ false: "#d1d5db", true: "#6ee7b7" }}
+                  thumbColor={rememberMe ? "#10b981" : "#f3f4f6"}
+                />
+                <Text style={styles.rememberMeText}>تذكرني</Text>
+                <TouchableOpacity
+                  style={styles.infoButton}
+                  activeOpacity={0.7}>
+                  <Info size={14} color="#10b981" />
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity
+                onPress={() => setShowForgotPasswordModal(true)}
+                activeOpacity={0.7}>
+                <Text style={styles.forgotPasswordText}>نسيت كلمة المرور؟</Text>
+              </TouchableOpacity>
+            </View>
 
             {/* Error Message */}
             {error && (
@@ -288,9 +308,24 @@ const styles = StyleSheet.create({
     padding: 4,
     marginLeft: 8,
   },
-  forgotPassword: {
-    alignSelf: "flex-end",
+  optionsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 16,
+  },
+  rememberMeContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  rememberMeText: {
+    fontSize: 14,
+    color: "#374151",
+    fontWeight: "500",
+  },
+  infoButton: {
+    padding: 4,
   },
   forgotPasswordText: {
     fontSize: 14,
