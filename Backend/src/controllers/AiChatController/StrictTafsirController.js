@@ -396,13 +396,43 @@ async function extractVerseKey(question) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * تحديد ما إذا كان السؤال من الأنماط المسموحة
+ * تحديد نوع السؤال: تفسير، دردشة عامة، أو ممنوع
  */
-function isAllowedQuestionType(question) {
-  const text = question.toLowerCase();
+function classifyQuestion(question) {
+  const text = question.toLowerCase().trim();
+  const normalizedText = text
+    .replace(/[أإآ]/g, 'ا')
+    .replace(/ى/g, 'ي')
+    .replace(/ة/g, 'ه');
   
-  // أنماط مسموحة
-  const allowedPatterns = [
+  // ═══════════════════════════════════════════════════════════════════════
+  // 1️⃣ أنماط الدردشة العامة (التحيات والأسئلة الودية)
+  // ═══════════════════════════════════════════════════════════════════════
+  const casualPatterns = [
+    // تحيات
+    /^(مرحبا|اهلا|هلا|السلام عليكم|صباح الخير|مساء الخير|هاي|هي|hello|hi|hey|salam)/i,
+    /^(كيف حالك|كيفك|شو اخبارك|شلونك|ازيك|عامل ايه|how are you)/i,
+    /^(شكرا|مشكور|الله يعطيك العافيه|يسلمو|thanks|thank you)/i,
+    // أسئلة عن البوت
+    /^(من انت|مين انت|ما اسمك|شو اسمك|عرفني عن نفسك|who are you|what is your name)/i,
+    /^(ماذا تفعل|شو بتعمل|ايش تسوي|what can you do|what do you do)/i,
+    /^(كيف استخدمك|كيف اسالك|كيف بشتغل معك|how to use)/i,
+    // وداع
+    /^(مع السلامه|باي|الى اللقاء|وداعا|bye|goodbye|see you)/i,
+    // عبارات قصيرة جداً
+    /^(اوك|تمام|حسنا|ok|okay|yes|no|نعم|لا)$/i,
+  ];
+
+  for (const pattern of casualPatterns) {
+    if (pattern.test(normalizedText)) {
+      return { type: 'casual', reason: 'greeting_or_casual' };
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // 2️⃣ أنماط التفسير القرآني (صارم - من قاعدة البيانات فقط)
+  // ═══════════════════════════════════════════════════════════════════════
+  const tafsirPatterns = [
     /تفسير/,
     /فسر/,
     /معن[ىي]/,
@@ -416,7 +446,27 @@ function isAllowedQuestionType(question) {
     /interpretation/i
   ];
 
-  // أنماط ممنوعة
+  for (const pattern of tafsirPatterns) {
+    if (pattern.test(text)) {
+      return { type: 'tafsir', reason: 'tafsir_keyword' };
+    }
+  }
+
+  // إذا يحتوي على إشارة لآية أو سورة
+  if (/آي[ةه]|سور[ةه]|\d{1,3}:\d{1,3}/.test(text)) {
+    return { type: 'tafsir', reason: 'verse_reference' };
+  }
+
+  // التحقق من أسماء السور
+  for (const surahName of Object.keys(SURAH_NAMES)) {
+    if (normalizedText.includes(surahName.replace(/[أإآ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').toLowerCase())) {
+      return { type: 'tafsir', reason: 'surah_name' };
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // 3️⃣ أنماط ممنوعة (فتاوى وأحكام)
+  // ═══════════════════════════════════════════════════════════════════════
   const forbiddenPatterns = [
     /رأي/,
     /حكم/,
@@ -434,21 +484,69 @@ function isAllowedQuestionType(question) {
 
   for (const pattern of forbiddenPatterns) {
     if (pattern.test(text)) {
-      return { allowed: false, reason: 'forbidden_pattern' };
+      return { type: 'forbidden', reason: 'fatwa_or_ruling' };
     }
   }
 
-  for (const pattern of allowedPatterns) {
-    if (pattern.test(text)) {
-      return { allowed: true };
-    }
-  }
+  // ═══════════════════════════════════════════════════════════════════════
+  // 4️⃣ أي شيء آخر → دردشة عامة
+  // ═══════════════════════════════════════════════════════════════════════
+  return { type: 'casual', reason: 'general_chat' };
+}
 
-  // إذا يحتوي على إشارة لآية، نعتبره مسموح
-  if (/آي[ةه]|سور[ةه]|\d{1,3}:\d{1,3}/.test(text)) {
+/**
+ * معالجة الدردشة العامة باستخدام AI
+ */
+async function handleCasualChat(message) {
+  try {
+    const openai = getOpenAIClient();
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: `أنت "المساعد الإسلامي" - مساعد ودود ومفيد في مدرسة قرآنية.
+
+🎯 شخصيتك:
+- ودود ومرحب ولطيف
+- تتحدث بالعربية الفصحى البسيطة
+- تحب مساعدة الطلاب
+
+📚 تخصصك الرئيسي:
+- تفسير الآيات القرآنية من تفسير ابن كثير
+- يمكنك توجيه المستخدم لسؤالك عن تفسير آية محددة
+
+⚠️ قواعد مهمة:
+- لا تعطي فتاوى أو أحكام شرعية
+- لا تفسر آيات من رأسك - وجه المستخدم ليسأل عن آية محددة
+- كن مختصراً في ردودك (2-3 جمل كافية للدردشة)
+- إذا سُئلت عن شيء لا تعرفه، اعتذر بلطف
+
+💡 عند السؤال عما تفعله، قل:
+"أنا هنا لمساعدتك في فهم تفسير الآيات القرآنية من تفسير ابن كثير. يمكنك أن تسألني مثلاً: تفسير سورة الفاتحة، أو تفسير آية الكرسي"`
+        },
+        { role: "user", content: message }
+      ],
+      temperature: 0.7,
+      max_tokens: 300
+    });
+
+    return response.choices[0].message.content.trim();
+  } catch (error) {
+    console.error("Casual chat error:", error.message);
+    return "أهلاً بك! أنا هنا لمساعدتك في تفسير الآيات القرآنية. كيف يمكنني مساعدتك؟";
+  }
+}
+
+// للتوافق مع الكود القديم
+function isAllowedQuestionType(question) {
+  const classification = classifyQuestion(question);
+  if (classification.type === 'tafsir') {
     return { allowed: true };
   }
-
+  if (classification.type === 'forbidden') {
+    return { allowed: false, reason: 'forbidden_pattern' };
+  }
   return { allowed: false, reason: 'unclear_intent' };
 }
 
@@ -494,7 +592,7 @@ function formatTafsirResponse(tafsir, includeNuzul = false) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * معالج الشات الرئيسي - صارم 100%
+ * معالج الشات الرئيسي - ودود للدردشة، صارم للتفسير
  */
 exports.chat = async (req, res) => {
   const { message } = req.body;
@@ -516,12 +614,63 @@ exports.chat = async (req, res) => {
     surah: null,
     ayah: null,
     confidence: null,
-    hallucination: false
+    hallucination: false,
+    type: null
   };
 
   try {
-    // 1️⃣ التحقق من نوع السؤال
-    const questionCheck = isAllowedQuestionType(message);
+    // 1️⃣ تصنيف السؤال
+    const classification = classifyQuestion(message);
+    requestLog.type = classification.type;
+    console.log(`📊 Question classified as: ${classification.type} (${classification.reason})`);
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 💬 معالجة الدردشة العامة
+    // ═══════════════════════════════════════════════════════════════════════
+    if (classification.type === 'casual') {
+      requestLog.source = 'ai_chat';
+      requestLog.hallucination = false;
+      
+      const casualResponse = await handleCasualChat(message);
+      const processingTime = Date.now() - startTime;
+      
+      console.log(`💬 Casual chat response in ${processingTime}ms`);
+      console.log('📋 Request Log:', requestLog);
+
+      return res.json({
+        success: true,
+        data: {
+          message: casualResponse,
+          timestamp: new Date().toISOString(),
+          metadata: {
+            ...requestLog,
+            processingTime: `${processingTime}ms`
+          }
+        }
+      });
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 🚫 معالجة الأسئلة الممنوعة (فتاوى وأحكام)
+    // ═══════════════════════════════════════════════════════════════════════
+    if (classification.type === 'forbidden') {
+      requestLog.source = null;
+      requestLog.hallucination = false;
+      console.log('📋 Request Log:', requestLog);
+
+      return res.json({
+        success: true,
+        data: {
+          message: '⚠️ عذراً، لا أستطيع الإجابة على أسئلة الفتاوى والأحكام الشرعية.\n\nأنا متخصص فقط في تفسير الآيات القرآنية من تفسير ابن كثير.\n\n💡 يمكنك سؤالي مثلاً:\n• تفسير سورة الفاتحة\n• تفسير آية الكرسي\n• تفسير البقرة 255',
+          timestamp: new Date().toISOString(),
+          metadata: requestLog
+        }
+      });
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 📖 معالجة طلبات التفسير (صارم 100%)
+    // ═══════════════════════════════════════════════════════════════════════
     
     // هل يسأل عن سبب النزول؟
     const asksForNuzul = /سبب\s*(?:ال)?نزول|لماذا\s*نزلت|متى\s*نزلت/i.test(message);
@@ -529,30 +678,15 @@ exports.chat = async (req, res) => {
     // 2️⃣ استخراج مفتاح الآية
     const verseKey = await extractVerseKey(message);
 
-    // إذا لم يُعثر على مفتاح ولم يكن السؤال مسموحاً
+    // إذا لم يُعثر على مفتاح
     if (!verseKey) {
-      if (!questionCheck.allowed) {
-        requestLog.hallucination = false;
-        console.log('📋 Request Log:', requestLog);
-        
-        return res.json({
-          success: true,
-          data: {
-            message: 'هذا النظام مخصص لتفسير الآيات القرآنية فقط.\n\nيرجى تحديد رقم السورة والآية.\nمثال: "تفسير سورة البقرة آية 255" أو "تفسير 2:255"',
-            timestamp: new Date().toISOString(),
-            metadata: requestLog
-          }
-        });
-      }
-      
-      // سؤال عام بدون آية محددة
       requestLog.hallucination = false;
       console.log('📋 Request Log:', requestLog);
       
       return res.json({
         success: true,
         data: {
-          message: 'لم أتمكن من تحديد الآية المطلوبة.\n\nيرجى تحديد رقم السورة والآية بوضوح.\nمثال: "تفسير آية الكرسي" أو "تفسير البقرة 255"',
+          message: 'لم أتمكن من تحديد الآية المطلوبة. 🤔\n\nيرجى تحديد رقم السورة والآية بوضوح.\n\n💡 أمثلة:\n• تفسير آية الكرسي\n• تفسير سورة البقرة آية 255\n• تفسير 2:255',
           timestamp: new Date().toISOString(),
           metadata: requestLog
         }
