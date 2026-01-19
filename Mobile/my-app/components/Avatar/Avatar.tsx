@@ -120,16 +120,16 @@ export const Avatar: React.FC<AvatarProps> = ({
   // تحديد الصورة المعروضة
   const displaySrc = previewSrc || src || getAvatarUrl(user);
 
-  // تحديد اسم المستخدم
+  // تحديد اسم المستخدم - حماية من القيم الفارغة
   const displayName = userName || userInfo?.name || alt || "";
 
-  // تحديد الجنس
+  // تحديد الجنس - حماية من القيم الفارغة
   const userGender = normalizeGender(
-    externalGender || userInfo?.gender || user?.gender
+    externalGender || userInfo?.gender || user?.gender,
   );
 
-  // الحصول على الحرف الأول
-  const initial = getUserInitials(displayName);
+  // الحصول على الحرف الأول - حماية إضافية
+  const initial = displayName ? getUserInitials(displayName) : "";
 
   // لون الخلفية حسب الجنس
   const bgColor = getGenderColor(userGender);

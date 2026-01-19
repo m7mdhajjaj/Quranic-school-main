@@ -138,7 +138,10 @@ export const fetchDashboardCharts = async () => {
     }
 
     console.log("✅ تم جلب بيانات الرسوم البيانية بنجاح");
-    return response.data.data;
+    return {
+      success: response.data.success,
+      data: response.data.data,
+    };
   } catch (error) {
     console.error("❌ خطأ في جلب بيانات الرسوم البيانية:", error);
     throw error;

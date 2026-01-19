@@ -95,15 +95,15 @@ const ExpulsionCard: React.FC<{
   expulsion: StudentHistoryEvent;
   onRestore?: () => void;
 }> = ({ expulsion, onRestore }) => (
-  <div className="mb-6 bg-gradient-to-br from-red-50 to-rose-50 border-2 border-red-300 rounded-xl p-5 shadow-lg animate-fade-in">
+  <div className="mb-6 bg-gradient-to-br from-red-50 via-rose-50 to-red-100 border-3 border-red-400 rounded-xl p-6 shadow-xl animate-fade-in ring-2 ring-red-200">
     <div className="flex items-start gap-4">
-      <div className="flex-shrink-0 w-12 h-12 bg-red-500 rounded-full flex items-center justify-center shadow-md">
-        <UserX className="w-6 h-6 text-white" />
+      <div className="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center shadow-lg ring-4 ring-red-200">
+        <UserX className="w-7 h-7 text-white" />
       </div>
       <div className="flex-1">
-        <h3 className="text-xl font-bold text-red-900 mb-2 flex items-center gap-2">
-          الطالب مفصول حالياً
-          <Badge variant="danger" size="sm">
+        <h3 className="text-2xl font-bold text-red-900 mb-3 flex items-center gap-3">
+          <span>🚫 الطالب مفصول حالياً</span>
+          <Badge variant="danger" size="md" className="bg-red-600 border-2 border-red-700">
             فصل نهائي
           </Badge>
         </h3>
@@ -132,10 +132,10 @@ const ExpulsionCard: React.FC<{
           {onRestore && (
             <button
               onClick={onRestore}
-              className="mt-4 w-full flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2.5 px-4 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+              className="mt-5 w-full flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-bold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98]"
             >
-              <RotateCcw className="w-4 h-4" />
-              إرجاع الطالب للحلقة
+              <RotateCcw className="w-5 h-5" />
+              <span>إرجاع الطالب للحلقة</span>
             </button>
           )}
         </div>
@@ -310,11 +310,18 @@ export const StudentFullHistorySidebar: React.FC<StudentFullHistorySidebarProps>
                   <History className="w-6 h-6" />
                   <h2 className="text-xl font-bold">تاريخ الطالب</h2>
                 </div>
-                <p className="text-emerald-100 text-sm flex items-center gap-2">
+                <p className="text-emerald-100 text-sm flex items-center gap-2 flex-wrap">
                   <span>{studentName}</span>
                   {isExpelled && (
-                    <Badge variant="danger" size="sm" className="bg-red-500/30 border-red-300 text-white">
-                      مفصول
+                    <Badge variant="danger" size="sm" className="bg-red-500/90 border-2 border-red-300 text-white animate-pulse">
+                      <UserX className="w-3 h-3 ml-1" />
+                      مفصول حالياً
+                    </Badge>
+                  )}
+                  {!isExpelled && (
+                    <Badge variant="success" size="sm" className="bg-green-500/90 border-2 border-green-300 text-white">
+                      <CheckCircle className="w-3 h-3 ml-1" />
+                      نشط
                     </Badge>
                   )}
                 </p>
