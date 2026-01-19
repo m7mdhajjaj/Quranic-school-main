@@ -29,6 +29,24 @@ interface HeroSectionProps {
   onEditButtonClick?: () => void;
 }
 
+// دالة للحصول على الرتبة بالعربي
+const getRoleInArabic = (role?: string): string => {
+  switch (role) {
+    case "admin":
+      return "المدير";
+    case "teacher":
+      return "المعلم";
+    case "teacherAssistant":
+      return "مساعد المعلم";
+    case "secretary":
+      return "السكرتير";
+    case "student":
+      return "الطالب";
+    default:
+      return "";
+  }
+};
+
 export const HeroSection: React.FC<HeroSectionProps> = ({
   currentUser,
   heroImage,
@@ -48,15 +66,17 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         {currentUser && (
           <View style={styles.greetingContainer}>
             <Text style={styles.greetingTitle}>
-              {currentUser.role === "student"
-                ? `أهلاً وسهلاً بك في أكاديمية المهاجرين، الطالب العزيز ${
-                    currentUser.firstName || ""
-                  } ${currentUser.fatherName || ""} ${
-                    currentUser.lastName || ""
-                  }`.trim()
-                : `أهلاً وسهلاً بك في أكاديمية المهاجرين، المعلم الفاضل ${
-                    currentUser.firstName || currentUser.name || ""
-                  } ${currentUser.lastName || ""}`.trim()}
+              {`أهلاً وسهلاً بك في أكاديمية المهاجرين، ${getRoleInArabic(
+                currentUser.role
+              )} ${
+                currentUser.role === "student"
+                  ? `${currentUser.firstName || ""} ${
+                      currentUser.fatherName || ""
+                    } ${currentUser.lastName || ""}`
+                  : `${currentUser.firstName || currentUser.name || ""} ${
+                      currentUser.lastName || ""
+                    }`
+              }`.trim()}
             </Text>
 
             <View style={styles.descriptionContainer}>
