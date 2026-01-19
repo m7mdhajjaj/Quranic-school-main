@@ -19,6 +19,7 @@ interface QuranSegmentInputProps {
   completedSurahs?: CompletedSurah[]; // New: For validation
   date?: string; // ✅ V8: Pass date for context-aware suggestions
   onValidationError?: (error: string | null) => void; // ✅ V8: Callback for validation errors
+  groupId?: string; // ✅ V10: For Active Surah validation
 }
 
 // Normalization Helper
@@ -44,7 +45,8 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   completedSurahs = [],
   date, // ✅ Receive date from parent
-  onValidationError // ✅ V8: Callback for validation errors
+  onValidationError, // ✅ V8: Callback for validation errors
+  groupId // ✅ V10: For Active Surah validation
 }) => {
   // استخدم الهوك لفصل المنطق
   // ✅ V8: reviewLimit و expectedStart لم تعد تستخدم للـ validation (Backend handles it)
@@ -62,15 +64,16 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
     maxAyah,
     segment,
     reviewLimit, // ✅ Retrive reviewLimit for input constraints
-    noMemorizationError // ✅ V8: Error when no memorization exists
-  } = useQuranSegmentInputLogic({ segments, groupName, type, onChange, excludeId, date });
+    noMemorizationError, // ✅ V8: Error when no memorization exists
+    activeSurahError // ✅ V10: Error when Active Surah validation fails
+  } = useQuranSegmentInputLogic({ segments, groupName, type, onChange, excludeId, date, groupId });
 
-  // ✅ V8: Notify parent of validation errors
+  // ✅ V8: Notify parent of validation errors (combine both errors)
   React.useEffect(() => {
     if (onValidationError) {
-      onValidationError(noMemorizationError);
+      onValidationError(noMemorizationError || activeSurahError);
     }
-  }, [noMemorizationError, onValidationError]);
+  }, [noMemorizationError, activeSurahError, onValidationError]);
 
   // Dynamic border/ring colors based on colorClass prop
   const activeRing = colorClass === 'amber' ? 'focus:ring-amber-500' : 'focus:ring-emerald-500';
@@ -262,10 +265,47 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
         </div>
       </div>
       
+      {/* ✅ V10: Active Surah validation error - shown immediately in modal with enhanced styling */}
+      {activeSurahError && (
+        <div className="mt-4 p-4 bg-red-50 border-2 border-red-300 rounded-xl shadow-lg animate-in fade-in duration-300">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+              <span className="text-xl">❌</span>
+            </div>
+            <div className="flex-1 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-red-700 bg-yellow-100 px-2 py-0.5 rounded">⚠️ تنبيه:</span>
+              </div>
+              <p className="text-sm font-bold text-red-800 whitespace-pre-line leading-relaxed">{activeSurahError}</p>
+              <p className="text-xs text-red-600 bg-red-100 px-2 py-1 rounded-lg">
+                💡 الحل: أكمل السورة الحالية أولاً أو اختر نفس السورة للمتابعة
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* ✅ V9: No memorization error */}
+      {noMemorizationError && !activeSurahError && (
+        <div className="mt-4 p-4 bg-amber-50 border-2 border-amber-300 rounded-xl shadow-lg animate-in fade-in duration-300">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center">
+              <span className="text-xl">📋</span>
+            </div>
+            <div className="flex-1 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-amber-700 bg-yellow-100 px-2 py-0.5 rounded">⚠️ تنبيه:</span>
+              </div>
+              <p className="text-sm font-bold text-amber-800 whitespace-pre-line leading-relaxed">{noMemorizationError}</p>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* ✅ V8: Backend handles all review validation - removed frontend real-time validation */}
 
       
-      {!segment.surahNumber && (
+      {!segment.surahNumber && !activeSurahError && !noMemorizationError && (
         <p className="text-xs text-gray-400 mt-1 mr-1 flex items-center gap-1">
           <span className="w-1.5 h-1.5 rounded-full bg-gray-300 inline-block"></span>
            اترك الحقول فارغة إذا لم يوجد لهذه الفقرة {label.includes('حفظ') ? 'حفظ' : 'مراجعة'} اليوم.

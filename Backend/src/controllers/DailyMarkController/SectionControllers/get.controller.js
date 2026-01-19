@@ -649,6 +649,7 @@ exports.getActiveSurahs = async (req, res) => {
  * @description
  * يجلب معلومات تفصيلية عن السور الفعالة مع نسبة التقدم
  * يستخدم للتحقق قبل إضافة مقطع جديد
+ * ✅ V10: يقبل الآن اسم الحلقة أو معرفها
  */
 exports.getActiveSurahInfo = async (req, res) => {
   try {
@@ -658,8 +659,26 @@ exports.getActiveSurahInfo = async (req, res) => {
       return sendError(res, "معرف الحلقة مطلوب", 400);
     }
 
-    // استخدام الـ method الجديد من Group Schema
-    const info = await Group.getActiveSurahInfo(groupId);
+    // ✅ V10: Check if groupId is a valid MongoDB ObjectId or group name
+    const mongoose = require("mongoose");
+    let group;
+    
+    if (mongoose.Types.ObjectId.isValid(groupId)) {
+      // It's a valid ObjectId - use it directly
+      group = await Group.findById(groupId).select('_id');
+    }
+    
+    // If not found by ID, try to find by name
+    if (!group) {
+      group = await Group.findOne({ name: groupId }).select('_id');
+    }
+
+    if (!group) {
+      return sendNotFound(res, "الحلقة");
+    }
+
+    // استخدام الـ method الجديد من Group Schema with actual ObjectId
+    const info = await Group.getActiveSurahInfo(group._id);
 
     if (!info) {
       return sendNotFound(res, "الحلقة");

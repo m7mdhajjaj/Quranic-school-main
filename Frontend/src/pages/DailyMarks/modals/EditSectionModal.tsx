@@ -193,11 +193,20 @@ const EditSectionModalComponent = ({
             required
           />
 
-          {/* Quota Error Display */}
+          {/* ✅ V10: Quota Error Display - Enhanced styling */}
           {quotaError && (
-              <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-start gap-2 animate-pulse">
-                  <span className="font-bold">⚠️ تنبيه:</span>
-                  <span className="whitespace-pre-line">{quotaError}</span>
+              <div className="mt-4 p-4 bg-red-50 border-2 border-red-300 rounded-xl shadow-lg">
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                    <span className="text-xl">❌</span>
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-red-700 bg-yellow-100 px-2 py-0.5 rounded">⚠️ تنبيه:</span>
+                    </div>
+                    <p className="text-sm font-bold text-red-800 whitespace-pre-line leading-relaxed">{quotaError}</p>
+                  </div>
+                </div>
               </div>
           )}
         </div>
@@ -214,6 +223,7 @@ const EditSectionModalComponent = ({
              excludeId={localSection._id}
              completedSurahs={completedList.filter(s => (s.type || 'memorization') === 'memorization')}
              date={localSection.date ? new Date(localSection.date).toISOString() : undefined}
+             groupId={localSection.group}
            />
 
            <QuranSegmentInput 
@@ -227,6 +237,7 @@ const EditSectionModalComponent = ({
              completedSurahs={completedList.filter(s => (s.type || 'memorization') === 'review')}
              date={localSection.date ? new Date(localSection.date).toISOString() : undefined}
              onValidationError={setReviewValidationError}
+             groupId={localSection.group}
            />
         </div>
 
