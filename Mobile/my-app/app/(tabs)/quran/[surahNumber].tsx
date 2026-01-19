@@ -131,12 +131,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f8fafc",
+    writingDirection: "rtl",
   },
   loadingContainer: {
     flex: 1,
     backgroundColor: "#f8fafc",
     justifyContent: "center",
     alignItems: "center",
+    writingDirection: "rtl",
   },
   loadingText: {
     marginTop: 16,
@@ -149,6 +151,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 24,
+    writingDirection: "rtl",
   },
   errorText: {
     fontSize: 16,
@@ -162,6 +165,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",
+    writingDirection: "rtl",
   },
   backButton: {
     width: 40,
@@ -196,6 +200,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffffff",
     borderBottomWidth: 1,
     borderBottomColor: "#e2e8f0",
+    writingDirection: "rtl",
   },
   controlButton: {
     width: 40,
@@ -213,6 +218,7 @@ const styles = StyleSheet.create({
   ayahsContainer: {
     flex: 1,
     backgroundColor: "#fffef7",
+    writingDirection: "rtl",
   },
   ayahsContent: {
     flexGrow: 1,
@@ -222,6 +228,7 @@ const styles = StyleSheet.create({
     padding: 24,
     minHeight: "100%",
     borderWidth: 0,
+    writingDirection: "rtl",
   },
   pageText: {
     color: "#1e293b",
