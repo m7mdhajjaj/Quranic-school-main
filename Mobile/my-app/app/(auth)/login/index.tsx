@@ -1,19 +1,18 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
   Image,
   ActivityIndicator,
-  ScrollView,
-  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  Switch,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { ArrowRight } from "lucide-react-native";
+import { ArrowRight, Eye, EyeOff, Info } from "lucide-react-native";
 import { useLoginLogic } from "./hooks";
 import ForgotPasswordModal from "../../../components/ForgotPasswordModal";
 
@@ -25,81 +24,52 @@ const Login = () => {
     isLoading,
     logoUrl,
     logoLoading,
+    rememberMe,
     handleChange,
+    handleRememberMeChange,
     handleSubmit,
   } = useLoginLogic();
 
   const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
-  const [keyboardVisible, setKeyboardVisible] = useState(false);
-
-  useEffect(() => {
-    const keyboardDidShowListener = Keyboard.addListener(
-      "keyboardDidShow",
-      () => setKeyboardVisible(true)
-    );
-    const keyboardDidHideListener = Keyboard.addListener(
-      "keyboardDidHide",
-      () => setKeyboardVisible(false)
-    );
-
-    return () => {
-      keyboardDidShowListener.remove();
-      keyboardDidHideListener.remove();
-    };
-  }, []);
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "padding"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-        bounces={false}>
-        {/* Back to Welcome Button */}
-        {!keyboardVisible && (
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.push("/welcome")}
-            activeOpacity={0.7}>
-            <ArrowRight size={20} color="#059669" />
-            <Text style={styles.backButtonText}>العودة للصفحة الرئيسية</Text>
-          </TouchableOpacity>
-        )}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 150 : 200}>
+      {/* Back to Welcome Button */}
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => router.push("/welcome")}
+        activeOpacity={0.7}>
+        <ArrowRight size={20} color="#059669" />
+        <Text style={styles.backButtonText}>العودة للصفحة الرئيسية</Text>
+      </TouchableOpacity>
 
-        <View
-          style={[
-            styles.content,
-            keyboardVisible && styles.contentKeyboardOpen,
-          ]}>
-          {/* Logo Section - Hide when keyboard is open */}
-          {!keyboardVisible && (
-            <View style={styles.logoContainer}>
-              {logoLoading ? (
-                <ActivityIndicator size="large" color="#059669" />
-              ) : logoUrl ? (
-                <Image source={{ uri: logoUrl }} style={styles.logo} />
-              ) : (
-                <View style={styles.logoPlaceholder}>
-                  <Text style={styles.logoText}>📖</Text>
-                </View>
-              )}
-              <Text style={styles.appName}>مدرسة القرآن الكريم</Text>
-              <Text style={styles.appSubtitle}>نظام إدارة المدرسة</Text>
+      <View style={styles.content}>
+        {/* Logo Section */}
+        <View style={styles.logoContainer}>
+          {logoLoading ? (
+            <ActivityIndicator size="large" color="#059669" />
+          ) : logoUrl ? (
+            <Image source={{ uri: logoUrl }} style={styles.logo} />
+          ) : (
+            <View style={styles.logoPlaceholder}>
+              <Text style={styles.logoText}>📖</Text>
             </View>
           )}
+          <Text style={styles.appName}>مدرسة القرآن الكريم</Text>
+          <Text style={styles.appSubtitle}>نظام إدارة المدرسة</Text>
+        </View>
 
-          {/* Welcome Text - Hide when keyboard is open */}
-          {!keyboardVisible && (
-            <View style={styles.welcomeContainer}>
-              <Text style={styles.welcomeTitle}>مرحباً بعودتك</Text>
-              <Text style={styles.welcomeSubtitle}>
-                سجل الدخول لإدارة بياناتك
-              </Text>
-            </View>
-          )}
+        {/* Welcome Text */}
+        <View style={styles.welcomeContainer}>
+          <Text style={styles.welcomeTitle}>مرحباً بعودتك</Text>
+          <Text style={styles.welcomeSubtitle}>
+            سجل الدخول لإدارة بياناتك
+          </Text>
+        </View>
 
           {/* Login Card */}
           <View style={styles.card}>
@@ -131,18 +101,45 @@ const Login = () => {
                   placeholderTextColor="#9ca3af"
                   value={formData.password}
                   onChangeText={(text) => handleChange("password", text)}
-                  secureTextEntry
+                  secureTextEntry={!showPassword}
                   editable={!isLoading}
                 />
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  style={styles.eyeButton}
+                  activeOpacity={0.7}>
+                  {showPassword ? (
+                    <EyeOff size={20} color="#6b7280" />
+                  ) : (
+                    <Eye size={20} color="#6b7280" />
+                  )}
+                </TouchableOpacity>
               </View>
             </View>
 
-            {/* Forgot Password */}
-            <TouchableOpacity
-              style={styles.forgotPassword}
-              onPress={() => setShowForgotPasswordModal(true)}>
-              <Text style={styles.forgotPasswordText}>نسيت كلمة المرور؟</Text>
-            </TouchableOpacity>
+            {/* Remember Me & Forgot Password */}
+            <View style={styles.optionsContainer}>
+              <View style={styles.rememberMeContainer}>
+                <Switch
+                  value={rememberMe}
+                  onValueChange={handleRememberMeChange}
+                  trackColor={{ false: "#d1d5db", true: "#6ee7b7" }}
+                  thumbColor={rememberMe ? "#10b981" : "#f3f4f6"}
+                />
+                <Text style={styles.rememberMeText}>تذكرني</Text>
+                <TouchableOpacity
+                  style={styles.infoButton}
+                  activeOpacity={0.7}>
+                  <Info size={14} color="#10b981" />
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity
+                onPress={() => setShowForgotPasswordModal(true)}
+                activeOpacity={0.7}>
+                <Text style={styles.forgotPasswordText}>نسيت كلمة المرور؟</Text>
+              </TouchableOpacity>
+            </View>
 
             {/* Error Message */}
             {error && (
@@ -170,7 +167,6 @@ const Login = () => {
             </TouchableOpacity>
           </View>
         </View>
-      </ScrollView>
 
       {/* Forgot Password Modal */}
       <ForgotPasswordModal
@@ -188,19 +184,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#d1fae5", // Light green background
   },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: "center",
-    paddingVertical: 20,
-  },
   backButton: {
+    position: "absolute",
+    top: 50,
+    left: 24,
     flexDirection: "row",
     alignItems: "center",
-    alignSelf: "flex-start",
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    marginTop: 40,
-    marginLeft: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     backgroundColor: "rgba(255, 255, 255, 0.9)",
     borderRadius: 12,
     gap: 8,
@@ -209,6 +200,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    zIndex: 10,
   },
   backButtonText: {
     fontSize: 14,
@@ -220,13 +212,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 24,
-    paddingTop: 40,
+    paddingTop: 100,
     paddingBottom: 40,
-  },
-  contentKeyboardOpen: {
-    paddingTop: 10,
-    paddingBottom: 10,
-    justifyContent: "flex-start",
   },
   logoContainer: {
     alignItems: "center",
@@ -315,10 +302,30 @@ const styles = StyleSheet.create({
     height: 50,
     fontSize: 16,
     color: "#111827",
+    paddingRight: 8,
   },
-  forgotPassword: {
-    alignSelf: "flex-end",
+  eyeButton: {
+    padding: 4,
+    marginLeft: 8,
+  },
+  optionsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 16,
+  },
+  rememberMeContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  rememberMeText: {
+    fontSize: 14,
+    color: "#374151",
+    fontWeight: "500",
+  },
+  infoButton: {
+    padding: 4,
   },
   forgotPasswordText: {
     fontSize: 14,

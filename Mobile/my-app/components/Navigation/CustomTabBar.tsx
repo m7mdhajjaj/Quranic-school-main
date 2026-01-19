@@ -67,7 +67,8 @@ export default function CustomTabBar() {
     pathname.includes("settings") ||
     pathname.includes("points-game") ||
     pathname.includes("admin ") ||
-    pathname.includes("dashboard")
+    pathname.includes("dashboard")||
+    pathname.includes("test")
   ) {
     return null;
   }

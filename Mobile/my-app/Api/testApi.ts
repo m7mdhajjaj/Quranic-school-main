@@ -1,4 +1,5 @@
 import api from './api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // ============================================================================
 // Test API - Interactive Quran Quiz System
@@ -42,15 +43,19 @@ export interface TestResult {
 // Get all Surahs
 export const getAllSurahs = async (): Promise<Surah[]> => {
   try {
-    // Try to fetch from our backend first
     const response = await api.get('/quran/surahs');
-    return response.data;
-  } catch {
-    console.log('Fallback to external API for surahs');
-    // Fallback to external API
+    const data = response.data?.data || response.data;
+    
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      throw new Error('Backend data is empty');
+    }
+    
+    return data;
+  } catch (error) {
+    console.log('📡 Fallback to external API for surahs');
     const response = await fetch('https://api.alquran.cloud/v1/surah');
-    const data = await response.json();
-    return data.data;
+    const result = await response.json();
+    return result.data || [];
   }
 };
 
@@ -60,26 +65,52 @@ export const getSurahWithAyahs = async (surahNumber: number): Promise<{
   ayahs: Ayah[];
 }> => {
   try {
-    // Try to fetch from our backend first
     const response = await api.get(`/quran/surah/${surahNumber}`);
-    return response.data;
-  } catch {
-    console.log('Fallback to external API for surah', surahNumber);
-    // Fallback to external API
-    const response = await fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}`);
-    const data = await response.json();
-    return {
-      surah: {
-        number: data.data.number,
-        name: data.data.name,
-        englishName: data.data.englishName,
-        numberOfAyahs: data.data.numberOfAyahs,
-      },
-      ayahs: data.data.ayahs.map((ayah: Ayah) => ({
-        ...ayah,
-        surahNumber: surahNumber,
-      }))
-    };
+    const data = response.data?.data || response.data;
+    
+    if (data.surah && data.ayahs) {
+      return data;
+    }
+    
+    if (data.ayahs) {
+      return {
+        surah: {
+          number: data.number,
+          name: data.name,
+          englishName: data.englishName,
+          numberOfAyahs: data.numberOfAyahs || data.ayahs.length,
+        },
+        ayahs: data.ayahs,
+      };
+    }
+    
+    throw new Error('Invalid response format');
+  } catch (error: any) {
+    // Silently fallback to external API - this is expected behavior
+    // Don't log errors for 404s when falling back to external API
+    if (error?.response?.status !== 404) {
+      console.log('📡 Fallback to external API for surah', surahNumber);
+    }
+    
+    try {
+      const response = await fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}`);
+      const data = await response.json();
+      return {
+        surah: {
+          number: data.data.number,
+          name: data.data.name,
+          englishName: data.data.englishName,
+          numberOfAyahs: data.data.numberOfAyahs,
+        },
+        ayahs: data.data.ayahs.map((ayah: Ayah) => ({
+          ...ayah,
+          surahNumber: surahNumber,
+        }))
+      };
+    } catch (fetchError) {
+      console.error('❌ Error fetching from external API:', fetchError);
+      throw fetchError;
+    }
   }
 };
 
@@ -110,15 +141,13 @@ export const generateTestQuestions = async (
   numberOfQuestions: number = 10
 ): Promise<Question[]> => {
   try {
-    // Try to generate questions using our backend AI
     const response = await api.post('/test/generate-questions', {
-      ayahs: ayahsData.slice(0, numberOfQuestions * 2), // Send more ayahs for better variety
+      ayahs: ayahsData.slice(0, numberOfQuestions * 2),
       numberOfQuestions,
     });
     return response.data;
   } catch {
     console.log('Fallback to local question generation');
-    // Fallback to local generation
     return generateQuestionsLocally(ayahsData, numberOfQuestions);
   }
 };
@@ -136,13 +165,12 @@ const generateQuestionsLocally = (
     let ayah;
     let attempts = 0;
     
-    // Find an unused ayah
     do {
       ayah = ayahsData[Math.floor(Math.random() * ayahsData.length)];
       attempts++;
     } while (usedAyahs.has(ayah.number) && attempts < 50);
 
-    if (attempts >= 50) break; // Prevent infinite loop
+    if (attempts >= 50) break;
 
     usedAyahs.add(ayah.number);
     
@@ -190,10 +218,7 @@ const generateHiddenWordQuestion = (
   const hiddenWord = words[randomIndex];
   const questionText = ayah.text.replace(hiddenWord, '___');
   
-  // Generate wrong options
   const wrongOptions = generateWrongWordOptions(hiddenWord, words);
-  
-  // Mix options
   const allOptions = [hiddenWord, ...wrongOptions].sort(() => Math.random() - 0.5);
   const correctAnswer = allOptions.indexOf(hiddenWord);
 
@@ -220,7 +245,6 @@ const generateNextAyahQuestion = (
   const firstHalf = words.slice(0, halfLength).join(' ');
   const secondHalf = words.slice(halfLength).join(' ');
   
-  // Generate wrong options from other ayahs
   const wrongOptions = allAyahs
     .filter(a => a.number !== ayah.number)
     .map(a => a.text.split(' ').slice(Math.floor(a.text.split(' ').length / 2)).join(' '))
@@ -251,7 +275,6 @@ const generateAyahEndingQuestion = (
   const lastWords = words.slice(-3).join(' ');
   const beforeLast = words.slice(0, -3).join(' ');
   
-  // Generate wrong endings
   const wrongOptions = [
     'والله عليم حكيم',
     'والله غفور رحيم', 
@@ -280,7 +303,6 @@ const generateWrongWordOptions = (correctWord: string, availableWords: string[])
     .sort(() => Math.random() - 0.5)
     .slice(0, 3);
   
-  // If not enough words, add common Arabic words
   const commonWords = ['الذي', 'التي', 'الذين', 'اللواتي', 'هذا', 'هذه', 'ذلك', 'تلك'];
   while (wrongOptions.length < 3) {
     const word = commonWords[Math.floor(Math.random() * commonWords.length)];
@@ -299,12 +321,13 @@ export const saveTestResult = async (result: TestResult): Promise<void> => {
   } catch (saveError) {
     console.log('Could not save test result:', saveError);
     // Store locally as fallback
-    const results = JSON.parse(localStorage.getItem('testResults') || '[]');
+    const resultsJson = await AsyncStorage.getItem('testResults');
+    const results = resultsJson ? JSON.parse(resultsJson) : [];
     results.push({
       ...result,
       timestamp: new Date().toISOString(),
     });
-    localStorage.setItem('testResults', JSON.stringify(results));
+    await AsyncStorage.setItem('testResults', JSON.stringify(results));
   }
 };
 
@@ -315,7 +338,8 @@ export const getUserTestHistory = async (): Promise<TestResult[]> => {
     return response.data;
   } catch {
     console.log('Fallback to local test history');
-    return JSON.parse(localStorage.getItem('testResults') || '[]');
+    const resultsJson = await AsyncStorage.getItem('testResults');
+    return resultsJson ? JSON.parse(resultsJson) : [];
   }
 };
 
@@ -331,7 +355,8 @@ export const getTestStatistics = async (): Promise<{
     return response.data;
   } catch {
     console.log('Fallback to local statistics calculation');
-    const results = JSON.parse(localStorage.getItem('testResults') || '[]');
+    const resultsJson = await AsyncStorage.getItem('testResults');
+    const results = resultsJson ? JSON.parse(resultsJson) : [];
     
     if (results.length === 0) {
       return {

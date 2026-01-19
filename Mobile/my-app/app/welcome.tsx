@@ -8,24 +8,20 @@ import {
   Animated,
   StatusBar,
 } from "react-native";
-import { Link, useRouter } from "expo-router";
+import { Link } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { BookOpen, ArrowLeft, ChevronDown } from "lucide-react-native";
 
 const { width, height } = Dimensions.get("window");
 
 const WelcomeScreen = () => {
-  const router = useRouter();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const glowAnim = useRef(new Animated.Value(1)).current;
   const scrollIndicatorAnim = useRef(new Animated.Value(0)).current;
 
   // Navigation handlers - مثل الويب
-  const handleHomeClick = () => {
-    console.log("🏠 Navigating to home...");
-    router.navigate("/home");
-  };
+  // Note: Using Link component instead of router.push for better navigation
 
   useEffect(() => {
     // Animation sequence
@@ -181,26 +177,27 @@ const WelcomeScreen = () => {
         </Link>
 
         {/* Scroll Indicator - اكتشف المزيد */}
-        <TouchableOpacity
-          style={styles.scrollIndicator}
-          activeOpacity={0.6}
-          hitSlop={{ top: 20, bottom: 20, left: 40, right: 40 }}
-          onPress={handleHomeClick}>
-          <Animated.View
-            style={{
-              transform: [
-                {
-                  translateY: scrollIndicatorAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0, 10],
-                  }),
-                },
-              ],
-            }}>
-            <ChevronDown size={32} color="#d1fae5" />
-          </Animated.View>
-          <Text style={styles.scrollText}>اكتشف المزيد</Text>
-        </TouchableOpacity>
+        <Link href="/home" asChild>
+          <TouchableOpacity
+            style={styles.scrollIndicator}
+            activeOpacity={0.6}
+            hitSlop={{ top: 20, bottom: 20, left: 40, right: 40 }}>
+            <Animated.View
+              style={{
+                transform: [
+                  {
+                    translateY: scrollIndicatorAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, 10],
+                    }),
+                  },
+                ],
+              }}>
+              <ChevronDown size={32} color="#d1fae5" />
+            </Animated.View>
+            <Text style={styles.scrollText}>اكتشف المزيد</Text>
+          </TouchableOpacity>
+        </Link>
       </Animated.View>
     </View>
   );
