@@ -30,11 +30,13 @@ function RootLayoutNav() {
     if (isLoading) return;
 
     const inAuthGroup = segments[0] === "(auth)";
+    const inWelcome = segments[0] === "welcome";
+    const inHome = segments[0] === "home";
 
-    if (!isAuthenticated && !inAuthGroup) {
-      // Redirect to login if not authenticated
-      router.replace("/(auth)/login");
-    } else if (isAuthenticated && inAuthGroup) {
+    if (!isAuthenticated && !inAuthGroup && !inWelcome && !inHome) {
+      // Redirect to welcome page if not authenticated
+      router.replace("/welcome");
+    } else if (isAuthenticated && (inAuthGroup || inWelcome || inHome)) {
       // Redirect to tabs if authenticated
       router.replace("/(tabs)");
     }
@@ -46,6 +48,8 @@ function RootLayoutNav() {
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       <NotificationProvider>
         <Stack>
+          <Stack.Screen name="welcome" options={{ headerShown: false }} />
+          <Stack.Screen name="home" options={{ headerShown: false }} />
           <Stack.Screen name="(auth)" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen

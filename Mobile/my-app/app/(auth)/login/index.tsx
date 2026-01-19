@@ -12,10 +12,13 @@ import {
   ScrollView,
   Keyboard,
 } from "react-native";
+import { useRouter } from "expo-router";
+import { ArrowRight } from "lucide-react-native";
 import { useLoginLogic } from "./hooks";
 import ForgotPasswordModal from "../../../components/ForgotPasswordModal";
 
 const Login = () => {
+  const router = useRouter();
   const {
     formData,
     error,
@@ -55,6 +58,17 @@ const Login = () => {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         bounces={false}>
+        {/* Back to Welcome Button */}
+        {!keyboardVisible && (
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.push("/welcome")}
+            activeOpacity={0.7}>
+            <ArrowRight size={20} color="#059669" />
+            <Text style={styles.backButtonText}>العودة للصفحة الرئيسية</Text>
+          </TouchableOpacity>
+        )}
+
         <View
           style={[
             styles.content,
@@ -178,6 +192,28 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: "center",
     paddingVertical: 20,
+  },
+  backButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    marginTop: 40,
+    marginLeft: 24,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    borderRadius: 12,
+    gap: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  backButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#059669",
   },
   content: {
     flex: 1,

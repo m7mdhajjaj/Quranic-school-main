@@ -34,15 +34,17 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="dailyMarks"
+          name="dailyMarks/index"
           options={{
             title: "العلامات اليومية",
+            href: null,
           }}
         />
         <Tabs.Screen
-          name="attendance"
+          name="attendance/index"
           options={{
             title: "الحضور والغياب",
+            href: null,
           }}
         />
         <Tabs.Screen
@@ -59,43 +61,43 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="home"
+          name="home/index"
           options={{
             href: null,
           }}
         />
         <Tabs.Screen
-          name="news"
+          name="news/index"
           options={{
             href: null,
           }}
         />
         <Tabs.Screen
-          name="goals"
+          name="goals/index"
           options={{
             href: null,
           }}
         />
         <Tabs.Screen
-          name="prayer-times"
+          name="prayer-times/index"
           options={{
             href: null,
           }}
         />
         <Tabs.Screen
-          name="quran"
+          name="quran/index"
           options={{
             href: null,
           }}
         />
         <Tabs.Screen
-          name="quran-audio"
+          name="quran-audio/index"
           options={{
             href: null,
           }}
         />
         <Tabs.Screen
-          name="azkar"
+          name="azkar/index"
           options={{
             href: null,
           }}
@@ -119,7 +121,7 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="exam-schedule"
+          name="exam-schedule/index"
           options={{
             href: null,
           }}
@@ -137,19 +139,13 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="timetable"
+          name="timetable/index"
           options={{
             href: null,
           }}
         />
         <Tabs.Screen
           name="secretary"
-          options={{
-            href: null,
-          }}
-        />
-        <Tabs.Screen
-          name="admin"
           options={{
             href: null,
           }}
