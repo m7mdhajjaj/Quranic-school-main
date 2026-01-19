@@ -141,8 +141,15 @@ export const useWarningsData = (): UseWarningsDataReturn => {
 
   // ✅ استخدام AbortController لمنع race conditions
   useEffect(() => {
-    // ⚡ انتظر حتى يكون المستخدم والدور محددين
-    if (!user?._id || (!isTeacher && !isStudent)) {
+    // ⚡ انتظر حتى يكون المستخدم محدداً
+    if (!user) {
+      // المستخدم لم يُحمل بعد، نبقي loading = true
+      return;
+    }
+    
+    // ⚡ إذا المستخدم ليس معلم ولا طالب، أوقف التحميل
+    if (!isTeacher && !isStudent) {
+      setLoading(false);
       return;
     }
     
@@ -165,7 +172,7 @@ export const useWarningsData = (): UseWarningsDataReturn => {
       isMounted = false;
       controller.abort();
     };
-  }, [user?._id, isTeacher, isStudent, fetchData]);
+  }, [user, user?._id, isTeacher, isStudent, fetchData]);
 
   return {
     user,

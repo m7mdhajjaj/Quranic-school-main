@@ -22,6 +22,7 @@ export const useTeacherView = ({
   const [showHistorySidebar, setShowHistorySidebar] = useState(false);
   const [groupStatisticsData, setGroupStatisticsData] = useState<GroupStatistics | null>(null);
   const [loadingGroupStats, setLoadingGroupStats] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   
   const { fetchGroupStatistics } = useGroupStatistics();
 
@@ -61,8 +62,33 @@ export const useTeacherView = ({
     if (!selectedGroup?.students) {
       return [];
     }
-    return selectedGroup.students;
-  }, [selectedGroup?.students]);
+    
+    // إذا لا يوجد بحث، أرجع كل الطلاب
+    if (!searchQuery.trim()) {
+      return selectedGroup.students;
+    }
+    
+    // البحث في الاسم الكامل (الأول، الأب، الجد، العائلة)
+    const query = searchQuery.trim().toLowerCase();
+    return selectedGroup.students.filter((student) => {
+      const fullName = [
+        student.firstName,
+        student.middleName,
+        student.fatherName,
+        student.lastName,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      
+      return fullName.includes(query);
+    });
+  }, [selectedGroup?.students, searchQuery]);
+  
+  // مسح البحث
+  const clearSearch = useCallback(() => {
+    setSearchQuery('');
+  }, []);
 
   const studentsCount = useMemo(() => 
     filteredStudents?.length || 0,
@@ -80,6 +106,7 @@ export const useTeacherView = ({
     showHistorySidebar,
     groupStatisticsData,
     loadingGroupStats,
+    searchQuery,
     
     // Computed
     filteredStudents,
@@ -93,5 +120,7 @@ export const useTeacherView = ({
     handleCloseStatsModal,
     handleCloseHistory,
     handleOpenHistory,
+    setSearchQuery,
+    clearSearch,
   };
 };

@@ -11,7 +11,7 @@ import { StudentCard } from '../components/cards/StudentCard';
 import { WarningsPageHeader } from '../components/shared/WarningsPageHeader';
 import { GroupStatisticsModal } from '../components/statistics/GroupStatisticsModal';
 import { useTeacherView } from '../hooks/useTeacherView';
-import { ArrowRight, Users } from 'lucide-react';
+import { ArrowRight, Users, Search, X } from 'lucide-react';
 import { StudentHistorySidebar } from '../components/shared/StudentHistorySidebar';
 import { ANIMATION_DELAYS, LOADING_SKELETON_COUNT, EMPTY_STATES } from '../types/viewsConstants';
 
@@ -34,12 +34,15 @@ export const TeacherView: React.FC<TeacherViewProps> = React.memo(({
     filteredStudents,
     studentsCount,
     suspendedCount,
+    searchQuery,
     handleGroupSelect,
     handleBack,
     handleShowGroupStatistics,
     handleCloseStatsModal,
     handleCloseHistory,
     handleOpenHistory,
+    setSearchQuery,
+    clearSearch,
   } = useTeacherView({
     selectedGroup: selectedGroupProp ?? null,
     onGroupSelect,
@@ -92,14 +95,6 @@ export const TeacherView: React.FC<TeacherViewProps> = React.memo(({
                   </div>
                 );
               })}
-            </div>
-          ) : !loading && groups.length === 0 ? (
-            <div className="animate-fade-in">
-              <EmptyState
-                icon={EMPTY_STATES.noGroups.icon}
-                title={EMPTY_STATES.noGroups.title}
-                description={EMPTY_STATES.noGroups.description}
-              />
             </div>
           ) : null}
 
@@ -178,10 +173,44 @@ export const TeacherView: React.FC<TeacherViewProps> = React.memo(({
         {/* Layout: Students List - Simplified to reduce CLS */}
         <div className="w-full space-y-4">
           <div className="bg-white/50 backdrop-blur-sm rounded-2xl p-4 border border-emerald-200 min-h-[60vh]">
-            <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2 mb-4">
-              <Users className="w-6 h-6 text-emerald-600" />
-              طلاب الحلقة ({studentsCount})
-            </h2>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+              <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                <Users className="w-6 h-6 text-emerald-600" />
+                طلاب الحلقة ({studentsCount})
+              </h2>
+              
+              {/* حقل البحث */}
+              <div className="w-full sm:w-72 relative">
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                  <Search size={18} />
+                </div>
+                <input
+                  type="text"
+                  placeholder="ابحث عن طالب (الاسم الأول، الأب، العائلة)..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-10 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all outline-none text-sm shadow-sm"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={clearSearch}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    <X size={18} />
+                  </button>
+                )}
+              </div>
+            </div>
+            
+            {/* نتائج البحث */}
+            {searchQuery && (
+              <div className="mb-4 text-sm text-gray-600 bg-emerald-50 px-3 py-2 rounded-lg border border-emerald-200">
+                <span className="font-medium">نتائج البحث:</span> {filteredStudents.length} طالب
+                {filteredStudents.length === 0 && (
+                  <span className="text-amber-600 mr-2">- لم يتم العثور على طلاب مطابقين</span>
+                )}
+              </div>
+            )}
               
               {loadingStudents ? (
                 <div className="space-y-4">
