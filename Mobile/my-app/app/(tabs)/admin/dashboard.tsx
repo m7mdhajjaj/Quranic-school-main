@@ -13,11 +13,20 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Users, UserCheck, BookOpen, TrendingUp } from "lucide-react-native";
+import { useRouter } from "expo-router";
 import {
   fetchDashboardStats,
   type DashboardStats,
   fetchDashboardCharts,
+  fetchTopStudents,
+  fetchTopTeachers,
+  type TopStudent,
+  type TopTeacher,
 } from "@/Api/dashboardApi";
+import { TopStudentsList } from "@/components/dashboard/TopStudentsList";
+import { TopTeachersList } from "@/components/dashboard/TopTeachersList";
+import { DonutChart } from "@/components/dashboard/DonutChart";
+import { PieChart } from "@/components/dashboard/PieChart";
 import { AddStudentModal } from "@/components/students/AddStudentModal";
 import { AddTeacherModal } from "@/components/teachers/AddTeacherModal";
 import { AddGroupModal } from "@/components/groups/AddGroupModal";
@@ -32,6 +41,7 @@ interface ChartData {
 }
 
 export default function AdminDashboardScreen() {
+  const router = useRouter();
   const [stats, setStats] = useState<DashboardStats>({
     totalStudents: 0,
     totalTeachers: 0,
@@ -58,6 +68,12 @@ export default function AdminDashboardScreen() {
     genderDistribution: [],
   });
   const [loadingCharts, setLoadingCharts] = useState(true);
+
+  // Top lists data
+  const [topStudents, setTopStudents] = useState<TopStudent[]>([]);
+  const [topTeachers, setTopTeachers] = useState<TopTeacher[]>([]);
+  const [loadingTopStudents, setLoadingTopStudents] = useState(true);
+  const [loadingTopTeachers, setLoadingTopTeachers] = useState(true);
 
   // Modal states
   const [showStudentModal, setShowStudentModal] = useState(false);
@@ -94,6 +110,8 @@ export default function AdminDashboardScreen() {
     loadStats();
     loadTeachers();
     loadCharts();
+    loadTopStudents();
+    loadTopTeachers();
   }, []);
 
   // Load teachers for AddGroupModal
@@ -123,9 +141,41 @@ export default function AdminDashboardScreen() {
     }
   };
 
+  // Load top students
+  const loadTopStudents = async () => {
+    try {
+      setLoadingTopStudents(true);
+      const response = await fetchTopStudents();
+      if (response.success && response.data) {
+        setTopStudents(response.data);
+      }
+    } catch (err) {
+      console.error("Error loading top students:", err);
+    } finally {
+      setLoadingTopStudents(false);
+    }
+  };
+
+  // Load top teachers
+  const loadTopTeachers = async () => {
+    try {
+      setLoadingTopTeachers(true);
+      const response = await fetchTopTeachers();
+      if (response.success && response.data) {
+        setTopTeachers(response.data);
+      }
+    } catch (err) {
+      console.error("Error loading top teachers:", err);
+    } finally {
+      setLoadingTopTeachers(false);
+    }
+  };
+
   const onRefresh = () => {
     loadStats(true);
     loadCharts();
+    loadTopStudents();
+    loadTopTeachers();
   };
 
   // Modal handlers
@@ -331,100 +381,59 @@ export default function AdminDashboardScreen() {
         </View>
       ) : (
         <>
-          {/* Group Distribution */}
+          {/* Group Distribution - Donut Chart */}
           {chartsData.groupDistribution.length > 0 && (
             <View style={styles.chartSection}>
-              <Text style={styles.chartTitle}>📊 توزيع الطلاب حسب الحلقات</Text>
               <View style={styles.chartCard}>
-                {chartsData.groupDistribution.map((item, index) => {
-                  const total = chartsData.groupDistribution.reduce(
-                    (sum, g) => sum + g.count,
-                    0
-                  );
-                  const percentage =
-                    total > 0 ? Math.round((item.count / total) * 100) : 0;
-
-                  return (
-                    <View key={index} style={styles.distributionItem}>
-                      <View style={styles.distributionHeader}>
-                        <Text style={styles.distributionLabel}>
-                          {item.name}
-                        </Text>
-                        <Text style={styles.distributionValue}>
-                          {item.count} طالب ({percentage}%)
-                        </Text>
-                      </View>
-                      <View style={styles.distributionBarContainer}>
-                        <View
-                          style={[
-                            styles.distributionBar,
-                            {
-                              width: `${percentage}%`,
-                              backgroundColor: [
-                                "#10b981",
-                                "#059669",
-                                "#047857",
-                                "#065f46",
-                                "#064e3b",
-                              ][index % 5],
-                            },
-                          ]}
-                        />
-                      </View>
-                    </View>
-                  );
-                })}
+                <Text style={styles.chartTitle}>📊 توزيع الطلاب حسب الحلقات</Text>
+                <DonutChart
+                  data={chartsData.groupDistribution.map((g) => g.count)}
+                  labels={chartsData.groupDistribution.map((g) => g.name)}
+                  colors={[
+                    "from-green-500 to-green-600",
+                    "from-emerald-500 to-emerald-600",
+                    "from-teal-500 to-teal-600",
+                    "from-blue-500 to-blue-600",
+                    "from-purple-500 to-purple-600",
+                  ]}
+                />
               </View>
             </View>
           )}
 
-          {/* Gender Distribution */}
+          {/* Gender Distribution - Pie Chart */}
           {chartsData.genderDistribution.length > 0 && (
             <View style={styles.chartSection}>
-              <Text style={styles.chartTitle}>👥 توزيع الطلاب حسب الجنس</Text>
               <View style={styles.chartCard}>
-                {chartsData.genderDistribution.map((item, index) => {
-                  const total = chartsData.genderDistribution.reduce(
-                    (sum, g) => sum + g.count,
-                    0
-                  );
-                  const percentage =
-                    total > 0 ? Math.round((item.count / total) * 100) : 0;
-                  const genderName = item.label === "male" ? "ذكور" : "إناث";
-                  const color = item.label === "male" ? "#3b82f6" : "#ec4899";
-
-                  return (
-                    <View key={index} style={styles.distributionItem}>
-                      <View style={styles.distributionHeader}>
-                        <Text style={styles.distributionLabel}>
-                          {genderName}
-                        </Text>
-                        <Text style={styles.distributionValue}>
-                          {item.count} طالب ({percentage}%)
-                        </Text>
-                      </View>
-                      <View style={styles.distributionBarContainer}>
-                        <View
-                          style={[
-                            styles.distributionBar,
-                            { width: `${percentage}%`, backgroundColor: color },
-                          ]}
-                        />
-                      </View>
-                    </View>
-                  );
-                })}
+                <Text style={styles.chartTitle}>👥 توزيع الطلاب حسب الجنس</Text>
+                <PieChart
+                  data={chartsData.genderDistribution.map((g) => g.count)}
+                  labels={chartsData.genderDistribution.map((g) =>
+                    g.label === "male" ? "ذكور" : "إناث"
+                  )}
+                  colors={[
+                    "from-green-500 to-green-600",
+                    "from-rose-400 to-pink-500",
+                  ]}
+                />
               </View>
             </View>
           )}
         </>
       )}
 
-      {/* Coming Soon Section */}
-      <View style={styles.comingSoonContainer}>
-        <Text style={styles.comingSoonTitle}>قريباً</Text>
-        <View style={styles.comingSoonCard}>
-          <Text style={styles.comingSoonText}>🏆 أفضل الطلاب والمعلمين</Text>
+      {/* Top Lists Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>الأوائل</Text>
+        <View style={styles.topListsContainer}>
+          <TopStudentsList
+            students={topStudents}
+            loading={loadingTopStudents}
+          />
+          <TopTeachersList
+            teachers={topTeachers}
+            loading={loadingTopTeachers}
+          />
         </View>
       </View>
 
@@ -722,30 +731,8 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
 
-  // Coming Soon
-  comingSoonContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 32,
-  },
-  comingSoonTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#1f2937",
-    marginBottom: 16,
-  },
-  comingSoonCard: {
-    backgroundColor: "#f3f4f6",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderStyle: "dashed",
-  },
-  comingSoonText: {
-    fontSize: 14,
-    color: "#6b7280",
-    fontWeight: "500",
-    textAlign: "center",
+  // Top Lists
+  topListsContainer: {
+    gap: 16,
   },
 });

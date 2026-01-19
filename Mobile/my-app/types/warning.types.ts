@@ -1,12 +1,28 @@
 export interface Warning {
   _id: string;
-  student: string | Student;
-  teacher: string;
-  groupName: string;
-  type: "warning" | "first" | "second" | "third";
+  studentId?: string | {
+    _id: string;
+    firstName: string;
+    lastName: string;
+  };
+  teacherId?: string | {
+    _id: string;
+    firstName: string;
+    lastName: string;
+  };
+  groupId?: string | {
+    _id: string;
+    name: string;
+  };
+  // Legacy fields for backward compatibility
+  student?: string | Student;
+  teacher?: string;
+  groupName?: string;
+  type: "warning" | "first" | "second" | "third" | "expulsion";
   reason: string;
+  date?: string;
   createdAt: string;
-  updatedAt: string;
+  updatedAt?: string;
 }
 
 export type WarningType = "warning" | "first" | "second" | "third";

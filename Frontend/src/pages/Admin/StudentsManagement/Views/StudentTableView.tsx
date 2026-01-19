@@ -269,7 +269,8 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
                       {/* Group */}
                       <td className="px-6 py-4 text-center">
                         {(() => {
-                          if (student.group) {
+                          const isExpelled = !student.group || student.group === null || student.group === '';
+                          if (student.group && !isExpelled) {
                             const groupObj = typeof student.group === 'object' ? student.group : { name: student.group };
                             const isActive = (groupObj as any).isActive !== false;
                             return (
@@ -290,9 +291,14 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
                             );
                           }
                           return (
-                            <div className="inline-flex items-center gap-1 px-2 py-1 bg-red-50 rounded border border-red-200">
-                              <div className="w-1.5 h-1.5 bg-red-500 rounded-full flex-shrink-0"></div>
-                              <span className="text-red-600 text-xs font-medium">لا توجد</span>
+                            <div className="inline-flex flex-col items-center gap-1">
+                              <div className="inline-flex items-center gap-1 px-2 py-1 bg-red-50 rounded border-2 border-red-300">
+                                <div className="w-1.5 h-1.5 bg-red-500 rounded-full flex-shrink-0 animate-pulse"></div>
+                                <span className="text-red-700 text-xs font-bold">مفصول</span>
+                              </div>
+                              {canRestore && (
+                                <span className="text-[10px] text-red-600 font-medium">يمكن إرجاعه</span>
+                              )}
                             </div>
                           );
                         })()}
@@ -313,10 +319,21 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
                                 avatar: student.avatar,
                               });
                             }}
-                            className="p-2 text-teal-600 hover:bg-teal-100 rounded-lg transition-colors"
-                            title="تاريخ الطالب"
+                            className={`p-2 rounded-lg transition-colors relative ${
+                              !student.group || student.group === null || student.group === ''
+                                ? 'text-red-600 hover:bg-red-100'
+                                : 'text-teal-600 hover:bg-teal-100'
+                            }`}
+                            title={
+                              !student.group || student.group === null || student.group === ''
+                                ? 'تاريخ الطالب - مفصول (انقر لعرض التفاصيل وإرجاعه)'
+                                : 'تاريخ الطالب'
+                            }
                           >
                             <History className="w-4 h-4" />
+                            {(!student.group || student.group === null || student.group === '') && (
+                              <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>
+                            )}
                           </button>
                           {!isReadOnly && (
                             <>

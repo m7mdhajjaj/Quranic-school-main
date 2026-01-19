@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Alert,
   TextInput,
+  StyleSheet,
 } from "react-native";
 import { Search, X } from "lucide-react-native";
 import { StudentWithWarnings, WarningType } from "@/types/warning.types";
@@ -42,16 +43,10 @@ export const StudentsList: React.FC<StudentsListProps> = ({
   };
 
   const getWarningColor = (count: number) => {
-    if (count === 0) return "bg-gray-100 border-2 border-gray-300";
-    if (count === 1) return "bg-yellow-400 border-2 border-yellow-600";
-    if (count === 2) return "bg-orange-500 border-2 border-orange-700";
-    return "bg-red-600 border-2 border-red-800";
-  };
-
-  const getWarningTextColor = (count: number) => {
-    if (count === 0) return "text-gray-500";
-    if (count >= 1) return "text-white";
-    return "text-white";
+    if (count === 0) return { bg: "#F3F4F6", border: "#9CA3AF", text: "#6B7280" };
+    if (count === 1) return { bg: "#FCD34D", border: "#D97706", text: "#FFFFFF" };
+    if (count === 2) return { bg: "#F97316", border: "#C2410C", text: "#FFFFFF" };
+    return { bg: "#DC2626", border: "#991B1B", text: "#FFFFFF" };
   };
 
   const handleWarningPress = (
@@ -61,7 +56,6 @@ export const StudentsList: React.FC<StudentsListProps> = ({
     const count = student.warnings[type];
 
     if (count === 0) {
-      // لا يوجد إنذار - لا نفعل شيء
       return;
     }
 
@@ -80,7 +74,6 @@ export const StudentsList: React.FC<StudentsListProps> = ({
   };
 
   const renderStudent = ({ item }: { item: StudentWithWarnings }) => {
-    // حماية من البيانات المفقودة
     const warnings = item.warnings || {
       warning: 0,
       first: 0,
@@ -93,16 +86,14 @@ export const StudentsList: React.FC<StudentsListProps> = ({
     const hasWarnings = warnings.total > 0;
 
     return (
-      <View className="bg-white rounded-2xl p-5 mb-4 shadow-lg border-2 border-gray-200">
+      <View style={styles.studentCard}>
         {/* اسم الطالب */}
-        <View className="flex-row items-center justify-between mb-4">
-          <View className="flex-1">
-            <Text className="text-lg font-bold text-gray-800">
-              {getFullName(item)}
-            </Text>
+        <View style={styles.studentHeader}>
+          <View style={styles.studentInfo}>
+            <Text style={styles.studentName}>{getFullName(item)}</Text>
             {hasWarnings && (
-              <View className="bg-red-50 rounded-full px-3 py-1 mt-2 self-start">
-                <Text className="text-red-700 font-bold text-sm">
+              <View style={styles.warningsBadge}>
+                <Text style={styles.warningsBadgeText}>
                   ⚠️ {warnings.total} إنذار
                 </Text>
               </View>
@@ -110,31 +101,46 @@ export const StudentsList: React.FC<StudentsListProps> = ({
           </View>
           <TouchableOpacity
             onPress={() => onAddWarning(item)}
-            className="bg-red-600 rounded-xl px-5 py-3 shadow-md"
-            style={{ elevation: 4 }}>
-            <Text className="text-white font-bold text-base">+ إنذار</Text>
+            style={styles.addWarningButton}
+          >
+            <Text style={styles.addWarningButtonText}>+ إنذار</Text>
           </TouchableOpacity>
         </View>
 
         {/* أنواع الإنذارات */}
-        <View className="flex-row flex-wrap gap-2">
+        <View style={styles.warningsGrid}>
           {/* تنبيه */}
           <TouchableOpacity
             onPress={() => handleWarningPress(item, "warning")}
             disabled={warnings.warning === 0}
             activeOpacity={0.7}
-            className="flex-1 min-w-[45%]">
+            style={styles.warningButton}
+          >
             <View
-              className={`${getWarningColor(
-                warnings.warning
-              )} rounded-xl p-4 items-center shadow-sm`}
-              style={{ elevation: warnings.warning > 0 ? 3 : 0 }}>
+              style={[
+                styles.warningBox,
+                {
+                  backgroundColor: getWarningColor(warnings.warning).bg,
+                  borderColor: getWarningColor(warnings.warning).border,
+                  borderWidth: 2,
+                },
+                warnings.warning > 0 && styles.warningBoxActive,
+              ]}
+            >
               <Text
-                className={`text-xs mb-2 font-bold ${getWarningTextColor(warnings.warning)}`}>
+                style={[
+                  styles.warningLabel,
+                  { color: getWarningColor(warnings.warning).text },
+                ]}
+              >
                 تنبيه
               </Text>
               <Text
-                className={`text-3xl font-bold ${getWarningTextColor(warnings.warning)}`}>
+                style={[
+                  styles.warningCount,
+                  { color: getWarningColor(warnings.warning).text },
+                ]}
+              >
                 {warnings.warning}
               </Text>
             </View>
@@ -145,18 +151,33 @@ export const StudentsList: React.FC<StudentsListProps> = ({
             onPress={() => handleWarningPress(item, "first")}
             disabled={warnings.first === 0}
             activeOpacity={0.7}
-            className="flex-1 min-w-[45%]">
+            style={styles.warningButton}
+          >
             <View
-              className={`${getWarningColor(
-                warnings.first
-              )} rounded-xl p-4 items-center shadow-sm`}
-              style={{ elevation: warnings.first > 0 ? 3 : 0 }}>
+              style={[
+                styles.warningBox,
+                {
+                  backgroundColor: getWarningColor(warnings.first).bg,
+                  borderColor: getWarningColor(warnings.first).border,
+                  borderWidth: 2,
+                },
+                warnings.first > 0 && styles.warningBoxActive,
+              ]}
+            >
               <Text
-                className={`text-xs mb-2 font-bold ${getWarningTextColor(warnings.first)}`}>
+                style={[
+                  styles.warningLabel,
+                  { color: getWarningColor(warnings.first).text },
+                ]}
+              >
                 إنذار أول
               </Text>
               <Text
-                className={`text-3xl font-bold ${getWarningTextColor(warnings.first)}`}>
+                style={[
+                  styles.warningCount,
+                  { color: getWarningColor(warnings.first).text },
+                ]}
+              >
                 {warnings.first}
               </Text>
             </View>
@@ -167,18 +188,33 @@ export const StudentsList: React.FC<StudentsListProps> = ({
             onPress={() => handleWarningPress(item, "second")}
             disabled={warnings.second === 0}
             activeOpacity={0.7}
-            className="flex-1 min-w-[45%]">
+            style={styles.warningButton}
+          >
             <View
-              className={`${getWarningColor(
-                warnings.second
-              )} rounded-xl p-4 items-center shadow-sm`}
-              style={{ elevation: warnings.second > 0 ? 3 : 0 }}>
+              style={[
+                styles.warningBox,
+                {
+                  backgroundColor: getWarningColor(warnings.second).bg,
+                  borderColor: getWarningColor(warnings.second).border,
+                  borderWidth: 2,
+                },
+                warnings.second > 0 && styles.warningBoxActive,
+              ]}
+            >
               <Text
-                className={`text-xs mb-2 font-bold ${getWarningTextColor(warnings.second)}`}>
+                style={[
+                  styles.warningLabel,
+                  { color: getWarningColor(warnings.second).text },
+                ]}
+              >
                 إنذار ثاني
               </Text>
               <Text
-                className={`text-3xl font-bold ${getWarningTextColor(warnings.second)}`}>
+                style={[
+                  styles.warningCount,
+                  { color: getWarningColor(warnings.second).text },
+                ]}
+              >
                 {warnings.second}
               </Text>
             </View>
@@ -189,18 +225,33 @@ export const StudentsList: React.FC<StudentsListProps> = ({
             onPress={() => handleWarningPress(item, "third")}
             disabled={warnings.third === 0}
             activeOpacity={0.7}
-            className="flex-1 min-w-[45%]">
+            style={styles.warningButton}
+          >
             <View
-              className={`${getWarningColor(
-                warnings.third
-              )} rounded-xl p-4 items-center shadow-sm`}
-              style={{ elevation: warnings.third > 0 ? 3 : 0 }}>
+              style={[
+                styles.warningBox,
+                {
+                  backgroundColor: getWarningColor(warnings.third).bg,
+                  borderColor: getWarningColor(warnings.third).border,
+                  borderWidth: 2,
+                },
+                warnings.third > 0 && styles.warningBoxActive,
+              ]}
+            >
               <Text
-                className={`text-xs mb-2 font-bold ${getWarningTextColor(warnings.third)}`}>
+                style={[
+                  styles.warningLabel,
+                  { color: getWarningColor(warnings.third).text },
+                ]}
+              >
                 إنذار ثالث
               </Text>
               <Text
-                className={`text-3xl font-bold ${getWarningTextColor(warnings.third)}`}>
+                style={[
+                  styles.warningCount,
+                  { color: getWarningColor(warnings.third).text },
+                ]}
+              >
                 {warnings.third}
               </Text>
             </View>
@@ -212,35 +263,35 @@ export const StudentsList: React.FC<StudentsListProps> = ({
 
   if (students.length === 0) {
     return (
-      <View className="flex-1 items-center justify-center py-20">
-        <Text className="text-6xl mb-4">👥</Text>
-        <Text className="text-gray-500 text-lg">لا يوجد طلاب</Text>
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyEmoji}>👥</Text>
+        <Text style={styles.emptyText}>لا يوجد طلاب</Text>
       </View>
     );
   }
 
   return (
-    <View className="flex-1">
+    <View style={styles.container}>
       {/* Search Bar */}
-      <View className="bg-white rounded-2xl p-4 mb-4 shadow-md">
-        <View className="flex-row items-center bg-gray-100 rounded-xl px-4 py-3">
-          <Search size={20} color="#6b7280" />
+      <View style={styles.searchContainer}>
+        <View style={styles.searchInputContainer}>
+          <Search size={20} color="#6B7280" />
           <TextInput
             value={searchQuery}
             onChangeText={setSearchQuery}
             placeholder="ابحث عن طالب..."
-            placeholderTextColor="#9ca3af"
-            className="flex-1 mx-3 text-gray-800 text-base"
+            placeholderTextColor="#9CA3AF"
+            style={styles.searchInput}
             textAlign="right"
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => setSearchQuery("")}>
-              <X size={20} color="#6b7280" />
+              <X size={20} color="#6B7280" />
             </TouchableOpacity>
           )}
         </View>
         {searchQuery.length > 0 && (
-          <Text className="text-gray-500 text-sm mt-2">
+          <Text style={styles.searchResults}>
             النتائج: {filteredStudents.length} طالب
           </Text>
         )}
@@ -248,19 +299,161 @@ export const StudentsList: React.FC<StudentsListProps> = ({
 
       {/* Students List */}
       {filteredStudents.length === 0 ? (
-        <View className="flex-1 items-center justify-center py-20">
-          <Text className="text-6xl mb-4">🔍</Text>
-          <Text className="text-gray-500 text-lg">لا توجد نتائج</Text>
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyEmoji}>🔍</Text>
+          <Text style={styles.emptyText}>لا توجد نتائج</Text>
         </View>
       ) : (
         <FlatList
           data={filteredStudents}
           renderItem={renderStudent}
           keyExtractor={(item) => item._id}
-          contentContainerStyle={{ paddingBottom: 20 }}
+          contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
         />
       )}
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  searchContainer: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 24,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  searchInputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F3F4F6",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 12,
+  },
+  searchInput: {
+    flex: 1,
+    marginHorizontal: 12,
+    color: "#111827",
+    fontSize: 16,
+  },
+  searchResults: {
+    color: "#6B7280",
+    fontSize: 14,
+    marginTop: 8,
+  },
+  studentCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 24,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
+    borderWidth: 2,
+    borderColor: "#E5E7EB",
+  },
+  studentHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
+  studentInfo: {
+    flex: 1,
+  },
+  studentName: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#111827",
+  },
+  warningsBadge: {
+    backgroundColor: "#FEF2F2",
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    marginTop: 8,
+    alignSelf: "flex-start",
+  },
+  warningsBadgeText: {
+    color: "#991B1B",
+    fontWeight: "bold",
+    fontSize: 14,
+  },
+  addWarningButton: {
+    backgroundColor: "#DC2626",
+    borderRadius: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  addWarningButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  warningsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  warningButton: {
+    flex: 1,
+    minWidth: "45%",
+  },
+  warningBox: {
+    borderRadius: 12,
+    padding: 16,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+  },
+  warningBoxActive: {
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  warningLabel: {
+    fontSize: 12,
+    fontWeight: "bold",
+    marginBottom: 8,
+  },
+  warningCount: {
+    fontSize: 32,
+    fontWeight: "bold",
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 40,
+  },
+  emptyEmoji: {
+    fontSize: 64,
+    marginBottom: 16,
+  },
+  emptyText: {
+    color: "#6B7280",
+    fontSize: 18,
+  },
+  listContent: {
+    paddingBottom: 20,
+  },
+});
