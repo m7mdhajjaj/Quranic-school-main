@@ -123,60 +123,62 @@ const AdminDashboard = () => {
           </p>
         </div>
 
-        {/* Statistics Cards - Priority for LCP */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6 lg:gap-8 mb-6 sm:mb-8 lg:mb-12">
-          {isLoadingStats ? (
-            <>
-              <StatCardSkeleton />
-              <StatCardSkeleton />
-              <StatCardSkeleton />
-              <StatCardSkeleton />
-              <StatCardSkeleton />
-            </>
-          ) : (
-            <>
-              <StatCard
-                icon={<FaGraduationCap className="text-3xl text-white" />}
-                title="إجمالي الطلاب"
-                value={stats.totalStudents}
-                color="bg-gradient-to-br from-emerald-500 to-emerald-600"
-                bgColor="bg-white"
-              />
+        {/* Statistics Cards - تظهر فقط إذا كان هناك بيانات أو أثناء التحميل */}
+        {(isLoadingStats || stats.totalStudents > 0 || stats.totalTeachers > 0 || stats.totalAssistants > 0 || stats.totalSecretaries > 0 || stats.totalGroups > 0) && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6 lg:gap-8 mb-6 sm:mb-8 lg:mb-12">
+            {isLoadingStats ? (
+              <>
+                <StatCardSkeleton />
+                <StatCardSkeleton />
+                <StatCardSkeleton />
+                <StatCardSkeleton />
+                <StatCardSkeleton />
+              </>
+            ) : (
+              <>
+                <StatCard
+                  icon={<FaGraduationCap className="text-3xl text-white" />}
+                  title="إجمالي الطلاب"
+                  value={stats.totalStudents}
+                  color="bg-gradient-to-br from-emerald-500 to-emerald-600"
+                  bgColor="bg-white"
+                />
 
-              <StatCard
-                icon={<FaChalkboardTeacher className="text-3xl text-white" />}
-                title="إجمالي المعلمين"
-                value={stats.totalTeachers}
-                color="bg-gradient-to-br from-green-500 to-green-600"
-                bgColor="bg-white"
-              />
+                <StatCard
+                  icon={<FaChalkboardTeacher className="text-3xl text-white" />}
+                  title="إجمالي المعلمين"
+                  value={stats.totalTeachers}
+                  color="bg-gradient-to-br from-green-500 to-green-600"
+                  bgColor="bg-white"
+                />
 
-              <StatCard
-                icon={<FaUserTie className="text-3xl text-white" />}
-                title="المساعدين"
-                value={stats.totalAssistants}
-                color="bg-gradient-to-br from-blue-500 to-blue-600"
-                bgColor="bg-white"
-              />
+                <StatCard
+                  icon={<FaUserTie className="text-3xl text-white" />}
+                  title="المساعدين"
+                  value={stats.totalAssistants}
+                  color="bg-gradient-to-br from-blue-500 to-blue-600"
+                  bgColor="bg-white"
+                />
 
-              <StatCard
-                icon={<FaClipboardList className="text-3xl text-white" />}
-                title="السكرتيرات"
-                value={stats.totalSecretaries}
-                color="bg-gradient-to-br from-purple-500 to-purple-600"
-                bgColor="bg-white"
-              />
+                <StatCard
+                  icon={<FaClipboardList className="text-3xl text-white" />}
+                  title="السكرتيرات"
+                  value={stats.totalSecretaries}
+                  color="bg-gradient-to-br from-purple-500 to-purple-600"
+                  bgColor="bg-white"
+                />
 
-              <StatCard
-                icon={<FaUsers className="text-3xl text-white" />}
-                title="عدد الحلقات"
-                value={stats.totalGroups}
-                color="bg-gradient-to-br from-green-600 to-emerald-600"
-                bgColor="bg-white"
-              />
-            </>
-          )}
-        </div>
+                <StatCard
+                  icon={<FaUsers className="text-3xl text-white" />}
+                  title="عدد الحلقات"
+                  value={stats.totalGroups}
+                  color="bg-gradient-to-br from-green-600 to-emerald-600"
+                  bgColor="bg-white"
+                />
+              </>
+            )}
+          </div>
+        )}
 
         {/* Quick Actions */}
         <div className="mb-6 sm:mb-8 lg:mb-12">

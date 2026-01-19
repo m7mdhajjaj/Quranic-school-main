@@ -1,7 +1,6 @@
 import React, { memo } from "react";
-import { Shield } from "lucide-react";
+import { Shield, Loader2 } from "lucide-react";
 import { EmptyState } from "@/components/UI/EmptyState";
-import { MotionPageSkeleton } from "@/components/skeletons/MotionSkeleton";
 
 // Components
 import {
@@ -207,13 +206,12 @@ const SecretaryManagement: React.FC = () => {
   // Loading State
   if (isLoading) {
     return (
-      <MotionPageSkeleton
-        showStats={true}
-        showToolbar={true}
-        showTable={true}
-        statsCount={4}
-        rowsCount={8}
-      />
+      <div className="min-h-[400px] flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-emerald-600 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600 font-medium">جاري تحميل البيانات...</p>
+        </div>
+      </div>
     );
   }
 
