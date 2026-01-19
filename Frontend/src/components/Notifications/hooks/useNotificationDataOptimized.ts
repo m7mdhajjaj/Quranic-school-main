@@ -113,13 +113,14 @@ const notificationReducer = (
         }
         
         const sortedIds = sortIds(newById, newIds);
-        const stats = calculateStats(newById, sortedIds);
+        // ❌ Removed calculateStats to prevent overwriting global server stats with local list stats
+        // Stats will be updated via 'UPDATE_STATS' action immediately after
         
         return {
           ...state,
           byId: newById,
           ids: sortedIds,
-          stats,
+          // stats: state.stats, // Keep existing stats until UPDATE_STATS fires
           isLoading: false,
         };
       } else {
@@ -135,13 +136,12 @@ const notificationReducer = (
         }
         
         const sortedIds = sortIds(newById, newIds);
-        const stats = calculateStats(newById, sortedIds);
         
         return {
           ...state,
           byId: newById,
           ids: sortedIds,
-          stats,
+          // stats: state.stats, // Keep existing stats
           isLoading: false,
         };
       }
@@ -160,11 +160,23 @@ const notificationReducer = (
         ...state.byId,
         [notif._id]: notif,
       };
+      
+      // Add new notification at the start
       const newIds = [notif._id, ...state.ids];
       const sortedIds = sortIds(newById, newIds);
-      const stats = calculateStats(newById, sortedIds);
       
-      console.log('✅ Notification added:', notif._id, 'New count:', newIds.length);
+      // ✅ Increment stats instead of recalculating from partial list
+      const unreadIncrement = !notif.isRead ? 1 : 0;
+      const newIncrement = notif.isNew ? 1 : 0;
+
+      const stats = {
+        ...state.stats,
+        unreadCount: state.stats.unreadCount + unreadIncrement,
+        newCount: state.stats.newCount + newIncrement,
+        totalCount: state.stats.totalCount + 1,
+      };
+      
+      console.log('✅ Notification added:', notif._id, 'New stats:', stats);
       
       return {
         ...state,
@@ -178,13 +190,19 @@ const notificationReducer = (
       const notifications = action.payload;
       const newById = { ...state.byId };
       const newIds = [...state.ids];
+      
       let addedCount = 0;
+      let unreadIncrement = 0;
+      let newIncrement = 0;
       
       for (const notif of notifications) {
         if (!newById[notif._id]) {
           newById[notif._id] = notif;
           newIds.push(notif._id);
           addedCount++;
+          
+          if (!notif.isRead) unreadIncrement++;
+          if (notif.isNew) newIncrement++;
         }
       }
       
@@ -194,9 +212,16 @@ const notificationReducer = (
       }
       
       const sortedIds = sortIds(newById, newIds);
-      const stats = calculateStats(newById, sortedIds);
       
-      console.log(`✅ Batch added ${addedCount} notifications`);
+      // ✅ Increment stats
+      const stats = {
+          ...state.stats,
+          unreadCount: state.stats.unreadCount + unreadIncrement,
+          newCount: state.stats.newCount + newIncrement,
+          totalCount: state.stats.totalCount + addedCount,
+      };
+      
+      console.log(`✅ Batch added ${addedCount} notifications. Stats updated.`);
       
       return {
         ...state,
@@ -215,7 +240,13 @@ const notificationReducer = (
         ...state.byId,
         [id]: { ...notif, isRead: true, isNew: false },
       };
-      const stats = calculateStats(newById, state.ids);
+      
+      // ✅ Decrement stats instead of recalculating
+      const stats = {
+          ...state.stats,
+          unreadCount: Math.max(0, state.stats.unreadCount - 1),
+          newCount: Math.max(0, state.stats.newCount - (notif.isNew ? 1 : 0)),
+      };
       
       return { ...state, byId: newById, stats };
     }
@@ -229,7 +260,12 @@ const notificationReducer = (
         ...state.byId,
         [id]: { ...notif, isRead: false },
       };
-      const stats = calculateStats(newById, state.ids);
+      
+      // Revert stats
+      const stats = {
+          ...state.stats,
+          unreadCount: state.stats.unreadCount + 1,
+      };
       
       return { ...state, byId: newById, stats };
     }
@@ -243,7 +279,13 @@ const notificationReducer = (
         ...state.byId,
         [id]: { ...notif, isRead: true, isNew: false },
       };
-      const stats = calculateStats(newById, state.ids);
+      
+      // Same logic as Optimistic
+      const stats = {
+          ...state.stats,
+          unreadCount: Math.max(0, state.stats.unreadCount - 1),
+          newCount: Math.max(0, state.stats.newCount - (notif.isNew ? 1 : 0)),
+      };
       
       return { ...state, byId: newById, stats };
     }
@@ -259,17 +301,32 @@ const notificationReducer = (
         }
       }
       
-      const stats = calculateStats(newById, state.ids);
+      // ✅ Reset counters (assuming server call succeeds)
+      const stats = {
+          ...state.stats,
+          unreadCount: 0,
+          newCount: 0 
+      };
       
       return { ...state, byId: newById, stats };
     }
 
     case 'DELETE_NOTIFICATION': {
       const id = action.payload;
+      const notif = state.byId[id]; // Get it before delete
       const newById = { ...state.byId };
       delete newById[id];
       const newIds = state.ids.filter(i => i !== id);
-      const stats = calculateStats(newById, newIds);
+      
+      // ✅ Update stats
+      let unreadDecrement = 0;
+      if (notif && !notif.isRead) unreadDecrement = 1;
+
+      const stats = {
+          ...state.stats,
+          totalCount: Math.max(0, state.stats.totalCount - 1),
+          unreadCount: Math.max(0, state.stats.unreadCount - unreadDecrement),
+      };
       
       return {
         ...state,
