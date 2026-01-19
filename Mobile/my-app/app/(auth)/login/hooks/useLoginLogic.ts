@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
+import { Alert } from "react-native";
 import { useAuth } from "@/hooks/useAuth";
 import {
   loginStudent,
@@ -203,20 +204,50 @@ export const useLoginLogic = () => {
       const newFailedAttempts = failedAttempts + 1;
       setFailedAttempts(newFailedAttempts);
 
-      if (newFailedAttempts >= 3) {
-        setShowForgotPasswordModal(true);
-      }
+      let errorMessage = "فشل تسجيل الدخول. رجاءً تأكد من بيانات الدخول.";
+      let errorTitle = "خطأ في تسجيل الدخول";
 
       if (error instanceof Error) {
-        const errorMsg = error.message;
-        setError(
-          "البيانات المدخلة غير صحيحة. تأكد من رقم المستخدم وكلمة المرور."
-        );
+        errorMessage = "البيانات المدخلة غير صحيحة. تأكد من رقم المستخدم وكلمة المرور.";
       } else if (axios.isAxiosError(error)) {
         const message = error.response?.data?.message || error.message;
-        setError(message || "فشل تسجيل الدخول. رجاءً تأكد من بيانات الدخول.");
-      } else {
-        setError("فشل تسجيل الدخول. رجاءً تأكد من بيانات الدخول.");
+        const errors = error.response?.data?.errors;
+        
+        if (errors && Array.isArray(errors) && errors.length > 0) {
+          errorMessage = errors.join("\n");
+        } else if (message) {
+          errorMessage = message;
+        }
+      }
+
+      setError(errorMessage);
+
+      // Show beautiful Alert
+      Alert.alert(
+        errorTitle,
+        errorMessage,
+        [
+          {
+            text: "حاول مرة أخرى",
+            style: "default",
+          },
+          ...(newFailedAttempts >= 3
+            ? [
+                {
+                  text: "نسيت كلمة المرور؟",
+                  onPress: () => setShowForgotPasswordModal(true),
+                  style: "cancel",
+                },
+              ]
+            : []),
+        ],
+        {
+          cancelable: true,
+        }
+      );
+
+      if (newFailedAttempts >= 3) {
+        setShowForgotPasswordModal(true);
       }
     } finally {
       setIsLoading(false);

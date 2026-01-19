@@ -1,7 +1,7 @@
-import axios from "axios";
+import api from "./api";
 import { API_URL as BASE_API_URL } from "@/config/config";
 
-const API_URL = `${BASE_API_URL}/upload`;
+const UPLOAD_ENDPOINT = "/upload";
 
 export interface UploadResponse {
   success: boolean;
@@ -23,7 +23,7 @@ export const uploadNewsImage = async (file: File): Promise<UploadResponse> => {
   const formData = new FormData();
   formData.append("image", file);
 
-  const response = await axios.post(`${API_URL}/news`, formData, {
+  const response = await api.post(`${UPLOAD_ENDPOINT}/news`, formData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
@@ -43,7 +43,7 @@ export const uploadMultipleNewsImages = async (
     formData.append("images", file);
   });
 
-  const response = await axios.post(`${API_URL}/news/multiple`, formData, {
+  const response = await api.post(`${UPLOAD_ENDPOINT}/news/multiple`, formData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
@@ -59,7 +59,7 @@ export const uploadLogo = async (file: File): Promise<UploadResponse> => {
   const formData = new FormData();
   formData.append("image", file);
 
-  const response = await axios.post(`${API_URL}/logo`, formData, {
+  const response = await api.post(`${UPLOAD_ENDPOINT}/logo`, formData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
@@ -72,8 +72,13 @@ export const uploadLogo = async (file: File): Promise<UploadResponse> => {
  * جلب صورة اللوغو الحالية
  */
 export const getLogo = async (): Promise<UploadResponse> => {
-  const response = await axios.get(`${API_URL}/logo`);
-  return response.data;
+  try {
+    const response = await api.get(`${UPLOAD_ENDPOINT}/logo`);
+    return response.data;
+  } catch (error) {
+    console.error("Error in getLogo:", error);
+    return { success: false, message: "فشل في جلب اللوغو" };
+  }
 };
 
 /**
@@ -83,7 +88,7 @@ export const uploadHeroImage = async (file: File): Promise<UploadResponse> => {
   const formData = new FormData();
   formData.append("image", file);
 
-  const response = await axios.post(`${API_URL}/hero`, formData, {
+  const response = await api.post(`${UPLOAD_ENDPOINT}/hero`, formData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
@@ -96,8 +101,13 @@ export const uploadHeroImage = async (file: File): Promise<UploadResponse> => {
  * جلب صورة الهيرو الحالية
  */
 export const getHeroImage = async (): Promise<UploadResponse> => {
-  const response = await axios.get(`${API_URL}/hero`);
-  return response.data;
+  try {
+    const response = await api.get(`${UPLOAD_ENDPOINT}/hero`);
+    return response.data;
+  } catch (error) {
+    console.error("Error in getHeroImage:", error);
+    return { success: false, message: "فشل في جلب صورة الهيرو" };
+  }
 };
 
 /**
@@ -107,7 +117,7 @@ export const uploadAvatar = async (file: File): Promise<UploadResponse> => {
   const formData = new FormData();
   formData.append("image", file);
 
-  const response = await axios.post(`${API_URL}/avatar`, formData, {
+  const response = await api.post(`${UPLOAD_ENDPOINT}/avatar`, formData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
@@ -132,8 +142,8 @@ export const deleteImage = async (
         .replace(/\.[^/.]+$/, "")
     : publicId;
 
-  const response = await axios.delete(
-    `${API_URL}/${encodeURIComponent(cleanPublicId)}`
+  const response = await api.delete(
+    `${UPLOAD_ENDPOINT}/${encodeURIComponent(cleanPublicId)}`
   );
   return response.data;
 };

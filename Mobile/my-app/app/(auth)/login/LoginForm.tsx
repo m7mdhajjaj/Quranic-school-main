@@ -1,7 +1,7 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Switch } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Switch, Animated } from "react-native";
 import { Button, Input } from "@/components/ui";
-import { LogIn, Info } from "lucide-react-native";
+import { LogIn, Info, AlertCircle } from "lucide-react-native";
 
 export interface LoginFormData {
   userId: string;
@@ -31,10 +31,18 @@ export const LoginForm: React.FC<LoginFormProps> = ({
 }) => {
   return (
     <View>
-      {/* Error Message */}
+      {/* Error Message - Enhanced */}
       {error && (
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
+          <View style={styles.errorContent}>
+            <View style={styles.errorIconContainer}>
+              <AlertCircle size={20} color="#dc2626" />
+            </View>
+            <View style={styles.errorTextContainer}>
+              <Text style={styles.errorTitle}>خطأ في تسجيل الدخول</Text>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          </View>
         </View>
       )}
 
@@ -108,16 +116,45 @@ export const LoginForm: React.FC<LoginFormProps> = ({
 const styles = StyleSheet.create({
   errorContainer: {
     backgroundColor: "#fee2e2",
-    borderWidth: 1,
-    borderColor: "#fecaca",
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: "#fca5a5",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    shadowColor: "#dc2626",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  errorContent: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+  },
+  errorIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#fecaca",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "#fca5a5",
+  },
+  errorTextContainer: {
+    flex: 1,
+  },
+  errorTitle: {
+    color: "#991b1b",
+    fontSize: 15,
+    fontWeight: "bold",
+    marginBottom: 4,
   },
   errorText: {
-    color: "#991b1b",
-    fontSize: 14,
-    textAlign: "center",
+    color: "#dc2626",
+    fontSize: 13,
+    lineHeight: 18,
   },
   form: {
     gap: 16,

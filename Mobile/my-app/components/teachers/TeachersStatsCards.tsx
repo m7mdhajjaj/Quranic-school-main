@@ -3,98 +3,114 @@
 // ============================================================================
 
 import React from "react";
-import { View, Text } from "react-native";
+import { View, Text, ActivityIndicator } from "react-native";
 import type { TeachersStats } from "@/types/teacher.types";
 
 interface TeachersStatsCardsProps {
   stats: TeachersStats;
+  loading?: boolean;
 }
 
 export const TeachersStatsCards: React.FC<TeachersStatsCardsProps> = ({
   stats,
+  loading = false,
 }) => {
-  const statCards = [
+  const statsData = [
     {
       label: "إجمالي المعلمين",
       value: stats.totalTeachers,
-      emoji: "👥",
-      color: "bg-blue-100 border-blue-300",
+      icon: "👥",
+      bgColor: "bg-blue-50",
       textColor: "text-blue-700",
+      iconBg: "bg-blue-500",
     },
     {
       label: "معلمين نشطين",
       value: stats.activeTeachers,
-      emoji: "✅",
-      color: "bg-emerald-100 border-emerald-300",
-      textColor: "text-emerald-700",
+      icon: "✅",
+      bgColor: "bg-green-50",
+      textColor: "text-green-700",
+      iconBg: "bg-green-500",
     },
     {
       label: "معلمين غير نشطين",
       value: stats.inactiveTeachers,
-      emoji: "⏸️",
-      color: "bg-orange-100 border-orange-300",
+      icon: "⏸️",
+      bgColor: "bg-orange-50",
       textColor: "text-orange-700",
+      iconBg: "bg-orange-500",
     },
     {
-      label: "معلمين ذكور",
+      label: "ذكور",
       value: stats.maleTeachers,
-      emoji: "👨‍🏫",
-      color: "bg-cyan-100 border-cyan-300",
+      icon: "👨",
+      bgColor: "bg-cyan-50",
       textColor: "text-cyan-700",
+      iconBg: "bg-cyan-600",
     },
     {
-      label: "معلمات إناث",
+      label: "إناث",
       value: stats.femaleTeachers,
-      emoji: "👩‍🏫",
-      color: "bg-pink-100 border-pink-300",
+      icon: "👩",
+      bgColor: "bg-pink-50",
       textColor: "text-pink-700",
+      iconBg: "bg-pink-500",
     },
     {
       label: "لديهم حلقات",
       value: stats.teachersWithGroups,
-      emoji: "📚",
-      color: "bg-green-100 border-green-300",
-      textColor: "text-green-700",
+      icon: "📚",
+      bgColor: "bg-emerald-50",
+      textColor: "text-emerald-700",
+      iconBg: "bg-emerald-500",
     },
     {
       label: "بدون حلقات",
       value: stats.teachersWithoutGroups,
-      emoji: "⚠️",
-      color: "bg-yellow-100 border-yellow-300",
+      icon: "⚠️",
+      bgColor: "bg-yellow-50",
       textColor: "text-yellow-700",
+      iconBg: "bg-yellow-500",
     },
     {
       label: "متوسط العمر",
       value: stats.averageAge ? Math.round(stats.averageAge) : 0,
-      emoji: "📊",
-      color: "bg-purple-100 border-purple-300",
+      icon: "🎂",
+      bgColor: "bg-purple-50",
       textColor: "text-purple-700",
+      iconBg: "bg-purple-500",
+      suffix: " سنة",
     },
   ];
 
+  if (loading) {
+    return (
+      <View className="flex-row justify-center py-8">
+        <ActivityIndicator size="large" color="#3b82f6" />
+      </View>
+    );
+  }
+
   return (
-    <View className="mb-6 gap-3">
-      {statCards.map((stat, index) => (
+    <View className="flex-row flex-wrap gap-3">
+      {statsData.map((stat, index) => (
         <View
           key={index}
-          className={`${stat.color} rounded-2xl p-5 border-2 shadow-sm`}>
-          <View className="flex-row items-center gap-4">
-            {/* Emoji and Number Section */}
-            <View className="items-center justify-center min-w-[80px]">
-              <Text className="text-4xl mb-1">{stat.emoji}</Text>
-              <Text className={`text-3xl font-bold ${stat.textColor}`}>
-                {stat.value}
-              </Text>
+          className={`${stat.bgColor} rounded-2xl p-4 shadow-md border border-gray-100 flex-1 min-w-[45%]`}>
+          <View className="flex-row items-center justify-between mb-3">
+            <View className={`${stat.iconBg} rounded-xl p-2`}>
+              <Text className="text-2xl">{stat.icon}</Text>
             </View>
-
-            {/* Label Section */}
-            <View className="flex-1 justify-center border-r-2 border-gray-300 pr-4">
-              <Text
-                className={`text-lg font-bold ${stat.textColor} text-right`}>
-                {stat.label}
+            <View className="flex-1 items-end mr-2">
+              <Text className={`${stat.textColor} font-bold text-2xl`}>
+                {stat.value}
+                {stat.suffix || ""}
               </Text>
             </View>
           </View>
+          <Text className={`${stat.textColor} font-semibold text-sm`}>
+            {stat.label}
+          </Text>
         </View>
       ))}
     </View>

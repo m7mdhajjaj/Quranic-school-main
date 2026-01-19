@@ -3,84 +3,96 @@
 // ============================================================================
 
 import React from "react";
-import { View, Text } from "react-native";
+import { View, Text, ActivityIndicator } from "react-native";
 import type { GroupsStats } from "@/types/group.types";
 
 interface GroupsStatsCardsProps {
   stats: GroupsStats;
+  loading?: boolean;
 }
 
 export const GroupsStatsCards: React.FC<GroupsStatsCardsProps> = ({
   stats,
+  loading = false,
 }) => {
-  const statCards = [
+  const statsData = [
     {
       label: "إجمالي الحلقات",
       value: stats.totalGroups,
-      emoji: "📚",
-      color: "bg-blue-100 border-blue-300",
+      icon: "📚",
+      bgColor: "bg-blue-50",
       textColor: "text-blue-700",
+      iconBg: "bg-blue-500",
     },
     {
       label: "إجمالي الطلاب",
       value: stats.totalStudents,
-      emoji: "👥",
-      color: "bg-emerald-100 border-emerald-300",
+      icon: "👥",
+      bgColor: "bg-emerald-50",
       textColor: "text-emerald-700",
+      iconBg: "bg-emerald-500",
     },
     {
       label: "حلقات ممتلئة",
       value: stats.fullGroups,
-      emoji: "✅",
-      color: "bg-green-100 border-green-300",
+      icon: "✅",
+      bgColor: "bg-green-50",
       textColor: "text-green-700",
+      iconBg: "bg-green-500",
     },
     {
       label: "حلقات فارغة",
       value: stats.emptyGroups,
-      emoji: "⚠️",
-      color: "bg-orange-100 border-orange-300",
+      icon: "⚠️",
+      bgColor: "bg-orange-50",
       textColor: "text-orange-700",
+      iconBg: "bg-orange-500",
     },
     {
       label: "السعة الإجمالية",
       value: stats.totalCapacity,
-      emoji: "📊",
-      color: "bg-purple-100 border-purple-300",
+      icon: "📊",
+      bgColor: "bg-purple-50",
       textColor: "text-purple-700",
+      iconBg: "bg-purple-500",
     },
     {
       label: "مقاعد متاحة",
       value: stats.availableSeats,
-      emoji: "🪑",
-      color: "bg-pink-100 border-pink-300",
+      icon: "🪑",
+      bgColor: "bg-pink-50",
       textColor: "text-pink-700",
+      iconBg: "bg-pink-500",
     },
   ];
 
+  if (loading) {
+    return (
+      <View className="flex-row justify-center py-8">
+        <ActivityIndicator size="large" color="#3b82f6" />
+      </View>
+    );
+  }
+
   return (
-    <View className="mb-6 gap-3">
-      {statCards.map((stat, index) => (
+    <View className="flex-row flex-wrap gap-3">
+      {statsData.map((stat, index) => (
         <View
           key={index}
-          className={`${stat.color} rounded-2xl p-5 border-2 shadow-sm`}>
-          <View className="flex-row items-center gap-4">
-            {/* Emoji and Number Section */}
-            <View className="items-center justify-center min-w-[80px]">
-              <Text className="text-4xl mb-1">{stat.emoji}</Text>
-              <Text className={`text-3xl font-bold ${stat.textColor}`}>
+          className={`${stat.bgColor} rounded-2xl p-4 shadow-md border border-gray-100 flex-1 min-w-[45%]`}>
+          <View className="flex-row items-center justify-between mb-3">
+            <View className={`${stat.iconBg} rounded-xl p-2`}>
+              <Text className="text-2xl">{stat.icon}</Text>
+            </View>
+            <View className="flex-1 items-end mr-2">
+              <Text className={`${stat.textColor} font-bold text-2xl`}>
                 {stat.value}
               </Text>
             </View>
-
-            {/* Label Section */}
-            <View className="flex-1 justify-center border-r-2 border-gray-300 pr-4">
-              <Text
-                className={`text-lg font-bold ${stat.textColor} text-right`}>
-                {stat.label}
-              </Text>
-            </View>
           </View>
+          <Text className={`${stat.textColor} font-semibold text-sm`}>
+            {stat.label}
+          </Text>
         </View>
       ))}
     </View>
