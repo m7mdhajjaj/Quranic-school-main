@@ -7,6 +7,8 @@ const express = require("express");
 const router = express.Router();
 const { protect } = require("../../middleware/auth");
 const { validateProfileData, sanitizeProfile } = require("../../Validation/Profile/ProfileValidation");
+const { validateChangePassword } = require("../../Validation/Auth/AuthValidation");
+const { changePassword } = require("../../controllers/authController");
 
 // Import profile controllers
 const {
@@ -15,6 +17,20 @@ const {
   checkDuplicate,
   getEditLimits,
 } = require("../../controllers/profileController");
+
+/**
+ * Middleware to extract userId and userType from req.user (set by protect middleware)
+ * This is needed for the changePassword controller
+ */
+const extractUserInfo = (req, res, next) => {
+  if (req.user && req.user._id) {
+    req.body.userId = req.user._id.toString();
+    // Normalize role to lowercase for validation (validation will normalize it back)
+    const role = req.user.role || "student";
+    req.body.userType = role.toLowerCase();
+  }
+  next();
+};
 
 /**
  * @route   GET /api/me
@@ -38,6 +54,19 @@ router.get("/profile/check-duplicate", protect, checkDuplicate);
  * @access  Private
  */
 router.get("/profile/edit-limits/:field", protect, getEditLimits);
+
+/**
+ * @route   PUT /api/profile/change-password
+ * @desc    Change user password (for profile page)
+ * @access  Private
+ */
+router.put(
+  "/profile/change-password",
+  protect,
+  extractUserInfo,
+  validateChangePassword,
+  changePassword
+);
 
 /**
  * @route   PUT /api/me

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
 
 interface DatePickerProps {
   label: string;
@@ -130,7 +130,10 @@ export const DatePicker: React.FC<DatePickerProps> = ({
 
       {/* Day Picker */}
       {showDayPicker && (
-        <View style={styles.dropdownContainer}>
+        <ScrollView 
+          style={styles.dropdownContainer}
+          nestedScrollEnabled={true}
+          showsVerticalScrollIndicator={true}>
           {days.map((d) => (
             <TouchableOpacity
               key={d}
@@ -148,12 +151,15 @@ export const DatePicker: React.FC<DatePickerProps> = ({
               </Text>
             </TouchableOpacity>
           ))}
-        </View>
+        </ScrollView>
       )}
 
       {/* Month Picker */}
       {showMonthPicker && (
-        <View style={styles.dropdownContainer}>
+        <ScrollView 
+          style={styles.dropdownContainer}
+          nestedScrollEnabled={true}
+          showsVerticalScrollIndicator={true}>
           {monthsInArabic.map((m) => (
             <TouchableOpacity
               key={m.value}
@@ -171,12 +177,15 @@ export const DatePicker: React.FC<DatePickerProps> = ({
               </Text>
             </TouchableOpacity>
           ))}
-        </View>
+        </ScrollView>
       )}
 
       {/* Year Picker */}
       {showYearPicker && (
-        <View style={styles.dropdownContainer}>
+        <ScrollView 
+          style={styles.dropdownContainer}
+          nestedScrollEnabled={true}
+          showsVerticalScrollIndicator={true}>
           {years.map((y) => (
             <TouchableOpacity
               key={y}
@@ -194,7 +203,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
               </Text>
             </TouchableOpacity>
           ))}
-        </View>
+        </ScrollView>
       )}
 
       {error && <Text style={styles.errorText}>{error}</Text>}
@@ -245,7 +254,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginTop: 8,
     maxHeight: 200,
-    overflow: "scroll",
   },
   dropdownItem: {
     paddingVertical: 12,

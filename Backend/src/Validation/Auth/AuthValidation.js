@@ -268,10 +268,17 @@ const validatePasswordChange = (data) => {
     errors.push("نوع المستخدم مطلوب");
   } else {
     const userType = data.userType.toString().toLowerCase();
+    // Normalize teacherAssistant variations
+    let normalizedUserType = userType;
+    if (userType === "teacherassistant" || userType === "teacher_assistant") {
+      normalizedUserType = "teacherAssistant";
+    }
+    
+    // Check if userType is valid (check lowercase version)
     if (!["student", "teacher", "admin", "secretary", "teacherassistant"].includes(userType)) {
       errors.push("نوع المستخدم غير صحيح");
     } else {
-      validatedData.userType = userType;
+      validatedData.userType = normalizedUserType;
     }
   }
 
