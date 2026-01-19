@@ -31,7 +31,8 @@ const {
   getAvailableHours,
   getTeacherAvailableHours,
   getTeacherDaySchedule,
-  checkConflict
+  checkConflict,
+  getAvailableSlots    // ✅ الفترات المتاحة مع الفجوة
 } = require("./availability.controller");
 
 module.exports = {
@@ -59,5 +60,6 @@ module.exports = {
   getAvailableHours,         // الأوقات المتاحة (عامة)
   getTeacherAvailableHours,  // أوقات المعلم المتاحة مع تفاصيل المواعيد
   getTeacherDaySchedule,     // ✅ ملخص يوم المعلم (مجمع حسب الحلقات)
-  checkConflict              // فحص التعارض
+  checkConflict,             // فحص التعارض (يشمل فحص الفجوة)
+  getAvailableSlots          // ✅ الفترات المتاحة مع الفجوة 30 دقيقة
 };

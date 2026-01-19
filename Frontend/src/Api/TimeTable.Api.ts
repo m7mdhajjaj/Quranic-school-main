@@ -112,7 +112,8 @@ export interface TeacherAvailableHoursResponse {
     }>;
     // ✅ تفاصيل كل وقت محجوز
     bookedHoursDetails?: Record<string, Array<{
-      sessionId: string;
+      sessionId?: string; // ✅ اختياري (الفجوات ليس لها ID)
+      type?: 'gap' | 'session'; // ✅ تمييز نوع الحجز
       groupName: string;
       groupId?: string;
       sessionType?: string;
@@ -154,14 +155,20 @@ export interface CheckConflictResponse {
   success: boolean;
   data: {
     hasConflict: boolean;
+    conflictType?: 'OVERLAP' | 'GAP_BEFORE' | 'GAP_AFTER' | 'INVALID_TIME' | 'INVALID_RANGE' | 'OUT_OF_HOURS';
     message: string;
     conflictWith?: {
       _id: string;
-      note: string;
+      note?: string;
       groupName: string;
       startHour: string;
       endHour: string;
-      sessionDate: string;
+      sessionDate?: string;
+    };
+    suggestion?: string;  // ✅ اقتراح للمستخدم
+    gapInfo?: {
+      currentGap: number;   // الفجوة الحالية بالدقائق
+      requiredGap: number;  // الفجوة المطلوبة (30 دقيقة)
     };
     dateInfo?: DateInfo;
   };
@@ -188,13 +195,19 @@ export interface CreateTimetableResponse {
 export interface ConflictError {
   success: false;
   message: string;
+  conflictType?: 'OVERLAP' | 'GAP_BEFORE' | 'GAP_AFTER' | 'INVALID_TIME' | 'INVALID_RANGE' | 'OUT_OF_HOURS';
   conflictWith?: {
     _id: string;
-    note: string;
+    note?: string;
     groupName: string;
     startHour: string;
     endHour: string;
-    sessionDate: string;
+    sessionDate?: string;
+  };
+  suggestion?: string;  // ✅ اقتراح للمستخدم
+  gapInfo?: {
+    currentGap: number;
+    requiredGap: number;
   };
 }
 
@@ -203,10 +216,60 @@ export interface ConflictError {
 // ============================================================================
 
 /**
+ * ✅ Interface للفترات المتاحة مع الفجوة
+ */
+export interface AvailableSlotsResponse {
+  success: boolean;
+  data: {
+    teacherId: string;
+    teacherName: string;
+    date: string;
+    dateShort: string;
+    day: string;
+    availableSlots: Array<{
+      startHour: string;
+      endHour: string;
+      durationMinutes: number;
+    }>;
+    existingSessions: Array<{
+      _id: string;
+      startHour: string;
+      endHour: string;
+      groupName: string;
+    }>;
+    gapMinutes: number;  // الفجوة الإلزامية (30 دقيقة)
+    workingHours: {
+      start: string;
+      end: string;
+    };
+    stats: {
+      availableSlotsCount: number;
+      existingSessionsCount: number;
+      totalAvailableMinutes: number;
+    };
+  };
+}
+
+/**
  * الأوقات المتاحة (عامة) - صيفي/شتوي
  */
 export const getAvailableHours = async (): Promise<AvailableHoursResponse> => {
   const response = await api.get(`${BASE_URL}/available-hours`);
+  return response.data;
+};
+
+/**
+ * ✅ الفترات المتاحة مع الفجوة الإلزامية (30 دقيقة)
+ * @param teacherId - معرف المعلم
+ * @param date - التاريخ (YYYY-MM-DD)
+ */
+export const getAvailableSlots = async (
+  teacherId: string,
+  date: string
+): Promise<AvailableSlotsResponse> => {
+  const response = await api.get(`${BASE_URL}/available-slots`, {
+    params: { teacherId, date }
+  });
   return response.data;
 };
 

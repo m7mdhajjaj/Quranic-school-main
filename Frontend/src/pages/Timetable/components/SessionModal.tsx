@@ -62,7 +62,13 @@ export const SessionModal: React.FC<SessionModalProps> = (props) => {
     const lines: string[] = [];
     detailsList.forEach((details, idx) => {
       if (idx > 0) lines.push('───────');
-      lines.push(`📚 ${details.groupName || 'حلقة'}`);
+      
+      if (details.type === 'gap') {
+        lines.push(`${details.groupName}`); // الاسم يحتوي على إيموجي من الباك إند
+      } else {
+        lines.push(`📚 ${details.groupName || 'حلقة'}`);
+      }
+      
       if (details.sectionName) lines.push(`📖 ${details.sectionName}`);
       if (details.studentName) lines.push(`👤 ${details.studentName}`);
       if (details.sessionTypeAr) lines.push(`📝 ${details.sessionTypeAr}`);

@@ -3,6 +3,7 @@
 // ============================================
 // الأوقات المتاحة وفحص التعارض مع تفاصيل كاملة
 // ⚠️ مهم: التعارض يعتمد على التاريخ المحدد وليس اليوم فقط
+// ✅ تم إضافة: الفجوة الإلزامية 30 دقيقة + Redis Cache
 
 const TimeTable = require("../../schema/TimeTable");
 const Teacher = require("../../schema/Teacher");
@@ -12,7 +13,10 @@ const {
   checkTimeConflict, 
   normalizeDate, 
   normalizeNextDay,
-  isValidDate 
+  isValidDate,
+  getAvailableSlotsForTeacher,
+  getTeacherSessionsOnDateCached,
+  REQUIRED_GAP_MINUTES
 } = require("./helpers/scheduleConflict.helper");
 const { 
   generateAvailableHours,
@@ -22,6 +26,7 @@ const {
   findTimeIndex,
   normalizeTimeFormat,
   timeToMinutes,
+  minutesToTime,
   getAllBookedHours
 } = require("./helpers/dateTime.helper");
 
@@ -197,6 +202,55 @@ exports.getTeacherAvailableHours = async (req, res) => {
                          session.sectionId?.reviewSection || ''
           });
         }
+        
+        // ==========================================
+        // ✅ إضافة الفجوة الإلزامية (30 دقيقة)
+        // ==========================================
+        
+        // 1. فجوة بعد الجلسة (Gap After)
+        // تبدأ من وقت نهاية الجلسة
+        const gapAfterStartIdx = endIdx; 
+        if (gapAfterStartIdx < allHours.length) {
+          const gapAfterTime = allHours[gapAfterStartIdx];
+          bookedHoursSet.add(gapAfterTime);
+          
+          if (!bookedHoursMap.has(gapAfterTime)) {
+             bookedHoursMap.set(gapAfterTime, []);
+          }
+           // التحقق من عدم وجود نفس الرسالة مسبقاً
+           const existingGap = bookedHoursMap.get(gapAfterTime).find(d => d.type === 'gap');
+           if (!existingGap) {
+             bookedHoursMap.get(gapAfterTime).push({
+               type: 'gap',
+               groupName: '⛔ فترة راحة إلزامية',
+               sectionName: `بعد جلسة ${session.note || session.groupId?.name || ''}`,
+               sessionTypeAr: '30 دقيقة'
+             });
+           }
+        }
+
+        // 2. فجوة قبل الجلسة (Gap Before)
+        // تنتهي عند وقت بداية الجلسة (أي تبدأ قبلها بـ 30 دقيقة)
+        const gapBeforeStartIdx = startIdx - 1;
+        if (gapBeforeStartIdx >= 0) {
+          const gapBeforeTime = allHours[gapBeforeStartIdx];
+          bookedHoursSet.add(gapBeforeTime);
+          
+          if (!bookedHoursMap.has(gapBeforeTime)) {
+             bookedHoursMap.set(gapBeforeTime, []);
+          }
+           // التحقق من عدم وجود نفس الرسالة مسبقاً
+           const existingGap = bookedHoursMap.get(gapBeforeTime).find(d => d.type === 'gap');
+           if (!existingGap) {
+             bookedHoursMap.get(gapBeforeTime).push({
+               type: 'gap',
+               groupName: '⛔ فترة راحة إلزامية',
+               sectionName: `قبل جلسة ${session.note || session.groupId?.name || ''}`,
+               sessionTypeAr: '30 دقيقة'
+             });
+           }
+        }
+
       } else {
         logger.warn(`Time not found! ${session.startHour} - ${session.endHour}`);
       }
@@ -417,6 +471,7 @@ exports.getTeacherDaySchedule = async (req, res) => {
 
 /**
  * فحص التعارض قبل الإنشاء/التحديث
+ * ✅ يشمل فحص الفجوة الإلزامية 30 دقيقة
  * @route POST /api/timetable/check-conflict
  */
 exports.checkConflict = async (req, res) => {
@@ -453,8 +508,14 @@ exports.checkConflict = async (req, res) => {
       success: true,
       data: {
         hasConflict: result.hasConflict,
+        conflictType: result.conflictType || null,
         message: result.message || `لا يوجد تعارض في ${dateInfo.dateFormatted}`,
         conflictWith: result.conflictWith || null,
+        suggestion: result.suggestion || null,
+        gapInfo: result.currentGap !== undefined ? {
+          currentGap: result.currentGap,
+          requiredGap: result.requiredGap || REQUIRED_GAP_MINUTES
+        } : null,
         dateInfo: {
           date: dateInfo.dateFormatted,
           day: dateInfo.dayName
@@ -467,6 +528,91 @@ exports.checkConflict = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "حدث خطأ"
+    });
+  }
+};
+
+/**
+ * ✅ جلب الفترات المتاحة لمعلم في تاريخ معين (مع الفجوة)
+ * @route GET /api/timetable/available-slots
+ */
+exports.getAvailableSlots = async (req, res) => {
+  try {
+    const { teacherId, date } = req.query;
+
+    if (!teacherId || !date) {
+      return res.status(400).json({
+        success: false,
+        message: "teacherId و date مطلوبان"
+      });
+    }
+
+    // التحقق من صحة المعلم
+    const teacherValidation = await validateTeacherId(teacherId);
+    if (!teacherValidation.valid) {
+      return res.status(400).json({
+        success: false,
+        message: teacherValidation.error
+      });
+    }
+
+    // التحقق من صحة التاريخ
+    if (!isValidDate(date)) {
+      return res.status(400).json({
+        success: false,
+        message: "التاريخ غير صالح"
+      });
+    }
+
+    const dateInfo = extractDayInfo(date);
+    
+    // جلب الفترات المتاحة (مع الفجوة)
+    const availableSlots = await getAvailableSlotsForTeacher(teacherId, date);
+    
+    // جلب الجلسات الحالية
+    const existingSessions = await getTeacherSessionsOnDateCached(teacherId, date);
+
+    res.json({
+      success: true,
+      data: {
+        teacherId,
+        teacherName: `${teacherValidation.teacher.firstName} ${teacherValidation.teacher.lastName}`,
+        date: dateInfo.dateFormatted,
+        dateShort: dateInfo.dateShort,
+        day: dateInfo.dayName,
+        
+        // الفترات المتاحة (مع احتساب الفجوة)
+        availableSlots,
+        
+        // الجلسات الحالية
+        existingSessions: existingSessions.map(s => ({
+          _id: s._id,
+          startHour: s.startHour,
+          endHour: s.endHour,
+          groupName: s.groupId?.name || s.note || 'غير محدد'
+        })),
+        
+        // معلومات إضافية
+        gapMinutes: REQUIRED_GAP_MINUTES,
+        workingHours: {
+          start: WORKING_HOURS.startTime,
+          end: WORKING_HOURS.endTime
+        },
+        
+        stats: {
+          availableSlotsCount: availableSlots.length,
+          existingSessionsCount: existingSessions.length,
+          totalAvailableMinutes: availableSlots.reduce((sum, s) => sum + s.durationMinutes, 0)
+        }
+      }
+    });
+
+  } catch (error) {
+    logger.error("Error getting available slots:", error);
+    res.status(500).json({
+      success: false,
+      message: "حدث خطأ في جلب الفترات المتاحة",
+      error: error.message
     });
   }
 };

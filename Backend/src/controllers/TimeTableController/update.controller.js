@@ -2,11 +2,18 @@
 // UPDATE TIMETABLE CONTROLLER (NEW)
 // ============================================
 // تحديث المواعيد مع مزامنة المقاطع
+// ✅ تم إضافة: الفجوة الإلزامية 30 دقيقة + Redis Cache Invalidation
 
 const TimeTable = require("../../schema/TimeTable");
 const Section = require("../../schema/DailyMark/Section");
 const Group = require("../../schema/Group");
-const { checkTimeConflict, normalizeDate } = require("./helpers/scheduleConflict.helper");
+const { 
+  checkTimeConflict, 
+  normalizeDate,
+  invalidateTeacherCache,
+  invalidateCacheMultiple,
+  REQUIRED_GAP_MINUTES 
+} = require("./helpers/scheduleConflict.helper");
 const { getArabicDayFromDate, normalizeTimeFormat } = require("./helpers/dateTime.helper");
 const { notifyTimetableUpdated } = require("../../Notifications");
 const { createLogger } = require("../../utils/logger");
@@ -132,10 +139,22 @@ exports.updateTimetable = async (req, res) => {
       });
 
       if (conflict.hasConflict) {
+        // ✅ رسالة خطأ مفصلة حسب نوع التعارض
+        let userMessage = conflict.message;
+        if (conflict.conflictType === 'GAP_BEFORE' || conflict.conflictType === 'GAP_AFTER') {
+          userMessage = `${conflict.message}. ${conflict.suggestion || ''}`;
+        }
+        
         return res.status(409).json({
           success: false,
-          message: `تعارض: ${conflict.message}`,
-          conflictWith: conflict.conflictWith
+          message: userMessage,
+          conflictType: conflict.conflictType,
+          conflictWith: conflict.conflictWith,
+          suggestion: conflict.suggestion,
+          gapInfo: conflict.currentGap !== undefined ? {
+            currentGap: conflict.currentGap,
+            requiredGap: conflict.requiredGap || REQUIRED_GAP_MINUTES
+          } : null
         });
       }
     }
@@ -149,6 +168,10 @@ exports.updateTimetable = async (req, res) => {
       .populate('teacherId', 'firstName lastName')
       .populate('groupId', 'name')
       .populate('sectionId', 'date group memorizationSection reviewSection marksStatus');
+
+    // ✅ إبطال الـ Cache للمعلم في هذا التاريخ
+    await invalidateTeacherCache(newTeacherId, timetable.sessionDate);
+    logger.debug(`🗑️ Cache invalidated for teacher ${newTeacherId} on ${timetable.sessionDate?.toISOString()?.split('T')[0]}`);
 
     // ✅ 8. مزامنة مع Section إذا موجود
     if (updated.sectionId) {
@@ -235,10 +258,18 @@ exports.updateTimetableTime = async (req, res) => {
     });
 
     if (conflict.hasConflict) {
+      // ✅ رسالة خطأ مفصلة حسب نوع التعارض
+      let userMessage = conflict.message;
+      if (conflict.conflictType === 'GAP_BEFORE' || conflict.conflictType === 'GAP_AFTER') {
+        userMessage = `${conflict.message}. ${conflict.suggestion || ''}`;
+      }
+      
       return res.status(409).json({
         success: false,
-        message: `تعارض: ${conflict.message}`,
-        conflictWith: conflict.conflictWith
+        message: userMessage,
+        conflictType: conflict.conflictType,
+        conflictWith: conflict.conflictWith,
+        suggestion: conflict.suggestion
       });
     }
 
@@ -248,6 +279,10 @@ exports.updateTimetableTime = async (req, res) => {
       { startHour, endHour },
       { new: true }
     ).populate('teacherId', 'firstName lastName');
+    
+    // ✅ إبطال الـ Cache للمعلم في هذا التاريخ
+    await invalidateTeacherCache(timetable.teacherId, timetable.sessionDate);
+    logger.debug(`🗑️ Cache invalidated for teacher ${timetable.teacherId}`);
 
     // ✅ 5. مزامنة Section
     if (updated.sectionId) {

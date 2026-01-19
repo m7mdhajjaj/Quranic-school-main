@@ -146,7 +146,15 @@ export const useTimetableActions = ({
         setSessions(savedPreviousSessions);
         
         if (error?.isConflict) {
-          await showErrorMessage("⚠️ تعارض في المواعيد", error.message);
+          // ✅ عرض الـ suggestion إذا كان موجوداً (خاصة لأخطاء الفجوة)
+          let errorMsg = error.message;
+          if (error.suggestion) {
+            errorMsg = `${error.message}\n\n💡 ${error.suggestion}`;
+          }
+          if (error.gapInfo) {
+            errorMsg += `\n⏱️ الفجوة الحالية: ${error.gapInfo.currentGap} دقيقة (المطلوب: ${error.gapInfo.requiredGap} دقيقة)`;
+          }
+          await showErrorMessage("⚠️ تعارض في المواعيد", errorMsg);
           operationInProgressRef.current = false;
           return false;
         }
@@ -228,7 +236,15 @@ export const useTimetableActions = ({
         setSessions(savedPreviousSessions);
         
         if (error?.isConflict) {
-          await showErrorMessage("⚠️ تعارض في المواعيد", error.message);
+          // ✅ عرض الـ suggestion إذا كان موجوداً (خاصة لأخطاء الفجوة)
+          let errorMsg = error.message;
+          if (error.suggestion) {
+            errorMsg = `${error.message}\n\n💡 ${error.suggestion}`;
+          }
+          if (error.gapInfo) {
+            errorMsg += `\n⏱️ الفجوة الحالية: ${error.gapInfo.currentGap} دقيقة (المطلوب: ${error.gapInfo.requiredGap} دقيقة)`;
+          }
+          await showErrorMessage("⚠️ تعارض في المواعيد", errorMsg);
           operationInProgressRef.current = false;
           return false;
         }

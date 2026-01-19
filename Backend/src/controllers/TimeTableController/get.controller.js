@@ -75,15 +75,28 @@ exports.getTimetables = async (req, res) => {
 
     // ✅ 1. بناء Query الأساسي حسب الدور
     let query = {};
+    const accessFilters = [];
 
     if (user?.role === 'student' && user.group) {
       // الطالب: مواعيد حلقته فقط
-      query.note = user.group;
+      accessFilters.push({ note: user.group });
     } else if (user?.role === 'teacher') {
       // المعلم: مواعيده فقط
-      query.teacherId = user._id;
+      accessFilters.push({ teacherId: user._id });
+    } else if (user?.role === 'teacherAssistant') {
+      // مساعد المعلم: مواعيد المعلم المعيّن + الحلقات المصرح له بها
+      const orFilters = [];
+      if (user.assignedTeacher) {
+        orFilters.push({ teacherId: user.assignedTeacher });
+      }
+      if (user.allowedGroups && user.allowedGroups.length > 0) {
+        orFilters.push({ groupId: { $in: user.allowedGroups } });
+      }
+      if (orFilters.length > 0) {
+        accessFilters.push({ $or: orFilters });
+      }
     }
-    // الإداري: كل المواعيد
+    // الإداري/السكرتير: كل المواعيد
 
     // ✅ 2. فلاتر إضافية
     if (teacherId) query.teacherId = teacherId;
@@ -111,6 +124,11 @@ exports.getTimetables = async (req, res) => {
           sessionDate: { $gte: startOfWeek, $lte: endOfWeek }
         }
       ];
+    }
+
+    // ✅ دمج فلاتر الوصول
+    if (accessFilters.length > 0) {
+      query.$and = query.$and ? [...query.$and, ...accessFilters] : accessFilters;
     }
 
     // ✅ 4. جلب البيانات مع تفاصيل المقطع الكاملة

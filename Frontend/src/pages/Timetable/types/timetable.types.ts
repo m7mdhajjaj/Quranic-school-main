@@ -104,12 +104,19 @@ export interface TimetableState {
 
 /**
  * خطأ التعارض من الـ Backend
+ * ✅ يشمل الفجوة الإلزامية (30 دقيقة)
  */
 export interface ConflictError {
   isConflict: true;
   success: false;
   error: string;
   message: string;
+  conflictType?: 'OVERLAP' | 'GAP_BEFORE' | 'GAP_AFTER' | 'INVALID_TIME' | 'INVALID_RANGE' | 'OUT_OF_HOURS';
+  suggestion?: string;      // اقتراح للمستخدم
+  gapInfo?: {
+    currentGap: number;     // الفجوة الحالية بالدقائق
+    requiredGap: number;    // الفجوة المطلوبة (30 دقيقة)
+  };
   conflictDetails?: {
     sessionDate: string;    // التاريخ المتعارض
     day?: string;           // اسم اليوم (مشتق)

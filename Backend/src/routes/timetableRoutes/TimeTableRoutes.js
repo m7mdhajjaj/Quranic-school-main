@@ -16,6 +16,7 @@ const {
 // TIMETABLE ROUTES (NEW CRUD SYSTEM)
 // ============================================
 // ⚠️ التعارض يعتمد على التاريخ المحدد (sessionDate) وليس اليوم
+// ✅ تم إضافة: فجوة 30 دقيقة إلزامية + Redis Cache
 
 // ============ AVAILABILITY ============
 
@@ -26,11 +27,15 @@ router.get("/available-hours", protect, timetableController.getAvailableHours);
 // GET /api/timetable/available-hours/teacher?teacherId=xxx&date=2026-01-12
 router.get("/available-hours/teacher", protect, timetableController.getTeacherAvailableHours);
 
+// ✅ الفترات المتاحة مع الفجوة الإلزامية (30 دقيقة)
+// GET /api/timetable/available-slots?teacherId=xxx&date=2026-01-12
+router.get("/available-slots", protect, timetableController.getAvailableSlots);
+
 // ✅ جدول المعلم ليوم معين (ملخص حسب الحلقات)
 // GET /api/timetable/day-schedule?teacherId=xxx&date=2026-01-14
 router.get("/day-schedule", protect, timetableController.getTeacherDaySchedule);
 
-// فحص التعارض قبل الإنشاء
+// فحص التعارض قبل الإنشاء (يشمل فحص الفجوة)
 // POST /api/timetable/check-conflict
 router.post("/check-conflict", protect, validateCheckConflict, timetableController.checkConflict);
 

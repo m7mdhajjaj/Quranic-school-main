@@ -2,10 +2,12 @@
 // DELETE TIMETABLE CONTROLLER (NEW)
 // ============================================
 // حذف المواعيد وفك الربط
+// ✅ تم إضافة: Redis Cache Invalidation
 
 const TimeTable = require("../../schema/TimeTable");
 const Section = require("../../schema/DailyMark/Section");
 const { notifyTimetableDeleted } = require("../../Notifications");
+const { invalidateTeacherCache } = require("./helpers/scheduleConflict.helper");
 const { createLogger } = require("../../utils/logger");
 
 const logger = createLogger('TimetableDelete');
@@ -27,6 +29,10 @@ exports.deleteTimetable = async (req, res) => {
         message: "الموعد غير موجود"
       });
     }
+
+    // حفظ البيانات للـ Cache Invalidation
+    const teacherId = timetable.teacherId;
+    const sessionDate = timetable.sessionDate;
 
     // ✅ 2. التحقق من الصلاحيات
     if (user?.role === 'teacher') {
@@ -57,6 +63,12 @@ exports.deleteTimetable = async (req, res) => {
 
     // ✅ 5. حذف الموعد
     await TimeTable.findByIdAndDelete(id);
+    
+    // ✅ 6. إبطال الـ Cache للمعلم في هذا التاريخ
+    if (teacherId && sessionDate) {
+      await invalidateTeacherCache(teacherId, sessionDate);
+      logger.debug(`🗑️ Cache invalidated for teacher ${teacherId} on ${sessionDate.toISOString().split('T')[0]}`);
+    }
 
     logger.info(`🗑️ Timetable deleted: ${id} for group "${timetable.note}"`);
 

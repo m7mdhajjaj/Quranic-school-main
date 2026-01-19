@@ -3,11 +3,17 @@
 // ============================================
 // إنشاء مواعيد جديدة مع ربط مباشر بالمقاطع
 // ⚠️ التعارض يعتمد على التاريخ المحدد (12/1 ≠ 19/1)
+// ✅ تم إضافة: الفجوة الإلزامية 30 دقيقة + Redis Cache Invalidation
 
 const TimeTable = require("../../schema/TimeTable");
 const Section = require("../../schema/DailyMark/Section");
 const Group = require("../../schema/Group");
-const { checkTimeConflict, normalizeDate } = require("./helpers/scheduleConflict.helper");
+const { 
+  checkTimeConflict, 
+  normalizeDate,
+  invalidateTeacherCache,
+  REQUIRED_GAP_MINUTES 
+} = require("./helpers/scheduleConflict.helper");
 const { getArabicDayFromDate, extractDayInfo, validateTimeRange, normalizeTimeFormat } = require("./helpers/dateTime.helper");
 const { notifyTimetableCreated } = require("../../Notifications");
 const { createLogger } = require("../../utils/logger");
@@ -135,10 +141,22 @@ exports.createTimetable = async (req, res) => {
     });
 
     if (conflict.hasConflict) {
+      // ✅ رسالة خطأ مفصلة حسب نوع التعارض
+      let userMessage = conflict.message;
+      if (conflict.conflictType === 'GAP_BEFORE' || conflict.conflictType === 'GAP_AFTER') {
+        userMessage = `${conflict.message}. ${conflict.suggestion || ''}`;
+      }
+      
       return res.status(409).json({
         success: false,
-        message: `تعارض: ${conflict.message}`,
-        conflictWith: conflict.conflictWith
+        message: userMessage,
+        conflictType: conflict.conflictType,
+        conflictWith: conflict.conflictWith,
+        suggestion: conflict.suggestion,
+        gapInfo: conflict.currentGap !== undefined ? {
+          currentGap: conflict.currentGap,
+          requiredGap: conflict.requiredGap || REQUIRED_GAP_MINUTES
+        } : null
       });
     }
 
@@ -161,6 +179,10 @@ exports.createTimetable = async (req, res) => {
     });
 
     await timetable.save();
+    
+    // ✅ إبطال الـ Cache للمعلم في هذا التاريخ
+    await invalidateTeacherCache(teacherId, sessionDate);
+    logger.debug(`🗑️ Cache invalidated for teacher ${teacherId} on ${sessionDate.toISOString().split('T')[0]}`);
 
     // ✅ 6. تحديث Section إذا موجود
     if (section) {
@@ -260,11 +282,19 @@ exports.createTimetableForSection = async (req, res) => {
     });
 
     if (conflict.hasConflict) {
+      // ✅ رسالة خطأ مفصلة حسب نوع التعارض
+      let userMessage = conflict.message;
+      if (conflict.conflictType === 'GAP_BEFORE' || conflict.conflictType === 'GAP_AFTER') {
+        userMessage = `${conflict.message}. ${conflict.suggestion || ''}`;
+      }
+      
       return res.status(409).json({
         success: false,
-        message: `تعارض: ${conflict.message}`,
+        message: userMessage,
+        conflictType: conflict.conflictType,
         conflictWith: conflict.conflictWith,
-        dateInfo: dayInfo // معلومات التاريخ للتوضيح
+        suggestion: conflict.suggestion,
+        dateInfo: dayInfo
       });
     }
 
@@ -299,6 +329,10 @@ exports.createTimetableForSection = async (req, res) => {
     });
 
     await timetable.save();
+    
+    // ✅ إبطال الـ Cache للمعلم في هذا التاريخ
+    await invalidateTeacherCache(finalTeacherId, sessionDate);
+    logger.debug(`🗑️ Cache invalidated for teacher ${finalTeacherId} on ${sessionDate.toISOString().split('T')[0]}`);
 
     // ✅ 8. تحديث المقطع
     await Section.findByIdAndUpdate(sectionId, {
