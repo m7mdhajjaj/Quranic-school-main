@@ -302,99 +302,75 @@ class SectionSequenceService {
       }
 
       // ====================================================
-      // 2. منطق المراجعة المرن (V7: Flexible Range - Coverage Check)
+      // 2. منطق المراجعة المرن (V9: Review ALWAYS starts from 1)
       // ====================================================
       if (type === 'review') {
-          // ✅ V7: القاعدة الجديدة:
-          // - يمكن مراجعة أي نطاق (مثلاً 1-50 مرة واحدة)
-          // - الشرط: جميع الآيات في النطاق يجب أن تكون محفوظة سابقاً
-          // - لا يمكن تجاوز آخر آية تم حفظها في السورة
+          // ✅ V9: القواعد الجديدة للمراجعة:
+          // 1. المراجعة تبدأ دائماً من 1
+          // 2. نهاية المراجعة = آخر آية محفوظة قبل التاريخ المحدد (ليس نفس اليوم)
+          // 3. إذا كانت نفس سورة الحفظ في نفس اليوم: review.end = memorization.start - 1
+          
+          // ✅ V9: Review MUST start from 1
+          if (seg.ayahStart !== 1) {
+              return {
+                  isValid: false,
+                  message: `❌ المراجعة يجب أن تبدأ دائماً من الآية 1 (أنت أدخلت ${seg.ayahStart})`
+              };
+          }
           
           // الحصول على أقصى تقدم في الحفظ لهذه السورة
-          // ✅ V8: تمرير newDateKey لضمان احتساب المحفوظات السابقة فقط (قبل اليوم الحالي)
+          // ✅ V9: تمرير newDateKey لضمان احتساب المحفوظات السابقة فقط (قبل اليوم الحالي)
           const maxMemProgress = await this.getMaxProgress(groupId, seg.surahNumber, 'memorization', null, newDateKey);
           
-          // حساب أقصى حفظ من الطلب الحالي أيضاً (sibling)
-          // ❌ V8: تم إيقاف احتساب الحفظ الجديد (في نفس اليوم) كسقف للمراجعة
-          // القاعدة: المراجعة تكون فقط لما تم حفظه في أيام سابقة
-          let maxFromSibling = 0;
-          /* 
+          // ✅ V9: Check if there's same-day memorization for the same surah (sibling)
+          let sameDayMemEnd = 0;
           if (siblingSegments && siblingSegments.length > 0) {
               const siblingOfSameSurah = siblingSegments.filter(m => m.surahNumber === seg.surahNumber);
               for (const sib of siblingOfSameSurah) {
-                  if (sib.ayahEnd > maxFromSibling) maxFromSibling = sib.ayahEnd;
+                  if (sib.ayahStart && sib.ayahStart > 1) {
+                      // If memorization starts from X, review can only go up to X-1
+                      sameDayMemEnd = sib.ayahStart - 1;
+                  }
               }
           }
-          */
           
-          // أقصى آية محفوظة (من DB أو من الطلب الحالي)
-          const maxMemorizedAyah = Math.max(
-              maxMemProgress?.maxEnd || 0,
-              maxFromSibling
-          );
+          // أقصى آية محفوظة (من DB قبل اليوم الحالي)
+          const maxMemorizedAyah = maxMemProgress?.maxEnd || 0;
           
-          // ✅ فحص 1: لا يمكن مراجعة ما لم يُحفظ (التاريخ لا يهم هنا - المهم أن الآيات محفوظة)
-          if (maxMemorizedAyah === 0) {
+          // ✅ V9: Determine the actual review limit
+          // If same-day memorization exists, use the lower value
+          let reviewLimit = maxMemorizedAyah;
+          if (sameDayMemEnd > 0 && sameDayMemEnd < reviewLimit) {
+              reviewLimit = sameDayMemEnd;
+          }
+          
+          // ✅ فحص 1: لا يمكن مراجعة ما لم يُحفظ قبل هذا التاريخ
+          if (maxMemorizedAyah === 0 && sameDayMemEnd === 0) {
               return {
                   isValid: false,
                   message: REVIEW_ERRORS.NO_MEMORIZATION(seg.surahNumber, seg.ayahStart, seg.ayahEnd)
               };
           }
           
-          // ✅ فحص 2: لا يمكن للمراجعة أن تتجاوز آخر آية محفوظة
-          if (seg.ayahEnd > maxMemorizedAyah) {
+          // ✅ V9: If no memorization before this date, but there's same-day memorization
+          if (maxMemorizedAyah === 0 && sameDayMemEnd > 0) {
+              return {
+                  isValid: false,
+                  message: `❌ لا يمكن مراجعة سورة ${seg.surahNumber} في نفس يوم الحفظ. يجب حفظها أولاً ثم مراجعتها في يوم لاحق.`
+              };
+          }
+          
+          // ✅ فحص 2: لا يمكن للمراجعة أن تتجاوز آخر آية محفوظة قبل هذا التاريخ
+          if (seg.ayahEnd > reviewLimit) {
+              if (sameDayMemEnd > 0) {
+                  return {
+                      isValid: false,
+                      message: `❌ نهاية المراجعة (${seg.ayahEnd}) تتجاوز الحد المسموح (${reviewLimit}). يوجد حفظ جديد في نفس اليوم يبدأ من ${sameDayMemEnd + 1}.`
+                  };
+              }
               return {
                   isValid: false,
                   message: REVIEW_ERRORS.EXCEEDS_MEMORIZATION(seg.ayahEnd, maxMemorizedAyah)
-              };
-          }
-          
-          // ✅ فحص 3: بداية المراجعة يجب أن تكون ضمن نطاق المحفوظ
-          if (seg.ayahStart > maxMemorizedAyah) {
-              return {
-                  isValid: false,
-                  message: REVIEW_ERRORS.START_EXCEEDS(seg.ayahStart, maxMemorizedAyah)
-              };
-          }
-
-          // ====================================================
-          // ✅ V6: التسلسل الإجباري للمراجعة (مثل الحفظ)
-          // ====================================================
-          const lastReview = await this.getLastProgress(groupId, seg.surahNumber, 'review', newSectionDate, excludeSectionId);
-          let expectedStart = 1;
-          
-          if (lastReview) {
-             expectedStart = lastReview.nextStart;
-             
-             // ✅ V7: إذا اكتملت المراجعة (وصلنا لآخر آية محفوظة)، يمكن إعادة البدء من 1
-             // حساب أقصى آية كانت محفوظة وقت آخر مراجعة (تقريبياً = maxMemorizedAyah)
-             if (lastReview.lastEnd >= maxMemorizedAyah) {
-                 // السورة مكتملة المراجعة، يمكن البدء من جديد
-                 expectedStart = 1;
-             }
-          }
-
-          // التحقق من الاتصال (Continuity)
-          const hasLocalPredecessor = newSegments.some(s => 
-            s !== seg && 
-            s.surahNumber === seg.surahNumber && 
-            s.ayahEnd === seg.ayahStart - 1
-          );
-
-          // ✅ V6: منع الفجوات في المراجعة (إجباري)
-          // ✅ V7: السماح بالبدء من 1 إذا اكتملت الدورة
-          if (!hasLocalPredecessor && seg.ayahStart !== expectedStart && seg.ayahStart !== 1) {
-              return {
-                  isValid: false,
-                  message: REVIEW_ERRORS.GAP(seg.surahNumber, seg.ayahStart, seg.ayahEnd, lastReview?.lastEnd || 0, expectedStart)
-              };
-          }
-
-          // ✅ V6: أول مراجعة في السورة يجب أن تبدأ من 1
-          if (!lastReview && !hasLocalPredecessor && seg.ayahStart !== 1) {
-              return {
-                  isValid: false,
-                  message: REVIEW_ERRORS.WRONG_START(seg.surahNumber, seg.ayahStart)
               };
           }
       }

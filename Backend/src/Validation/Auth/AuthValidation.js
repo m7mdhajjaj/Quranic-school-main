@@ -268,7 +268,7 @@ const validatePasswordChange = (data) => {
     errors.push("نوع المستخدم مطلوب");
   } else {
     const userType = data.userType.toString().toLowerCase();
-    if (!["student", "teacher", "admin", "secretary"].includes(userType)) {
+    if (!["student", "teacher", "admin", "secretary", "teacherassistant"].includes(userType)) {
       errors.push("نوع المستخدم غير صحيح");
     } else {
       validatedData.userType = userType;

@@ -228,8 +228,10 @@ exports.getFilteredSections = async (req, res) => {
  * Used for auto-increment suggestions in Frontend
  * GET /sections/last-segment?group=...&surah=...&type=memorization|review
  * 
- * ✅ V3: Still uses getLastProgress for backward compatibility
- * Note: For date-aware validation, use /neighbor-segments endpoint
+ * ✅ V9: New Review Logic:
+ * - Review ALWAYS starts from 1
+ * - Review end = max memorized ayah BEFORE the selected date
+ * - Same surah: review end = memorization start - 1 (if same surah as memorization)
  */
 exports.getLastSegment = async (req, res) => {
   try {
@@ -241,46 +243,58 @@ exports.getLastSegment = async (req, res) => {
     
     const surahNum = parseInt(surah);
     
-    // استخدام الخدمة المركزية للبحث
-    const result = await sequenceService.getLastProgress(group, surahNum, type, null, excludeId);
-    
-    // إذا لم يوجد سجل سابق (مثلاً أول مراجعة)، نحاول جلب حد الحفظ فقط إذا كان الطلب للمراجعة
-    let maxMemorized = 0;
-    
-    // NEW: Suggested End (Strict Range Matching)
-    let suggestedEnd = null;
-    const startPoint = result ? result.nextStart : 1;
+    // ========== MEMORIZATION LOGIC (unchanged) ==========
+    if (type === 'memorization') {
+      const result = await sequenceService.getLastProgress(group, surahNum, type, null, excludeId);
+      
+      if (!result) {
+        return sendSuccess(res, {
+          nextStart: 1,
+          maxMemorized: 0,
+          suggestedEnd: null
+        }, "No previous segment found (First time)");
+      }
 
-    if (type === 'review') {
-        // ✅ Fix: Pass excludeId to ignore current section
-        // ✅ V8: Pass limitDateKey to ignore TODAY'S memorization (Review < Today rule)
-        const targetDate = date ? new Date(date) : new Date();
-        const limitDateKey = sequenceService.toDateKeyLocal(targetDate);
-
-        const memProgress = await sequenceService.getMaxProgress(group, surahNum, 'memorization', excludeId, limitDateKey);
-        maxMemorized = memProgress ? memProgress.maxEnd : 0;
-
-        // Try to find the Exact Memorization Segment that starts at 'startPoint'
-        suggestedEnd = await sequenceService.getMatchingMemorizationEnd(group, surahNum, startPoint);
-    }
-
-    if (!result) {
-      // إذا لم يكن هناك سجل سابق للمراجعة، نعيد null مع حد الحفظ
-      // هذا يسمح للفرونت إند بمعرفة أن السجل فارغ لكن هناك حد للحفظ
       return sendSuccess(res, {
-          nextStart: 1, // Start from 1 if no history
-          maxMemorized, // Return memorization limit for first-time review
-          suggestedEnd // Return strictly matched end if found
-      }, "No previous segment found (First time)");
-    }
-
-    sendSuccess(res, {
-        lastSegment: { ayahEnd: result.lastEnd, status: result.lastStatus }, // Compatibility structure
+        lastSegment: { ayahEnd: result.lastEnd, status: result.lastStatus },
         nextStart: result.nextStart,
         lastDate: result.lastDate,
-        maxMemorized: result.maxMemorized || maxMemorized, // Include limit in response
-        suggestedEnd // Return strictly matched end
-    }, "Last segment found");
+        maxMemorized: 0,
+        suggestedEnd: null
+      }, "Last segment found");
+    }
+    
+    // ========== REVIEW LOGIC (V9: Always start from 1) ==========
+    if (type === 'review') {
+      const targetDate = date ? new Date(date) : new Date();
+      const limitDateKey = sequenceService.toDateKeyLocal(targetDate);
+      
+      // ✅ V9: Get max memorized BEFORE the selected date (strict < not <=)
+      const memProgress = await sequenceService.getMaxProgress(
+        group, 
+        surahNum, 
+        'memorization', 
+        excludeId, 
+        limitDateKey  // This ensures we only count memorization from dates BEFORE this date
+      );
+      
+      const maxMemorized = memProgress ? memProgress.maxEnd : 0;
+      
+      // ✅ V9: Review ALWAYS starts from 1
+      // ✅ V9: Review end = maxMemorized (everything memorized before this date)
+      return sendSuccess(res, {
+        nextStart: 1, // ✅ Always start from 1 for review
+        maxMemorized, // ✅ Max limit for review end
+        suggestedEnd: maxMemorized > 0 ? maxMemorized : null, // ✅ Auto-fill end with max memorized
+        lastSegment: null,
+        lastDate: memProgress?.sectionDate || null
+      }, maxMemorized > 0 
+        ? `Review available: 1-${maxMemorized}` 
+        : "No memorization found before this date");
+    }
+    
+    // Fallback
+    sendSuccess(res, { nextStart: 1, maxMemorized: 0, suggestedEnd: null }, "Unknown type");
     
   } catch (error) {
     sendError(res, error.message, 500, error);

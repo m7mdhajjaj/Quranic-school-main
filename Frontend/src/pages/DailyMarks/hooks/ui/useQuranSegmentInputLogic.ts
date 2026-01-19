@@ -35,7 +35,7 @@ export function useQuranSegmentInputLogic({ segments = [], groupName, type, onCh
     if (groupName && (type === 'memorization' || type === 'review') && segment.surahNumber) {
       
       // Use the actual type to get specific suggestions (Strict Mode)
-      // ✅ V8: Pass date to ensure review suggestions respect the selected date (exclude same day)
+      // ✅ V9: Pass date to ensure review suggestions respect the selected date (exclude same day)
       getLastSegment(groupName, segment.surahNumber, type, excludeId, date).then(suggestion => {
         if (suggestion) {
           const nextStart = suggestion.nextStart || 1;
@@ -45,27 +45,34 @@ export function useQuranSegmentInputLogic({ segments = [], groupName, type, onCh
               setReviewLimit(null);
               setNoMemorizationError(null);
           } else if (type === 'review') {
-              // For review: nextStart is the start of the next review cycle
-              setExpectedStart(nextStart); 
+              // ✅ V9: Review ALWAYS starts from 1
+              setExpectedStart(1); // Always 1 for review
               // API now returns maxMemorized specifically for review context
               const maxMem = suggestion.maxMemorized || 0;
               setReviewLimit(maxMem > 0 ? maxMem : null);
               
-              // ✅ V8: Check if no memorization exists for this surah
-              if (maxMem === 0) {
-                const surahName = quranSurahs.find(s => s.number === segment.surahNumber)?.name || segment.surahNumber;
-                setNoMemorizationError(`⚠️ لا يوجد حفظ سابق لسورة ${surahName}. يجب حفظ السورة أولاً قبل مراجعتها.`);
-              } else {
+              // ✅ V9: Auto-fill the range for review
+              if (maxMem > 0) {
+                const autoSegment: QuranSegmentUI = {
+                  ...segment,
+                  ayahStart: 1,
+                  ayahEnd: maxMem
+                };
+                onChange([autoSegment]);
                 setNoMemorizationError(null);
+              } else {
+                // ✅ V9: Check if no memorization exists for this surah BEFORE this date
+                const surahName = quranSurahs.find(s => s.number === segment.surahNumber)?.name || segment.surahNumber;
+                setNoMemorizationError(`⚠️ لا يوجد حفظ سابق لسورة ${surahName} قبل هذا التاريخ. يجب حفظ السورة أولاً ثم مراجعتها في يوم لاحق.`);
               }
           }
         } else {
-          setExpectedStart(1);
+          setExpectedStart(type === 'review' ? 1 : 1); // ✅ V9: Always 1 for review
           setReviewLimit(null);
-          // ✅ V8: No suggestion means no memorization for review
+          // ✅ V9: No suggestion means no memorization for review
           if (type === 'review') {
             const surahName = quranSurahs.find(s => s.number === segment.surahNumber)?.name || segment.surahNumber;
-            setNoMemorizationError(`⚠️ لا يوجد حفظ سابق لسورة ${surahName}. يجب حفظ السورة أولاً قبل مراجعتها.`);
+            setNoMemorizationError(`⚠️ لا يوجد حفظ سابق لسورة ${surahName} قبل هذا التاريخ. يجب حفظ السورة أولاً ثم مراجعتها في يوم لاحق.`);
           } else {
             setNoMemorizationError(null);
           }
@@ -80,6 +87,7 @@ export function useQuranSegmentInputLogic({ segments = [], groupName, type, onCh
       setReviewLimit(null);
       setNoMemorizationError(null);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [segment.surahNumber, groupName, type, excludeId, date]);
 
   const handleUpdate = (field: keyof QuranSegmentUI, value: number | string, surahData?: { number: number, name: string }) => {
@@ -105,47 +113,48 @@ export function useQuranSegmentInputLogic({ segments = [], groupName, type, onCh
       
       if (groupName && (type === 'memorization' || type === 'review')) {
         
-        getLastSegment(groupName, numValue, type, excludeId).then(suggestion => {
+        getLastSegment(groupName, numValue, type, excludeId, date).then(suggestion => {
           if (suggestion) {
             const nextStart = suggestion.nextStart || 1;
             
              if (type === 'memorization') {
                  setExpectedStart(nextStart);
                  setReviewLimit(null);
-             } else {
-                 setExpectedStart(nextStart); // Suggest next review cycle start
-                 setReviewLimit(suggestion.maxMemorized || null);
-             }
-            
-            // Auto fill Logic
-            let updated = false;
-            let updatedSegment = { ...newSegment };
-
-            // 1. Auto-fill Start
-            if (suggestion.nextStart) {
-                updatedSegment.ayahStart = suggestion.nextStart;
-                updated = true;
-            }
-            
-            // 2. Auto-fill End (Strict Matching)
-            if (type === 'review' && suggestion.suggestedEnd) {
-                 updatedSegment.ayahEnd = suggestion.suggestedEnd;
-                 updated = true;
-            } else if (type === 'review' && !suggestion.suggestedEnd) {
-                 if (suggestion.maxMemorized && suggestion.maxMemorized < 9999) {
-                     // ✅ V8: Always default to maxMemorized for easier bulk review
-                     updatedSegment.ayahEnd = suggestion.maxMemorized;
-                     updated = true;
+                 
+                 // Auto fill for memorization
+                 if (suggestion.nextStart && suggestion.nextStart > 1) {
+                   const updatedSegment = { ...newSegment, ayahStart: suggestion.nextStart };
+                   onChange([updatedSegment]);
                  }
-            }
-            
-            if (updated) {
-                 onChange([updatedSegment]);
-            }
+             } else {
+                 // ✅ V9: Review always starts from 1
+                 setExpectedStart(1);
+                 const maxMem = suggestion.maxMemorized || 0;
+                 setReviewLimit(maxMem > 0 ? maxMem : null);
+                 
+                 // ✅ V9: Auto fill for review (locked range)
+                 if (maxMem > 0) {
+                   const updatedSegment = { 
+                     ...newSegment, 
+                     ayahStart: 1,  // Always 1
+                     ayahEnd: maxMem  // Auto-determined by backend
+                   };
+                   onChange([updatedSegment]);
+                   setNoMemorizationError(null);
+                 } else {
+                   const surahName = quranSurahs.find(s => s.number === numValue)?.name || numValue;
+                   setNoMemorizationError(`⚠️ لا يوجد حفظ سابق لسورة ${surahName} قبل هذا التاريخ.`);
+                 }
+             }
 
           } else {
             setExpectedStart(1);
             setReviewLimit(null);
+            
+            if (type === 'review') {
+              const surahName = quranSurahs.find(s => s.number === numValue)?.name || numValue;
+              setNoMemorizationError(`⚠️ لا يوجد حفظ سابق لسورة ${surahName} قبل هذا التاريخ.`);
+            }
           }
         }).catch(() => {
           setExpectedStart(null);

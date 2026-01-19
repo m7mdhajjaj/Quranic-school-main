@@ -81,6 +81,35 @@ const AddSectionModalComponent = ({
   // ✅ V8: Review validation error (no memorization)
   const [reviewValidationError, setReviewValidationError] = useState<string | null>(null);
 
+  // ✅ V9: Auto-adjust review end when same surah memorization exists
+  // Rule: If memorization starts at X, review can only go up to X-1
+  useEffect(() => {
+    if (localReviewMeta.length === 0 || localMemorizationMeta.length === 0) return;
+    
+    const reviewSeg = localReviewMeta[0];
+    const memSeg = localMemorizationMeta[0];
+    
+    // Check if same surah
+    if (reviewSeg?.surahNumber && memSeg?.surahNumber && reviewSeg.surahNumber === memSeg.surahNumber) {
+      // If memorization starts from 1, review shouldn't exist for this surah (first time memorizing)
+      if (memSeg.ayahStart === 1) {
+        // Clear review - can't review a surah being memorized for the first time
+        handleMetaChange('reviewMeta', [], onChange);
+        return;
+      }
+      
+      // If review end >= memorization start, adjust it
+      if (reviewSeg.ayahEnd && memSeg.ayahStart && reviewSeg.ayahEnd >= memSeg.ayahStart) {
+        const adjustedEnd = memSeg.ayahStart - 1;
+        if (adjustedEnd >= 1) {
+          const adjustedReview = { ...reviewSeg, ayahEnd: adjustedEnd };
+          handleMetaChange('reviewMeta', [adjustedReview], onChange);
+        }
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localMemorizationMeta]);
+
   // ✅ V8: Backend Real-time Validation
   const { consistencyErrors, hasConsistencyErrors, isValidating: isValidatingSegments } = useSectionValidation(
       localMemorizationMeta, 

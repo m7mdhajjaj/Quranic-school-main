@@ -186,11 +186,29 @@ export const sectionValidationSchema = yup.object<SectionFormData>({
     return Boolean(hasMem || hasRev);
   }
 ).test(
+  'review-starts-from-one',
+  'المراجعة يجب أن تبدأ دائماً من الآية 1',
+  function(value) {
+    // ✅ V9: Review MUST start from ayah 1
+    const v = value as SectionFormData;
+    if (!v?.reviewMeta || !Array.isArray(v.reviewMeta) || v.reviewMeta.length === 0) return true;
+    
+    for (const rev of v.reviewMeta) {
+      if (rev.ayahStart && rev.ayahStart !== 1) {
+        return this.createError({
+          path: 'reviewMeta',
+          message: `❌ المراجعة يجب أن تبدأ دائماً من الآية 1 (أنت أدخلت ${rev.ayahStart})`
+        });
+      }
+    }
+    return true;
+  }
+).test(
   'consistency-check',
   'خطأ في اتساق البيانات المنطقي',
   function(value) {
     // ============================================================================
-    // ✅ V3: UI-Layer Consistency Check (Quick UX Feedback)
+    // ✅ V9: UI-Layer Consistency Check (Quick UX Feedback)
     // ============================================================================
     const v = value as SectionFormData;
     if (!v?.memorizationMeta || !v?.reviewMeta) return true;
@@ -204,20 +222,20 @@ export const sectionValidationSchema = yup.object<SectionFormData>({
       const matchingMems = mems.filter(m => m.surahNumber === rev.surahNumber);
       
       for (const mem of matchingMems) {
-        // UI Rule 1: No Review if Memorization Starts at 1
+        // ✅ V9: Rule 1 - No Review if Memorization Starts at 1 (first time memorizing)
         if (mem.ayahStart === 1) {
           return this.createError({
             path: 'reviewMeta',
-            message: `🚫 غير منطقي: لا يمكن مراجعة سورة ${rev.surahNameCanonical || ''} لأنك بدأت حفظها الآن (من الآية 1).`
+            message: `🚫 غير منطقي: لا يمكن مراجعة سورة ${rev.surahNameCanonical || ''} لأنك بدأت حفظها الآن (من الآية 1). يجب حفظها أولاً ثم مراجعتها في يوم لاحق.`
           });
         }
 
-        // UI Rule 2: Temporal Separation Check
+        // ✅ V9: Rule 2 - Review end must be < Memorization start (same surah)
         if (rev.ayahEnd !== undefined && mem.ayahStart !== undefined) {
           if (rev.ayahEnd >= mem.ayahStart) {
             return this.createError({
               path: 'reviewMeta',
-              message: `🚫 تداخل زمني: المراجعة (${rev.ayahStart}-${rev.ayahEnd}) تتداخل مع نطاق الحفظ الجديد (${mem.ayahStart}-${mem.ayahEnd}). المراجعة تكون للمحفوظات القديمة فقط.`
+              message: `🚫 نهاية المراجعة (${rev.ayahEnd}) يجب أن تكون أقل من بداية الحفظ (${mem.ayahStart}). المراجعة تكون للمحفوظات السابقة فقط (1 إلى ${mem.ayahStart - 1}).`
             });
           }
         }

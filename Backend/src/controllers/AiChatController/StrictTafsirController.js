@@ -25,8 +25,274 @@ const getOpenAIClient = () => {
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
+// 🧠 نظام التصحيح الإملائي الذكي (Fuzzy Matching + AI)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * حساب مسافة Levenshtein بين كلمتين
+ * @returns {number} عدد التعديلات المطلوبة
+ */
+function levenshteinDistance(str1, str2) {
+  const m = str1.length;
+  const n = str2.length;
+  const dp = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0));
+
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      if (str1[i - 1] === str2[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1];
+      } else {
+        dp[i][j] = 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+      }
+    }
+  }
+  return dp[m][n];
+}
+
+/**
+ * حساب نسبة التشابه بين كلمتين
+ * @returns {number} نسبة من 0 إلى 1
+ */
+function similarity(str1, str2) {
+  const maxLen = Math.max(str1.length, str2.length);
+  if (maxLen === 0) return 1;
+  return 1 - levenshteinDistance(str1, str2) / maxLen;
+}
+
+/**
+ * تطبيع النص العربي (إزالة التشكيل وتوحيد الحروف)
+ */
+function normalizeArabic(text) {
+  return text
+    .replace(/[\u064B-\u065F\u0670]/g, '') // إزالة التشكيل
+    .replace(/[أإآ]/g, 'ا')
+    .replace(/ى/g, 'ي')
+    .replace(/ة/g, 'ه')
+    .replace(/ؤ/g, 'و')
+    .replace(/ئ/g, 'ي')
+    .replace(/ء/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+/**
+ * البحث الذكي عن اسم السورة (Fuzzy Search)
+ * @param {string} input - النص المدخل (قد يحتوي على أخطاء إملائية)
+ * @returns {{ surahNumber: number, surahName: string, confidence: number } | null}
+ */
+function fuzzyFindSurah(input) {
+  const normalizedInput = normalizeArabic(input);
+  
+  // قائمة أسماء السور الرسمية
+  const SURAH_CANONICAL = [
+    { number: 1, names: ['الفاتحة', 'فاتحة', 'ام الكتاب', 'السبع المثاني'] },
+    { number: 2, names: ['البقرة', 'بقرة', 'بقره'] },
+    { number: 3, names: ['آل عمران', 'ال عمران', 'عمران'] },
+    { number: 4, names: ['النساء', 'نساء'] },
+    { number: 5, names: ['المائدة', 'مائدة', 'مائده'] },
+    { number: 6, names: ['الأنعام', 'الانعام', 'انعام'] },
+    { number: 7, names: ['الأعراف', 'الاعراف', 'اعراف'] },
+    { number: 8, names: ['الأنفال', 'الانفال', 'انفال'] },
+    { number: 9, names: ['التوبة', 'توبة', 'براءة'] },
+    { number: 10, names: ['يونس'] },
+    { number: 11, names: ['هود'] },
+    { number: 12, names: ['يوسف'] },
+    { number: 13, names: ['الرعد', 'رعد'] },
+    { number: 14, names: ['إبراهيم', 'ابراهيم'] },
+    { number: 15, names: ['الحجر', 'حجر'] },
+    { number: 16, names: ['النحل', 'نحل'] },
+    { number: 17, names: ['الإسراء', 'الاسراء', 'اسراء', 'بني إسرائيل'] },
+    { number: 18, names: ['الكهف', 'كهف'] },
+    { number: 19, names: ['مريم'] },
+    { number: 20, names: ['طه'] },
+    { number: 21, names: ['الأنبياء', 'الانبياء', 'انبياء'] },
+    { number: 22, names: ['الحج', 'حج'] },
+    { number: 23, names: ['المؤمنون', 'المومنون', 'مؤمنون'] },
+    { number: 24, names: ['النور', 'نور'] },
+    { number: 25, names: ['الفرقان', 'فرقان'] },
+    { number: 26, names: ['الشعراء', 'شعراء'] },
+    { number: 27, names: ['النمل', 'نمل'] },
+    { number: 28, names: ['القصص', 'قصص'] },
+    { number: 29, names: ['العنكبوت', 'عنكبوت'] },
+    { number: 30, names: ['الروم', 'روم'] },
+    { number: 31, names: ['لقمان'] },
+    { number: 32, names: ['السجدة', 'سجدة'] },
+    { number: 33, names: ['الأحزاب', 'الاحزاب', 'احزاب'] },
+    { number: 34, names: ['سبأ', 'سبا'] },
+    { number: 35, names: ['فاطر'] },
+    { number: 36, names: ['يس', 'ياسين', 'يسن'] },
+    { number: 37, names: ['الصافات', 'صافات'] },
+    { number: 38, names: ['ص', 'صاد'] },
+    { number: 39, names: ['الزمر', 'زمر'] },
+    { number: 40, names: ['غافر', 'المؤمن', 'المومن'] },
+    { number: 41, names: ['فصلت', 'حم السجدة'] },
+    { number: 42, names: ['الشورى', 'شورى'] },
+    { number: 43, names: ['الزخرف', 'زخرف'] },
+    { number: 44, names: ['الدخان', 'دخان'] },
+    { number: 45, names: ['الجاثية', 'جاثية'] },
+    { number: 46, names: ['الأحقاف', 'الاحقاف', 'احقاف'] },
+    { number: 47, names: ['محمد'] },
+    { number: 48, names: ['الفتح', 'فتح'] },
+    { number: 49, names: ['الحجرات', 'حجرات'] },
+    { number: 50, names: ['ق', 'قاف'] },
+    { number: 51, names: ['الذاريات', 'ذاريات'] },
+    { number: 52, names: ['الطور', 'طور'] },
+    { number: 53, names: ['النجم', 'نجم'] },
+    { number: 54, names: ['القمر', 'قمر'] },
+    { number: 55, names: ['الرحمن', 'رحمن'] },
+    { number: 56, names: ['الواقعة', 'واقعة'] },
+    { number: 57, names: ['الحديد', 'حديد'] },
+    { number: 58, names: ['المجادلة', 'مجادلة'] },
+    { number: 59, names: ['الحشر', 'حشر'] },
+    { number: 60, names: ['الممتحنة', 'ممتحنة'] },
+    { number: 61, names: ['الصف', 'صف'] },
+    { number: 62, names: ['الجمعة', 'جمعة'] },
+    { number: 63, names: ['المنافقون', 'منافقون'] },
+    { number: 64, names: ['التغابن', 'تغابن'] },
+    { number: 65, names: ['الطلاق', 'طلاق'] },
+    { number: 66, names: ['التحريم', 'تحريم'] },
+    { number: 67, names: ['الملك', 'ملك', 'تبارك'] },
+    { number: 68, names: ['القلم', 'قلم', 'نون'] },
+    { number: 69, names: ['الحاقة', 'حاقة'] },
+    { number: 70, names: ['المعارج', 'معارج'] },
+    { number: 71, names: ['نوح'] },
+    { number: 72, names: ['الجن', 'جن'] },
+    { number: 73, names: ['المزمل', 'مزمل'] },
+    { number: 74, names: ['المدثر', 'مدثر'] },
+    { number: 75, names: ['القيامة', 'قيامة'] },
+    { number: 76, names: ['الإنسان', 'الانسان', 'انسان', 'الدهر'] },
+    { number: 77, names: ['المرسلات', 'مرسلات'] },
+    { number: 78, names: ['النبأ', 'نبأ', 'عم', 'عم يتساءلون'] },
+    { number: 79, names: ['النازعات', 'نازعات'] },
+    { number: 80, names: ['عبس'] },
+    { number: 81, names: ['التكوير', 'تكوير'] },
+    { number: 82, names: ['الانفطار', 'انفطار'] },
+    { number: 83, names: ['المطففين', 'مطففين'] },
+    { number: 84, names: ['الانشقاق', 'انشقاق'] },
+    { number: 85, names: ['البروج', 'بروج'] },
+    { number: 86, names: ['الطارق', 'طارق'] },
+    { number: 87, names: ['الأعلى', 'الاعلى', 'اعلى', 'سبح'] },
+    { number: 88, names: ['الغاشية', 'غاشية'] },
+    { number: 89, names: ['الفجر', 'فجر'] },
+    { number: 90, names: ['البلد', 'بلد'] },
+    { number: 91, names: ['الشمس', 'شمس'] },
+    { number: 92, names: ['الليل', 'ليل'] },
+    { number: 93, names: ['الضحى', 'ضحى'] },
+    { number: 94, names: ['الشرح', 'شرح', 'الانشراح', 'انشراح'] },
+    { number: 95, names: ['التين', 'تين'] },
+    { number: 96, names: ['العلق', 'علق', 'اقرأ'] },
+    { number: 97, names: ['القدر', 'قدر'] },
+    { number: 98, names: ['البينة', 'بينة'] },
+    { number: 99, names: ['الزلزلة', 'زلزلة'] },
+    { number: 100, names: ['العاديات', 'عاديات'] },
+    { number: 101, names: ['القارعة', 'قارعة'] },
+    { number: 102, names: ['التكاثر', 'تكاثر'] },
+    { number: 103, names: ['العصر', 'عصر'] },
+    { number: 104, names: ['الهمزة', 'همزة'] },
+    { number: 105, names: ['الفيل', 'فيل'] },
+    { number: 106, names: ['قريش', 'ايلاف', 'إيلاف'] },
+    { number: 107, names: ['الماعون', 'ماعون'] },
+    { number: 108, names: ['الكوثر', 'كوثر'] },
+    { number: 109, names: ['الكافرون', 'كافرون'] },
+    { number: 110, names: ['النصر', 'نصر'] },
+    { number: 111, names: ['المسد', 'مسد', 'تبت', 'اللهب'] },
+    { number: 112, names: ['الإخلاص', 'الاخلاص', 'اخلاص', 'التوحيد', 'قل هو الله أحد'] },
+    { number: 113, names: ['الفلق', 'فلق'] },
+    { number: 114, names: ['الناس', 'ناس'] }
+  ];
+
+  let bestMatch = null;
+  let bestScore = 0;
+  const THRESHOLD = 0.6; // الحد الأدنى للتشابه (60%)
+
+  for (const surah of SURAH_CANONICAL) {
+    for (const name of surah.names) {
+      const normalizedName = normalizeArabic(name);
+      
+      // البحث الدقيق أولاً
+      if (normalizedInput.includes(normalizedName)) {
+        return {
+          surahNumber: surah.number,
+          surahName: surah.names[0],
+          confidence: 1.0
+        };
+      }
+
+      // البحث التقريبي (Fuzzy)
+      // نقسم النص إلى كلمات ونبحث في كل كلمة
+      const words = normalizedInput.split(/\s+/);
+      for (const word of words) {
+        if (word.length < 2) continue;
+        
+        const score = similarity(word, normalizedName);
+        if (score > bestScore && score >= THRESHOLD) {
+          bestScore = score;
+          bestMatch = {
+            surahNumber: surah.number,
+            surahName: surah.names[0],
+            confidence: score
+          };
+        }
+      }
+    }
+  }
+
+  return bestMatch;
+}
+
+/**
+ * تصحيح الأخطاء الإملائية باستخدام AI
+ * @param {string} text - النص المدخل
+ * @returns {Promise<{ corrected: string, surah: number | null, ayah: number | null }>}
+ */
+async function aiSpellingCorrection(text) {
+  try {
+    const openai = getOpenAIClient();
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: `أنت مصحح إملائي لأسماء سور القرآن الكريم.
+
+مهمتك:
+1. صحح الأخطاء الإملائية في اسم السورة
+2. استخرج رقم السورة (1-114)
+3. استخرج رقم الآية إن وُجد
+
+أمثلة:
+- "سور انلور ايع 7" → {"surah": 24, "ayah": 7, "corrected": "سورة النور آية 7"}
+- "الباقره اية 255" → {"surah": 2, "ayah": 255, "corrected": "سورة البقرة آية 255"}
+- "تفسير الفتحه" → {"surah": 1, "ayah": null, "corrected": "سورة الفاتحة"}
+- "سوره يسن" → {"surah": 36, "ayah": null, "corrected": "سورة يس"}
+
+أرجع JSON فقط:
+{"surah": number|null, "ayah": number|null, "corrected": "النص المصحح"}`
+        },
+        { role: "user", content: text }
+      ],
+      temperature: 0,
+      max_tokens: 100
+    });
+
+    const content = response.choices[0].message.content.trim();
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0]);
+    }
+  } catch (error) {
+    console.error("AI Spelling Correction error:", error.message);
+  }
+  return { corrected: text, surah: null, ayah: null };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // 📚 قاموس أسماء السور (114 سورة)
 // ═══════════════════════════════════════════════════════════════════════════
+
 
 const SURAH_NAMES = {
   // الفاتحة
@@ -248,35 +514,29 @@ const FAMOUS_VERSES = {
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 🧠 الـ AI Router - استخراج المفتاح القرآني
+// 🧠 الـ AI Router - استخراج المفتاح القرآني (مع تصحيح إملائي ذكي)
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * استخراج مفتاح الآية من السؤال
+ * استخراج مفتاح الآية من السؤال (مع دعم الأخطاء الإملائية)
  * @returns {{ surah: number, ayah: number } | null}
  */
 async function extractVerseKey(question) {
   const text = question.trim();
-  const normalizedText = text
-    .replace(/[أإآ]/g, 'ا')
-    .replace(/ى/g, 'ي')
-    .replace(/ة/g, 'ه')
-    .toLowerCase(); // fixed v2
+  const normalizedText = normalizeArabic(text);
+
+  console.log(`🔍 Extracting verse key from: "${text}"`);
 
   // 1️⃣ البحث في الآيات المشهورة
   for (const [key, value] of Object.entries(FAMOUS_VERSES)) {
-    const normalizedKey = key
-      .replace(/[أإآ]/g, 'ا')
-      .replace(/ى/g, 'ي')
-      .replace(/ة/g, 'ه')
-      .toLowerCase();
+    const normalizedKey = normalizeArabic(key);
     if (normalizedText.includes(normalizedKey)) {
       console.log(`📌 Famous verse detected: ${key} → ${value.surah}:${value.ayah}`);
       return value;
     }
   }
 
-  // 2️⃣ البحث بنمط رقمي: "2:255" أو "2-255" أو "2 255"
+  // 2️⃣ البحث بنمط رقمي: "2:255" أو "2-255"
   const numericPattern = normalizedText.match(/(\d{1,3})\s*[:：\-]\s*(\d{1,3})/);
   if (numericPattern) {
     const surah = parseInt(numericPattern[1]);
@@ -287,54 +547,56 @@ async function extractVerseKey(question) {
     }
   }
 
-  // 3️⃣ البحث باسم السورة + رقم الآية
-  // نرتب الأسماء من الأطول للأقصر لتجنب التطابق الخاطئ
-  // مثال: "الإخلاص" يجب أن يُكتشف قبل "ص"
+  // 3️⃣ البحث الذكي باسم السورة (Fuzzy Matching)
   let foundSurah = null;
   let foundAyah = null;
 
+  // أولاً: البحث الدقيق في القاموس
   const sortedSurahNames = Object.entries(SURAH_NAMES)
-    .sort((a, b) => b[0].length - a[0].length); // الأطول أولاً
+    .sort((a, b) => b[0].length - a[0].length);
 
   for (const [name, number] of sortedSurahNames) {
-    const normalizedName = name
-      .replace(/[أإآ]/g, 'ا')
-      .replace(/ى/g, 'ي')
-      .replace(/ة/g, 'ه')
-      .toLowerCase();
+    const normalizedName = normalizeArabic(name);
     
-    // استخدام word boundary للأسماء القصيرة (أقل من 3 أحرف)
     if (normalizedName.length <= 2) {
-      // أسماء قصيرة مثل "ص" و "ق" و "طه" - نتحقق من word boundary
-      const regex = new RegExp(`(^|\\s|سورة\\s*)${normalizedName}(\\s|$|\\d)`, 'i');
+      const regex = new RegExp(`(^|\\s|سور[ةه]?\\s*)${normalizedName}(\\s|$|\\d)`, 'i');
       if (regex.test(normalizedText)) {
         foundSurah = number;
         console.log(`📌 Surah name detected (short): ${name} = ${number}`);
         break;
       }
     } else {
-      // أسماء طويلة - البحث العادي
       if (normalizedText.includes(normalizedName)) {
         foundSurah = number;
-        console.log(`📌 Surah name detected: ${name} = ${number}`);
+        console.log(`📌 Surah name detected (exact): ${name} = ${number}`);
         break;
       }
     }
   }
 
+  // 4️⃣ إذا لم نجد تطابق دقيق، نستخدم Fuzzy Matching
+  if (!foundSurah) {
+    const fuzzyResult = fuzzyFindSurah(text);
+    if (fuzzyResult && fuzzyResult.confidence >= 0.6) {
+      foundSurah = fuzzyResult.surahNumber;
+      console.log(`🔮 Fuzzy match: "${text}" → ${fuzzyResult.surahName} (${(fuzzyResult.confidence * 100).toFixed(0)}% confidence)`);
+    }
+  }
+
+  // 5️⃣ البحث عن رقم الآية
   if (foundSurah) {
-    // البحث عن رقم الآية
     const ayahPatterns = [
       /آي[ةه]\s*(?:رقم)?\s*(\d{1,3})/,
       /الآي[ةه]\s*(\d{1,3})/,
-      /اي[ةه]\s*(\d{1,3})/,
+      /اي[عةه]\s*(\d{1,3})/,  // ايع = آية (خطأ شائع)
+      /ايا\s*(\d{1,3})/,
       /ayah?\s*(\d{1,3})/i,
       /verse\s*(\d{1,3})/i,
       /(\d{1,3})\s*$/
     ];
 
     for (const pattern of ayahPatterns) {
-      const match = normalizedText.match(pattern);
+      const match = text.match(pattern);
       if (match) {
         foundAyah = parseInt(match[1]);
         console.log(`📌 Ayah number detected: ${foundAyah}`);
@@ -347,44 +609,22 @@ async function extractVerseKey(question) {
     }
   }
 
-  // 4️⃣ استخدام AI كـ Router فقط (لا يجيب، فقط يستخرج)
-  if (text.length > 5) {
-    try {
-      const openai = getOpenAIClient();
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "system",
-            content: `أنت Router لاستخراج رقم السورة والآية فقط.
-لا تفسر. لا تشرح. فقط أرجع JSON.
-
-القواعد:
-- السور من 1 إلى 114
-- إذا ذُكر اسم سورة، حوّله لرقم
-- إذا ذُكرت آية مشهورة (مثل آية الكرسي)، أرجع رقمها
-- إذا لم تجد مرجعاً واضحاً، أرجع null
-
-أرجع فقط:
-{"surah": number|null, "ayah": number|null}`
-          },
-          { role: "user", content: text }
-        ],
-        temperature: 0,
-        max_tokens: 50
-      });
-
-      const content = response.choices[0].message.content.trim();
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        if (parsed.surah && parsed.surah >= 1 && parsed.surah <= 114 && parsed.ayah) {
-          console.log(`🤖 AI Router extracted: ${parsed.surah}:${parsed.ayah}`);
-          return parsed;
-        }
+  // 6️⃣ استخدام AI للتصحيح الإملائي واستخراج المعلومات
+  if (text.length > 3) {
+    console.log(`🤖 Using AI for spelling correction...`);
+    const aiResult = await aiSpellingCorrection(text);
+    
+    if (aiResult.surah && aiResult.surah >= 1 && aiResult.surah <= 114) {
+      console.log(`🤖 AI corrected: "${text}" → "${aiResult.corrected}" (Surah ${aiResult.surah}, Ayah ${aiResult.ayah})`);
+      
+      if (aiResult.ayah) {
+        return { surah: aiResult.surah, ayah: aiResult.ayah };
       }
-    } catch (error) {
-      console.error("AI Router error:", error.message);
+      // إذا وجدنا السورة فقط بدون آية، نحاول استخراج الرقم من النص الأصلي
+      const ayahMatch = text.match(/(\d{1,3})/);
+      if (ayahMatch) {
+        return { surah: aiResult.surah, ayah: parseInt(ayahMatch[1]) };
+      }
     }
   }
 
@@ -457,11 +697,19 @@ function classifyQuestion(question) {
     return { type: 'tafsir', reason: 'verse_reference' };
   }
 
-  // التحقق من أسماء السور
+  // التحقق من أسماء السور (بحث دقيق)
   for (const surahName of Object.keys(SURAH_NAMES)) {
-    if (normalizedText.includes(surahName.replace(/[أإآ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').toLowerCase())) {
+    const normalizedSurahName = normalizeArabic(surahName);
+    if (normalizedText.includes(normalizedSurahName)) {
       return { type: 'tafsir', reason: 'surah_name' };
     }
+  }
+
+  // 2.5️⃣ البحث الذكي (Fuzzy) - للأخطاء الإملائية
+  const fuzzyResult = fuzzyFindSurah(text);
+  if (fuzzyResult && fuzzyResult.confidence >= 0.6) {
+    console.log(`🔮 Fuzzy classification: "${text}" matched "${fuzzyResult.surahName}" (${(fuzzyResult.confidence * 100).toFixed(0)}%)`);
+    return { type: 'tafsir', reason: 'fuzzy_surah_match' };
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -489,7 +737,14 @@ function classifyQuestion(question) {
   }
 
   // ═══════════════════════════════════════════════════════════════════════
-  // 4️⃣ أي شيء آخر → دردشة عامة
+  // 4️⃣ إذا يحتوي على رقم + كلمة تشبه سورة/آية → على الأرجح تفسير
+  // ═══════════════════════════════════════════════════════════════════════
+  if (/\d+/.test(text) && /سور|اي[عهة]|ايا/i.test(normalizedText)) {
+    return { type: 'tafsir', reason: 'number_with_surah_pattern' };
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // 5️⃣ أي شيء آخر → دردشة عامة
   // ═══════════════════════════════════════════════════════════════════════
   return { type: 'casual', reason: 'general_chat' };
 }
