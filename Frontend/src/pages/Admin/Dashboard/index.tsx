@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import {
   FaGraduationCap,
   FaChalkboardTeacher,
@@ -25,7 +25,8 @@ import AddStudentForm from '../StudentsManagement/Model/StudentForm';
 import TeacherForm from '../TeachersManagement/Model/TeacherForm';
 import AddGroupForm from '../GroupManagement/Model/GroupForm';
 import { AssistantForm } from '../TeacherAssistantManagement/Model/AssistantForm';
-import SecretaryForm from '../SecretaryManagement/Model/SecretaryForm';
+import { SecretaryForm } from '../SecretaryManagement/Model/SecretaryForm';
+import { createSecretary } from '@/Api/secretaryApi';
 
 const AdminDashboard = () => {
 
@@ -50,6 +51,23 @@ const AdminDashboard = () => {
   const [showAddGroupForm, setShowAddGroupForm] = useState(false);
   const [showAddAssistantForm, setShowAddAssistantForm] = useState(false);
   const [showAddSecretaryForm, setShowAddSecretaryForm] = useState(false);
+  const [isSecretaryLoading, setIsSecretaryLoading] = useState(false);
+
+  // Handler لإضافة سكرتير
+  const handleCreateSecretary = useCallback(async (data: Parameters<typeof createSecretary>[0]) => {
+    setIsSecretaryLoading(true);
+    try {
+      const response = await createSecretary(data);
+      if (response.success) {
+        setShowAddSecretaryForm(false);
+        fetchStats(true);
+      } else {
+        throw new Error(response.message || 'فشل في إضافة السكرتير');
+      }
+    } finally {
+      setIsSecretaryLoading(false);
+    }
+  }, [fetchStats]);
 
 
   // Loading state - استخدام Skeleton بدلاً من Spinner
@@ -105,60 +123,62 @@ const AdminDashboard = () => {
           </p>
         </div>
 
-        {/* Statistics Cards - Priority for LCP */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6 lg:gap-8 mb-6 sm:mb-8 lg:mb-12">
-          {isLoadingStats ? (
-            <>
-              <StatCardSkeleton />
-              <StatCardSkeleton />
-              <StatCardSkeleton />
-              <StatCardSkeleton />
-              <StatCardSkeleton />
-            </>
-          ) : (
-            <>
-              <StatCard
-                icon={<FaGraduationCap className="text-3xl text-white" />}
-                title="إجمالي الطلاب"
-                value={stats.totalStudents}
-                color="bg-gradient-to-br from-emerald-500 to-emerald-600"
-                bgColor="bg-white"
-              />
+        {/* Statistics Cards - تظهر فقط إذا كان هناك بيانات أو أثناء التحميل */}
+        {(isLoadingStats || stats.totalStudents > 0 || stats.totalTeachers > 0 || stats.totalAssistants > 0 || stats.totalSecretaries > 0 || stats.totalGroups > 0) && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6 lg:gap-8 mb-6 sm:mb-8 lg:mb-12">
+            {isLoadingStats ? (
+              <>
+                <StatCardSkeleton />
+                <StatCardSkeleton />
+                <StatCardSkeleton />
+                <StatCardSkeleton />
+                <StatCardSkeleton />
+              </>
+            ) : (
+              <>
+                <StatCard
+                  icon={<FaGraduationCap className="text-3xl text-white" />}
+                  title="إجمالي الطلاب"
+                  value={stats.totalStudents}
+                  color="bg-gradient-to-br from-emerald-500 to-emerald-600"
+                  bgColor="bg-white"
+                />
 
-              <StatCard
-                icon={<FaChalkboardTeacher className="text-3xl text-white" />}
-                title="إجمالي المعلمين"
-                value={stats.totalTeachers}
-                color="bg-gradient-to-br from-green-500 to-green-600"
-                bgColor="bg-white"
-              />
+                <StatCard
+                  icon={<FaChalkboardTeacher className="text-3xl text-white" />}
+                  title="إجمالي المعلمين"
+                  value={stats.totalTeachers}
+                  color="bg-gradient-to-br from-green-500 to-green-600"
+                  bgColor="bg-white"
+                />
 
-              <StatCard
-                icon={<FaUserTie className="text-3xl text-white" />}
-                title="المساعدين"
-                value={stats.totalAssistants}
-                color="bg-gradient-to-br from-blue-500 to-blue-600"
-                bgColor="bg-white"
-              />
+                <StatCard
+                  icon={<FaUserTie className="text-3xl text-white" />}
+                  title="المساعدين"
+                  value={stats.totalAssistants}
+                  color="bg-gradient-to-br from-blue-500 to-blue-600"
+                  bgColor="bg-white"
+                />
 
-              <StatCard
-                icon={<FaClipboardList className="text-3xl text-white" />}
-                title="السكرتيرات"
-                value={stats.totalSecretaries}
-                color="bg-gradient-to-br from-purple-500 to-purple-600"
-                bgColor="bg-white"
-              />
+                <StatCard
+                  icon={<FaClipboardList className="text-3xl text-white" />}
+                  title="السكرتيرات"
+                  value={stats.totalSecretaries}
+                  color="bg-gradient-to-br from-purple-500 to-purple-600"
+                  bgColor="bg-white"
+                />
 
-              <StatCard
-                icon={<FaUsers className="text-3xl text-white" />}
-                title="عدد الحلقات"
-                value={stats.totalGroups}
-                color="bg-gradient-to-br from-green-600 to-emerald-600"
-                bgColor="bg-white"
-              />
-            </>
-          )}
-        </div>
+                <StatCard
+                  icon={<FaUsers className="text-3xl text-white" />}
+                  title="عدد الحلقات"
+                  value={stats.totalGroups}
+                  color="bg-gradient-to-br from-green-600 to-emerald-600"
+                  bgColor="bg-white"
+                />
+              </>
+            )}
+          </div>
+        )}
 
         {/* Quick Actions */}
         <div className="mb-6 sm:mb-8 lg:mb-12">
@@ -365,11 +385,10 @@ const AdminDashboard = () => {
 
         {showAddSecretaryForm && (
           <SecretaryForm
+            isOpen={showAddSecretaryForm}
             onClose={() => setShowAddSecretaryForm(false)}
-            onSuccess={() => {
-              setShowAddSecretaryForm(false);
-              fetchStats(true); // إعادة تحميل البيانات بعد إضافة سكرتير
-            }}
+            onSubmit={handleCreateSecretary}
+            isLoading={isSecretaryLoading}
           />
         )}
       </div>

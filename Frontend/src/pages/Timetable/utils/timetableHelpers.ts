@@ -239,7 +239,7 @@ export const getCurrentUser = (): User | null => {
 /**
  * الحصول على دور المستخدم
  */
-export const getUserRole = (): "student" | "teacher" | "admin" => {
+export const getUserRole = (): "student" | "teacher" | "admin" | "secretary" | "teacherAssistant" => {
   const user = getCurrentUser();
   return user?.role || "student";
 };

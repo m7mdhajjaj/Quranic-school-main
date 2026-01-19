@@ -89,7 +89,7 @@ export const AssistantsStatsCards: React.FC<AssistantsStatsCardsProps> = memo(({
                     <div className="w-full bg-white/20 rounded-full h-1 sm:h-1.5">
                       <div
                         className="bg-white rounded-full h-1 sm:h-1.5 transition-all duration-500"
-                        style={{ width: `${card.percentage}%` }}
+                        style={{ ['--percentage' as string]: `${card.percentage}%`, width: 'var(--percentage)' } as React.CSSProperties}
                       />
                     </div>
                   </div>

@@ -297,6 +297,14 @@ export const AssistantTableView: React.FC<AssistantTableViewProps> = memo(({
                             </h4>
 
                             <div className="space-y-2 sm:space-y-3">
+                              {/* رقم المستخدم */}
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-gray-600">رقم المستخدم:</span>
+                                <span className="text-sm font-bold text-emerald-700 font-mono" dir="ltr">
+                                  {assistant.assistantId || <span className="text-gray-400">-</span>}
+                                </span>
+                              </div>
+
                               {/* الاسم الكامل */}
                               <div className="flex items-center justify-between">
                                 <span className="text-sm font-semibold text-gray-600">الاسم الكامل:</span>

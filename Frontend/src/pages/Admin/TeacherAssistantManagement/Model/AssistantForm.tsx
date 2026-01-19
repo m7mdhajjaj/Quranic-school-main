@@ -1,7 +1,7 @@
 import React, { memo, useCallback } from "react";
 import { 
   X, HandHelping, User, Mail, Phone, MapPin,
-  Lock, AlertCircle, Calendar, Users,
+  AlertCircle, Calendar, Users,
   CreditCard
 } from "lucide-react";
 import { FaMale, FaFemale } from "react-icons/fa";
@@ -154,16 +154,24 @@ export const AssistantForm: React.FC<AssistantFormProps> = memo(({
               {/* Grandfather Name */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  اسم الجد
+                  اسم الجد *
                 </label>
                 <input
                   type="text"
                   name="grandFatherName"
                   value={formData.grandFatherName || ""}
                   onChange={handleChange}
-                  className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl hover:border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                  className={`w-full px-4 py-2.5 border-2 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all ${
+                    errors.grandFatherName ? "border-red-400 bg-red-50" : "border-gray-200 hover:border-gray-300"
+                  }`}
                   placeholder="أدخل اسم الجد"
                 />
+                {errors.grandFatherName && (
+                  <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    {errors.grandFatherName}
+                  </p>
+                )}
               </div>
 
               {/* Last Name */}
@@ -192,16 +200,24 @@ export const AssistantForm: React.FC<AssistantFormProps> = memo(({
               {/* Mother Name */}
               <div className="col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  اسم الأم
+                  اسم الأم *
                 </label>
                 <input
                   type="text"
                   name="motherName"
                   value={formData.motherName || ""}
                   onChange={handleChange}
-                  className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl hover:border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                  className={`w-full px-4 py-2.5 border-2 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all ${
+                    errors.motherName ? "border-red-400 bg-red-50" : "border-gray-200 hover:border-gray-300"
+                  }`}
                   placeholder="أدخل اسم الأم"
                 />
+                {errors.motherName && (
+                  <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    {errors.motherName}
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -296,17 +312,7 @@ export const AssistantForm: React.FC<AssistantFormProps> = memo(({
                 )}
               </div>
 
-              {/* Password Note - للمساعدين الجدد فقط */}
-              {!isEditMode && (
-                <div className="col-span-2">
-                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center gap-2">
-                    <Lock className="w-5 h-5 text-amber-600 flex-shrink-0" />
-                    <p className="text-sm text-amber-700">
-                      <span className="font-bold">ملاحظة:</span> كلمة المرور الافتراضية هي رقم الهوية. يمكن للمساعد تغييرها لاحقاً من حسابه.
-                    </p>
-                  </div>
-                </div>
-              )}
+
             </div>
           </div>
 

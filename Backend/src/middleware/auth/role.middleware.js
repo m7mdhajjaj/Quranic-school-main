@@ -10,19 +10,20 @@
 const { protect } = require("./protect.middleware");
 
 /**
- * Teacher and Admin only access
- * الوصول للمعلمين والمديرين فقط
+ * Teacher, Admin, and TeacherAssistant access for marks
+ * الوصول للمعلمين والمديرين ومساعدي المعلمين فقط
  * 
  * @middleware
- * @description يسمح فقط للمستخدمين من نوع teacher أو admin
- * @access Protected (Teacher, Admin only)
+ * @description يسمح فقط للمستخدمين من نوع teacher أو admin أو teacherAssistant
+ * @access Protected (Teacher, Admin, TeacherAssistant only)
  */
 exports.teacherProtect = async (req, res, next) => {
   try {
     // استخدام وسيط الحماية أولاً
     await protect(req, res, () => {
-      // التحقق من أن المستخدم معلم أو إداري
-      if (req.user.role !== "teacher" && req.user.role !== "admin") {
+      // التحقق من أن المستخدم معلم أو إداري أو مساعد معلم
+      const allowedRoles = ["teacher", "admin", "teacherAssistant"];
+      if (!allowedRoles.includes(req.user.role)) {
         return res.status(403).json({
           success: false,
           message: "غير مصرح للطلاب بالوصول إلى هذه الصفحة",
@@ -669,6 +670,20 @@ exports.secretaryTimetableAccess = (requiredLevel = 'view') => {
             });
           }
           req.canManage = false; // الطالب عرض فقط
+          return next();
+        }
+        
+        // ✅ مساعد المعلم لديه وصول للعرض فقط (لجدول الحلقات المسموح له بها)
+        if (req.user.role === "teacherAssistant") {
+          console.log('👨‍🏫 [secretaryTimetableAccess] Teacher Assistant - View Only for Allowed Groups');
+          if (requiredLevel === 'manage') {
+            return res.status(403).json({
+              success: false,
+              message: "ليس لديك صلاحية لإدارة الجدول",
+            });
+          }
+          req.canManage = false; // المساعد عرض فقط
+          req.isTeacherAssistantAccess = true; // علامة للتحقق في الـ controller
           return next();
         }
         

@@ -655,6 +655,24 @@ const TeacherAssistantRoutes: React.FC = () => {
         <Route path="/chat" element={<TeacherAssistantChatView />} />
 
         {/* ============================================
+            مواعيد الحلقات - Timetable (View Only)
+            ============================================ */}
+        <Route path="/timetable" element={<Timetable />} />
+
+        {/* ============================================
+            الأخبار - News
+            ============================================ */}
+        <Route path="/news" element={<News />} />
+
+        {/* ============================================
+            القرآن والأذكار - Religious Content
+            ============================================ */}
+        <Route path="/quran" element={<QuranPage />} />
+        <Route path="/quran-audio" element={<QuranAudio />} />
+        <Route path="/azkar" element={<Azkar />} />
+        <Route path="/prayer-times" element={<PrayerTimesPage />} />
+
+        {/* ============================================
             الإعدادات الشخصية - User Settings
             ============================================ */}
         <Route path="/profile" element={<Profile />} />

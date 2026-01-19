@@ -92,36 +92,36 @@ const AddStudentForm: React.FC<Props> = ({
       dir="rtl">
       <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Modern Gradient Header with Steps */}
-        <div className="relative bg-gradient-to-l from-emerald-600 via-teal-600 to-cyan-600 rounded-t-2xl p-4 overflow-hidden">
+        <div className="relative bg-gradient-to-l from-emerald-600 via-teal-600 to-cyan-600 rounded-t-2xl p-5 pb-6">
           {/* Decorative circles */}
-          <div className="absolute -top-10 -left-10 w-40 h-40 bg-white/10 rounded-full" />
-          <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-white/10 rounded-full" />
+          <div className="absolute -top-10 -left-10 w-40 h-40 bg-white/10 rounded-full pointer-events-none" />
+          <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-white/10 rounded-full pointer-events-none" />
           
           <div className="relative z-10">
-            <div className="flex justify-between items-start mb-3">
+            <div className="flex justify-between items-start mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
-                  <GraduationCap className="text-white" size={22} />
+                <div className="w-11 h-11 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                  <GraduationCap className="text-white" size={24} />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-white">
+                  <h2 className="text-xl font-bold text-white">
                     {student ? "تعديل بيانات الطالب" : "إضافة طالب جديد"}
                   </h2>
-                  <p className="text-white/80 text-xs">
+                  <p className="text-white/80 text-sm">
                     {student ? "قم بتحديث معلومات الطالب" : "أدخل بيانات الطالب الكاملة"}
                   </p>
                 </div>
               </div>
               <button
                 onClick={onClose}
-                className="text-white/80 hover:text-white hover:bg-white/20 rounded-lg p-1.5 transition-colors"
+                className="text-white/80 hover:text-white hover:bg-white/20 rounded-lg p-2 transition-colors"
                 aria-label="إغلاق">
-                <X size={20} />
+                <X size={22} />
               </button>
             </div>
 
             {/* Steps indicator inside header */}
-            <div className="flex items-center justify-center gap-2 mt-3">
+            <div className="flex items-center justify-center gap-4 mt-5">
               {steps.map((step, index) => (
                 <React.Fragment key={step.number}>
                   <button
@@ -130,30 +130,30 @@ const AddStudentForm: React.FC<Props> = ({
                       if (step.number < currentStep) handlePrevStep();
                       else if (step.number > currentStep && isStep1Valid) handleNextStep();
                     }}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all shadow-sm ${
                       currentStep === step.number
-                        ? "bg-white text-emerald-700 shadow-lg"
+                        ? "bg-white text-emerald-700 shadow-lg scale-105"
                         : currentStep > step.number
                           ? "bg-white/30 text-white hover:bg-white/40"
-                          : "bg-white/10 text-white/70"
+                          : "bg-white/15 text-white/80 hover:bg-white/25"
                     }`}>
-                    <div className={`flex items-center justify-center w-5 h-5 rounded-full ${
+                    <div className={`flex items-center justify-center w-7 h-7 rounded-full font-bold ${
                       currentStep === step.number
                         ? "bg-emerald-600 text-white"
                         : currentStep > step.number
-                          ? "bg-white/30 text-white"
-                          : "bg-white/20 text-white/70"
+                          ? "bg-white/40 text-white"
+                          : "bg-white/25 text-white/80"
                     }`}>
                       {currentStep > step.number ? (
-                        <Check size={12} />
+                        <Check size={16} />
                       ) : (
-                        <span className="text-[10px]">{step.number}</span>
+                        <span className="text-sm">{step.number}</span>
                       )}
                     </div>
-                    <span className="hidden sm:inline">{step.title}</span>
+                    <span>{step.title}</span>
                   </button>
                   {index < steps.length - 1 && (
-                    <ChevronLeft className="text-white/50" size={16} />
+                    <ChevronLeft className="text-white/60" size={20} />
                   )}
                 </React.Fragment>
               ))}

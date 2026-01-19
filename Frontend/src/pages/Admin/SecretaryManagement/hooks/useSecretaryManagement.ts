@@ -49,7 +49,7 @@ export const useSecretaryManagement = () => {
   }), [searchQuery, genderFilter, ageRange, sortField, sortOrder]);
 
   // Hooks
-  const { secretaries, error, refetch } = useSecretariesData(filtersParams);
+  const { secretaries, isLoading, error, refetch } = useSecretariesData(filtersParams);
   const { createSecretary, updateSecretary, deleteSecretary, bulkDeleteSecretaries, isSubmitting } = useSecretariesActions();
   const { refetch: refetchStats, ...stats } = useSecretariesStats();
 
@@ -231,6 +231,7 @@ export const useSecretaryManagement = () => {
     // Data
     secretaries,
     stats,
+    isLoading,
     error,
     refetch,
     

@@ -174,6 +174,8 @@ const Header: React.FC<HeaderProps> = ({ className = '', isGuest = false }) => {
                             ? "مدير" 
                             : currentUser?.role === "secretary"
                             ? "سكرتير"
+                            : currentUser?.role === "teacherAssistant"
+                            ? "مساعد مدرس"
                             : "طالب"}
                         </span>
                       </div>

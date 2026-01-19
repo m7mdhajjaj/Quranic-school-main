@@ -13,7 +13,6 @@ export interface TeacherAssistant {
   idNumber: string;
   email: string;
   phoneNumber: string;
-  password?: string;
   // البيانات الشخصية
   birthDate: string;
   age?: number;

@@ -1,31 +1,31 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import type { TeacherAssistant } from "../types";
-import { checkDuplicate, getNextAssistantId } from "@/Api/teacherAssistantApi";
-import { getAllGroups, type Group } from "@/Api/groupApi";
-import { isEqual } from "@/utils/objectUtils";
-import { showInfoToast } from "@/utils/toastUtils";
+import { useState, useEffect, useCallback, useRef } from 'react';
+import type { TeacherAssistant } from '../types';
+import { checkDuplicate, getNextAssistantId } from '@/Api/teacherAssistantApi';
+import { getAllGroups, type Group } from '@/Api/groupApi';
+import { isEqual } from '@/utils/objectUtils';
+import { showInfoToast } from '@/utils/toastUtils';
+import { DEBOUNCE_TIME, VALIDATION_RULES, MESSAGES } from '../constants';
 import {
   validateAssistantFieldWithYup,
   validateAssistantWithYup,
-} from "@/Validation/assistantValidation";
+} from '@/Validation/assistantValidation';
 
 // =================== Types ===================
 export interface TeacherAssistantFormData {
   // الأسماء
   firstName: string;
   lastName: string;
-  fatherName?: string;
-  grandFatherName?: string;
-  motherName?: string;
+  fatherName: string;
+  grandFatherName: string;
+  motherName: string;
   // الهوية والتواصل
   assistantId?: number;
   idNumber: string;
   email: string;
   phoneNumber: string;
-  password?: string;
   // البيانات الشخصية
   birthDate: string;
-  gender: "ذكر" | "أنثى";
+  gender: 'ذكر' | 'أنثى';
   residence: string;
   // العلاقات
   allowedGroups: string[];
@@ -44,49 +44,48 @@ export interface UseTeacherAssistantFormReturn {
   isEditMode: boolean;
   groups: Group[];
   isLoadingGroups: boolean;
-  handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
+  handleChange: (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => void;
   handleGroupsChange: (groupIds: string[]) => void;
   handleSubmit: (e: React.FormEvent) => Promise<void>;
-  validateForm: () => Promise<boolean>;
+  validateForm: () => Promise<{
+    isValid: boolean;
+    errors: Record<string, string>;
+  }>;
 }
 
 // =================== Initial Data ===================
 const initialFormData: TeacherAssistantFormData = {
-  firstName: "",
-  lastName: "",
-  fatherName: "",
-  grandFatherName: "",
-  motherName: "",
+  firstName: '',
+  lastName: '',
+  fatherName: '',
+  grandFatherName: '',
+  motherName: '',
   assistantId: undefined,
-  idNumber: "",
-  email: "",
-  phoneNumber: "",
-  password: "",
-  birthDate: "",
-  gender: "ذكر",
-  residence: "",
+  idNumber: '',
+  email: '',
+  phoneNumber: '',
+  birthDate: '',
+  gender: 'ذكر',
+  residence: '',
   allowedGroups: [],
 };
-
-// =================== Validation Regex ===================
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-const PHONE_REGEX = /^05\d{8}$/;
-const ID_REGEX = /^\d{9}$/;
 
 // =================== Hook ===================
 export const useTeacherAssistantForm = ({
   assistant,
   isOpen,
   onSubmit,
-  onClose,
 }: UseTeacherAssistantFormProps): UseTeacherAssistantFormReturn => {
-  const [formData, setFormData] = useState<TeacherAssistantFormData>(initialFormData);
-  const [showPassword, setShowPassword] = useState(false);
+  const [formData, setFormData] =
+    useState<TeacherAssistantFormData>(initialFormData);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [groups, setGroups] = useState<Group[]>([]);
   const [isLoadingGroups, setIsLoadingGroups] = useState(false);
-  
-  const [initialData, setInitialData] = useState<TeacherAssistantFormData | null>(null);
+
+  const [initialData, setInitialData] =
+    useState<TeacherAssistantFormData | null>(null);
 
   // Debounce timers
   const emailCheckRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -99,7 +98,7 @@ export const useTeacherAssistantForm = ({
   useEffect(() => {
     const fetchGroups = async () => {
       if (!isOpen) return;
-      
+
       setIsLoadingGroups(true);
       try {
         const response = await getAllGroups();
@@ -109,18 +108,19 @@ export const useTeacherAssistantForm = ({
           const availableGroups = response.data.filter((group: Group) => {
             // الحلقة يجب أن تكون نشطة
             if (!group.activeStatus) return false;
-            
+
             // إذا الحلقة ليس لها مساعد - متاحة
             if (!group.teacherAssistant) return true;
-            
+
             // في وضع التعديل: إذا المساعد الحالي هو المشرف - متاحة
             if (isEditMode && assistant?._id) {
-              const assistantId = typeof group.teacherAssistant === 'object' 
-                ? group.teacherAssistant._id 
-                : group.teacherAssistant;
+              const assistantId =
+                typeof group.teacherAssistant === 'object'
+                  ? group.teacherAssistant._id
+                  : group.teacherAssistant;
               return assistantId === assistant._id;
             }
-            
+
             // غير متاحة
             return false;
           });
@@ -140,11 +140,11 @@ export const useTeacherAssistantForm = ({
   useEffect(() => {
     const fetchNextId = async () => {
       if (!isOpen || isEditMode) return;
-      
+
       try {
         const response = await getNextAssistantId();
         if (response.success && response.nextId) {
-          setFormData(prev => ({ ...prev, assistantId: response.nextId }));
+          setFormData((prev) => ({ ...prev, assistantId: response.nextId }));
         }
       } catch (error) {
         console.error('Error fetching next ID:', error);
@@ -159,20 +159,22 @@ export const useTeacherAssistantForm = ({
     if (isOpen) {
       if (assistant) {
         const loadedData: TeacherAssistantFormData = {
-          firstName: assistant.firstName || "",
-          lastName: assistant.lastName || "",
-          fatherName: assistant.fatherName || "",
-          grandFatherName: assistant.grandFatherName || "",
-          motherName: assistant.motherName || "",
+          firstName: assistant.firstName || '',
+          lastName: assistant.lastName || '',
+          fatherName: assistant.fatherName || '',
+          grandFatherName: assistant.grandFatherName || '',
+          motherName: assistant.motherName || '',
           assistantId: assistant.assistantId,
-          idNumber: assistant.idNumber || "",
-          email: assistant.email || "",
-          phoneNumber: assistant.phoneNumber || "",
-          password: "",
-          birthDate: assistant.birthDate || "",
-          gender: (assistant.gender === 'male' || assistant.gender === 'ذكر') ? "ذكر" : "أنثى",
-          residence: assistant.residence || "",
-          allowedGroups: assistant.allowedGroups?.map(g => g._id) || [],
+          idNumber: assistant.idNumber || '',
+          email: assistant.email || '',
+          phoneNumber: assistant.phoneNumber || '',
+          birthDate: assistant.birthDate || '',
+          gender:
+            assistant.gender === 'male' || assistant.gender === 'ذكر'
+              ? 'ذكر'
+              : 'أنثى',
+          residence: assistant.residence || '',
+          allowedGroups: assistant.allowedGroups?.map((g) => g._id) || [],
         };
         setFormData(loadedData);
         setInitialData(loadedData);
@@ -181,7 +183,6 @@ export const useTeacherAssistantForm = ({
         setInitialData(null);
       }
       setErrors({});
-      setShowPassword(false);
     }
   }, [isOpen, assistant]);
 
@@ -189,46 +190,55 @@ export const useTeacherAssistantForm = ({
   const checkDuplicateField = useCallback(
     async (field: 'email' | 'phoneNumber' | 'idNumber', value: string) => {
       if (!value.trim()) return;
-      
+
       try {
         const response = await checkDuplicate(field, value, assistant?._id);
         if (response.success && response.isDuplicate) {
           // عرض رسالة تفصيلية مع نوع المستخدم واسمه
-          const message = response.message || 
+          const message =
+            response.message ||
             `${response.existingUserType ? `مستخدم بالفعل لـ ${response.existingUserType}` : 'مستخدم بالفعل'}` +
-            (response.existingUserName ? ` (${response.existingUserName})` : '');
-          setErrors(prev => ({ ...prev, [field]: message }));
+              (response.existingUserName
+                ? ` (${response.existingUserName})`
+                : '');
+          setErrors((prev) => ({ ...prev, [field]: message }));
         }
       } catch (error) {
         console.error('Error checking duplicate:', error);
       }
     },
-    [assistant?._id]
+    [assistant?._id],
   );
 
   // Debounced duplicate checks helper
-  const debouncedCheck = useCallback((
-    field: 'email' | 'phoneNumber' | 'idNumber', 
-    value: string, 
-    regex: RegExp, 
-    timerRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>
-  ) => {
-    if (value && regex.test(value)) {
-      if (timerRef.current) clearTimeout(timerRef.current);
-      timerRef.current = setTimeout(() => checkDuplicateField(field, value), 500);
-    }
-  }, [checkDuplicateField]);
+  const debouncedCheck = useCallback(
+    (
+      field: 'email' | 'phoneNumber' | 'idNumber',
+      value: string,
+      regex: RegExp,
+      timerRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>,
+    ) => {
+      if (value && regex.test(value)) {
+        if (timerRef.current) clearTimeout(timerRef.current);
+        timerRef.current = setTimeout(
+          () => checkDuplicateField(field, value),
+          DEBOUNCE_TIME.DUPLICATE_CHECK,
+        );
+      }
+    },
+    [checkDuplicateField],
+  );
 
   // Handle form change with Yup validation
   const handleChange = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
       const { name, value } = e.target;
-      
-      setFormData(prev => ({ ...prev, [name]: value }));
-      
+
+      setFormData((prev) => ({ ...prev, [name]: value }));
+
       // Clear error immediately
       if (errors[name]) {
-        setErrors(prev => {
+        setErrors((prev) => {
           const newErrors = { ...prev };
           delete newErrors[name];
           return newErrors;
@@ -236,30 +246,56 @@ export const useTeacherAssistantForm = ({
       }
 
       // Validate field
-      const error = await validateAssistantFieldWithYup(name, value, formData, !isEditMode);
+      const error = await validateAssistantFieldWithYup(
+        name,
+        value,
+        formData,
+        !isEditMode,
+      );
       if (error) {
-        setErrors(prev => ({ ...prev, [name]: error }));
+        setErrors((prev) => ({ ...prev, [name]: error }));
       }
 
       // Check duplicates using optimized helper
-      if (name === 'email') debouncedCheck('email', value, EMAIL_REGEX, emailCheckRef);
-      if (name === 'phoneNumber') debouncedCheck('phoneNumber', value, PHONE_REGEX, phoneCheckRef);
-      if (name === 'idNumber') debouncedCheck('idNumber', value, ID_REGEX, idCheckRef);
+      if (name === 'email')
+        debouncedCheck(
+          'email',
+          value,
+          VALIDATION_RULES.EMAIL_REGEX,
+          emailCheckRef,
+        );
+      if (name === 'phoneNumber')
+        debouncedCheck(
+          'phoneNumber',
+          value,
+          VALIDATION_RULES.PHONE_REGEX,
+          phoneCheckRef,
+        );
+      if (name === 'idNumber')
+        debouncedCheck(
+          'idNumber',
+          value,
+          VALIDATION_RULES.ID_NUMBER_REGEX,
+          idCheckRef,
+        );
     },
-    [errors, formData, isEditMode, debouncedCheck]
+    [errors, formData, isEditMode, debouncedCheck],
   );
 
   // Handle groups change
   const handleGroupsChange = useCallback((groupIds: string[]) => {
-    setFormData(prev => ({ ...prev, allowedGroups: groupIds }));
+    setFormData((prev) => ({ ...prev, allowedGroups: groupIds }));
   }, []);
 
   // Validate form with Yup
-  const validateForm = useCallback(async (): Promise<boolean> => {
+  const validateForm = useCallback(async (): Promise<{
+    isValid: boolean;
+    errors: Record<string, string>;
+  }> => {
     const dataToValidate = {
       ...formData,
-      allowedGroups: formData.allowedGroups.map(id => {
-        const group = groups.find(g => g._id === id);
+      allowedGroups: formData.allowedGroups.map((id) => {
+        const group = groups.find((g) => g._id === id);
         return {
           id: id,
           name: group?.name || '',
@@ -268,21 +304,25 @@ export const useTeacherAssistantForm = ({
       }),
     };
 
-    const validation = await validateAssistantWithYup(dataToValidate, !isEditMode);
-    
+    const validation = await validateAssistantWithYup(
+      dataToValidate,
+      !isEditMode,
+    );
+
     if (!validation.isValid) {
       setErrors(validation.errors);
-      return false;
+      return { isValid: false, errors: validation.errors };
     }
 
     // Additional validation for groups
     if (formData.allowedGroups.length === 0) {
-      setErrors(prev => ({ ...prev, allowedGroups: "يجب اختيار حلقة واحدة على الأقل" }));
-      return false;
+      const groupError = { allowedGroups: 'يجب اختيار حلقة واحدة على الأقل' };
+      setErrors((prev) => ({ ...prev, ...groupError }));
+      return { isValid: false, errors: groupError };
     }
 
     setErrors({});
-    return true;
+    return { isValid: true, errors: {} };
   }, [formData, groups, isEditMode]);
 
   // Handle submit
@@ -290,50 +330,66 @@ export const useTeacherAssistantForm = ({
     async (e: React.FormEvent) => {
       e.preventDefault();
 
-      const isValid = await validateForm();
-      if (!isValid) {
+      console.log('🚀 Submit triggered - Form Data:', formData);
+
+      const validationResult = await validateForm();
+      console.log('✅ Validation result:', validationResult.isValid);
+      console.log('📋 Validation errors:', validationResult.errors);
+
+      if (!validationResult.isValid) {
+        console.log('❌ Form validation failed, stopping submission');
+        console.log('🔍 Error details:', validationResult.errors);
         return;
       }
 
-      // Check if data changed in edit mode
-      if (isEditMode && initialData) {
-        const currentDataWithoutPassword = { ...formData };
-        if (!currentDataWithoutPassword.password) {
-          delete currentDataWithoutPassword.password;
+      // Check if data changed (for both edit and add modes)
+      if (initialData) {
+        // في وضع التعديل: تحقق إذا تم تغيير أي بيانات
+        if (isEqual(formData, initialData)) {
+          console.log(
+            'ℹ️ No changes detected - Data is identical to initial data',
+          );
+          showInfoToast(MESSAGES.INFO.NO_CHANGES);
+          return;
         }
-        
-        const initialDataWithoutPassword = { ...initialData };
-        delete initialDataWithoutPassword.password;
-
-        if (isEqual(currentDataWithoutPassword, initialDataWithoutPassword)) {
-          showInfoToast("لم يتم إجراء أي تغييرات");
-          onClose?.();
+        console.log('✨ Changes detected - Proceeding with submission');
+      } else {
+        // في وضع الإضافة: تحقق إذا البيانات لا تزال فارغة (default values)
+        const isStillEmpty = isEqual(formData, initialFormData);
+        if (isStillEmpty) {
+          console.log('⚠️ Form is still empty - cannot submit');
+          showInfoToast(MESSAGES.INFO.FILL_REQUIRED);
           return;
         }
       }
 
       try {
+        console.log('📤 Submitting form data:', formData);
         await onSubmit(formData);
       } catch (error) {
-        console.error('Form submission error:', error);
+        console.error('❌ Form submission error:', error);
       }
     },
-    [formData, validateForm, isEditMode, initialData, onSubmit, onClose]
+    [formData, validateForm, isEditMode, initialData, onSubmit, errors],
   );
 
   // Cleanup on unmount
   useEffect(() => {
+    const emailTimer = emailCheckRef.current;
+    const phoneTimer = phoneCheckRef.current;
+    const idTimer = idCheckRef.current;
+
     return () => {
-      if (emailCheckRef.current) clearTimeout(emailCheckRef.current);
-      if (phoneCheckRef.current) clearTimeout(phoneCheckRef.current);
-      if (idCheckRef.current) clearTimeout(idCheckRef.current);
+      if (emailTimer) clearTimeout(emailTimer);
+      if (phoneTimer) clearTimeout(phoneTimer);
+      if (idTimer) clearTimeout(idTimer);
     };
   }, []);
 
   return {
     formData,
     errors,
-    
+
     isEditMode,
     groups,
     isLoadingGroups,

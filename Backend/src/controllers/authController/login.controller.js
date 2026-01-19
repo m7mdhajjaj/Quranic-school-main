@@ -35,49 +35,74 @@ exports.login = async (req, res) => {
       });
     }
 
-    // البحث التلقائي في جميع الأنواع
+    // البحث بالتوازي في جميع الـ collections
+    const idNumber = parseInt(identifier);
     
-    // 1. محاولة البحث كطالب (studentId)
-    const studentIdNumber = parseInt(identifier);
-    if (!isNaN(studentIdNumber)) {
-      const student = await Student.findOne({ studentId: studentIdNumber });
-      
-      if (student) {
-        return await authenticateStudent(student, password, rememberMe, res);
+    // بناء queries للبحث في كل collection حسب الـ field الخاص به
+    const searchPromises = [];
+    
+    // البحث في كل collection حسب نوع الـ identifier
+    if (!isNaN(idNumber)) {
+      searchPromises.push(
+        Student.findOne({ studentId: idNumber }).then(user => user ? { user, type: 'student' } : null),
+        Teacher.findOne({ teacherId: idNumber }).then(user => user ? { user, type: 'teacher' } : null),
+        Admin.findOne({ adminId: idNumber }).then(user => user ? { user, type: 'admin' } : null),
+        Secretary.findOne({ secretaryId: idNumber }).then(user => user ? { user, type: 'secretary' } : null),
+        TeacherAssistant.findOne({ assistantId: idNumber }).then(user => user ? { user, type: 'teacherAssistant' } : null)
+      );
+    }
+    
+    // البحث أيضاً كـ string للـ IDs النصية
+    searchPromises.push(
+      Teacher.findOne({ teacherId: identifier }).then(user => user ? { user, type: 'teacher' } : null),
+      Admin.findOne({ adminId: identifier }).then(user => user ? { user, type: 'admin' } : null)
+    );
+    
+    // انتظار كل النتائج
+    const results = await Promise.all(searchPromises);
+    
+    // فلترة النتائج الفارغة
+    const foundUsers = results.filter(result => result !== null);
+    
+    // إذا لقينا مستخدم واحد بس
+    if (foundUsers.length === 1) {
+      const { user, type } = foundUsers[0];
+      switch (type) {
+        case 'student':
+          return await authenticateStudent(user, password, rememberMe, res);
+        case 'teacher':
+          return await authenticateTeacher(user, password, rememberMe, res);
+        case 'admin':
+          return await authenticateAdmin(user, password, rememberMe, res);
+        case 'secretary':
+          return await authenticateSecretary(user, password, rememberMe, res);
+        case 'teacherAssistant':
+          return await authenticateTeacherAssistant(user, password, rememberMe, res);
       }
     }
-
-    // 2. محاولة البحث كمعلم (teacherId)
-    const teacher = await Teacher.findOne({ teacherId: identifier });
     
-    if (teacher) {
-      return await authenticateTeacher(teacher, password, rememberMe, res);
-    }
-
-    // 3. محاولة البحث كإداري (adminId)
-    const admin = await Admin.findOne({ adminId: identifier });
-    
-    if (admin) {
-      return await authenticateAdmin(admin, password, rememberMe, res);
-    }
-
-    // 4. محاولة البحث كسكرتير (secretaryId) - secretaryId هو Number
-    const secretaryIdNumber = parseInt(identifier);
-    if (!isNaN(secretaryIdNumber)) {
-      const secretary = await Secretary.findOne({ secretaryId: secretaryIdNumber });
+    // إذا لقينا أكثر من مستخدم (نادر - يعني في تعارض IDs)
+    if (foundUsers.length > 1) {
+      console.warn(`⚠️ تعارض IDs: الـ identifier "${identifier}" موجود في أكثر من collection:`, 
+        foundUsers.map(f => f.type));
       
-      if (secretary) {
-        return await authenticateSecretary(secretary, password, rememberMe, res);
-      }
-    }
-
-    // 5. محاولة البحث كمساعد مدرس (assistantId) - assistantId هو Number
-    const assistantIdNumber = parseInt(identifier);
-    if (!isNaN(assistantIdNumber)) {
-      const assistant = await TeacherAssistant.findOne({ assistantId: assistantIdNumber });
-      
-      if (assistant) {
-        return await authenticateTeacherAssistant(assistant, password, rememberMe, res);
+      // نجرب نتحقق من كلمة المرور لكل واحد ونرجع الصحيح
+      for (const { user, type } of foundUsers) {
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (isMatch) {
+          switch (type) {
+            case 'student':
+              return await authenticateStudent(user, password, rememberMe, res);
+            case 'teacher':
+              return await authenticateTeacher(user, password, rememberMe, res);
+            case 'admin':
+              return await authenticateAdmin(user, password, rememberMe, res);
+            case 'secretary':
+              return await authenticateSecretary(user, password, rememberMe, res);
+            case 'teacherAssistant':
+              return await authenticateTeacherAssistant(user, password, rememberMe, res);
+          }
+        }
       }
     }
 
