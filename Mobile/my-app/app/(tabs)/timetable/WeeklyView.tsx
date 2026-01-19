@@ -1,7 +1,8 @@
 // WeeklyView.tsx - عرض الجدول الأسبوعي للموبايل
+// ✅ محدث: يعرض تفاصيل المقاطع (حفظ/مراجعة) واسم المعلم مثل الويب
 import React, { useMemo } from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
-import { Calendar } from "lucide-react-native";
+import { Calendar, BookOpen, RefreshCw, User } from "lucide-react-native";
 
 const WEEK_DAYS = [
   "السبت",
@@ -13,6 +14,12 @@ const WEEK_DAYS = [
   "الجمعة",
 ];
 
+interface Teacher {
+  _id: string;
+  firstName: string;
+  lastName: string;
+}
+
 interface Session {
   _id: string;
   sessionDate: string;
@@ -21,12 +28,32 @@ interface Session {
   note?: string;
   groupName?: string;
   sessionType?: "hifz" | "murajaah" | "both";
+  teacherId?: string | Teacher;
+  sectionDetails?: {
+    surahName?: string;
+    memorizationSection?: string;
+    reviewSection?: string;
+    marksStatus?: string;
+  };
+  sectionInfo?: {
+    memorizationSection?: string;
+    reviewSection?: string;
+    marksStatus?: string;
+  };
 }
 
 interface WeeklyViewProps {
   sessions: Session[];
   currentDate: Date;
 }
+
+// ✅ دالة لتحويل التاريخ إلى صيغة YYYY-MM-DD بالتوقيت المحلي (ليس UTC)
+const formatLocalDate = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
 
 const WeeklyView: React.FC<WeeklyViewProps> = ({ sessions, currentDate }) => {
   // حساب بداية الأسبوع (السبت) - في JavaScript: السبت = 6
@@ -52,7 +79,7 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({ sessions, currentDate }) => {
   const sessionsByDay = useMemo(() => {
     const map: Record<string, Session[]> = {};
     weekDates.forEach((date) => {
-      const key = date.toISOString().split("T")[0];
+      const key = formatLocalDate(date);
       map[key] = [];
     });
     sessions.forEach((s) => {
@@ -73,9 +100,9 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({ sessions, currentDate }) => {
         showsHorizontalScrollIndicator={false}
         style={styles.daysRow}>
         {weekDates.map((date, idx) => {
-          const key = date.toISOString().split("T")[0];
+          const key = formatLocalDate(date);
           const daySessions = sessionsByDay[key] || [];
-          const isToday = new Date().toISOString().split("T")[0] === key;
+          const isToday = formatLocalDate(new Date()) === key;
           return (
             <View key={key} style={[styles.dayCol, isToday && styles.todayCol]}>
               <Text style={[styles.dayName, isToday && styles.todayText]}>
@@ -104,9 +131,57 @@ const WeeklyView: React.FC<WeeklyViewProps> = ({ sessions, currentDate }) => {
                     <Text style={styles.sessionTitle}>
                       {s.groupName || s.note || "حلقة"}
                     </Text>
+
+                    {/* ✅ اسم المعلم */}
+                    {s.teacherId && typeof s.teacherId === "object" && (
+                      <View style={styles.teacherRow}>
+                        <User size={12} color="#6b7280" />
+                        <Text style={styles.teacherName}>
+                          {s.teacherId.firstName} {s.teacherId.lastName}
+                        </Text>
+                      </View>
+                    )}
+
                     <Text style={styles.sessionTime}>
                       {s.startHour} - {s.endHour}
                     </Text>
+
+                    {/* ✅ تفاصيل المقاطع */}
+                    {(s.sectionDetails || s.sectionInfo) && (
+                      <View style={styles.sectionDetailsContainer}>
+                        {/* مقطع الحفظ */}
+                        {(s.sectionDetails?.memorizationSection ||
+                          s.sectionInfo?.memorizationSection) &&
+                          (s.sessionType === "hifz" ||
+                            s.sessionType === "both") && (
+                            <View style={styles.sectionBadgeHifz}>
+                              <BookOpen size={10} color="#fff" />
+                              <Text
+                                style={styles.sectionBadgeText}
+                                numberOfLines={1}>
+                                {s.sectionDetails?.memorizationSection ||
+                                  s.sectionInfo?.memorizationSection}
+                              </Text>
+                            </View>
+                          )}
+                        {/* مقطع المراجعة */}
+                        {(s.sectionDetails?.reviewSection ||
+                          s.sectionInfo?.reviewSection) &&
+                          (s.sessionType === "murajaah" ||
+                            s.sessionType === "both") && (
+                            <View style={styles.sectionBadgeMurajaah}>
+                              <RefreshCw size={10} color="#fff" />
+                              <Text
+                                style={styles.sectionBadgeText}
+                                numberOfLines={1}>
+                                {s.sectionDetails?.reviewSection ||
+                                  s.sectionInfo?.reviewSection}
+                              </Text>
+                            </View>
+                          )}
+                      </View>
+                    )}
+
                     <Text style={styles.sessionTypeText}>
                       {s.sessionType === "hifz"
                         ? "📖 حفظ"
@@ -266,6 +341,46 @@ const styles = StyleSheet.create({
     color: "#6b7280",
     fontWeight: "600",
     marginTop: 4,
+  },
+  // ✅ أنماط جديدة للمعلم والمقاطع
+  teacherRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginBottom: 6,
+  },
+  teacherName: {
+    fontSize: 11,
+    color: "#6b7280",
+    fontWeight: "500",
+  },
+  sectionDetailsContainer: {
+    marginTop: 8,
+    gap: 4,
+  },
+  sectionBadgeHifz: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#3b82f6",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  sectionBadgeMurajaah: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#f59e0b",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  sectionBadgeText: {
+    fontSize: 10,
+    color: "#ffffff",
+    fontWeight: "700",
+    flex: 1,
   },
 });
 
