@@ -19,6 +19,7 @@ const AttendanceHandler = require("./Handlers/AttendanceHandler");
 const WarningHandler = require("./Handlers/WarningHandler");
 const ChatHandler = require("./Handlers/ChatHandler");
 const TimetableHandler = require("./Handlers/TimetableHandler");
+const SecretaryHandler = require("./Handlers/SecretaryHandler");
 
 module.exports = {
   // Main Services
@@ -87,6 +88,20 @@ module.exports = {
   notifyBulkNewsUpdated: NewsHandler.notifyBulkNewsUpdated,
   notifyBulkNewsDeleted: NewsHandler.notifyBulkNewsDeleted,
   notifyViewsIncremented: NewsHandler.notifyViewsIncremented,
+  
+  // ✅ Secretary Notifications - إشعارات السكرتير
+  SecretaryHandler,
+  secretaryNotifyAllStudents: SecretaryHandler.notifyAllStudents,
+  secretaryNotifyAllTeachers: SecretaryHandler.notifyAllTeachers,
+  secretaryNotifyAdmin: SecretaryHandler.notifyAdmin,
+  secretaryNotifyAll: SecretaryHandler.notifyAll,
+  secretaryNotifyStudent: SecretaryHandler.notifyStudent,
+  secretaryNotifyTeacher: SecretaryHandler.notifyTeacher,
+  secretaryStudentAdded: SecretaryHandler.notifyStudentAdded,
+  secretaryStudentRemoved: SecretaryHandler.notifyStudentRemoved,
+  secretaryStudentMoved: SecretaryHandler.notifyStudentMoved,
+  checkSecretaryPermission: SecretaryHandler.checkSecretaryPermission,
+  getSecretaryPermissions: SecretaryHandler.getSecretaryPermissions,
   
   // Helper functions from NotificationManager
   sendNotificationToDevices: NotificationManager.prototype.sendNotificationToDevices,

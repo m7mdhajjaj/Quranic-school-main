@@ -254,6 +254,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     mentionActiveIndex,
     mentionUsers,
     mentionPosition,
+    mentionQuery,
     textareaRef,
     messagesContainerRef,
     messagesEndRef,
@@ -355,22 +356,26 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       {/* Input */}
       <div className="p-2 sm:p-3 bg-white/95 backdrop-blur-md border-t border-gray-200/80 flex-shrink-0 relative z-20 shadow-sm">
         <div className="flex gap-1.5 sm:gap-2 items-end bg-white p-1.5 sm:p-2 rounded-xl border border-gray-200/80 focus-within:border-emerald-400 focus-within:ring-1 focus-within:ring-emerald-100 transition-all shadow-sm relative" dir="rtl">
-          <Suspense fallback={null}>
-            <MentionDropdown 
-            isOpen={isMentionOpen}
-            users={mentionUsers}
-            activeIndex={mentionActiveIndex}
-            position={mentionPosition}
-            onSelect={handleSelectMention}
-          />
-          </Suspense>
+          {/* Mention Dropdown - positioned above input (only for GROUP chats) */}
+          {chatType === 'GROUP' && (
+            <Suspense fallback={null}>
+              <MentionDropdown 
+                isOpen={isMentionOpen}
+                users={mentionUsers}
+                activeIndex={mentionActiveIndex}
+                position={mentionPosition}
+                onSelect={handleSelectMention}
+                searchQuery={mentionQuery}
+              />
+            </Suspense>
+          )}
           <div className="flex-1 min-w-0">
             <textarea
               ref={textareaRef}
               value={inputText}
               onChange={onInputChange}
               onKeyDown={onKeyDown}
-              placeholder="اكتب رسالة..."
+              placeholder={chatType === 'GROUP' ? "اكتب رسالة... (@ للمنشن)" : "اكتب رسالة..."}
               disabled={isSending}
               rows={1}
               dir="rtl"

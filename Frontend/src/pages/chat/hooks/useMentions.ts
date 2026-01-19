@@ -1,15 +1,12 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { getCaretCoordinates } from '../../../utils/caretCoordinates';
 import api from '../../../Api/api';
+import type { User, ChatType } from '../types';
 
-interface MentionUser {
-  _id: string;
-  firstName: string;
-  lastName: string;
-  avatar?: { url: string };
-}
+// MentionUser extends User with required fields for mentions
+export interface MentionUser extends Pick<User, '_id' | 'firstName' | 'lastName' | 'avatar'> {}
 
-export const useMentions = () => {
+export const useMentions = (chatType: ChatType = 'GROUP', groupId?: string) => {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
@@ -19,54 +16,79 @@ export const useMentions = () => {
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Fetch users based on query
+  // Fetch users based on query - only for GROUP chats
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || chatType !== 'GROUP') {
+      setUsers([]);
+      return;
+    }
 
     const fetchUsers = async () => {
       try {
-        const { data } = await api.get(`/mentions/search?q=${query}`);
-        setUsers(data.data);
+        // Pass groupId and query to get group members only
+        const params = new URLSearchParams();
+        if (query) params.append('q', query);
+        if (groupId) params.append('groupId', groupId);
+        
+        const { data } = await api.get(`/mentions/search?${params.toString()}`);
+        
+        // Filter locally by firstName or lastName if query exists
+        let filteredUsers = data.data || [];
+        if (query && query.trim()) {
+          const searchTerm = query.toLowerCase().trim();
+          filteredUsers = filteredUsers.filter((user: MentionUser) => {
+            const firstName = (user.firstName || '').toLowerCase();
+            const lastName = (user.lastName || '').toLowerCase();
+            const fullName = `${firstName} ${lastName}`;
+            return firstName.includes(searchTerm) || 
+                   lastName.includes(searchTerm) || 
+                   fullName.includes(searchTerm);
+          });
+        }
+        
+        setUsers(filteredUsers);
         setActiveIndex(0);
       } catch (error) {
         console.error("Failed to fetch mention users", error);
       }
     };
 
-    const timeoutId = setTimeout(fetchUsers, 300); // Debounce
+    const timeoutId = setTimeout(fetchUsers, 200); // Faster debounce
     return () => clearTimeout(timeoutId);
-  }, [query, isOpen]);
+  }, [query, isOpen, chatType, groupId]);
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const { value, selectionStart } = e.target;
+    const textarea = e.target; // Use event target directly
     
     // Check if we are typing a mention
     // Look backwards from cursor to find the last @
     const textBeforeCaret = value.slice(0, selectionStart);
     const lastAtPos = textBeforeCaret.lastIndexOf('@');
 
-    if (lastAtPos !== -1) {
+    if (lastAtPos !== -1 && chatType === 'GROUP') {
       const textAfterAt = textBeforeCaret.slice(lastAtPos + 1);
       
-      // Valid mention if no spaces (or handle spaces if you want "John Doe")
-      // Here we assume simple names or allow spaces if needed, but usually stop at newline
-      if (!textAfterAt.includes('\n') && (textAfterAt.length <= 15)) { // Limit search length
+      // Allow spaces for full names like "محمد أحمد"
+      // Stop at newline only
+      if (!textAfterAt.includes('\n') && (textAfterAt.length <= 25)) { // Limit search length
         setTriggerIndex(lastAtPos);
         setQuery(textAfterAt);
         setIsOpen(true);
         
-        // Calculate position
-        if (textareaRef.current) {
-          const coords = getCaretCoordinates(textareaRef.current, lastAtPos);
-          const rect = textareaRef.current.getBoundingClientRect();
-          
-          // Calculate absolute position relative to viewport
-          // Subtract scrollTop to handle scrolling within the textarea
-          setPosition({ 
-            top: rect.top + coords.top - textareaRef.current.scrollTop, 
-            left: rect.left + coords.left - textareaRef.current.scrollLeft
-          });
-        }
+        // Calculate position using event target directly
+        const coords = getCaretCoordinates(textarea, lastAtPos);
+        const rect = textarea.getBoundingClientRect();
+        
+        // Calculate absolute position relative to viewport
+        // Subtract scrollTop to handle scrolling within the textarea
+        setPosition({ 
+          top: rect.top + coords.top - textarea.scrollTop, 
+          left: rect.left + coords.left - textarea.scrollLeft
+        });
+        
+        // Update ref for later use
+        textareaRef.current = textarea;
         return;
       }
     }
@@ -78,7 +100,9 @@ export const useMentions = () => {
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (!isOpen) return;
 
-    const totalOptions = users.length + 1; // +1 for "All"
+    // When searching, don't count "All" option
+    const totalOptions = query.trim() ? users.length : users.length + 1;
+    if (totalOptions === 0) return;
 
     switch (e.key) {
       case 'ArrowDown':

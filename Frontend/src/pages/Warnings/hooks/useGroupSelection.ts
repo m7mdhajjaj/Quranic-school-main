@@ -19,8 +19,13 @@ export const useGroupSelection = ({
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const [loadingStudents, setLoadingStudents] = useState(false);
   const lastLoadedGroupIdRef = useRef<string | null>(null);
+  const selectedGroupRef = useRef<Group | null>(null);
 
-  // ✅ استعادة الحلقة المختارة من URL عند التحميل ومزامنة الحالة
+  // ✅ تحديث الـ ref عند تغيير selectedGroup
+  useEffect(() => {
+    selectedGroupRef.current = selectedGroup;
+  }, [selectedGroup]);
+
   useEffect(() => {
     const groupId = searchParams.get('groupId');
     
@@ -76,18 +81,26 @@ export const useGroupSelection = ({
 
   // ✅ تحديث بيانات الحلقة الحالية بدون إظهار Loading (Silent Refresh)
   const refreshCurrentGroup = useCallback(async () => {
-    if (!selectedGroup) return;
+    const currentGroup = selectedGroupRef.current;
+    if (!currentGroup) {
+      console.warn('⚠️ No selected group to refresh');
+      return;
+    }
 
+    console.log('🔄 Refreshing group:', currentGroup.name);
+    
     try {
-      // لا نضع setLoadingStudents(true) هنا لمنع الوميض
-      const updatedGroup = await fetchGroupStudentsWarnings(selectedGroup);
+      // ⚡ جلب البيانات المحدثة
+      const updatedGroup = await fetchGroupStudentsWarnings(currentGroup);
       if (updatedGroup) {
+        console.log('✅ Group refreshed successfully');
         setSelectedGroup(updatedGroup);
+        selectedGroupRef.current = updatedGroup;
       }
     } catch (error) {
-      console.error("Error refreshing group data:", error);
+      console.error("❌ Error refreshing group data:", error);
     }
-  }, [selectedGroup, fetchGroupStudentsWarnings]);
+  }, [fetchGroupStudentsWarnings]);
 
   // ✅ العودة للحلقات - محسّن بـ useCallback
   const handleBack = useCallback(() => {

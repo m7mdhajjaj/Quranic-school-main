@@ -105,7 +105,10 @@ export const useWarningsModals = ({
           `✅ تم إعطاء ${getWarningLabel(type)} بنجاح للطالب ${student.firstName} ${student.lastName}`
         );
 
-        onSuccess?.();
+        // ⚡ تحديث البيانات بعد 300ms (وقت كافي للـ Backend)
+        setTimeout(() => {
+          onSuccess?.();
+        }, 300);
       } catch (error: any) {
         // عرض رسالة الخطأ باستخدام SweetAlert
         showErrorMessage("خطأ", error.message || "حدث خطأ أثناء إعطاء الإنذار");
@@ -142,7 +145,11 @@ export const useWarningsModals = ({
           `✅ تم حذف ${getWarningLabel(warningType)} بنجاح للطالب ${student.firstName} ${student.lastName}`
         );
 
+        // ⚡ تحديث الواجهة فوراً
         onSuccess?.();
+      } else {
+        // ❌ إظهار رسالة خطأ عند فشل الحذف
+        showErrorMessage("خطأ", "حدث خطأ أثناء حذف الإنذار. حاول مرة أخرى.");
       }
     }
   }, [deleteWarning, onSuccess]);
@@ -184,7 +191,11 @@ export const useWarningsModals = ({
           `✅ تم حذف التنبيه بنجاح للطالب ${student.firstName} ${student.lastName}`
         );
 
+        // ⚡ تحديث الواجهة فوراً
         onSuccess?.();
+      } else {
+        // ❌ إظهار رسالة خطأ عند فشل الحذف
+        showErrorMessage("خطأ", "حدث خطأ أثناء حذف التنبيه. حاول مرة أخرى.");
       }
     }
   }, [deleteWarningById, onSuccess]);

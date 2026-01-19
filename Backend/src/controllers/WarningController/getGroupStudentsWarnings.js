@@ -69,12 +69,17 @@ exports.getGroupWithStudentsWarnings = async (req, res) => {
       });
     }
 
-    // ✅ OPTIMIZED: جلب جميع الإنذارات النشطة دفعة واحدة
+    // ✅ OPTIMIZED: جلب جميع الإنذارات دفعة واحدة
+    // المعلم: فقط active | المدير: الكل (active + inactive)
     const studentIds = students.map((s) => s._id);
-    const warnings = await Warning.find({ 
-      studentId: { $in: studentIds },
-      status: "active" // فقط الإنذارات النشطة
-    })
+    const warningsQuery = { studentId: { $in: studentIds } };
+    
+    // المعلم يشوف فقط الإنذارات النشطة
+    if (req.user.role !== 'admin') {
+      warningsQuery.status = 'active';
+    }
+    
+    const warnings = await Warning.find(warningsQuery)
       .select("studentId type reason createdAt status")
       .lean();
 

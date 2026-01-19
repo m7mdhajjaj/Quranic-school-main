@@ -206,7 +206,7 @@ export interface UseWarningsDataReturn {
   loading: boolean;
   isTeacher: boolean;
   isStudent: boolean;
-  refetchData: () => void;
+  refetchData: (silent?: boolean) => void;
   fetchGroupStudentsWarnings: (group: Group) => Promise<Group>;
   setWarnings: React.Dispatch<React.SetStateAction<Warning[]>>;
 }

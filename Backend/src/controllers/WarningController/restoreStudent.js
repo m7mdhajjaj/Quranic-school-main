@@ -10,9 +10,15 @@ const { cache } = require("../../utils/cache/cacheClient");
 
 /**
  * إعادة طالب مفصول إلى حلقة (نفس الحلقة أو جديدة)
- * Changes Warning status -> 'inactive'
+ * 
+ * ⚠️ ملاحظة مهمة:
+ * - الإنذارات القديمة تبقى inactive (ما ترجع active)
+ * - الطالب يبدأ من صفر عند المعلم
+ * - المدير يشوف كل التاريخ في StudentHistory
+ * 
+ * Changes Warning status -> 'inactive' (تبقى inactive)
  * Updates Student -> group: targetGroup
- * Logs to StudentHistory
+ * Logs to StudentHistory (للمدير)
  * 
  * @route POST /api/warnings/restore
  */
@@ -38,25 +44,23 @@ exports.restoreStudentToGroup = async (req, res) => {
       });
     }
 
-    // 3. العثور على الإنذار النشط (فصل) وتحديثه
-    // نبحث عن أي إنذار نشط من نوع فصل أو إنذار ثالث أدى للفصل
-    const activeWarning = await Warning.findOne({
+    // 3. الإنذارات القديمة تبقى inactive (ما ترجع active)
+    // الطالب يبدأ من صفر عند المعلم، لكن المدير يشوف التاريخ الكامل
+    // لا حاجة لتعديل Warning status - تبقى inactive كما هي
+    
+    // نبحث عن آخر إنذار فصل للتسجيل في History فقط
+    const lastExpulsionWarning = await Warning.findOne({
       studentId: studentId,
-      status: "active",
+      status: "inactive",
       type: { $in: ["expulsion", "third"] }
-    });
-
-    if (activeWarning) {
-      activeWarning.status = "inactive";
-      await activeWarning.save();
-    }
+    }).sort({ createdAt: -1 });
 
     // 4. تحديث حالة الطالب وإعادته للحلقة
     const oldGroup = student.group; // المفترض أن يكون null أو الحلقة القديمة
     student.group = group.name;
     await student.save();
 
-    // 5. تسجيل في السجل (History)
+    // 5. تسجيل في السجل (History) - للمدير يشوف التاريخ الكامل
     await StudentHistory.create({
       studentId: studentId,
       eventType: "RESTORATION",
@@ -65,7 +69,7 @@ exports.restoreStudentToGroup = async (req, res) => {
         reason: reason || "إعادة بقرار إداري",
         previousGroup: oldGroup || "مفصول",
         newGroup: group.name,
-        relatedWarningId: activeWarning ? activeWarning._id : null
+        relatedWarningId: lastExpulsionWarning ? lastExpulsionWarning._id : null
       },
       metadata: {
         adminId: req.user._id,
@@ -80,10 +84,11 @@ exports.restoreStudentToGroup = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "تمت إعادة الطالب للحلقة بنجاح، وإلغاء تفعيل الإنذار السابق",
+      message: "تمت إعادة الطالب للحلقة بنجاح. الإنذارات القديمة محفوظة في السجل للمدير فقط",
       data: {
         studentName: `${student.firstName} ${student.lastName}`,
-        newGroup: group.name
+        newGroup: group.name,
+        note: "الطالب يبدأ من صفر عند المعلم"
       }
     });
 

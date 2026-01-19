@@ -90,33 +90,30 @@ export const useWarningsActions = (): UseWarningsActionsReturn => {
     }
   }, []);
 
-  // ✅ حذف إنذار باستخدام endpoint مباشر - محسّن بـ useCallback
-  const deleteWarning = useCallback(async (student: Student, warningType: string) => {
+  // ✅ حذف إنذار - انتظار النتيجة الفعلية
+  const deleteWarning = useCallback(async (student: Student, warningType: string): Promise<boolean> => {
     try {
-      // حذف الإنذار مباشرة بدون استدعاء GET أولاً
-      await warningApi.deleteWarningByType(student._id, warningType);
-
-      // Socket سيقوم بالتحديث تلقائياً - لا داعي لاستدعاءات API إضافية
-      // تم إزالة refetchData() و fetchTeacherStatistics() لتحسين الأداء
+      // ⚡ انتظار الحذف الفعلي من الـ API
+      const response = await warningApi.deleteWarningByType(student._id, warningType);
+      console.log('✅ Delete warning success:', response);
       return true;
     } catch (error: any) {
-      console.error('Error deleting warning:', error);
-      // إرجاع false فقط - الخطأ سيُعرض من modal
+      console.error('❌ Error deleting warning:', error);
+      console.error('❌ Error response:', error?.response?.data);
       return false;
     }
   }, []);
 
-  // ✅ حذف تنبيه بالـ ID - محسّن بـ useCallback
-  const deleteWarningById = useCallback(async (warningId: string) => {
+  // ✅ حذف تنبيه بالـ ID - انتظار النتيجة الفعلية
+  const deleteWarningById = useCallback(async (warningId: string): Promise<boolean> => {
     try {
-      await warningApi.deleteWarningById(warningId);
-      
-      // Socket سيقوم بالتحديث تلقائياً - لا داعي لاستدعاء refetchData()
-      // تم إزالة refetchData() لتحسين الأداء
+      // ⚡ انتظار الحذف الفعلي من الـ API
+      const response = await warningApi.deleteWarningById(warningId);
+      console.log('✅ Delete warning by ID success:', response);
       return true;
     } catch (error: any) {
-      console.error('Error deleting warning:', error);
-      // إرجاع false فقط - الخطأ سيُعرض من modal
+      console.error('❌ Error deleting warning:', error);
+      console.error('❌ Error response:', error?.response?.data);
       return false;
     }
   }, []);

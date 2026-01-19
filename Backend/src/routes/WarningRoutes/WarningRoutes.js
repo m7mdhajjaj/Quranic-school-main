@@ -63,6 +63,15 @@ router.get(
   warningController.getExpelledStudentsFromGroup
 );
 
+// ✅ NEW: التحقق من حالة طالب (مفصول/محظور)
+// GET /api/warnings/status/:studentId
+router.get(
+  '/status/:studentId',
+  protect,
+  validateGetStudentWarnings,
+  warningController.checkStudentStatus
+);
+
 // ============================================================================
 // POST ROUTES - إنشاء الإنذارات
 // ============================================================================

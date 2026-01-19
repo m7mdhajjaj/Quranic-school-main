@@ -3,7 +3,8 @@
 // ============================================================================
 
 import { useMemo } from 'react';
-import type { Conversation } from '../types';
+import type { Conversation, UserModel } from '../types';
+import { ROLE_NAMES } from '../types';
 
 interface DisplayInfo {
   name: string;
@@ -43,20 +44,15 @@ export const useConversationItem = ({
       };
     }
     
+    // Find other participant with null safety check
     const otherParticipant = conversation.participants.find(
-      p => p.userId._id !== currentUserId
+      p => p?.userId?._id && p.userId._id !== currentUserId
     );
     
-    if (otherParticipant) {
-      const roleMap: Record<string, string> = {
-        'Student': 'طالب',
-        'Teacher': 'معلم',
-        'Admin': 'مدير'
-      };
-      
+    if (otherParticipant?.userId) {
       return {
-        name: `${otherParticipant.userId.firstName} ${otherParticipant.userId.lastName}`,
-        subtitle: roleMap[otherParticipant.userModel] || '',
+        name: `${otherParticipant.userId.firstName || ''} ${otherParticipant.userId.lastName || ''}`.trim() || 'مستخدم',
+        subtitle: ROLE_NAMES[otherParticipant.userModel as UserModel] || '',
         avatar: otherParticipant.userId.avatar?.url || null,
         userId: otherParticipant.userId._id
       };

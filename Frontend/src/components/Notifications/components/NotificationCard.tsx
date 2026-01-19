@@ -43,7 +43,7 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
   return (
     <div
       className={`
-        group relative mx-2 my-2 rounded-2xl cursor-pointer overflow-hidden
+        group relative mx-1.5 my-1.5 rounded-xl cursor-pointer overflow-hidden
         transition-all duration-300 ease-out
         ${!notification.isRead
           ? 'bg-white shadow-lg shadow-gray-200/50 hover:shadow-xl hover:shadow-emerald-100/50 border border-gray-100'
@@ -62,15 +62,16 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
         <div className={`absolute -right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-gradient-to-br ${colorClass} blur-xl opacity-40`} />
       )}
 
-      <div className="flex items-start gap-3 p-3.5 pr-4">
+      <div className="flex items-start gap-2.5 p-2.5 pr-3">
         {/* Icon Container */}
         <div className="relative flex-shrink-0">
           <div
             className={`
-              w-11 h-11 rounded-xl flex items-center justify-center
+              w-9 h-9 rounded-lg flex items-center justify-center
               bg-gradient-to-br ${colorClass}
-              shadow-lg transition-all duration-300
-              group-hover:scale-110 group-hover:rotate-3 group-hover:shadow-xl
+              shadow-md transition-all duration-300
+              group-hover:scale-105 group-hover:shadow-lg
+              [&>svg]:w-4 [&>svg]:h-4
             `}
           >
             {icon}
@@ -78,17 +79,17 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
           
           {/* New Badge */}
           {!notification.isRead && (
-            <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white shadow-sm animate-pulse" />
+            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white shadow-sm animate-pulse" />
           )}
         </div>
 
         {/* Content */}
-        <div className="flex-1 min-w-0 space-y-1.5">
+        <div className="flex-1 min-w-0 space-y-1">
           {/* Title Row */}
-          <div className="flex items-start justify-between gap-2">
+          <div className="flex items-start justify-between gap-1.5">
             <h4
               className={`
-                font-semibold text-sm leading-snug
+                font-semibold text-xs leading-snug
                 ${!notification.isRead ? 'text-gray-900' : 'text-gray-600'}
               `}
             >
@@ -98,7 +99,7 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
             {/* Arrow Indicator */}
             <ChevronLeft 
               className={`
-                w-4 h-4 flex-shrink-0 text-gray-300
+                w-3.5 h-3.5 flex-shrink-0 text-gray-300
                 transition-all duration-300
                 group-hover:text-emerald-500 group-hover:-translate-x-1
               `} 
@@ -109,7 +110,7 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
           {notification.type !== 'message' && (notification.messageSummary || notification.message) && (
             <p
               className={`
-                text-xs leading-relaxed line-clamp-2
+                text-[11px] leading-relaxed line-clamp-2
                 ${!notification.isRead ? 'text-gray-600' : 'text-gray-500'}
               `}
             >
@@ -149,8 +150,8 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
           </div>
 
           {/* Time Row */}
-          <div className="flex items-center gap-1.5 text-[11px] text-gray-400" key={refreshTime}>
-            <Clock className="w-3 h-3" />
+          <div className="flex items-center gap-1 text-[10px] text-gray-400" key={refreshTime}>
+            <Clock className="w-2.5 h-2.5" />
             <span className="font-medium">{formatRelativeTime(notification.sentAt)}</span>
           </div>
         </div>
@@ -159,7 +160,7 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
         <button
           onClick={handleDelete}
           className={`
-            flex-shrink-0 p-2 rounded-xl
+            flex-shrink-0 p-1.5 rounded-lg
             text-gray-300 hover:text-red-500 
             hover:bg-red-50 active:bg-red-100
             transition-all duration-200
@@ -169,7 +170,7 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
           title="حذف الإشعار"
           aria-label="حذف الإشعار"
         >
-          <Trash2 className="w-4 h-4" />
+          <Trash2 className="w-3.5 h-3.5" />
         </button>
       </div>
     </div>

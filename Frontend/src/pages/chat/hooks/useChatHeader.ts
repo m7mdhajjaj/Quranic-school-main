@@ -6,6 +6,7 @@ import { useCallback } from 'react';
 import api from '../../../Api/api';
 import { showErrorMessage } from '../../../utils/sweetalertUtils';
 import { showSuccessToast } from '../../../utils/toastUtils';
+import type { ChatType } from '../types';
 
 interface DropdownItem {
   label: string;
@@ -13,7 +14,7 @@ interface DropdownItem {
   onClick: () => void;
 }
 
-export const useChatHeader = (chatType: 'DM' | 'GROUP', targetId: string): { getHeaderDropdownItems: () => DropdownItem[] } => {
+export const useChatHeader = (chatType: ChatType, targetId: string): { getHeaderDropdownItems: () => DropdownItem[] } => {
   const handleMute = useCallback(async (duration: number) => {
     try {
       await api.post('/chat/conversations/mute', {

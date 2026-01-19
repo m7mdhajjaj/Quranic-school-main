@@ -3,7 +3,7 @@
 // ============================================================================
 
 import React, { useCallback, useEffect } from "react";
-import { useWarningsData } from "./hooks/useWarningsData";
+import { useWarningsData, clearWarningsCache } from "./hooks/useWarningsData";
 import { useWarningsActions } from "./hooks/useWarningsActions";
 import { useGroupSelection } from "./hooks/useGroupSelection";
 import { useWarningsModals } from "./hooks/useWarningsModals";
@@ -35,23 +35,23 @@ const WarningsPage: React.FC = () => {
     groups,
   });
 
-  // ✅ Memoize onSuccess callback - Optimized
+  // ✅ Silent refresh بعد العمليات - يحدّث البيانات بدون loading
   const handleModalSuccess = useCallback(async () => {
-    // Socket.IO سيقوم بالتحديث التلقائي لكل شيء:
-    // - warningCreated → يحدث قائمة الطلاب المفصولين
-    // - warningDeleted → يحدث قائمة الطلاب المفصولين
-    // - statisticsUpdated → يحدث الإحصائيات
+    console.log('🔄 Starting refresh after operation...');
     
-    // تحديث قائمة طلاب الحلقة فقط (باقي التحديثات عبر Socket)
-    // ✅ استخدام refreshCurrentGroup بدلاً من handleGroupSelect لمنع الوميض
-    await refreshCurrentGroup();
+    // 1️⃣ مسح الكاش لإجبار تحديث البيانات
+    clearWarningsCache();
     
-    // تحديث قائمة الحلقات لتحديث العدادات في الكروت
-    // إضافة تأخير بسيط لضمان اكتمال التحديث في قاعدة البيانات
-    setTimeout(() => {
-      refetchData();
-    }, 100);
-  }, [refreshCurrentGroup, refetchData]);
+    // 2️⃣ تحديث الحلقة الحالية
+    if (selectedGroup) {
+      await refreshCurrentGroup();
+    }
+    
+    // 3️⃣ تحديث الإحصائيات
+    fetchTeacherStatistics();
+    
+    console.log('✅ Refresh completed');
+  }, [selectedGroup, refreshCurrentGroup, fetchTeacherStatistics]);
 
   const { showGiveWarningModal, showDeleteWarningModal, showDeleteWarningByIdModal } =
     useWarningsModals({

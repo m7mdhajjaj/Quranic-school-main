@@ -70,12 +70,25 @@ async function restoreStudentToGroup(warning) {
 /**
  * فصل الطالب من الحلقة (مؤقت أو دائم)
  * 🔄 يُستخدم من: createWarning Controller فقط (الفصل الفوري)
+ * 📊 يجعل إنذارات الطالب السابقة inactive (للمعلم فقط، المدير يشوف الكل)
  */
 async function suspendStudentFromGroup(student, group, type, originalGroup) {
   console.log(`⚠️ Processing suspension for student from group: ${originalGroup}`);
   
   try {
-    // استخدام findByIdAndUpdate لضمان التحديث وإرجاع الوثيقة المحدثة
+    // 1️⃣ جعل جميع إنذارات الطالب النشطة inactive
+    const updateResult = await Warning.updateMany(
+      { 
+        studentId: student._id, 
+        status: 'active' 
+      },
+      { 
+        $set: { status: 'inactive' } 
+      }
+    );
+    console.log(`📝 Updated ${updateResult.modifiedCount} warnings to inactive status`);
+
+    // 2️⃣ تحديث بيانات الطالب
     const updatedStudent = await Student.findByIdAndUpdate(
       student._id,
       { 
@@ -84,7 +97,7 @@ async function suspendStudentFromGroup(student, group, type, originalGroup) {
           teacher: null
         } 
       },
-      { new: true, runValidators: false } // runValidators: false لتجنب مشاكل التحقق من الحقول المطلوبة
+      { new: true, runValidators: false }
     );
     
     if (!updatedStudent) {
@@ -94,11 +107,11 @@ async function suspendStudentFromGroup(student, group, type, originalGroup) {
 
     console.log(`✅ Student suspended. New group: ${updatedStudent.group}`);
     
-    // تحديث الكائن المحلي أيضاً للاستخدام اللاحق
+    // 3️⃣ تحديث الكائن المحلي
     student.group = null;
     student.teacher = null;
 
-    // إزالة الطالب من قائمة طلاب الحلقة إذا كانت موجودة
+    // 4️⃣ إزالة الطالب من قائمة طلاب الحلقة
     if (group.students && Array.isArray(group.students)) {
       group.students = group.students.filter(
         (id) => id.toString() !== student._id.toString()

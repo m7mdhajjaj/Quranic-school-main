@@ -403,6 +403,192 @@ export const getSecretaryStats = async (): Promise<SecretaryStatsResponse> => {
   }
 };
 
+// ==================== SECRETARY NOTIFICATIONS ====================
+
+// Types for Secretary Notifications
+export interface SecretaryNotificationPayload {
+  title: string;
+  message: string;
+  data?: Record<string, unknown>;
+}
+
+export interface SecretaryNotificationResponse {
+  success: boolean;
+  message?: string;
+  data?: {
+    notifiedCount?: number;
+    permissions?: SecretaryPermissions;
+  };
+}
+
+/**
+ * Get secretary notification permissions
+ * جلب صلاحيات الإشعارات للسكرتير
+ */
+export const getSecretaryNotificationPermissions = async (): Promise<SecretaryNotificationResponse> => {
+  try {
+    console.log('🔐 جلب صلاحيات الإشعارات...');
+    const response = await api.get<SecretaryNotificationResponse>('/secretaries/notifications/permissions');
+    
+    if (response.data.success) {
+      console.log('✅ تم جلب الصلاحيات بنجاح');
+    }
+    
+    return response.data;
+  } catch (error) {
+    console.error('❌ خطأ في جلب الصلاحيات:', error);
+    const axiosError = error as AxiosError<SecretaryNotificationResponse>;
+    return {
+      success: false,
+      message: axiosError.response?.data?.message || 'حدث خطأ أثناء جلب الصلاحيات'
+    };
+  }
+};
+
+/**
+ * Broadcast notification to all students
+ * إرسال إشعار لجميع الطلاب
+ */
+export const broadcastToStudents = async (payload: SecretaryNotificationPayload): Promise<SecretaryNotificationResponse> => {
+  try {
+    console.log('📢 إرسال إشعار لجميع الطلاب...');
+    const response = await api.post<SecretaryNotificationResponse>('/secretaries/notifications/broadcast/students', payload);
+    
+    if (response.data.success) {
+      console.log('✅ تم إرسال الإشعار للطلاب:', response.data.data?.notifiedCount);
+    }
+    
+    return response.data;
+  } catch (error) {
+    console.error('❌ خطأ في إرسال الإشعار:', error);
+    const axiosError = error as AxiosError<SecretaryNotificationResponse>;
+    return {
+      success: false,
+      message: axiosError.response?.data?.message || 'حدث خطأ أثناء إرسال الإشعار'
+    };
+  }
+};
+
+/**
+ * Broadcast notification to all teachers
+ * إرسال إشعار لجميع المعلمين
+ */
+export const broadcastToTeachers = async (payload: SecretaryNotificationPayload): Promise<SecretaryNotificationResponse> => {
+  try {
+    console.log('📢 إرسال إشعار لجميع المعلمين...');
+    const response = await api.post<SecretaryNotificationResponse>('/secretaries/notifications/broadcast/teachers', payload);
+    
+    if (response.data.success) {
+      console.log('✅ تم إرسال الإشعار للمعلمين:', response.data.data?.notifiedCount);
+    }
+    
+    return response.data;
+  } catch (error) {
+    console.error('❌ خطأ في إرسال الإشعار:', error);
+    const axiosError = error as AxiosError<SecretaryNotificationResponse>;
+    return {
+      success: false,
+      message: axiosError.response?.data?.message || 'حدث خطأ أثناء إرسال الإشعار'
+    };
+  }
+};
+
+/**
+ * Broadcast notification to admin
+ * إرسال إشعار للإدارة
+ */
+export const broadcastToAdmin = async (payload: SecretaryNotificationPayload): Promise<SecretaryNotificationResponse> => {
+  try {
+    console.log('📢 إرسال إشعار للإدارة...');
+    const response = await api.post<SecretaryNotificationResponse>('/secretaries/notifications/broadcast/admin', payload);
+    
+    if (response.data.success) {
+      console.log('✅ تم إرسال الإشعار للإدارة');
+    }
+    
+    return response.data;
+  } catch (error) {
+    console.error('❌ خطأ في إرسال الإشعار:', error);
+    const axiosError = error as AxiosError<SecretaryNotificationResponse>;
+    return {
+      success: false,
+      message: axiosError.response?.data?.message || 'حدث خطأ أثناء إرسال الإشعار'
+    };
+  }
+};
+
+/**
+ * Broadcast notification to all (students, teachers, admin based on permissions)
+ * إرسال إشعار للجميع (حسب الصلاحيات)
+ */
+export const broadcastToAll = async (payload: SecretaryNotificationPayload): Promise<SecretaryNotificationResponse> => {
+  try {
+    console.log('📢 إرسال إشعار للجميع...');
+    const response = await api.post<SecretaryNotificationResponse>('/secretaries/notifications/broadcast/all', payload);
+    
+    if (response.data.success) {
+      console.log('✅ تم إرسال الإشعار للجميع:', response.data.data?.notifiedCount);
+    }
+    
+    return response.data;
+  } catch (error) {
+    console.error('❌ خطأ في إرسال الإشعار:', error);
+    const axiosError = error as AxiosError<SecretaryNotificationResponse>;
+    return {
+      success: false,
+      message: axiosError.response?.data?.message || 'حدث خطأ أثناء إرسال الإشعار'
+    };
+  }
+};
+
+/**
+ * Send notification to specific student
+ * إرسال إشعار لطالب محدد
+ */
+export const notifyStudent = async (studentId: string, payload: SecretaryNotificationPayload): Promise<SecretaryNotificationResponse> => {
+  try {
+    console.log('📢 إرسال إشعار للطالب:', studentId);
+    const response = await api.post<SecretaryNotificationResponse>(`/secretaries/notifications/student/${studentId}`, payload);
+    
+    if (response.data.success) {
+      console.log('✅ تم إرسال الإشعار للطالب');
+    }
+    
+    return response.data;
+  } catch (error) {
+    console.error('❌ خطأ في إرسال الإشعار:', error);
+    const axiosError = error as AxiosError<SecretaryNotificationResponse>;
+    return {
+      success: false,
+      message: axiosError.response?.data?.message || 'حدث خطأ أثناء إرسال الإشعار'
+    };
+  }
+};
+
+/**
+ * Send notification to specific teacher
+ * إرسال إشعار لمعلم محدد
+ */
+export const notifyTeacher = async (teacherId: string, payload: SecretaryNotificationPayload): Promise<SecretaryNotificationResponse> => {
+  try {
+    console.log('📢 إرسال إشعار للمعلم:', teacherId);
+    const response = await api.post<SecretaryNotificationResponse>(`/secretaries/notifications/teacher/${teacherId}`, payload);
+    
+    if (response.data.success) {
+      console.log('✅ تم إرسال الإشعار للمعلم');
+    }
+    
+    return response.data;
+  } catch (error) {
+    console.error('❌ خطأ في إرسال الإشعار:', error);
+    const axiosError = error as AxiosError<SecretaryNotificationResponse>;
+    return {
+      success: false,
+      message: axiosError.response?.data?.message || 'حدث خطأ أثناء إرسال الإشعار'
+    };
+  }
+};
+
 // Default export object with all functions
 export default {
   getAllSecretaries,
@@ -417,4 +603,12 @@ export default {
   deleteSecretaryAvatar,
   getSecretaryStats,
   checkDuplicate,
+  // Notification functions
+  getSecretaryNotificationPermissions,
+  broadcastToStudents,
+  broadcastToTeachers,
+  broadcastToAdmin,
+  broadcastToAll,
+  notifyStudent,
+  notifyTeacher,
 };

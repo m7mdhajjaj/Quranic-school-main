@@ -8,10 +8,10 @@ import { useChat } from './useChat';
 import { useMessageOperations } from './useMessageOperations';
 import { useMessageInput } from './useMessageInput';
 import { useMentions } from './useMentions';
-import type { Message, MentionItem, User } from '../types';
+import type { Message, MentionItem, User, ChatType } from '../types';
 
 interface UseChatWindowProps {
-  chatType: 'DM' | 'GROUP';
+  chatType: ChatType;
   targetId: string;
   onNewMessage?: (message: Message) => void;
 }
@@ -46,7 +46,7 @@ export const useChatWindow = ({ chatType, targetId, onNewMessage }: UseChatWindo
   // Message operations (reply, sending state)
   const { replyTo, setReplyTo, clearReply, isSending, setIsSending } = useMessageOperations();
   
-  // Mentions Hook
+  // Mentions Hook - only for GROUP chats
   const [mentions, setMentions] = useState<MentionItem[]>([]);
   const {
     isOpen: isMentionOpen,
@@ -54,11 +54,12 @@ export const useChatWindow = ({ chatType, targetId, onNewMessage }: UseChatWindo
     users: mentionUsers,
     position: mentionPosition,
     triggerIndex: mentionTriggerIndex,
+    query: mentionQuery,
     textareaRef,
     handleChange: handleMentionChange,
     handleKeyDown: handleMentionKeyDown,
     closeMentions
-  } = useMentions();
+  } = useMentions(chatType, chatType === 'GROUP' ? targetId : undefined);
 
   // Dedupe messages with useMemo for performance (O(n²) operation)
   const uniqueMessages = useMemo(() => 
@@ -336,6 +337,7 @@ export const useChatWindow = ({ chatType, targetId, onNewMessage }: UseChatWindo
     mentionActiveIndex,
     mentionUsers,
     mentionPosition,
+    mentionQuery,
     textareaRef,
     
     // Refs

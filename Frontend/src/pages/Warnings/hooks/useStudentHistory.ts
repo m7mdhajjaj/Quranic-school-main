@@ -1,12 +1,17 @@
 // ============================================================================
-// useStudentHistory - Hook لإدارة تاريخ الطلاب المفصولين
+// useStudentHistory - Hook لإدارة تاريخ الطلاب المفصولين - محسّن بـ Caching
 // ============================================================================
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { getStudentHistory } from '@/Api/studentApi';
 import { getExpelledStudentsFromGroup } from '@/Api/warningApi';
 import { formatEventDate } from '../types/Constans';
 import type { StudentHistoryEvent, ExpelledStudent } from '../types/warnings';
+
+// ⚡ التخزين المؤقت للسجلات
+const historyCache = new Map<string, { data: StudentHistoryEvent[]; timestamp: number }>();
+const expelledCache = new Map<string, { data: ExpelledStudent[]; timestamp: number }>();
+const CACHE_TTL = 2 * 60 * 1000; // 2 دقائق
 
 interface UseStudentHistoryReturn {
   // State
@@ -34,16 +39,35 @@ export const useStudentHistory = (
   const [history, setHistory] = useState<StudentHistoryEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingExpelled, setLoadingExpelled] = useState(false);
+  
+  // ⚡ إلغاء الطلبات عند الانتقال
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  // ✅ Fetch expelled students
+  // ✅ Fetch expelled students - محسّن بـ Caching
   const fetchExpelledStudents = useCallback(async () => {
     if (!groupId) return;
+    
+    // التحقق من الـ Cache
+    const cached = expelledCache.get(groupId);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      setExpelledStudents(cached.data);
+      return;
+    }
+    
+    // إلغاء الطلب السابق
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = new AbortController();
     
     try {
       setLoadingExpelled(true);
       const data = await getExpelledStudentsFromGroup(groupId);
-      setExpelledStudents(data.expelledStudents || []);
-    } catch (err) {
+      const students = data.expelledStudents || [];
+      
+      // حفظ في الـ Cache
+      expelledCache.set(groupId, { data: students, timestamp: Date.now() });
+      setExpelledStudents(students);
+    } catch (err: any) {
+      if (err.name === 'AbortError') return;
       console.error('Error fetching expelled students:', err);
       setExpelledStudents([]);
     } finally {
@@ -51,15 +75,31 @@ export const useStudentHistory = (
     }
   }, [groupId]);
 
-  // ✅ Fetch student history
+  // ✅ Fetch student history - محسّن بـ Caching
   const fetchHistory = useCallback(async () => {
     if (!selectedStudentId) return;
+    
+    // التحقق من الـ Cache
+    const cached = historyCache.get(selectedStudentId);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      setHistory(cached.data);
+      return;
+    }
+    
+    // إلغاء الطلب السابق
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = new AbortController();
     
     try {
       setLoading(true);
       const data = await getStudentHistory(selectedStudentId, { limit: 50 });
-      setHistory(data.history || []);
-    } catch (err) {
+      const historyData = data.history || [];
+      
+      // حفظ في الـ Cache
+      historyCache.set(selectedStudentId, { data: historyData, timestamp: Date.now() });
+      setHistory(historyData);
+    } catch (err: any) {
+      if (err.name === 'AbortError') return;
       console.error('Error fetching student history:', err);
       setHistory([]);
     } finally {

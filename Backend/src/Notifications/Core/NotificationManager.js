@@ -4,6 +4,10 @@ const PrayerJob = require("../Jobs/PrayerJob");
 const ScheduleReminderJob = require("../Jobs/ScheduleReminderJob");
 const { sendRealTimeNotification, getCategoryFromType } = require("../Core/SocketSender");
 const { sendPushNotification, sendNotificationToDevices } = require("../Core/PushSender");
+const { 
+  invalidateOnNewNotification,
+  invalidateBatchUsers,
+} = require("../Core/NotificationCache");
 const {
   notifySystemMessage,
   notifyWarning,
@@ -28,6 +32,9 @@ const {
   notifyAdminRemovedStudent,
   notifyAdminMovedStudent,
 } = require("../Handlers/AdminHandler");
+
+// ✅ Secretary Handler
+const SecretaryHandler = require("../Handlers/SecretaryHandler");
 
 /**
  * NotificationManager - خدمة الإشعارات المركزية (محسّنة)
@@ -79,10 +86,108 @@ class NotificationManager {
         console.error("❌ Error sending FCM push:", fcmErr);
       }
 
+      // ✅ إبطال كاش Redis للمستلم
+      try {
+        await invalidateOnNewNotification(savedNotification.recipient);
+      } catch (cacheErr) {
+        console.error("❌ Error invalidating notification cache:", cacheErr);
+      }
+
       console.log(`✅ Notification created: ${savedNotification.title} (${savedNotification.category}/${savedNotification.type})`);
       return savedNotification;
     } catch (error) {
       console.error("❌ Error creating notification:", error);
+      throw error;
+    }
+  }
+
+  // ============================================================================
+  // Bulk Operations - عمليات دفعية محسّنة
+  // ============================================================================
+
+  /**
+   * إرسال إشعار لعدة مستخدمين (دفعي - محسّن للأداء)
+   * @param {Array} recipients - قائمة المستلمين [{id, model}]
+   * @param {String} type - نوع الإشعار
+   * @param {String} title - العنوان
+   * @param {String} message - الرسالة
+   * @param {Object} data - بيانات إضافية
+   */
+  async createBulkNotifications(recipients, type, title, message, data = {}) {
+    try {
+      if (!recipients || recipients.length === 0) {
+        console.log("⚠️ No recipients for bulk notification");
+        return [];
+      }
+
+      console.log(`📢 Creating bulk notifications for ${recipients.length} recipients`);
+
+      // استخدام الدالة المحسّنة من Schema
+      const notifications = await Notification.createBulkBatched(
+        recipients,
+        type,
+        title,
+        message,
+        data
+      );
+
+      // إرسال Real-time notifications بالتوازي (بدفعات)
+      const batchSize = 50;
+      for (let i = 0; i < notifications.length; i += batchSize) {
+        const batch = notifications.slice(i, i + batchSize);
+        const realTimePromises = batch.map(notification => 
+          sendRealTimeNotification(this.io, notification).catch(err => 
+            console.error("❌ RT error:", err.message)
+          )
+        );
+        await Promise.allSettled(realTimePromises);
+      }
+
+      // إرسال Push notifications للأجهزة
+      try {
+        const recipientIds = recipients.map(r => r.id);
+        await sendNotificationToDevices(recipientIds, { title, message, data });
+      } catch (pushErr) {
+        console.error("❌ Bulk push error:", pushErr.message);
+      }
+
+      // إبطال كاش Redis لجميع المستلمين
+      try {
+        const userIds = recipients.map(r => r.id);
+        await invalidateBatchUsers(userIds);
+      } catch (cacheErr) {
+        console.error("❌ Batch cache error:", cacheErr.message);
+      }
+
+      console.log(`✅ Bulk notifications created: ${notifications.length}`);
+      return notifications;
+    } catch (error) {
+      console.error("❌ Error creating bulk notifications:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * إرسال إشعار لجميع المستخدمين من نوع معين
+   * @param {String} recipientModel - نوع المستلم (Student, Teacher, etc.)
+   * @param {String} type - نوع الإشعار
+   * @param {String} title - العنوان
+   * @param {String} message - الرسالة
+   * @param {Object} data - بيانات إضافية
+   */
+  async broadcastToModel(recipientModel, type, title, message, data = {}) {
+    try {
+      const Model = require(`mongoose`).model(recipientModel);
+      const users = await Model.find({ isActive: { $ne: false } }).select('_id').lean();
+      
+      const recipients = users.map(user => ({
+        id: user._id,
+        model: recipientModel,
+      }));
+
+      return this.createBulkNotifications(recipients, type, title, message, data);
+    } catch (error) {
+      console.error(`❌ Error broadcasting to ${recipientModel}:`, error);
       throw error;
     }
   }
@@ -287,6 +392,147 @@ class NotificationManager {
       newGroupName,
       adminName
     );
+  }
+
+  // ============================================================================
+  // Secretary Notifications - إشعارات السكرتير
+  // ============================================================================
+
+  /**
+   * إرسال إشعار لجميع الطلاب (حسب صلاحيات السكرتير)
+   */
+  async secretaryNotifyAllStudents(secretaryId, title, message, data = {}) {
+    return SecretaryHandler.notifyAllStudents(
+      this.createNotification.bind(this),
+      secretaryId,
+      title,
+      message,
+      data
+    );
+  }
+
+  /**
+   * إرسال إشعار لجميع المعلمين (حسب صلاحيات السكرتير)
+   */
+  async secretaryNotifyAllTeachers(secretaryId, title, message, data = {}) {
+    return SecretaryHandler.notifyAllTeachers(
+      this.createNotification.bind(this),
+      secretaryId,
+      title,
+      message,
+      data
+    );
+  }
+
+  /**
+   * إرسال إشعار للمدير
+   */
+  async secretaryNotifyAdmin(secretaryId, title, message, data = {}) {
+    return SecretaryHandler.notifyAdmin(
+      this.createNotification.bind(this),
+      secretaryId,
+      title,
+      message,
+      data
+    );
+  }
+
+  /**
+   * إرسال إشعار للجميع (حسب صلاحيات السكرتير)
+   * ⚠️ لا يشمل المساعدين
+   */
+  async secretaryNotifyAll(secretaryId, title, message, data = {}) {
+    return SecretaryHandler.notifyAll(
+      this.createNotification.bind(this),
+      secretaryId,
+      title,
+      message,
+      data
+    );
+  }
+
+  /**
+   * إشعار طالب معين
+   */
+  async secretaryNotifyStudent(secretaryId, studentId, title, message, data = {}) {
+    return SecretaryHandler.notifyStudent(
+      this.createNotification.bind(this),
+      secretaryId,
+      studentId,
+      title,
+      message,
+      data
+    );
+  }
+
+  /**
+   * إشعار معلم معين
+   */
+  async secretaryNotifyTeacher(secretaryId, teacherId, title, message, data = {}) {
+    return SecretaryHandler.notifyTeacher(
+      this.createNotification.bind(this),
+      secretaryId,
+      teacherId,
+      title,
+      message,
+      data
+    );
+  }
+
+  /**
+   * إشعار عند إضافة طالب من السكرتير
+   */
+  async secretaryStudentAdded(secretaryId, student, groupName, teacherId) {
+    return SecretaryHandler.notifyStudentAdded(
+      this.createNotification.bind(this),
+      secretaryId,
+      student,
+      groupName,
+      teacherId
+    );
+  }
+
+  /**
+   * إشعار عند إزالة طالب من السكرتير
+   */
+  async secretaryStudentRemoved(secretaryId, student, groupName, teacherId, reason = '') {
+    return SecretaryHandler.notifyStudentRemoved(
+      this.createNotification.bind(this),
+      secretaryId,
+      student,
+      groupName,
+      teacherId,
+      reason
+    );
+  }
+
+  /**
+   * إشعار عند نقل طالب من السكرتير
+   */
+  async secretaryStudentMoved(secretaryId, student, fromGroup, toGroup, oldTeacherId, newTeacherId) {
+    return SecretaryHandler.notifyStudentMoved(
+      this.createNotification.bind(this),
+      secretaryId,
+      student,
+      fromGroup,
+      toGroup,
+      oldTeacherId,
+      newTeacherId
+    );
+  }
+
+  /**
+   * التحقق من صلاحية السكرتير
+   */
+  async checkSecretaryPermission(secretaryId, permission, level = 'view') {
+    return SecretaryHandler.checkSecretaryPermission(secretaryId, permission, level);
+  }
+
+  /**
+   * جلب صلاحيات السكرتير
+   */
+  async getSecretaryPermissions(secretaryId) {
+    return SecretaryHandler.getSecretaryPermissions(secretaryId);
   }
 
   // Helper to expose push notification functionality

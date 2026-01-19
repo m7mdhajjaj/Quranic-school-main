@@ -12,6 +12,8 @@ const deleteWarningByType = require("./deleteWarningByType");
 const getGroupStatistics = require("./getGroupStatistics");
 const getExpelledStudentsFromGroup = require("./getExpelledStudentsFromGroup");
 const restoreStudent = require("./restoreStudent");
+// ✅ NEW: إضافة studentStatus (كان مفقوداً)
+const studentStatus = require("./studentStatus");
 
 // Export all functions
 module.exports = {
@@ -29,6 +31,9 @@ module.exports = {
   ...deleteWarning,
   ...deleteWarningByType,
 
-  // Statistics operations (only getTeacherStatistics is used)
+  // Statistics operations
   ...warningStatistics,
+
+  // ✅ NEW: Student status operations
+  ...studentStatus,
 };

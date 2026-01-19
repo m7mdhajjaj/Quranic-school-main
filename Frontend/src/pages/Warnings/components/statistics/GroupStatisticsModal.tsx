@@ -88,6 +88,62 @@ export const GroupStatisticsModal: React.FC<GroupStatisticsModalProps> = React.m
 
         {/* Content */}
         <div className="p-6 space-y-6 bg-emerald-50">
+          {/* ملاحظة للمدير فقط */}
+          <div className="bg-blue-50 border-r-4 border-blue-500 rounded-lg p-4 flex items-start gap-3">
+            <div className="shrink-0 p-2 bg-blue-100 rounded-lg">
+              <TrendingUp className="w-5 h-5 text-blue-600" />
+            </div>
+            <div className="text-sm text-blue-800">
+              <p className="font-bold mb-1">📊 ملاحظة هامة</p>
+              <p className="leading-relaxed">
+                الإحصائيات المعروضة تشمل <strong>فقط الإنذارات النشطة حالياً</strong>. 
+                الطلاب المفصولون لا تظهر إنذاراتهم في هذه الإحصائيات، لكن يمكن الاطلاع على سجلهم الكامل من قائمة الطلاب المفصولين.
+              </p>
+            </div>
+          </div>
+
+          {/* إحصائيات سريعة */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* إجمالي الطلاب */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">إجمالي الطلاب</p>
+                  <p className="text-3xl font-bold text-emerald-600">{statistics.totalStudents}</p>
+                </div>
+                <div className="p-3 bg-emerald-100 rounded-xl">
+                  <Users className="w-8 h-8 text-emerald-600" />
+                </div>
+              </div>
+            </div>
+
+            {/* طلاب بإنذارات */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">طلاب بإنذارات</p>
+                  <p className="text-3xl font-bold text-amber-600">{statistics.studentsWithWarnings}</p>
+                </div>
+                <div className="p-3 bg-amber-100 rounded-xl">
+                  <AlertTriangle className="w-8 h-8 text-amber-600" />
+                </div>
+              </div>
+            </div>
+
+            {/* طلاب مفصولون */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">طلاب مفصولون</p>
+                  <p className="text-3xl font-bold text-red-600">{statistics.expelledStudentsCount || 0}</p>
+                </div>
+                <div className="p-3 bg-red-100 rounded-xl">
+                  <Ban className="w-8 h-8 text-red-600" />
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* أكثر الطلاب تنبيهات */}
           {hasTopStudents && (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">

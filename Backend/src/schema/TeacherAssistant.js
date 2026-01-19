@@ -116,11 +116,7 @@ const teacherAssistantSchema = new mongoose.Schema(
   }
 );
 
-// Indexes
-teacherAssistantSchema.index({ assistantId: 1 }, { unique: true });
-teacherAssistantSchema.index({ email: 1 }, { unique: true });
-teacherAssistantSchema.index({ phoneNumber: 1 }, { unique: true });
-teacherAssistantSchema.index({ idNumber: 1 }, { unique: true });
+// Indexes - فقط الـ index الإضافي (البقية موجودة مع unique: true)
 teacherAssistantSchema.index({ assignedTeacher: 1 });
 
 module.exports = mongoose.model('TeacherAssistant', teacherAssistantSchema);

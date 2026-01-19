@@ -6,6 +6,10 @@ import type { Conversation } from '../types';
 
 export type { Conversation };
 
+// Debounce/throttle for fetch
+let lastFetchTime = 0;
+const FETCH_COOLDOWN = 2000; // 2 seconds minimum between fetches
+
 export const useConversations = (search?: string) => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const conversationsRef = useRef(conversations);
@@ -13,17 +17,28 @@ export const useConversations = (search?: string) => {
   const [error, setError] = useState<string | null>(null);
   const { onMessage, onConversationUpdated, onMessageDeleted, joinGroup } = useChatSocket();
   const { user } = useAuth();
+  const hasFetchedRef = useRef(false);
+  const currentSearchRef = useRef(search);
 
   // Keep ref in sync
   useEffect(() => {
     conversationsRef.current = conversations;
   }, [conversations]);
 
-  const fetchConversations = useCallback(async () => {
+  const fetchConversations = useCallback(async (force = false) => {
+    // Throttle fetches
+    const now = Date.now();
+    if (!force && (now - lastFetchTime) < FETCH_COOLDOWN) {
+      console.log('⏳ [Conversations] Throttled, skipping fetch...');
+      return;
+    }
+    
     setLoading(true);
+    lastFetchTime = now;
+    
     try {
       const res = await api.get('/chat/conversations', {
-        params: { search }
+        params: { search: currentSearchRef.current }
       });
       
       setConversations(res.data);
@@ -39,11 +54,23 @@ export const useConversations = (search?: string) => {
     } finally {
       setLoading(false);
     }
-  }, [search, joinGroup]);
+  }, [joinGroup]);
 
+  // Fetch on mount only (not on every search change)
   useEffect(() => {
-    fetchConversations();
+    if (!hasFetchedRef.current) {
+      hasFetchedRef.current = true;
+      fetchConversations(true);
+    }
   }, [fetchConversations]);
+
+  // Fetch when search changes (debounced by parent)
+  useEffect(() => {
+    if (currentSearchRef.current !== search) {
+      currentSearchRef.current = search;
+      fetchConversations(true); // Force fetch on search change
+    }
+  }, [search, fetchConversations]);
 
   // ✅ Listen for real-time new messages and update conversations
   useEffect(() => {

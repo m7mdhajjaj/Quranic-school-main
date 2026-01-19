@@ -7,6 +7,8 @@ const { restoreStudentToGroup } = require("./helpers");
 const { invalidateCache } = require("../../middleware");
 const { invalidateStudentCountsCache } = require("../basicController/groupController/cache");
 const { logRestorationEvent } = require("../basicController/studentController/history/helpers/restorationHistory");
+// ✅ Redis: نظام caching متقدم
+const { invalidateWarningCache } = require("./cache");
 
 /**
  * حذف إنذار حسب النوع
@@ -53,6 +55,13 @@ exports.deleteWarningByType = async (req, res) => {
       // 🆕 إبطال كاش الحضور أيضاً
       const attendanceCachePattern = `cache:/api/attendance/teacher/${teacherId}*`;
       await invalidateCache(attendanceCachePattern);
+
+      // ⚡️ Redis: إبطال شامل لجميع الكاش المتعلق
+      await invalidateWarningCache({
+        teacherId,
+        studentId: warning.studentId,
+        groupId: warning.groupId._id
+      });
     }
 
     // 📚 تسجيل الإعادة في التاريخ إذا تمت

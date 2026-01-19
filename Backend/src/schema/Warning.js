@@ -63,5 +63,9 @@ const warningSchema = new mongoose.Schema(
 warningSchema.index({ studentId: 1, type: 1 });
 warningSchema.index({ groupId: 1, createdAt: -1 });
 warningSchema.index({ teacherId: 1, createdAt: -1 });
+// ✅ NEW: فهارس إضافية للأداء
+warningSchema.index({ studentId: 1, status: 1 }); // للبحث عن الإنذارات النشطة
+warningSchema.index({ originalGroup: 1, type: 1, status: 1 }); // للبحث عن المفصولين من حلقة
+warningSchema.index({ status: 1, type: 1 }); // للـ WarningJob
 
 module.exports = mongoose.model("Warning", warningSchema);

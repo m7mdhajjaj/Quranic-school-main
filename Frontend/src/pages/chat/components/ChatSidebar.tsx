@@ -3,9 +3,19 @@ import { Avatar } from '../../../components/Avatar';
 import { LoadingSpinner } from '../../../components/UI';
 import { MessageSquare, Users, Search } from 'lucide-react';
 import type { Conversation } from '../types';
+import { ROLE_COLORS } from '../types';
 import type { Contact, Group } from '../hooks/useChatContacts';
 import ConversationItem from './ConversationItem';
 import { useChatSidebar } from '../hooks/useChatSidebar';
+
+// Role display names (Arabic)
+const ROLE_DISPLAY: Record<string, string> = {
+  'student': 'طالب',
+  'teacher': 'معلم',
+  'admin': 'مدير',
+  'secretary': 'سكرتير',
+  'teacherAssistant': 'مساعد معلم'
+};
 
 interface ChatSidebarProps {
   conversations: Conversation[];
@@ -201,11 +211,11 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
                         <div className="font-bold text-gray-800 truncate">{contact.firstName} {contact.lastName}</div>
                         <div className="flex items-center gap-2 mt-0.5">
                           <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                            contact.role === 'student' ? 'bg-blue-50 text-blue-600' : 
-                            contact.role === 'teacher' ? 'bg-purple-50 text-purple-600' : 
-                            'bg-orange-50 text-orange-600'
+                            ROLE_COLORS[contact.role]?.bg || 'bg-gray-50'
+                          } ${
+                            ROLE_COLORS[contact.role]?.text || 'text-gray-600'
                           }`}>
-                            {contact.role === 'student' ? 'طالب' : contact.role === 'teacher' ? 'معلم' : contact.role === 'secretary' ? 'سكرتير' : contact.role === 'teacherAssistant' ? 'مساعد مدرس' : 'مدير'}
+                            {ROLE_DISPLAY[contact.role] || contact.role}
                           </span>
                         </div>
                       </div>

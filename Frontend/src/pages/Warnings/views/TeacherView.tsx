@@ -93,7 +93,7 @@ export const TeacherView: React.FC<TeacherViewProps> = React.memo(({
                 );
               })}
             </div>
-          ) : (
+          ) : !loading && groups.length === 0 ? (
             <div className="animate-fade-in">
               <EmptyState
                 icon={EMPTY_STATES.noGroups.icon}
@@ -101,7 +101,7 @@ export const TeacherView: React.FC<TeacherViewProps> = React.memo(({
                 description={EMPTY_STATES.noGroups.description}
               />
             </div>
-          )}
+          ) : null}
 
           {/* Modal الإحصائيات */}
           <GroupStatisticsModal

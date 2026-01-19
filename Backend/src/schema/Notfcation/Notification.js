@@ -351,6 +351,143 @@ notificationSchema.statics.markAllAsRead = async function (recipientId) {
   );
 };
 
+// ============================================================================
+// Bulk Operations - عمليات دفعية محسّنة
+// ============================================================================
+
+/**
+ * إنشاء إشعارات دفعية لعدة مستخدمين (محسّن للأداء)
+ * @param {Array} recipients - قائمة المستلمين [{id, model}]
+ * @param {String} type - نوع الإشعار
+ * @param {String} title - العنوان
+ * @param {String} message - الرسالة
+ * @param {Object} data - بيانات إضافية
+ * @returns {Promise<Array>} - الإشعارات المُنشأة
+ */
+notificationSchema.statics.createBulk = async function (
+  recipients,
+  type,
+  title,
+  message,
+  data = {}
+) {
+  if (!recipients || recipients.length === 0) return [];
+
+  // تحديد الفئة تلقائياً
+  let category = "general";
+  if (NOTIFICATION_TYPES.ACADEMIC.includes(type)) category = "academic";
+  else if (NOTIFICATION_TYPES.ADMIN.includes(type)) category = "admin";
+  else if (NOTIFICATION_TYPES.OTHER.includes(type)) category = "other";
+
+  const messageSummary = message.length > 150 
+    ? message.substring(0, 147) + "..." 
+    : message;
+
+  // إنشاء مصفوفة الإشعارات
+  const notifications = recipients.map(recipient => ({
+    recipient: recipient.id,
+    recipientModel: recipient.model,
+    type,
+    category,
+    title,
+    message,
+    messageSummary,
+    data,
+  }));
+
+  // استخدام insertMany مع ordered: false للأداء
+  try {
+    const result = await this.insertMany(notifications, { 
+      ordered: false, // متابعة حتى لو فشل بعضها
+      lean: true,
+    });
+    
+    console.log(`✅ Bulk created ${result.length} notifications`);
+    return result;
+  } catch (error) {
+    // في حالة فشل جزئي، استخرج الناجحة
+    if (error.insertedDocs) {
+      console.log(`⚠️ Partial bulk insert: ${error.insertedDocs.length} succeeded`);
+      return error.insertedDocs;
+    }
+    throw error;
+  }
+};
+
+/**
+ * إنشاء إشعارات دفعية بالتقسيم (للأعداد الكبيرة)
+ * @param {Array} recipients - قائمة المستلمين
+ * @param {String} type - نوع الإشعار
+ * @param {String} title - العنوان
+ * @param {String} message - الرسالة
+ * @param {Object} data - بيانات إضافية
+ * @param {Number} batchSize - حجم الدفعة (افتراضي 500)
+ */
+notificationSchema.statics.createBulkBatched = async function (
+  recipients,
+  type,
+  title,
+  message,
+  data = {},
+  batchSize = 500
+) {
+  if (!recipients || recipients.length === 0) return [];
+
+  const results = [];
+  
+  // تقسيم إلى دفعات
+  for (let i = 0; i < recipients.length; i += batchSize) {
+    const batch = recipients.slice(i, i + batchSize);
+    const batchResult = await this.createBulk(batch, type, title, message, data);
+    results.push(...batchResult);
+    
+    // انتظار قصير بين الدفعات لتجنب الضغط
+    if (i + batchSize < recipients.length) {
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+  }
+
+  console.log(`✅ Batched bulk created ${results.length} notifications in ${Math.ceil(recipients.length / batchSize)} batches`);
+  return results;
+};
+
+/**
+ * حذف الإشعارات القديمة (للصيانة)
+ * @param {Number} daysOld - عمر الإشعارات بالأيام
+ */
+notificationSchema.statics.deleteOldNotifications = async function (daysOld = 90) {
+  const cutoffDate = new Date();
+  cutoffDate.setDate(cutoffDate.getDate() - daysOld);
+
+  const result = await this.deleteMany({
+    sentAt: { $lt: cutoffDate },
+    isRead: true, // فقط المقروءة
+  });
+
+  console.log(`🗑️ Deleted ${result.deletedCount} old notifications (older than ${daysOld} days)`);
+  return result.deletedCount;
+};
+
+/**
+ * أرشفة الإشعارات القديمة بدلاً من حذفها
+ * @param {Number} daysOld - عمر الإشعارات بالأيام
+ */
+notificationSchema.statics.archiveOldNotifications = async function (daysOld = 60) {
+  const cutoffDate = new Date();
+  cutoffDate.setDate(cutoffDate.getDate() - daysOld);
+
+  const result = await this.updateMany(
+    {
+      sentAt: { $lt: cutoffDate },
+      isArchived: { $ne: true },
+    },
+    { $set: { isArchived: true, archivedAt: new Date() } }
+  );
+
+  console.log(`📦 Archived ${result.modifiedCount} old notifications`);
+  return result.modifiedCount;
+};
+
 // Instance method لتحديد الإشعار كمقروء
 notificationSchema.methods.markAsRead = function () {
   this.isRead = true;

@@ -44,6 +44,7 @@ exports.getGroupStatistics = async (req, res) => {
         totalStudents: 0,
         studentsWithWarnings: 0,
         totalWarnings: 0,
+        expelledStudentsCount: 0, // ✅ إضافة للـ empty state
         warningsByType: {
           warning: 0,
           first: 0,
@@ -84,6 +85,7 @@ exports.getGroupStatistics = async (req, res) => {
 
     let studentsWithWarningsCount = 0;
     const studentsDetails = [];
+    const expelledStudentsSet = new Set(); // ✅ لحساب عدد الطلاب المفصولين
 
     students.forEach((student) => {
       const studentWarnings = warningsByStudent.get(student._id.toString()) || [];
@@ -100,6 +102,12 @@ exports.getGroupStatistics = async (req, res) => {
       const existingTypes = studentWarnings
         .map((w) => w.type)
         .filter((type) => type !== "warning");
+
+      // ✅ تحديد الطلاب المفصولين (unique students)
+      const hasExpulsion = studentWarnings.some(w => w.type === "expulsion");
+      if (hasExpulsion) {
+        expelledStudentsSet.add(student._id.toString());
+      }
 
       // حساب الإنذارات حسب النوع
       studentWarnings.forEach((w) => {
@@ -132,6 +140,7 @@ exports.getGroupStatistics = async (req, res) => {
       totalStudents: students.length,
       studentsWithWarnings: studentsWithWarningsCount,
       totalWarnings: warnings.length,
+      expelledStudentsCount: expelledStudentsSet.size, // ✅ عدد الطلاب المفصولين (unique)
       warningsByType,
       topStudents,
       studentsDetails,

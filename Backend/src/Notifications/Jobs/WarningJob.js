@@ -33,10 +33,11 @@ class WarningJob {
   async enforcePermanentSuspensions() {
     try {
       // 1. Find all active permanent suspension warnings
+      // ✅ FIXED: استخدام status بدلاً من isActive (الحقل الصحيح في السكيما)
       const suspensionWarnings = await Warning.find({
         type: { $in: ["third", "expulsion"] },
-        isActive: true
-      }).select("studentId");
+        status: "active"
+      }).select("studentId").lean();
 
       if (suspensionWarnings.length === 0) {
         return;

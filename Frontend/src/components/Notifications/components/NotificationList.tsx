@@ -21,34 +21,34 @@ export const NotificationList: React.FC<NotificationListProps> = ({
   // حالة الفراغ
   if (notifications.length === 0 && !isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 px-6">
+      <div className="flex flex-col items-center justify-center py-10 px-4">
         {/* Icon Container */}
-        <div className="relative mb-6">
-          <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-3xl flex items-center justify-center shadow-inner">
-            <BellOff className="w-10 h-10 text-gray-400" />
+        <div className="relative mb-4">
+          <div className="w-14 h-14 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center shadow-inner">
+            <BellOff className="w-7 h-7 text-gray-400" />
           </div>
           {/* Decorative circles */}
-          <div className="absolute -top-2 -right-2 w-6 h-6 bg-gray-100 rounded-full" />
-          <div className="absolute -bottom-1 -left-3 w-4 h-4 bg-gray-200 rounded-full" />
+          <div className="absolute -top-1 -right-1 w-4 h-4 bg-gray-100 rounded-full" />
+          <div className="absolute -bottom-0.5 -left-2 w-3 h-3 bg-gray-200 rounded-full" />
         </div>
         
         {/* Text */}
-        <h3 className="text-lg font-bold text-gray-700 mb-2">لا توجد إشعارات</h3>
-        <p className="text-sm text-gray-500 text-center max-w-[200px]">
-          ستظهر الإشعارات الجديدة هنا عندما تصلك
+        <h3 className="text-sm font-bold text-gray-700 mb-1">لا توجد إشعارات</h3>
+        <p className="text-xs text-gray-500 text-center max-w-[180px]">
+          ستظهر الإشعارات الجديدة هنا
         </p>
         
         {/* Decorative Bell */}
-        <div className="mt-6 flex items-center gap-2 text-gray-400">
-          <Bell className="w-4 h-4" />
-          <span className="text-xs">في انتظار الإشعارات...</span>
+        <div className="mt-4 flex items-center gap-1.5 text-gray-400">
+          <Bell className="w-3 h-3" />
+          <span className="text-[10px]">في انتظار الإشعارات...</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="py-2">
+    <div className="py-1">
       {/* قائمة الإشعارات */}
       {notifications.map((notification, index) => (
         <NotificationCard
@@ -63,12 +63,12 @@ export const NotificationList: React.FC<NotificationListProps> = ({
 
       {/* زر تحميل المزيد */}
       {hasMore && !isLoading && (
-        <div className="p-4">
+        <div className="p-2">
           <button
             onClick={onLoadMore}
-            className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-br from-gray-50 to-gray-100 hover:from-emerald-50 hover:to-teal-50 border border-gray-200 hover:border-emerald-300 text-gray-600 hover:text-emerald-600 text-sm font-semibold rounded-xl transition-all duration-300 hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
+            className="w-full flex items-center justify-center gap-1.5 py-2 px-3 bg-gradient-to-br from-gray-50 to-gray-100 hover:from-emerald-50 hover:to-teal-50 border border-gray-200 hover:border-emerald-300 text-gray-600 hover:text-emerald-600 text-xs font-semibold rounded-lg transition-all duration-300 hover:shadow-sm hover:scale-[1.01] active:scale-[0.99]"
           >
-            <ChevronDown className="w-4 h-4" />
+            <ChevronDown className="w-3.5 h-3.5" />
             <span>تحميل المزيد</span>
           </button>
         </div>
@@ -76,9 +76,9 @@ export const NotificationList: React.FC<NotificationListProps> = ({
 
       {/* Loading State */}
       {isLoading && notifications.length > 0 && (
-        <div className="flex items-center justify-center py-4 gap-2 text-emerald-600">
-          <Loader2 className="w-5 h-5 animate-spin" />
-          <span className="text-sm font-medium">جاري التحميل...</span>
+        <div className="flex items-center justify-center py-3 gap-1.5 text-emerald-600">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          <span className="text-xs font-medium">جاري التحميل...</span>
         </div>
       )}
     </div>

@@ -1,5 +1,5 @@
 // ============================================================================
-// updateRoutes.js - UPDATE Routes for Notifications
+// updateRoutes.js - UPDATE Routes for Notifications (مع Redis Cache Invalidation)
 // ============================================================================
 
 const express = require("express");
@@ -7,6 +7,10 @@ const router = express.Router();
 const mongoose = require("mongoose");
 const Notification = require("../../schema/Notfcation/Notification");
 const { protect } = require("../../middleware/auth");
+const {
+  invalidateOnMarkAsRead,
+  invalidateOnMarkAllAsRead,
+} = require("../../Notifications/Core/NotificationCache");
 
 // Helper: Validate ObjectId
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
@@ -55,6 +59,9 @@ router.put("/:notificationId/read", protect, async (req, res) => {
       });
     }
 
+    // ✅ إبطال كاش Redis
+    await invalidateOnMarkAsRead(userId);
+
     res.json({
       success: true,
       message: "تم تحديد الإشعار كمقروء",
@@ -99,6 +106,9 @@ router.patch("/:notificationId/read", async (req, res) => {
       });
     }
 
+    // ✅ إبطال كاش Redis
+    await invalidateOnMarkAsRead(notification.recipient);
+
     res.json({
       success: true,
       message: "تم تحديد الإشعار كمقروء",
@@ -126,6 +136,9 @@ router.put("/read-all", protect, async (req, res) => {
         readAt: new Date(),
       },
     );
+
+    // ✅ إبطال كاش Redis
+    await invalidateOnMarkAllAsRead(userId);
 
     res.json({
       success: true,
@@ -164,6 +177,9 @@ router.patch("/:userId/read-all", async (req, res) => {
         readAt: new Date(),
       },
     );
+
+    // ✅ إبطال كاش Redis
+    await invalidateOnMarkAllAsRead(userId);
 
     res.json({
       success: true,

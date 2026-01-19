@@ -4,52 +4,72 @@
 
 const Warning = require("../../schema/Warning");
 const mongoose = require("mongoose");
+// ✅ NEW: إضافة caching للإحصائيات
+const { cache } = require("../../utils/cache/cacheClient");
+
+const CACHE_TTL = 300; // 5 دقائق
 
 /**
  * جلب إحصائيات المعلم
- * ✅ OPTIMIZED: استخدام aggregation pipeline بدلاً من queries منفصلة
+ * ✅ OPTIMIZED: استخدام aggregation pipeline + Redis caching
  * @route GET /api/warnings/statistics/teacher
  */
 exports.getTeacherStatistics = async (req, res) => {
   try {
     const teacherId = req.user._id;
+    const userRole = req.user.role; // admin أو teacher
 
-    // ✅ استخدام aggregation واحد لحساب كل الإحصائيات دفعة واحدة
-    const [statistics] = await Warning.aggregate([
-      { $match: { teacherId: new mongoose.Types.ObjectId(teacherId) } },
-      {
-        $facet: {
-          // إجمالي الإنذارات
-          totalCount: [{ $count: "count" }],
-          
-          // الإنذارات حسب النوع
-          byType: [
-            {
-              $group: {
-                _id: "$type",
-                count: { $sum: 1 },
+    // ⚡️ استخدام Redis getOrSet للتبسيط
+    const cacheKey = `warning-stats:${userRole}:${teacherId}`;
+    
+    const responseData = await cache.getOrSet(cacheKey, async () => {
+      // ✅ المعلم يشوف فقط active، المدير يشوف الكل
+      const matchQuery = { teacherId: new mongoose.Types.ObjectId(teacherId) };
+      if (userRole !== 'admin') {
+        matchQuery.status = 'active'; // المعلم فقط الـ active
+      }
+
+      // ✅ استخدام aggregation واحد لحساب كل الإحصائيات دفعة واحدة
+      const [statistics] = await Warning.aggregate([
+        { $match: matchQuery },
+        {
+          $facet: {
+            // إجمالي الإنذارات
+            totalCount: [{ $count: "count" }],
+            
+            // الإنذارات حسب النوع
+            byType: [
+              {
+                $group: {
+                  _id: "$type",
+                  count: { $sum: 1 },
+                },
               },
-            },
-          ],
-          
-          // عدد الطلاب الفريدين
-          uniqueStudents: [
-            {
-              $group: {
-                _id: "$studentId",
+            ],
+            
+            // عدد الطلاب الفريدين
+            uniqueStudents: [
+              {
+                $group: {
+                  _id: "$studentId",
+                },
               },
-            },
-            { $count: "count" },
-          ],
-          
-          // عدد المفصولين
-          expelled: [
-            { $match: { type: "expulsion" } },
-            { $count: "count" },
-          ],
-          
-          // أكثر 5 أسباب
-          topReasons: [
+              { $count: "count" },
+            ],
+            
+            // عدد الطلاب المفصولين (unique students with expulsion)
+            expelled: [
+              { $match: { type: "expulsion" } },
+              {
+                $group: {
+                  _id: "$studentId", // عد الطلاب مش الإنذارات
+                },
+              },
+              { $count: "count" },
+            ],
+            
+            // أكثر 5 أسباب
+            topReasons: [
             {
               $group: {
                 _id: "$reason",
@@ -122,17 +142,21 @@ exports.getTeacherStatistics = async (req, res) => {
       warningsCount[item._id] = item.count;
     });
 
-    res.json({
-      totalWarnings: statistics.totalCount[0]?.count || 0,
-      warningsCount,
-      studentsWithWarnings: statistics.uniqueStudents[0]?.count || 0,
-      expelledStudents: statistics.expelled[0]?.count || 0,
-      topReasons: statistics.topReasons,
-      warningsByGroup: statistics.byGroup,
-      recentWarnings: statistics.recentWarnings,
-    });
+      // إرجاع البيانات لحفظها في الكاش
+      return {
+        totalWarnings: statistics.totalCount[0]?.count || 0,
+        warningsCount,
+        studentsWithWarnings: statistics.uniqueStudents[0]?.count || 0,
+        expelledStudents: statistics.expelled[0]?.count || 0,
+        topReasons: statistics.topReasons,
+        warningsByGroup: statistics.byGroup,
+        recentWarnings: statistics.recentWarnings,
+      };
+    }, CACHE_TTL); // Redis سيحفظ النتيجة تلقائياً
+
+    res.json(responseData);
   } catch (error) {
-    console.error("Error fetching teacher statistics:", error);
+    console.error("❌ Error fetching teacher statistics:", error);
     res.status(500).json({ message: "حدث خطأ أثناء جلب الإحصائيات" });
   }
 };

@@ -10,12 +10,13 @@ export interface GroupStatistics {
   totalStudents: number;
   studentsWithWarnings: number;
   totalWarnings: number;
+  expelledStudentsCount: number; // ✅ عدد الطلاب المفصولين (مش عدد إنذارات الفصل)
   warningsByType: {
     warning: number;
     first: number;
     second: number;
     third: number;
-    expulsion: number;
+    expulsion: number; // عدد إنذارات الفصل (للإحصائيات)
   };
   topStudents: Array<{
     name: string;

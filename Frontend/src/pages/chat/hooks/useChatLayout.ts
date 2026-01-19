@@ -2,16 +2,16 @@
 // useChatLayout.ts - Layout State Management Hook
 // ============================================================================
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { useDebounce } from '../../../hooks/useDebounce';
 import { useConversations } from './useConversations';
 import { useChatContacts, type Contact, type Group } from './useChatContacts';
 import { useGroupConversations } from './useGroupConversations';
-import type { Conversation } from '../types';
+import type { Conversation, ChatType } from '../types';
 
 interface TargetInfo {
-  chatType: 'DM' | 'GROUP';
+  chatType: ChatType;
   targetId: string;
   targetName: string;
   targetAvatar?: string;
@@ -33,12 +33,16 @@ export const useChatLayout = () => {
   const { initializeGroupConversations } = useGroupConversations();
   
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
-  const [initialized, setInitialized] = useState(false);
+  const initializedRef = useRef(false);
 
-  // Auto-initialize group conversations for teachers and admins
+  // Auto-initialize group conversations for teachers and admins (runs ONCE)
   useEffect(() => {
     const initGroups = async () => {
-      if (!user || initialized) return;
+      // Use ref to prevent re-runs (survives re-renders)
+      if (!user || initializedRef.current) return;
+      
+      // Mark as initialized immediately to prevent race conditions
+      initializedRef.current = true;
       
       if (user.role === 'teacher' || user.role === 'admin') {
         try {
@@ -46,18 +50,15 @@ export const useChatLayout = () => {
           // Wait a bit for backend to process
           await new Promise(resolve => setTimeout(resolve, 500));
           await fetchConversations();
-          setInitialized(true);
         } catch (err) {
           console.error('Failed to initialize group conversations:', err);
-          setInitialized(true); // Set to true even on error to prevent infinite loop
         }
-      } else {
-        setInitialized(true);
       }
     };
     
     initGroups();
-  }, [user, initialized, initializeGroupConversations, fetchConversations]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?._id]); // Only depend on user ID, not function references
 
   /**
    * Handle conversation selection
@@ -68,17 +69,18 @@ export const useChatLayout = () => {
     // Reset unread count if needed
     if (conv.unreadCount > 0) {
       if (conv.type === 'DM') {
+        // Null safety check for participants
         const otherParticipant = conv.participants.find(
-          p => p.userId._id !== user?._id
+          p => p?.userId?._id && p.userId._id !== user?._id
         );
-        if (otherParticipant) {
+        if (otherParticipant?.userId?._id) {
           await resetUnreadCount('DM', otherParticipant.userId._id);
         }
-      } else if (conv.type === 'GROUP' && conv.groupId) {
+      } else if (conv.type === 'GROUP' && conv.groupId?._id) {
         await resetUnreadCount('GROUP', conv.groupId._id);
       }
     }
-  }, [user, resetUnreadCount]);
+  }, [user?._id, resetUnreadCount]);
 
   // Check for pending notification navigation
   useEffect(() => {
@@ -158,7 +160,9 @@ export const useChatLayout = () => {
             { 
               userId: contact, 
               userModel: contact.role === 'student' ? 'Student' 
-                        : contact.role === 'teacher' ? 'Teacher' 
+                        : contact.role === 'teacher' ? 'Teacher'
+                        : contact.role === 'secretary' ? 'Secretary'
+                        : contact.role === 'teacherAssistant' ? 'TeacherAssistant'
                         : 'Admin' 
             }
           ],
@@ -184,15 +188,16 @@ export const useChatLayout = () => {
         targetAvatar: (selectedConversation.groupId as any).image?.url
       };
     } else {
+      // Find other participant with null safety check
       const otherParticipant = selectedConversation.participants.find(
-        p => p.userId._id !== user?._id
+        p => p?.userId?._id && p.userId._id !== user?._id
       );
       
-      if (otherParticipant) {
+      if (otherParticipant?.userId) {
         return {
           chatType: 'DM',
           targetId: otherParticipant.userId._id,
-          targetName: `${otherParticipant.userId.firstName} ${otherParticipant.userId.lastName}`,
+          targetName: `${otherParticipant.userId.firstName || ''} ${otherParticipant.userId.lastName || ''}`.trim() || 'مستخدم',
           targetAvatar: otherParticipant.userId.avatar?.url
         };
       }

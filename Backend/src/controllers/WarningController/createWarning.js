@@ -16,6 +16,9 @@ const {
   suspendStudentFromGroup,
 } = require("./helpers");
 const { logWarningEvent, logExpulsionEvent } = require("../basicController/studentController/history/helpers/warningHistory");
+// ✅ Redis: نظام caching متقدم
+const { cache } = require("../../utils/cache/cacheClient");
+const { invalidateWarningCache, incrementWarningCount } = require("./cache");
 
 /**
  * إنشاء إنذار جديد (للمعلم فقط)
@@ -86,51 +89,45 @@ exports.createWarning = async (req, res) => {
 
     // ============================================================
     // 🔄 منطق الترقية التلقائية (3 تنبيهات -> إنذار أول -> ...)
+    // ✅ OPTIMIZED: استعلام واحد بدلاً من 5 استعلامات متتالية
     // ============================================================
     if (type === 'warning') {
-      const existingAlerts = await Warning.find({ 
+      // ⚡️ جلب جميع الإنذارات النشطة للطالب دفعة واحدة
+      const allActiveWarnings = await Warning.find({ 
         studentId, 
-        type: 'warning',
-        status: 'active' // فقط التنبيهات النشطة
-      });
+        status: 'active'
+      }).select('type').lean();
+      
+      // تجميع الإنذارات حسب النوع
+      const warningCounts = allActiveWarnings.reduce((acc, w) => {
+        acc[w.type] = (acc[w.type] || 0) + 1;
+        return acc;
+      }, {});
+      
+      const alertCount = warningCounts['warning'] || 0;
       
       // إذا كان لديه تنبيهين سابقين (وهذا الثالث)
-      if (existingAlerts.length >= 2) {
+      if (alertCount >= 2) {
         console.log(`🔄 Auto-upgrading alerts for student ${studentId}`);
         
         // 1. حذف التنبيهات السابقة
         await Warning.deleteMany({ studentId, type: 'warning' });
         
-        // 2. ترقية النوع إلى "إنذار أول"
+        // 2. ترقية النوع باستخدام البيانات المحملة مسبقاً
         type = 'first';
         reason = `${reason} (تلقائي: تراكم 3 تنبيهات)`;
         
-        // 3. التحقق التسلسلي للترقية للأعلى
-        const existingFirst = await Warning.findOne({ 
-          studentId, 
-          type: 'first',
-          status: 'active'
-        });
-        if (existingFirst) {
+        // 3. التحقق التسلسلي باستخدام warningCounts (بدون استعلامات إضافية)
+        if (warningCounts['first']) {
           type = 'second';
           reason = `${reason} -> ترقية لإنذار ثاني`;
           
-          const existingSecond = await Warning.findOne({ 
-            studentId, 
-            type: 'second',
-            status: 'active'
-          });
-          if (existingSecond) {
-            type = 'third'; // إنذار نهائي (فصل)
+          if (warningCounts['second']) {
+            type = 'third';
             reason = `${reason} -> ترقية لإنذار ثالث`;
             
-            const existingThird = await Warning.findOne({ 
-              studentId, 
-              type: 'third',
-              status: 'active'
-            });
-            if (existingThird) {
-              type = 'expulsion'; // فصل نهائي
+            if (warningCounts['third']) {
+              type = 'expulsion';
               reason = `${reason} -> ترقية لفصل نهائي`;
             }
           }
@@ -188,6 +185,16 @@ exports.createWarning = async (req, res) => {
       const attendanceCachePattern = `cache:/api/attendance/teacher/${teacherId}*`;
       await invalidateCache(attendanceCachePattern);
     }
+
+    // ⚡️ Redis: إبطال شامل لجميع الكاش المتعلق
+    await invalidateWarningCache({
+      teacherId,
+      studentId,
+      groupId: group._id
+    });
+
+    // 📊 Redis: تتبع عدد الإنذارات
+    await incrementWarningCount(teacherId);
 
     // إرجاع الإنذار مع البيانات المرتبطة
     const populatedWarning = await Warning.findById(warning._id)

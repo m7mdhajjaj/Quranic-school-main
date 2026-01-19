@@ -3,6 +3,7 @@ import { useChatSocket } from './useChatSocket';
 import { useChatMessages } from './useChatMessages';
 import { useAuth } from '../../../hooks/useAuth';
 import type { SendMessageInput } from '../../../Validation/chatValidation';
+import type { ChatType, Message, MentionItem } from '../types';
 
 // ⚡ Performance: Request idle callback with fallback
 const requestIdleCallbackPolyfill = (cb: IdleRequestCallback) => {
@@ -22,7 +23,7 @@ const cancelIdleCallbackPolyfill = (id: number) => {
 /**
  * Hook شامل للشات مع Real-time updates
  */
-export const useChat = (chatType: 'DM' | 'GROUP', targetId: string) => {
+export const useChat = (chatType: ChatType, targetId: string) => {
   const { user } = useAuth();
   const { 
     messages, 
@@ -59,7 +60,7 @@ export const useChat = (chatType: 'DM' | 'GROUP', targetId: string) => {
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // ⚡ Performance: Batch message updates
-  const messageBatchRef = useRef<any[]>([]);
+  const messageBatchRef = useRef<Message[]>([]);
   const batchTimeoutRef = useRef<number | null>(null);
   const idleCallbackIdRef = useRef<number | null>(null);
 
@@ -100,7 +101,7 @@ export const useChat = (chatType: 'DM' | 'GROUP', targetId: string) => {
 
   // Listen for new messages with batching
   useEffect(() => {
-    const cleanup = onMessage((message: any) => {
+    const cleanup = onMessage((message: Message) => {
       // Mark as delivered فوراً (critical path)
       const isFromMe = message.sender?._id === user?._id;
       
@@ -139,7 +140,7 @@ export const useChat = (chatType: 'DM' | 'GROUP', targetId: string) => {
 
   // Listen for sent confirmation
   useEffect(() => {
-    const cleanup = onMessageSent((data: any) => {
+    const cleanup = onMessageSent((data: { clientTempId: string; message: Message }) => {
       const { message } = data;
       // Replace optimistic message with real one
       addMessage(message);
@@ -249,7 +250,7 @@ export const useChat = (chatType: 'DM' | 'GROUP', targetId: string) => {
 
   // Listen for message edited (Real-time)
   useEffect(() => {
-    const cleanup = onMessageEdited((updatedMessage: any) => {
+    const cleanup = onMessageEdited((updatedMessage: Message) => {
       updateMessage(updatedMessage._id, {
         text: updatedMessage.text,
         edited: true,
@@ -260,7 +261,7 @@ export const useChat = (chatType: 'DM' | 'GROUP', targetId: string) => {
   }, [onMessageEdited, updateMessage]);
 
   // Send message with optimistic update
-  const sendMessage = useCallback(async (data: any | string, mentions: any[] = []) => {
+  const sendMessage = useCallback(async (data: { text: string; attachments?: any[]; replyTo?: string } | string, mentions: MentionItem[] = []) => {
     if (!user) return;
 
     const text = typeof data === 'string' ? data : data.text;
@@ -269,7 +270,7 @@ export const useChat = (chatType: 'DM' | 'GROUP', targetId: string) => {
     const clientTempId = `temp_${Date.now()}_${Math.random()}`;
     
     // Create optimistic message
-    const optimisticMessage = {
+    const optimisticMessage: Partial<Message> & { clientTempId: string } = {
       _id: clientTempId,
       clientTempId,
       chatType,
@@ -281,23 +282,22 @@ export const useChat = (chatType: 'DM' | 'GROUP', targetId: string) => {
       },
       text,
       attachments,
-      replyTo,
       createdAt: new Date().toISOString(),
       _optimistic: true,
-      mentions // Add mentions
+      mentions
     };
 
     // Add to UI فوراً
     addOptimisticMessage(optimisticMessage);
 
     try {
-      const messageData: SendMessageInput & { mentions?: any[] } = {
+      const messageData: SendMessageInput & { mentions?: MentionItem[] } = {
         chatType,
         text,
         attachments,
         replyTo,
         clientTempId,
-        mentions, // Send mentions
+        mentions,
         ...(chatType === 'DM' ? { recipientId: targetId } : { groupId: targetId })
       };
 

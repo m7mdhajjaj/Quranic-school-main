@@ -5,10 +5,6 @@ const {
   checkDuplicateFields,
 } = require("../../../Validation/validators/duplicateChecker");
 const { invalidateCache } = require("../../../middleware");
-const {
-  updateGroupActiveStatus,
-  updateGroupsActiveStatusOnStudentMove,
-} = require("../groupController/helpers");
 const { TIMEZONE } = require('../../../config/timezone');
 const {
   notifyStudentAddedToGroup,
@@ -102,11 +98,6 @@ exports.restoreStudentToGroup = async (req, res) => {
       },
       reason || "إرجاع الطالب للحلقة من قبل الأدمن",
       req.user
-    );
-
-    // تحديث activeStatus للحلقة الجديدة
-    await updateGroupActiveStatus(group.name).catch((err) =>
-      console.error("⚠️ Error updating group activeStatus:", err)
     );
 
     // مسح الكاش
@@ -550,14 +541,6 @@ exports.updateStudent = async (req, res) => {
     // Invalidate caches and emit events using helpers
     await invalidateStudentCaches();
     emitStudentEvent("updated", updatedStudent);
-
-    // Update activeStatus if group changed
-    if (updatedData.group && currentStudent.group !== updatedData.group) {
-      await updateGroupsActiveStatusOnStudentMove(
-        currentStudent.group,
-        updatedData.group
-      );
-    }
 
     // Notification Logic
     const io = req.app.get("io");

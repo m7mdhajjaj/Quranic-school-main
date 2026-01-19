@@ -45,11 +45,13 @@ exports.getStudentWarnings = async (req, res) => {
       }
     }
 
+    // ✅ OPTIMIZED: إضافة .lean() لتحسين الأداء
     const warnings = await Warning.find({ studentId })
       .populate("studentId", "firstName lastName")
       .populate("teacherId", "firstName lastName")
       .populate("groupId", "name")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     res.json(warnings);
   } catch (error) {
@@ -84,11 +86,13 @@ exports.getGroupWarnings = async (req, res) => {
       }
     }
 
+    // ✅ OPTIMIZED: إضافة .lean() لتحسين الأداء
     const warnings = await Warning.find({ groupId })
       .populate("studentId", "firstName lastName")
       .populate("teacherId", "firstName lastName")
       .populate("groupId", "name")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     res.json(warnings);
   } catch (error) {

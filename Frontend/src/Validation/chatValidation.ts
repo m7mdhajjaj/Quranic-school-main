@@ -2,6 +2,10 @@ import { z } from "zod";
 
 const objectIdRegex = /^[0-9a-fA-F]{24}$/;
 
+// ============================================================================
+// Message Schemas - Synced with Backend
+// ============================================================================
+
 export const sendMessageSchema = z.object({
   chatType: z.enum(["DM", "GROUP"]),
   recipientId: z.string().regex(objectIdRegex).optional(), // Required if DM
@@ -17,14 +21,19 @@ export const sendMessageSchema = z.object({
   ).optional(),
   replyTo: z.string().regex(objectIdRegex).optional().nullable(),
   clientTempId: z.string().optional(),
-  mentions: z.array(z.string()).optional(), // Array of User IDs or 'everyone'
+  mentions: z.array(
+    z.object({
+      type: z.enum(["user", "all"]),
+      user: z.string().regex(objectIdRegex).optional(), // User ID or undefined for 'all'
+    })
+  ).optional(),
 }).refine((data) => {
   if (data.chatType === "DM" && !data.recipientId) return false;
   if (data.chatType === "GROUP" && !data.groupId) return false;
   if (!data.text && (!data.attachments || data.attachments.length === 0)) return false;
   return true;
 }, {
-  message: "Invalid message data: Missing recipient/group or content",
+  message: "بيانات الرسالة غير صالحة: يجب تحديد المستلم/المجموعة والمحتوى",
 });
 
 export const getMessagesSchema = z.object({
@@ -39,11 +48,45 @@ export const markSeenSchema = z.object({
   chatType: z.enum(["DM", "GROUP"]),
 });
 
+export const resetUnreadCountSchema = z.object({
+  chatType: z.enum(["DM", "GROUP"]),
+  targetId: z.string().regex(objectIdRegex),
+});
+
 export const editMessageSchema = z.object({
   text: z.string().min(1, "الرسالة لا يمكن أن تكون فارغة").max(4000, "الرسالة يجب أن لا تتجاوز 4000 حرف"),
 });
 
+export const deleteMessageSchema = z.object({
+  deleteForAll: z.boolean().optional().default(false),
+});
+
+export const muteConversationSchema = z.object({
+  chatType: z.enum(["DM", "GROUP"]),
+  targetId: z.string().regex(objectIdRegex),
+  duration: z.number(), // minutes, -1 for indefinitely, 0 to unmute
+});
+
+// ============================================================================
+// Type Exports
+// ============================================================================
+
 export type SendMessageInput = z.infer<typeof sendMessageSchema>;
 export type GetMessagesInput = z.infer<typeof getMessagesSchema>;
 export type MarkSeenInput = z.infer<typeof markSeenSchema>;
+export type ResetUnreadCountInput = z.infer<typeof resetUnreadCountSchema>;
 export type EditMessageInput = z.infer<typeof editMessageSchema>;
+export type DeleteMessageInput = z.infer<typeof deleteMessageSchema>;
+export type MuteConversationInput = z.infer<typeof muteConversationSchema>;
+
+// ============================================================================
+// Validation Helper
+// ============================================================================
+
+export const validateSendMessage = (data: unknown) => {
+  return sendMessageSchema.safeParse(data);
+};
+
+export const validateEditMessage = (data: unknown) => {
+  return editMessageSchema.safeParse(data);
+};

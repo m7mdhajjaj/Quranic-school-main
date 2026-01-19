@@ -24,6 +24,8 @@ const {
   secretaryStudentsAccess,
   secretaryTimetableAccess,
 } = require("./role.middleware");
+// ✅ NEW: Group ownership middleware
+const { requireGroupOwnership, requireWarningOwnership } = require("./groupOwnership");
 
 module.exports = {
   // Core authentication - المصادقة الأساسية
@@ -44,4 +46,8 @@ module.exports = {
   secretaryTeachersAccess,
   secretaryStudentsAccess,
   secretaryTimetableAccess,
+
+  // ✅ NEW: Resource ownership - ملكية الموارد
+  requireGroupOwnership,
+  requireWarningOwnership,
 };

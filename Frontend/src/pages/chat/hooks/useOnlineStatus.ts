@@ -5,8 +5,9 @@
 import { useState, useEffect, useContext } from 'react';
 import { UserStatusContext } from '../../../Context/UserStatusContext';
 import api from '../../../Api/api';
+import type { ChatType } from '../types';
 
-export const useOnlineStatus = (chatType: 'DM' | 'GROUP', targetId: string) => {
+export const useOnlineStatus = (chatType: ChatType, targetId: string) => {
   const [lastSeen, setLastSeen] = useState<string | null>(null);
   const statusContext = useContext(UserStatusContext);
   

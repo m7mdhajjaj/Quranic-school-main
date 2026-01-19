@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '../../../Api/api';
 import type { GetMessagesInput } from '../../../Validation/chatValidation';
+import type { Message, ChatType, DeliveredToItem, SeenByItem, User } from '../types';
 
-export const useChatMessages = (chatType: 'DM' | 'GROUP', targetId: string) => {
-  const [messages, setMessages] = useState<any[]>([]);
+export const useChatMessages = (chatType: ChatType, targetId: string) => {
+  const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -47,13 +48,13 @@ export const useChatMessages = (chatType: 'DM' | 'GROUP', targetId: string) => {
   }, [fetchMessages]);
 
   // Add optimistic message (قبل ما يوصل للسيرفر)
-  const addOptimisticMessage = useCallback((message: any) => {
+  const addOptimisticMessage = useCallback((message: Partial<Message> & { clientTempId: string }) => {
     // ✅ Fix: Append to end (Chronological Order)
-    setMessages(prev => [...prev, { ...message, _optimistic: true }]);
+    setMessages(prev => [...prev, { ...message, _optimistic: true } as Message]);
   }, []);
 
   // Add real message from server
-  const addMessage = useCallback((message: any) => {
+  const addMessage = useCallback((message: Message) => {
     setMessages(prev => {
       // Check if message already exists by _id
       if (message._id && prev.some(m => m._id === message._id)) {
@@ -68,36 +69,36 @@ export const useChatMessages = (chatType: 'DM' | 'GROUP', targetId: string) => {
   }, []);
 
   // Update message (for delivery/read status)
-  const updateMessage = useCallback((messageId: string, updates: any) => {
+  const updateMessage = useCallback((messageId: string, updates: Partial<Message>) => {
     setMessages(prev => prev.map(msg => 
       msg._id === messageId ? { ...msg, ...updates } : msg
     ));
   }, []);
 
   // ✅ Update Group Message Status (Push to arrays)
-  const updateGroupMessageStatus = useCallback((messageId: string, userId: string, type: 'delivered' | 'read', timestamp: string, user?: any) => {
+  const updateGroupMessageStatus = useCallback((messageId: string, userId: string, type: 'delivered' | 'read', timestamp: string, user?: User) => {
     setMessages(prev => prev.map(msg => {
       if (msg._id !== messageId) return msg;
 
       if (type === 'delivered') {
-        const exists = msg.deliveredTo?.some((d: any) => d.userId === userId);
+        const exists = msg.deliveredTo?.some((d: DeliveredToItem) => d.userId === userId);
         if (exists) return msg;
         return {
           ...msg,
           deliveredTo: [...(msg.deliveredTo || []), { userId, deliveredAt: timestamp }]
         };
       } else if (type === 'read') {
-        const exists = msg.seenBy?.some((s: any) => s.userId === userId);
+        const exists = msg.seenBy?.some((s: SeenByItem) => s.userId === userId);
         if (exists) return msg;
         
         // If read, it's also delivered
-        const deliveredExists = msg.deliveredTo?.some((d: any) => d.userId === userId);
+        const deliveredExists = msg.deliveredTo?.some((d: DeliveredToItem) => d.userId === userId);
         const newDeliveredTo = deliveredExists 
           ? msg.deliveredTo 
           : [...(msg.deliveredTo || []), { userId, deliveredAt: timestamp }];
 
         // Add user info if provided (for avatar display)
-        const seenEntry = { userId, seenAt: timestamp, user };
+        const seenEntry: SeenByItem = { userId, seenAt: timestamp, user };
 
         return {
           ...msg,

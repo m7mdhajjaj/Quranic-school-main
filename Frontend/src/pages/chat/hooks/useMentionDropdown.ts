@@ -3,13 +3,9 @@
 // ============================================================================
 
 import { useEffect, useState, useMemo } from 'react';
+import type { User } from '../types';
 
-interface MentionUser {
-  _id: string;
-  firstName: string;
-  lastName: string;
-  avatar?: { url: string };
-}
+export interface MentionUser extends Pick<User, '_id' | 'firstName' | 'lastName' | 'avatar'> {}
 
 interface Position {
   top: number;
@@ -27,13 +23,13 @@ interface Coordinates {
   left: number;
 }
 
-interface AllOption {
+export interface AllOption {
   _id: 'all';
   firstName: string;
   lastName: string;
 }
 
-type DisplayItem = MentionUser | AllOption;
+export type DisplayItem = MentionUser | AllOption;
 
 interface UseMentionDropdownReturn {
   coords: Coordinates;

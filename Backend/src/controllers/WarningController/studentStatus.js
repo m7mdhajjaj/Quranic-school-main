@@ -6,54 +6,44 @@ const Warning = require("../../schema/Warning");
 
 /**
  * التحقق من حالة الطالب (مفصول أم لا)
+ * ✅ OPTIMIZED: استعلام واحد بدلاً من 4 استعلامات
  * @route GET /api/warnings/status/:studentId
  */
 exports.checkStudentStatus = async (req, res) => {
   try {
     const { studentId } = req.params;
 
-    // البحث عن إنذار فصل نهائي (يجب أن يكون نشطاً)
-    const expulsion = await Warning.findOne({
+    // ⚡️ استعلام واحد لجلب جميع الإنذارات النشطة
+    const activeWarnings = await Warning.find({
       studentId,
-      type: "expulsion",
       status: "active"
-    });
+    }).select('type createdAt').lean();
 
-    // البحث عن إنذارات فصل نشطة (الإنذار الثالث يعتبر فصل)
-    const activeSuspension = await Warning.findOne({
-      studentId,
-      type: { $in: ["third"] }, // الثالث يعتبر فصل
-      status: "active"
-    });
+    // تجميع الإنذارات حسب النوع
+    const warningsByType = activeWarnings.reduce((acc, w) => {
+      acc[w.type] = w;
+      return acc;
+    }, {});
 
-    // البحث عن حظر دائم من الأنشطة
-    const permanentBan = await Warning.findOne({
-      studentId,
-      $or: [{ type: "third" }, { type: "expulsion" }],
-      status: "active"
-    });
+    const hasExpulsion = !!warningsByType['expulsion'];
+    const hasThird = !!warningsByType['third'];
+    const hasSecond = !!warningsByType['second'];
 
-    // حساب حظر مؤقت من الأنشطة (مثلاً الإنذار الثاني)
-    const temporaryBan = await Warning.findOne({
-      studentId,
-      type: "second",
-      status: "active"
-    });
-
+    // حساب حظر مؤقت من الأنشطة (الإنذار الثاني - شهر واحد)
     let activitiesBanEndDate = null;
-    if (temporaryBan) {
-      const banEndDate = new Date(temporaryBan.createdAt); // استخدام createdAt
-      banEndDate.setMonth(banEndDate.getMonth() + 1); // شهر واحد
+    if (hasSecond) {
+      const banEndDate = new Date(warningsByType['second'].createdAt);
+      banEndDate.setMonth(banEndDate.getMonth() + 1);
       if (banEndDate > new Date()) {
         activitiesBanEndDate = banEndDate;
       }
     }
 
     res.json({
-      isPermanentlyExpelled: !!expulsion,
-      isTemporarilySuspended: !!activeSuspension,
-      suspensionEndDate: null, // لم يعد لدينا endDate محدد في السكيما، الفصل مفتوح حتى الإعادة
-      isPermanentlyBannedFromActivities: !!permanentBan,
+      isPermanentlyExpelled: hasExpulsion,
+      isTemporarilySuspended: hasThird,
+      suspensionEndDate: null, // الفصل مفتوح حتى الإعادة
+      isPermanentlyBannedFromActivities: hasExpulsion || hasThird,
       isTemporarilyBannedFromActivities: !!activitiesBanEndDate,
       activitiesBanEndDate,
     });

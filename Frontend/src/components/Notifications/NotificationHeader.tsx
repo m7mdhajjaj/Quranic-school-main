@@ -239,7 +239,7 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
         {/* القائمة المنسدلة */}
         {showDropdown && (
           <div 
-            className="fixed w-[340px] sm:w-[400px] bg-white rounded-2xl shadow-2xl shadow-gray-200/50 z-[150] animate-slideDown border border-gray-100 flex flex-col max-h-[75vh] sm:max-h-[550px] overflow-hidden"
+            className="fixed w-[320px] sm:w-[360px] bg-white rounded-2xl shadow-2xl shadow-gray-200/50 z-[150] animate-slideDown border border-gray-100 flex flex-col max-h-[60vh] sm:max-h-[450px] overflow-hidden"
             style={{
               top: `${dropdownPosition.top}px`,
               right: `${dropdownPosition.right}px`,
@@ -257,22 +257,22 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
             </div>
 
             {/* شريط الفلاتر */}
-            <div className="flex-shrink-0 px-3 py-3 bg-gradient-to-b from-gray-50 to-white border-b border-gray-100">
-              <div className="flex gap-2 overflow-x-auto no-scrollbar">
+            <div className="flex-shrink-0 px-2 py-2 bg-gradient-to-b from-gray-50 to-white border-b border-gray-100">
+              <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
                 {categoryButtons.map(({ key, label, Icon }) => (
                   <button
                     key={key ?? 'all'}
                     onClick={() => handleCategoryChange(key)}
                     className={`
-                      flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl whitespace-nowrap
+                      flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-semibold rounded-lg whitespace-nowrap
                       transition-all duration-300 ease-out
                       ${categoryFilter === key 
-                        ? 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-200/50 scale-105' 
-                        : 'bg-white text-gray-600 border border-gray-200 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-600 hover:shadow-md'
+                        ? 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-200/50 scale-105' 
+                        : 'bg-white text-gray-600 border border-gray-200 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-600 hover:shadow-sm'
                       }
                     `}
                   >
-                    <Icon className="w-4 h-4" />
+                    <Icon className="w-3 h-3" />
                     <span>{label}</span>
                   </button>
                 ))}
