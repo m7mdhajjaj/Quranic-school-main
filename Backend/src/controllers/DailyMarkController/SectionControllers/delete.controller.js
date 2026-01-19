@@ -7,6 +7,7 @@ const TimeTable = require("../../../schema/TimeTable");
 const Group = require("../../../schema/Group");
 const { notifySectionDeleted } = require("../../../Notifications");
 const { createLogger } = require("../../../utils/logger");
+const { getSurahByNumber } = require("../../../utils/Quran/dailyMarkQuranMetadata");
 const {
   sendSuccess,
   sendError,
@@ -21,7 +22,7 @@ const logger = createLogger('SectionDelete');
  * ============================================================================
  * عند حذف مقطع، يجب إعادة حساب:
  * 1. آخر آية تم الوصول إليها (lastAyahEnd)
- * 2. حالة الإكمال (isCompleted)
+ * 2. حالة الإكمال (isCompleted) - تعود إلى false إذا لم نعد عند آخر آية
  * 3. إذا لم تعد هناك مقاطع للسورة، يتم مسحها
  */
 async function recalculateActiveSurah(groupId, type) {
@@ -75,10 +76,23 @@ async function recalculateActiveSurah(groupId, type) {
       }
     }
 
-    // تحديث lastAyahEnd
-    await Group.updateLastAyah(groupId, maxAyahEnd, type);
+    // ✅ V8: التحقق من حالة الإكمال
+    const surahInfo = getSurahByNumber(activeSurah.surahNumber);
+    const totalAyahs = surahInfo?.ayahCount || 0;
+    const isCompleted = totalAyahs > 0 && maxAyahEnd >= totalAyahs;
+
+    // تحديث lastAyahEnd و isCompleted
+    const updateField = type === 'memorization' 
+      ? 'activeMemorizationSurah' 
+      : 'activeReviewSurah';
     
-    logger.info(`📊 [${type}] تم تحديث السورة ${activeSurah.surahNumber} - آخر آية: ${maxAyahEnd}`);
+    await Group.findByIdAndUpdate(groupId, {
+      [`${updateField}.lastAyahEnd`]: maxAyahEnd,
+      [`${updateField}.isCompleted`]: isCompleted,
+      [`${updateField}.completedAt`]: isCompleted ? activeSurah.completedAt || new Date() : null,
+    });
+    
+    logger.info(`📊 [${type}] تم تحديث السورة ${activeSurah.surahNumber} - آخر آية: ${maxAyahEnd}/${totalAyahs} (مكتملة: ${isCompleted})`);
   } catch (error) {
     logger.error(`❌ خطأ في إعادة حساب السورة الفعالة (${type}):`, error);
   }

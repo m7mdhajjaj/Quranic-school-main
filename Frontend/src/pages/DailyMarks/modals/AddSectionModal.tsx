@@ -80,6 +80,8 @@ const AddSectionModalComponent = ({
 
   // ✅ V8: Review validation error (no memorization)
   const [reviewValidationError, setReviewValidationError] = useState<string | null>(null);
+  // ✅ V13: Memorization validation error (Active Surah)
+  const [memorizationValidationError, setMemorizationValidationError] = useState<string | null>(null);
 
   // ✅ V9: Auto-adjust review end when same surah memorization exists
   // Rule: If memorization starts at X, review can only go up to X-1
@@ -134,10 +136,11 @@ const AddSectionModalComponent = ({
     600 // 600ms debounce
   );
 
-  const hasErrors = hasConsistencyErrors || !!quotaError || !isScheduleValid || !!reviewValidationError;
+  const hasErrors = hasConsistencyErrors || !!quotaError || !isScheduleValid || !!reviewValidationError || !!memorizationValidationError;
   const allErrors = [
     ...consistencyErrors,
     ...scheduleErrors,
+    ...(memorizationValidationError ? [memorizationValidationError] : []),
     ...(reviewValidationError ? [reviewValidationError] : []),
   ];
 
@@ -307,6 +310,7 @@ const AddSectionModalComponent = ({
              completedSurahs={completedList.filter(s => (s.type || 'memorization') === 'memorization')}
              date={newSection.date ? new Date(newSection.date).toISOString() : undefined}
              groupId={newSection.group || selectedGroup}
+             onValidationError={setMemorizationValidationError}
            />
 
            <QuranSegmentInput 

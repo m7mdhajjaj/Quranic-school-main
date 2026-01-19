@@ -265,13 +265,15 @@ groupSchema.statics.recalculateMultipleActiveStatus = async function (groupNames
 /**
  * التحقق من إمكانية إضافة مقطع جديد (حفظ أو مراجعة)
  * ✅ يفحص وجود مقاطع فعلية للسورة الفعالة قبل الرفض
+ * ✅ V8: رسالة خطأ محسنة توضح التقدم الحالي والمتبقي
  * @param {string} groupId - معرف الحلقة
  * @param {number} surahNumber - رقم السورة
  * @param {string} type - 'memorization' أو 'review'
- * @returns {Promise<{allowed: boolean, reason?: string, activeSurah?: object}>}
+ * @returns {Promise<{allowed: boolean, reason?: string, activeSurah?: object, progress?: object}>}
  */
 groupSchema.statics.canAddSegment = async function (groupId, surahNumber, type) {
   const Section = require("./DailyMark/Section");
+  const { getSurahByNumber } = require("../utils/Quran/dailyMarkQuranMetadata");
   
   const group = await this.findById(groupId);
   if (!group) {
@@ -287,8 +289,14 @@ groupSchema.statics.canAddSegment = async function (groupId, surahNumber, type) 
     return { allowed: true };
   }
 
+  // ✅ V12 FIX: التحقق من الإكمال بناءً على isCompleted أو الوصول للآية الأخيرة
+  const surahInfo = getSurahByNumber(activeSurah.surahNumber);
+  const totalAyahs = surahInfo?.ayahCount || 0;
+  const lastAyahEnd = activeSurah.lastAyahEnd || 0;
+  const isTrulyCompleted = activeSurah.isCompleted || (totalAyahs > 0 && lastAyahEnd >= totalAyahs);
+
   // إذا السورة الفعالة مكتملة، يمكن البدء بأي سورة
-  if (activeSurah.isCompleted) {
+  if (isTrulyCompleted) {
     return { allowed: true };
   }
 
@@ -313,11 +321,34 @@ groupSchema.statics.canAddSegment = async function (groupId, surahNumber, type) 
     return { allowed: true };
   }
 
+  // ✅ V8: حساب التقدم الحالي والمتبقي لرسالة خطأ مفصلة
+  const remainingAyahs = totalAyahs - lastAyahEnd;
+  const progressPercent = totalAyahs > 0 ? Math.round((lastAyahEnd / totalAyahs) * 100) : 0;
+  const typeLabel = type === 'memorization' ? 'الحفظ' : 'المراجعة';
+  const newSurahInfo = getSurahByNumber(surahNumber);
+  const newSurahName = newSurahInfo?.name || `سورة ${surahNumber}`;
+
+  // ✅ رسالة خطأ محسنة ومفصلة
+  const reason = `❌ لا يمكن البدء بسورة ${newSurahName} قبل إكمال السورة الحالية
+
+📖 السورة الفعالة: ${activeSurah.surahName || `سورة ${activeSurah.surahNumber}`}
+📊 التقدم الحالي: ${lastAyahEnd} من ${totalAyahs} آية (${progressPercent}%)
+⏳ المتبقي: ${remainingAyahs} آية للإكمال
+📝 النوع: ${typeLabel}
+
+💡 الحل: أكمل ${typeLabel} حتى الآية ${totalAyahs} من سورة ${activeSurah.surahName || activeSurah.surahNumber}، ثم يمكنك البدء بسورة جديدة.`;
+
   // لا يمكن البدء بسورة جديدة قبل إكمال الحالية
   return { 
     allowed: false, 
-    reason: `يجب إكمال سورة ${activeSurah.surahName || activeSurah.surahNumber} أولاً قبل البدء بسورة جديدة`,
-    activeSurah
+    reason,
+    activeSurah,
+    progress: {
+      lastAyahEnd,
+      totalAyahs,
+      remainingAyahs,
+      progressPercent
+    }
   };
 };
 
@@ -476,53 +507,7 @@ groupSchema.statics.getActiveSurahInfo = async function (groupId) {
   
   if (!group) return null;
 
-  // مساعد لحساب التفاصيل
-  const calculateProgress = (activeSurah, surahData) => {
-    if (!activeSurah?.surahNumber) {
-      return {
-        isActive: false,
-        canStartNewSurah: true,
-        message: 'يمكن البدء بأي سورة جديدة'
-      };
-    }
-
-    if (activeSurah.isCompleted) {
-      return {
-        isActive: false,
-        canStartNewSurah: true,
-        lastCompleted: {
-          surahNumber: activeSurah.surahNumber,
-          surahName: activeSurah.surahName,
-          completedAt: activeSurah.completedAt
-        },
-        message: 'السورة السابقة مكتملة - يمكن البدء بسورة جديدة'
-      };
-    }
-
-    // إيجاد عدد آيات السورة من البيانات
-    const surahInfo = surahData?.find(s => s.number === activeSurah.surahNumber);
-    const totalAyahs = surahInfo?.ayahCount || 0;
-    const remainingAyahs = totalAyahs - (activeSurah.lastAyahEnd || 0);
-    const progressPercent = totalAyahs > 0 
-      ? Math.round((activeSurah.lastAyahEnd / totalAyahs) * 100) 
-      : 0;
-
-    return {
-      isActive: true,
-      canStartNewSurah: false,
-      surahNumber: activeSurah.surahNumber,
-      surahName: activeSurah.surahName,
-      lastAyahEnd: activeSurah.lastAyahEnd || 0,
-      totalAyahs,
-      remainingAyahs: Math.max(0, remainingAyahs),
-      progressPercent,
-      nextAyahStart: (activeSurah.lastAyahEnd || 0) + 1,
-      startedAt: activeSurah.startedAt,
-      message: `يجب إكمال سورة ${activeSurah.surahName} أولاً (${progressPercent}% مكتمل، متبقي ${remainingAyahs} آية)`
-    };
-  };
-
-  // جلب بيانات السور للحساب
+  // جلب بيانات السور للحساب - نحتاجها قبل calculateProgress
   let surahData = [];
   try {
     const quranMeta = require('../utils/Quran/dailyMarkQuranMetadata');
@@ -531,11 +516,67 @@ groupSchema.statics.getActiveSurahInfo = async function (groupId) {
     console.warn('Could not load surah data for progress calculation');
   }
 
+  // مساعد لحساب التفاصيل
+  const calculateProgress = (activeSurah) => {
+    if (!activeSurah?.surahNumber) {
+      return {
+        isActive: false,
+        canStartNewSurah: true,
+        message: 'يمكن البدء بأي سورة جديدة'
+      };
+    }
+
+    // إيجاد عدد آيات السورة من البيانات
+    const surahInfo = surahData?.find(s => s.number === activeSurah.surahNumber);
+    const totalAyahs = surahInfo?.ayahCount || 0;
+    const lastAyahEnd = activeSurah.lastAyahEnd || 0;
+    const remainingAyahs = Math.max(0, totalAyahs - lastAyahEnd);
+    const progressPercent = totalAyahs > 0 
+      ? Math.round((lastAyahEnd / totalAyahs) * 100) 
+      : 0;
+
+    // ✅ V12 FIX: التحقق من الإكمال بناءً على isCompleted أو الوصول للآية الأخيرة
+    const isTrulyCompleted = activeSurah.isCompleted || (totalAyahs > 0 && lastAyahEnd >= totalAyahs);
+
+    if (isTrulyCompleted) {
+      return {
+        isActive: false,
+        canStartNewSurah: true,
+        surahNumber: activeSurah.surahNumber,
+        surahName: activeSurah.surahName,
+        lastAyahEnd,
+        totalAyahs,
+        remainingAyahs: 0,
+        progressPercent: 100,
+        lastCompleted: {
+          surahNumber: activeSurah.surahNumber,
+          surahName: activeSurah.surahName,
+          completedAt: activeSurah.completedAt || new Date()
+        },
+        message: 'السورة مكتملة - يمكن البدء بسورة جديدة'
+      };
+    }
+
+    return {
+      isActive: true,
+      canStartNewSurah: false,
+      surahNumber: activeSurah.surahNumber,
+      surahName: activeSurah.surahName,
+      lastAyahEnd,
+      totalAyahs,
+      remainingAyahs,
+      progressPercent,
+      nextAyahStart: lastAyahEnd + 1,
+      startedAt: activeSurah.startedAt,
+      message: `يجب إكمال سورة ${activeSurah.surahName} أولاً (${progressPercent}% مكتمل، متبقي ${remainingAyahs} آية)`
+    };
+  };
+
   return {
     groupId: group._id,
     groupName: group.name,
-    memorization: calculateProgress(group.activeMemorizationSurah, surahData),
-    review: calculateProgress(group.activeReviewSurah, surahData),
+    memorization: calculateProgress(group.activeMemorizationSurah),
+    review: calculateProgress(group.activeReviewSurah),
     completedSurahs: {
       memorization: group.completedSurahs?.memorization || [],
       review: group.completedSurahs?.review || []

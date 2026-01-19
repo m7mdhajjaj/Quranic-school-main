@@ -4,6 +4,7 @@ const { sendSuccess, sendError } = require("../utils/responseHelpers");
 const mongoose = require("mongoose");
 const { toDateKey, getWeekKey, addDays } = require("../../../config/timezone");
 const { createLogger } = require("../../../utils/logger");
+const { getSurahByNumber } = require("../../../utils/Quran/dailyMarkQuranMetadata");
 
 const logger = createLogger('BulkCreate');
 
@@ -57,6 +58,16 @@ exports.bulkCreateSections = async (req, res) => {
 
     logger.debug(`Surah: ${surahNumber}, Group: ${group.name}`);
     logger.debug(`Sections needed: ${sections.length}`);
+
+    // ============================================
+    // 🔒 ACTIVE SURAH VALIDATION - التحقق من السورة الفعالة
+    // ============================================
+    const canAdd = await Group.canAddSegment(group._id, surahNumber, 'memorization');
+    if (!canAdd.allowed) {
+      logger.warn("Active Surah Check failed:", canAdd.reason);
+      return sendError(res, canAdd.reason, 400);
+    }
+    // ============================================
 
     // ======================================================
     // الخطوة 1: جلب المقاطع الموجودة للسورة مرتبة بالآية
@@ -271,6 +282,46 @@ exports.bulkCreateSections = async (req, res) => {
 
     // حساب المقاطع المتخطاة (الموجودة أصلاً)
     const skippedCount = sections.length - validSections.length;
+
+    // ============================================
+    // 🔄 UPDATE ACTIVE SURAH - تحديث السورة الفعالة بعد الإنشاء الجماعي
+    // ============================================
+    if (createdSections.length > 0) {
+      const surahInfo = getSurahByNumber(surahNumber);
+      const totalAyahs = surahInfo?.ayahCount || 0;
+      
+      // حساب آخر آية تم الوصول إليها (من جميع المقاطع المنشأة + الموجودة)
+      let maxAyahEnd = 0;
+      for (const range of allRanges) {
+        if (range.ayahEnd > maxAyahEnd) {
+          maxAyahEnd = range.ayahEnd;
+        }
+      }
+      
+      // التحقق من السورة الفعالة
+      const activeSurahs = await Group.getActiveSurahs(group._id);
+      
+      if (!activeSurahs?.memorization?.surahNumber || activeSurahs.memorization.isCompleted) {
+        // تفعيل سورة جديدة
+        await Group.activateSurah(
+          group._id,
+          surahNumber,
+          surahInfo?.name || `سورة ${surahNumber}`,
+          maxAyahEnd,
+          'memorization'
+        );
+      } else {
+        // تحديث آخر آية
+        await Group.updateLastAyah(group._id, maxAyahEnd, 'memorization');
+      }
+      
+      // ✅ التحقق من إكمال السورة تلقائياً
+      if (totalAyahs > 0 && maxAyahEnd >= totalAyahs) {
+        await Group.checkAndCompleteSurah(group._id, maxAyahEnd, totalAyahs, 'memorization');
+        logger.info(`🎉 سورة ${surahInfo?.name} مكتملة الحفظ! (${maxAyahEnd}/${totalAyahs})`);
+      }
+    }
+    // ============================================
 
     logger.info("BULK CREATE RESULT");
     logger.success(`Created: ${createdSections.length}`);

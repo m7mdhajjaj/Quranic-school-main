@@ -10,6 +10,10 @@ export interface ActiveSurah {
   lastAyahEnd: number;
   isCompleted: boolean;
   startedAt: string | null;
+  // ✅ V8: Added progress info
+  totalAyahs?: number;
+  remainingAyahs?: number;
+  progressPercent?: number;
 }
 
 export interface CompletedSurah {
@@ -36,34 +40,32 @@ export interface ActiveSurahsResponse {
 // NEW: Active Surah Info (Detailed) Types
 // ============================================================================
 export interface ActiveSurahProgress {
-  surahNumber: number;
-  surahName: string;
-  lastAyahEnd: number;
-  totalAyahs: number;
-  progressPercentage: number;
-  startedAt: string | null;
-  isCompleted: boolean;
-  segmentsCount?: number;
+  isActive: boolean;
+  canStartNewSurah: boolean;
+  surahNumber?: number;
+  surahName?: string;
+  lastAyahEnd?: number;
+  totalAyahs?: number;
+  remainingAyahs?: number;
+  progressPercent?: number;
+  nextAyahStart?: number;
+  startedAt?: string | null;
+  message?: string;
+  lastCompleted?: {
+    surahNumber: number;
+    surahName: string;
+    completedAt: string;
+  };
 }
 
 export interface ActiveSurahInfoResponse {
   groupId: string;
   groupName: string;
-  memorization: {
-    activeSurah: ActiveSurahProgress | null;
-    canStartNewSurah: boolean;
-    nextSuggested?: {
-      surahNumber: number;
-      surahName: string;
-    };
-  };
-  review: {
-    activeSurah: ActiveSurahProgress | null;
-    canStartNewSurah: boolean;
-    nextSuggested?: {
-      surahNumber: number;
-      surahName: string;
-    };
+  memorization: ActiveSurahProgress;
+  review: ActiveSurahProgress;
+  completedSurahs: {
+    memorization: CompletedSurah[];
+    review: CompletedSurah[];
   };
 }
 

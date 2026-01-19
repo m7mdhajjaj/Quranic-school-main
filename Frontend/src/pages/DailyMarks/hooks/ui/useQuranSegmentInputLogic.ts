@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { quranSurahs } from "@/data/quranSurahs";
 import { getLastSegment } from "@/Api/DailyMark/sectionApi";
-import { getActiveSurahInfo } from "@/Api/DailyMark/activeSurahApi";
+import { getActiveSurahInfo, type ActiveSurahProgress } from "@/Api/DailyMark/activeSurahApi";
 import { normalizeText } from "@/pages/DailyMarks/utils/normalizeText";
 import type { QuranSegmentUI } from "../types/types";
 
@@ -23,7 +23,28 @@ export function useQuranSegmentInputLogic({ segments = [], groupName, type, onCh
   const [noMemorizationError, setNoMemorizationError] = useState<string | null>(null);
   // ✅ V10: Active Surah validation error
   const [activeSurahError, setActiveSurahError] = useState<string | null>(null);
+  // ✅ V13: معلومات السورة الفعالة للتحقق قبل الاختيار
+  const [activeSurahInfo, setActiveSurahInfo] = useState<ActiveSurahProgress | null>(null);
   const isInternalUpdate = useRef(false);
+
+  // ✅ V13: جلب معلومات Active Surah عند تحميل المكون
+  useEffect(() => {
+    if (!groupId || !type) {
+      setActiveSurahInfo(null);
+      return;
+    }
+
+    getActiveSurahInfo(groupId).then(response => {
+      if (!response.success || !response.data) {
+        setActiveSurahInfo(null);
+        return;
+      }
+      const typeData = type === 'memorization' ? response.data.memorization : response.data.review;
+      setActiveSurahInfo(typeData || null);
+    }).catch(() => {
+      setActiveSurahInfo(null);
+    });
+  }, [groupId, type]);
 
   useEffect(() => {
     if (segment.surahNumber && !isInternalUpdate.current) {
@@ -49,14 +70,19 @@ export function useQuranSegmentInputLogic({ segments = [], groupName, type, onCh
         return;
       }
 
-      // ✅ V10 FIX: البيانات تُرجع مباشرة وليس داخل activeSurah
+      // ✅ V11 FIX: البيانات تُرجع مع الحقول الصحيحة
       const typeData = type === 'memorization' ? response.data.memorization : response.data.review;
       
-      // التحقق من وجود سورة فعالة
-      if (typeData && typeData.isActive && typeData.surahNumber !== segment.surahNumber) {
+      // التحقق من وجود سورة فعالة غير مكتملة
+      if (typeData && typeData.isActive && !typeData.canStartNewSurah && typeData.surahNumber !== segment.surahNumber) {
         const typeLabel = type === 'memorization' ? 'حفظ' : 'مراجعة';
+        const progressText = typeData.progressPercent ? ` (${typeData.progressPercent}% مكتمل)` : '';
+        const remainingText = typeData.remainingAyahs ? `، متبقي ${typeData.remainingAyahs} آية` : '';
+        
         setActiveSurahError(
-          `يجب إكمال ${typeLabel} سورة ${typeData.surahName} أولاً (وصلت للآية ${typeData.lastAyahEnd} من ${typeData.totalAyahs}) قبل البدء بسورة جديدة.`
+          `❌ يجب إكمال ${typeLabel} سورة ${typeData.surahName} أولاً${progressText}${remainingText}\n\n` +
+          `📊 التقدم: ${typeData.lastAyahEnd || 0} من ${typeData.totalAyahs} آية\n` +
+          `💡 الحل: أكمل الحفظ حتى الآية ${typeData.totalAyahs} ثم يمكنك البدء بسورة جديدة.`
         );
       } else {
         setActiveSurahError(null);
@@ -283,6 +309,7 @@ export function useQuranSegmentInputLogic({ segments = [], groupName, type, onCh
     setReviewLimit,
     noMemorizationError,
     activeSurahError, // ✅ V10: Active Surah validation error
+    activeSurahInfo, // ✅ V13: معلومات السورة الفعالة للتحقق قبل الاختيار
     handleUpdate,
     handleInputChange,
     selectSurah,
