@@ -49,109 +49,214 @@ export const useChatSocket = () => {
     };
   }, [user]);
 
-  const joinGroup = useCallback((groupId: string) => {
-    socketRef.current?.emit('join:group', groupId);
+  const getSocket = useCallback(() => {
+    return socketRef.current || socketManager.getSocket();
   }, []);
+
+  const joinGroup = useCallback((groupId: string) => {
+    const socket = getSocket();
+    socket?.emit('join:group', groupId);
+  }, [getSocket]);
 
   const sendMessage = useCallback((data: SendMessageInput): Promise<Message> => {
     return new Promise((resolve, reject) => {
-      socketRef.current?.emit('message:send', data, (response: SocketResponse<Message>) => {
+      const socket = getSocket();
+      if (!socket) {
+        reject(new Error('Socket not connected'));
+        return;
+      }
+      socket.emit('message:send', data, (response: SocketResponse<Message>) => {
         if (response.status === 'ok' && response.data) resolve(response.data);
         else reject(new Error(response.message || 'Failed to send message'));
       });
     });
-  }, []);
+  }, [getSocket]);
 
   const sendTyping = useCallback((data: { chatType: ChatType; targetId: string }, isTyping: boolean) => {
     const event = isTyping ? 'typing:start' : 'typing:stop';
-    socketRef.current?.emit(event, data);
-  }, []);
+    const socket = getSocket();
+    socket?.emit(event, data);
+  }, [getSocket]);
 
   const markDelivered = useCallback((messageId: string) => {
-    socketRef.current?.emit('message:delivered', { messageId });
-  }, []);
+    const socket = getSocket();
+    socket?.emit('message:delivered', { messageId });
+  }, [getSocket]);
 
   const markRead = useCallback((messageId: string) => {
-    socketRef.current?.emit('message:read', { messageId });
-  }, []);
+    const socket = getSocket();
+    socket?.emit('message:read', { messageId });
+  }, [getSocket]);
 
   const editMessage = useCallback((messageId: string, text: string): Promise<Message> => {
     return new Promise((resolve, reject) => {
-      socketRef.current?.emit('message:edit', { messageId, text }, (response: SocketResponse<Message>) => {
+      const socket = getSocket();
+      if (!socket) {
+        reject(new Error('Socket not connected'));
+        return;
+      }
+      socket.emit('message:edit', { messageId, text }, (response: SocketResponse<Message>) => {
         if (response.status === 'ok' && response.data) resolve(response.data);
         else reject(new Error(response.message || 'Failed to edit message'));
       });
     });
-  }, []);
+  }, [getSocket]);
 
-  // Listen for new messages
+  // Listen for new messages - Use socketManager directly for better reliability
   const onMessage = useCallback((callback: (message: Message) => void) => {
-    socketRef.current?.on('message:new', callback);
+    const socket = getSocket();
+    if (socket) {
+      socket.on('message:new', callback);
+    } else {
+      // If socket not ready, register on socketManager
+      socketManager.on('message:new', callback);
+    }
     return () => {
-      socketRef.current?.off('message:new', callback);
+      const socket = getSocket();
+      if (socket) {
+        socket.off('message:new', callback);
+      } else {
+        socketManager.off('message:new', callback);
+      }
     };
-  }, []);
+  }, [getSocket]);
 
   // Listen for message sent confirmation
   const onMessageSent = useCallback((callback: (data: { clientTempId: string; message: Message }) => void) => {
-    socketRef.current?.on('message:sent', callback);
+    const socket = getSocket();
+    if (socket) {
+      socket.on('message:sent', callback);
+    } else {
+      socketManager.on('message:sent', callback);
+    }
     return () => {
-      socketRef.current?.off('message:sent', callback);
+      const socket = getSocket();
+      if (socket) {
+        socket.off('message:sent', callback);
+      } else {
+        socketManager.off('message:sent', callback);
+      }
     };
-  }, []);
+  }, [getSocket]);
 
   // Listen for message delivered
   const onMessageDelivered = useCallback((callback: (data: MessageDeliveredData) => void) => {
-    socketRef.current?.on('message:delivered', callback);
+    const socket = getSocket();
+    if (socket) {
+      socket.on('message:delivered', callback);
+    } else {
+      socketManager.on('message:delivered', callback);
+    }
     return () => {
-      socketRef.current?.off('message:delivered', callback);
+      const socket = getSocket();
+      if (socket) {
+        socket.off('message:delivered', callback);
+      } else {
+        socketManager.off('message:delivered', callback);
+      }
     };
-  }, []);
+  }, [getSocket]);
 
   // Listen for message read
   const onMessageRead = useCallback((callback: (data: MessageReadData) => void) => {
-    socketRef.current?.on('message:read', callback);
+    const socket = getSocket();
+    if (socket) {
+      socket.on('message:read', callback);
+    } else {
+      socketManager.on('message:read', callback);
+    }
     return () => {
-      socketRef.current?.off('message:read', callback);
+      const socket = getSocket();
+      if (socket) {
+        socket.off('message:read', callback);
+      } else {
+        socketManager.off('message:read', callback);
+      }
     };
-  }, []);
+  }, [getSocket]);
 
   // Listen for typing indicators
   const onTyping = useCallback((callback: (data: TypingData & { isTyping?: boolean }) => void) => {
-    socketRef.current?.on('typing:start', (data: TypingData) => callback({ ...data, isTyping: true }));
-    socketRef.current?.on('typing:stop', (data: TypingData) => callback({ ...data, isTyping: false }));
+    const socket = getSocket();
+    const typingStartHandler = (data: TypingData) => callback({ ...data, isTyping: true });
+    const typingStopHandler = (data: TypingData) => callback({ ...data, isTyping: false });
+    
+    if (socket) {
+      socket.on('typing:start', typingStartHandler);
+      socket.on('typing:stop', typingStopHandler);
+    } else {
+      socketManager.on('typing:start', typingStartHandler);
+      socketManager.on('typing:stop', typingStopHandler);
+    }
+    
     return () => {
-      socketRef.current?.off('typing:start', callback);
-      socketRef.current?.off('typing:stop', callback);
+      const socket = getSocket();
+      if (socket) {
+        socket.off('typing:start', typingStartHandler);
+        socket.off('typing:stop', typingStopHandler);
+      } else {
+        socketManager.off('typing:start', typingStartHandler);
+        socketManager.off('typing:stop', typingStopHandler);
+      }
     };
-  }, []);
+  }, [getSocket]);
 
   // ✅ Listen for conversation updates
   const onConversationUpdated = useCallback((callback: (data: Partial<Conversation>) => void) => {
-    socketRef.current?.on('conversation:updated', callback);
+    const socket = getSocket();
+    if (socket) {
+      socket.on('conversation:updated', callback);
+    } else {
+      socketManager.on('conversation:updated', callback);
+    }
     return () => {
-      socketRef.current?.off('conversation:updated', callback);
+      const socket = getSocket();
+      if (socket) {
+        socket.off('conversation:updated', callback);
+      } else {
+        socketManager.off('conversation:updated', callback);
+      }
     };
-  }, []);
+  }, [getSocket]);
 
   // ✅ Listen for message deletion
   const onMessageDeleted = useCallback((callback: (data: MessageDeletedData) => void) => {
-    socketRef.current?.on('message:deleted', callback);
+    const socket = getSocket();
+    if (socket) {
+      socket.on('message:deleted', callback);
+    } else {
+      socketManager.on('message:deleted', callback);
+    }
     return () => {
-      socketRef.current?.off('message:deleted', callback);
+      const socket = getSocket();
+      if (socket) {
+        socket.off('message:deleted', callback);
+      } else {
+        socketManager.off('message:deleted', callback);
+      }
     };
-  }, []);
+  }, [getSocket]);
 
   // ✅ Listen for message edited
   const onMessageEdited = useCallback((callback: (message: Message) => void) => {
-    socketRef.current?.on('message:edited', callback);
+    const socket = getSocket();
+    if (socket) {
+      socket.on('message:edited', callback);
+    } else {
+      socketManager.on('message:edited', callback);
+    }
     return () => {
-      socketRef.current?.off('message:edited', callback);
+      const socket = getSocket();
+      if (socket) {
+        socket.off('message:edited', callback);
+      } else {
+        socketManager.off('message:edited', callback);
+      }
     };
-  }, []);
+  }, [getSocket]);
 
   return {
-    socket: socketRef.current,
+    socket: getSocket(),
     joinGroup,
     sendMessage,
     sendTyping,
