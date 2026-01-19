@@ -25,8 +25,13 @@ class MessageService {
    * Send Message (DM or GROUP)
    */
   async sendMessage(senderId, senderRole, data) {
-    const normalizedSenderRole =
-      senderRole.charAt(0).toUpperCase() + senderRole.slice(1);
+    // Normalize senderRole - handle camelCase like "teacherAssistant"
+    let normalizedSenderRole;
+    if (senderRole === "teacherAssistant" || senderRole === "teacherassistant") {
+      normalizedSenderRole = "TeacherAssistant";
+    } else {
+      normalizedSenderRole = senderRole.charAt(0).toUpperCase() + senderRole.slice(1);
+    }
 
     // Validate input
     const validated = sendMessageSchema.parse(data);

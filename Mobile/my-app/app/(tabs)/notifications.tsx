@@ -164,7 +164,6 @@ export default function NotificationsPage() {
         data={notifications}
         keyExtractor={(item) => item._id}
         renderItem={renderItem}
-        inverted={true}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
