@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { quranSurahs } from "@/data/quranSurahs";
 import { getLastSegment } from "@/Api/DailyMark/sectionApi";
-import { getActiveSurahInfo } from "@/Api/DailyMark/activeSurahApi";
+import { getActiveSurahInfo, type ActiveSurahProgress } from "@/Api/DailyMark/activeSurahApi";
 import { normalizeText } from "@/pages/DailyMarks/utils/normalizeText";
 import type { QuranSegmentUI } from "../types/types";
 
@@ -23,7 +23,28 @@ export function useQuranSegmentInputLogic({ segments = [], groupName, type, onCh
   const [noMemorizationError, setNoMemorizationError] = useState<string | null>(null);
   // ✅ V10: Active Surah validation error
   const [activeSurahError, setActiveSurahError] = useState<string | null>(null);
+  // ✅ V13: معلومات السورة الفعالة للتحقق قبل الاختيار
+  const [activeSurahInfo, setActiveSurahInfo] = useState<ActiveSurahProgress | null>(null);
   const isInternalUpdate = useRef(false);
+
+  // ✅ V13: جلب معلومات Active Surah عند تحميل المكون
+  useEffect(() => {
+    if (!groupId || !type) {
+      setActiveSurahInfo(null);
+      return;
+    }
+
+    getActiveSurahInfo(groupId).then(response => {
+      if (!response.success || !response.data) {
+        setActiveSurahInfo(null);
+        return;
+      }
+      const typeData = type === 'memorization' ? response.data.memorization : response.data.review;
+      setActiveSurahInfo(typeData || null);
+    }).catch(() => {
+      setActiveSurahInfo(null);
+    });
+  }, [groupId, type]);
 
   useEffect(() => {
     if (segment.surahNumber && !isInternalUpdate.current) {
@@ -288,6 +309,7 @@ export function useQuranSegmentInputLogic({ segments = [], groupName, type, onCh
     setReviewLimit,
     noMemorizationError,
     activeSurahError, // ✅ V10: Active Surah validation error
+    activeSurahInfo, // ✅ V13: معلومات السورة الفعالة للتحقق قبل الاختيار
     handleUpdate,
     handleInputChange,
     selectSurah,

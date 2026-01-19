@@ -65,8 +65,13 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
     segment,
     reviewLimit, // ✅ Retrive reviewLimit for input constraints
     noMemorizationError, // ✅ V8: Error when no memorization exists
-    activeSurahError // ✅ V10: Error when Active Surah validation fails
+    activeSurahError, // ✅ V10: Error when Active Surah validation fails
+    activeSurahInfo // ✅ V13: معلومات السورة الفعالة للتحقق قبل الاختيار
   } = useQuranSegmentInputLogic({ segments, groupName, type, onChange, excludeId, date, groupId });
+
+  // ✅ V13: التحقق من وجود سورة فعالة غير مكتملة
+  const hasBlockingActiveSurah = activeSurahInfo?.isActive && !activeSurahInfo?.canStartNewSurah;
+  const blockingActiveSurahNumber = hasBlockingActiveSurah ? activeSurahInfo?.surahNumber : null;
 
   // ✅ V8: Notify parent of validation errors (combine both errors)
   React.useEffect(() => {
@@ -135,21 +140,51 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
               {/* Dropdown Suggestions */}
               {isFocused && surahInput && !segment.surahNumber && suggestions.length > 0 && (
                   <div className={`absolute top-full text-right left-0 w-full bg-white rounded-xl shadow-2xl border border-gray-100 mt-2 max-h-60 overflow-y-auto divide-y divide-gray-50 z-[100] animate-in fade-in zoom-in-95 duration-100 scrollbar-thin ${colorClass === 'amber' ? 'scrollbar-thumb-amber-500' : 'scrollbar-thumb-emerald-500'} scrollbar-track-transparent`}>
+                      {/* ✅ V13: تحذير إذا كانت هناك سورة فعالة غير مكتملة */}
+                      {hasBlockingActiveSurah && activeSurahInfo && (
+                        <div className="sticky top-0 bg-amber-50 border-b-2 border-amber-300 px-4 py-3 z-10">
+                          <div className="flex items-center gap-2 text-amber-800">
+                            <span className="text-lg">🔒</span>
+                            <div className="flex-1">
+                              <p className="text-xs font-bold">يجب إكمال {activeSurahInfo.surahName} أولاً</p>
+                              <p className="text-[10px] mt-0.5">
+                                التقدم: {activeSurahInfo.lastAyahEnd || 0}/{activeSurahInfo.totalAyahs} آية ({activeSurahInfo.progressPercent}%)
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                       {suggestions.map(s => {
                           const isCompleted = completedSurahs.some(c => c.surahNumber === s.number);
                           // ✅ V13 FIX: للمراجعة يمكن تكرار السور المكتملة، للحفظ فقط ممنوع
-                          const isBlockedForSelection = type === 'memorization' && isCompleted;
+                          const isBlockedByCompletion = type === 'memorization' && isCompleted;
+                          // ✅ V13: منع اختيار سورة غير السورة الفعالة
+                          const isBlockedByActiveSurah = hasBlockingActiveSurah && s.number !== blockingActiveSurahNumber;
+                          const isBlockedForSelection = isBlockedByCompletion || isBlockedByActiveSurah;
+                          // ✅ V13: السورة الفعالة تظهر بلون مميز
+                          const isActiveSurah = blockingActiveSurahNumber === s.number;
+                          
                           return (
                           <div 
                             key={s.number}
                             className={`px-4 py-3 border-b border-gray-50 last:border-0 transition-colors flex items-center justify-between group/item
-                                ${isBlockedForSelection ? 'bg-gray-50/50 cursor-not-allowed opacity-70' : 'cursor-pointer hover:bg-gray-50 bg-white'}
+                                ${isActiveSurah 
+                                  ? 'bg-amber-50 hover:bg-amber-100 cursor-pointer border-r-4 border-r-amber-500' 
+                                  : isBlockedForSelection 
+                                  ? 'bg-gray-50/50 cursor-not-allowed opacity-50' 
+                                  : 'cursor-pointer hover:bg-gray-50 bg-white'}
                             `}
                             onMouseDown={(e) => {
                                 e.preventDefault(); // Prevent blur before click
-                                if (isBlockedForSelection) {
+                                if (isBlockedByCompletion) {
                                    import('@/utils/toastUtils').then(({ showWarningToast }) => {
                                       showWarningToast(`⚠️ سورة ${s.name} مكتملة بالفعل في الحفظ`);
+                                   });
+                                   return;
+                                }
+                                if (isBlockedByActiveSurah) {
+                                   import('@/utils/toastUtils').then(({ showWarningToast }) => {
+                                      showWarningToast(`🔒 يجب إكمال ${activeSurahInfo?.surahName} أولاً (${activeSurahInfo?.progressPercent}% مكتمل)`);
                                    });
                                    return;
                                 }
@@ -159,7 +194,9 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
                               <div className="flex items-center gap-3">
                                 <div className="relative">
                                     <span className={`flex items-center justify-center w-6 h-6 rounded-full text-[10px] font-bold 
-                                        ${isBlockedForSelection 
+                                        ${isActiveSurah
+                                            ? 'bg-amber-200 text-amber-800 ring-2 ring-amber-400'
+                                            : isBlockedForSelection 
                                             ? 'bg-gray-200 text-gray-500' 
                                             : isCompleted && type === 'review'
                                             ? 'bg-green-100 text-green-700'
@@ -167,16 +204,23 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
                                         }`}>
                                     {s.number}
                                     </span>
-                                    {isCompleted && <div className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border-2 border-white ${type === 'review' ? 'bg-blue-500' : 'bg-green-500'}`}></div>}
+                                    {isActiveSurah && <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-500 rounded-full border-2 border-white animate-pulse"></div>}
+                                    {isCompleted && !isActiveSurah && <div className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border-2 border-white ${type === 'review' ? 'bg-blue-500' : 'bg-green-500'}`}></div>}
                                 </div>
                                 <div className="flex flex-col">
-                                    <span className={`font-bold ${isBlockedForSelection ? 'text-gray-500' : 'text-gray-700 group-hover/item:text-black'}`}>
+                                    <span className={`font-bold ${isBlockedForSelection && !isActiveSurah ? 'text-gray-500' : isActiveSurah ? 'text-amber-800' : 'text-gray-700 group-hover/item:text-black'}`}>
                                         {s.name}
                                     </span>
-                                    {isCompleted && (
+                                    {isActiveSurah && (
+                                      <span className="text-[9px] font-bold text-amber-600">⚡ السورة الفعالة - اختر للإكمال</span>
+                                    )}
+                                    {isCompleted && !isActiveSurah && (
                                       <span className={`text-[9px] font-bold ${type === 'review' ? 'text-blue-600' : 'text-green-600'}`}>
                                         {type === 'review' ? '✓ يمكن إعادة المراجعة' : 'تم الختم ✓'}
                                       </span>
+                                    )}
+                                    {isBlockedByActiveSurah && !isActiveSurah && !isCompleted && (
+                                      <span className="text-[9px] font-bold text-gray-400">🔒 أكمل السورة الفعالة أولاً</span>
                                     )}
                                 </div>
                               </div>
