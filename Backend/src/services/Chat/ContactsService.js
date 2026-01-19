@@ -59,8 +59,9 @@ class ContactsService {
 
   /**
    * Private: Get Student Contacts
-   * - Teacher of their group ONLY
-   * - Group chat ONLY (no individual student DM)
+   * - Teacher of their group
+   * - Group chat of their group
+   * - Teacher Assistant of their group
    */
   async _getStudentContacts(studentId, search) {
     const student = await Student.findById(studentId);
@@ -94,7 +95,21 @@ class ContactsService {
       }
     }
 
-    // 2. Add student's group
+    // 2. Add teacher assistants of this group
+    const assistants = await TeacherAssistant.find({
+      allowedGroups: group._id
+    })
+      .select("firstName lastName avatar assistantId")
+      .lean();
+    
+    assistants.forEach(assistant => {
+      const fullName = `${assistant.firstName} ${assistant.lastName}`;
+      if (!searchRegex || searchRegex.test(fullName)) {
+        contacts.push({ ...assistant, role: "teacherAssistant" });
+      }
+    });
+
+    // 3. Add student's group
     if (!searchRegex || searchRegex.test(group.name)) {
       groups.push({
         _id: group._id,
@@ -112,8 +127,9 @@ class ContactsService {
    * Private: Get Teacher Contacts
    * - All students from their groups
    * - All admins
+   * - All secretaries
    * - All their groups
-   * - Teacher assistants assigned to them or their groups
+   * - Teacher assistants assigned to their groups
    */
   async _getTeacherContacts(teacherId, search) {
     const teacher = await Teacher.findById(teacherId);
@@ -150,12 +166,21 @@ class ContactsService {
       }
     });
 
-    // 3. Get teacher assistants assigned to this teacher or their groups
+    // 3. Get all secretaries
+    const secretaries = await Secretary.find({})
+      .select("firstName lastName avatar secretaryId")
+      .lean();
+    
+    secretaries.forEach(s => {
+      const fullName = `${s.firstName} ${s.lastName}`;
+      if (!searchRegex || searchRegex.test(fullName)) {
+        contacts.push({ ...s, role: "secretary" });
+      }
+    });
+
+    // 4. Get teacher assistants assigned to this teacher's groups only
     const assistants = await TeacherAssistant.find({
-      $or: [
-        { assignedTeacher: teacherId },
-        { allowedGroups: { $in: groupIds } }
-      ]
+      allowedGroups: { $in: groupIds }
     })
       .select("firstName lastName avatar assistantId")
       .lean();
@@ -167,7 +192,7 @@ class ContactsService {
       }
     });
 
-    // 4. Get all teacher's groups
+    // 5. Get all teacher's groups
     const teacherGroups = await Group.find({ _id: { $in: groupIds } })
       .select("name description image teacher")
       .lean();
@@ -193,7 +218,9 @@ class ContactsService {
    * - All students
    * - All teachers
    * - Other admins
-   * - All groups
+   * - All secretaries
+   * - All teacher assistants
+   * - NO groups (Admin cannot access groups)
    */
   async _getAdminContacts(adminId, search) {
     const searchRegex = search ? new RegExp(search, 'i') : null;
@@ -204,17 +231,21 @@ class ContactsService {
       ]
     } : {};
 
-    // For Admin, we can filter at DB level since we fetch everyone
-    const [students, teachers, admins] = await Promise.all([
+    // Admin can see everyone EXCEPT groups
+    const [students, teachers, admins, secretaries, assistants] = await Promise.all([
       Student.find(query).select("firstName lastName avatar studentId group").sort({ firstName: 1, lastName: 1 }).lean(),
       Teacher.find(query).select("firstName lastName avatar teacherId").sort({ firstName: 1, lastName: 1 }).lean(),
-      Admin.find({ ...query, _id: { $ne: adminId } }).select("firstName lastName avatar adminId").sort({ firstName: 1, lastName: 1 }).lean()
+      Admin.find({ ...query, _id: { $ne: adminId } }).select("firstName lastName avatar adminId").sort({ firstName: 1, lastName: 1 }).lean(),
+      Secretary.find(query).select("firstName lastName avatar secretaryId").sort({ firstName: 1, lastName: 1 }).lean(),
+      TeacherAssistant.find(query).select("firstName lastName avatar assistantId").sort({ firstName: 1, lastName: 1 }).lean()
     ]);
     
     const contacts = [
       ...students.map(s => ({ ...s, role: "student" })),
       ...teachers.map(t => ({ ...t, role: "teacher" })),
-      ...admins.map(a => ({ ...a, role: "admin" }))
+      ...admins.map(a => ({ ...a, role: "admin" })),
+      ...secretaries.map(s => ({ ...s, role: "secretary" })),
+      ...assistants.map(a => ({ ...a, role: "teacherAssistant" }))
     ];
     
     // Admin sees NO groups
@@ -225,10 +256,10 @@ class ContactsService {
 
   /**
    * Private: Get Secretary Contacts
+   * - All admins
    * - All students
    * - All teachers
-   * - All admins
-   * - No groups (like Admin)
+   * - No groups, no teacher assistants, no other secretaries
    */
   async _getSecretaryContacts(secretaryId, search) {
     const searchRegex = search ? new RegExp(search, 'i') : null;
@@ -239,19 +270,17 @@ class ContactsService {
       ]
     } : {};
 
-    // Secretary can see everyone
-    const [students, teachers, admins, secretaries] = await Promise.all([
+    // Secretary can see: admins, students, teachers only
+    const [students, teachers, admins] = await Promise.all([
       Student.find(query).select("firstName lastName avatar studentId group").sort({ firstName: 1, lastName: 1 }).lean(),
       Teacher.find(query).select("firstName lastName avatar teacherId").sort({ firstName: 1, lastName: 1 }).lean(),
-      Admin.find(query).select("firstName lastName avatar adminId").sort({ firstName: 1, lastName: 1 }).lean(),
-      Secretary.find({ ...query, _id: { $ne: secretaryId } }).select("firstName lastName avatar secretaryId").sort({ firstName: 1, lastName: 1 }).lean()
+      Admin.find(query).select("firstName lastName avatar adminId").sort({ firstName: 1, lastName: 1 }).lean()
     ]);
     
     const contacts = [
-      ...students.map(s => ({ ...s, role: "student" })),
-      ...teachers.map(t => ({ ...t, role: "teacher" })),
       ...admins.map(a => ({ ...a, role: "admin" })),
-      ...secretaries.map(s => ({ ...s, role: "secretary" }))
+      ...students.map(s => ({ ...s, role: "student" })),
+      ...teachers.map(t => ({ ...t, role: "teacher" }))
     ];
     
     // Secretary sees NO groups
@@ -262,9 +291,9 @@ class ContactsService {
 
   /**
    * Private: Get Teacher Assistant Contacts
-   * - Teacher assigned to them (assignedTeacher) OR
-   * - Teachers of their allowed groups (by comparing group IDs)
-   * - NO students, NO admins, NO groups (DM only with their teacher)
+   * - Students of their allowed groups
+   * - Teachers of their allowed groups
+   * - Their allowed groups (group chats)
    */
   async _getTeacherAssistantContacts(assistantId, search) {
     const assistant = await TeacherAssistant.findById(assistantId)
@@ -282,6 +311,7 @@ class ContactsService {
     });
 
     const contacts = [];
+    const groups = [];
     const searchRegex = search ? new RegExp(search, 'i') : null;
     const addedTeacherIds = new Set();
 
@@ -303,22 +333,52 @@ class ContactsService {
       }
     }
 
-    // 2. Find teachers by comparing allowed groups
+    // 2. Find teachers and students by allowed groups
     if (assistant.allowedGroups && assistant.allowedGroups.length > 0) {
       console.log('🔍 Looking for teachers with groups:', assistant.allowedGroups);
       
       // Get all groups that the assistant has access to
       const allowedGroupIds = assistant.allowedGroups.map(g => g.toString());
       
-      // Find all groups and get their teachers
-      const groups = await Group.find({ _id: { $in: allowedGroupIds } })
-        .select('teacher name')
+      // Find all groups
+      const allowedGroups = await Group.find({ _id: { $in: allowedGroupIds } })
+        .select('teacher name description image')
         .lean();
       
-      console.log('📚 Found groups:', groups);
+      console.log('📚 Found groups:', allowedGroups);
       
-      // Extract unique teacher IDs from groups
-      const teacherIds = groups
+      // Add groups to result
+      allowedGroups.forEach(g => {
+        if (!searchRegex || searchRegex.test(g.name)) {
+          groups.push({
+            _id: g._id,
+            name: g.name,
+            description: g.description,
+            image: g.image,
+            teacher: g.teacher
+          });
+        }
+      });
+
+      // Get group names for student query
+      const groupNames = allowedGroups.map(g => g.name);
+      
+      // 2a. Get students from allowed groups
+      const students = await Student.find({ group: { $in: groupNames } })
+        .select("firstName lastName avatar studentId group")
+        .lean();
+      
+      students.forEach(s => {
+        const fullName = `${s.firstName} ${s.lastName}`;
+        if (!searchRegex || searchRegex.test(fullName)) {
+          contacts.push({ ...s, role: "student" });
+        }
+      });
+      
+      console.log('👨‍🎓 Found students:', students.length);
+
+      // 2b. Extract unique teacher IDs from groups
+      const teacherIds = allowedGroups
         .filter(g => g.teacher)
         .map(g => g.teacher.toString())
         .filter(id => !addedTeacherIds.has(id));
@@ -344,9 +404,7 @@ class ContactsService {
     }
 
     console.log('📤 Final contacts for assistant:', contacts.length);
-
-    // Teacher Assistant sees NO groups (DM only with teacher)
-    const groups = [];
+    console.log('📤 Final groups for assistant:', groups.length);
 
     return { contacts, groups };
   }
@@ -402,6 +460,9 @@ class ContactsService {
     // Can chat with any admin
     if (targetRole === "Admin") return true;
     
+    // Can chat with any secretary
+    if (targetRole === "Secretary") return true;
+    
     // Can chat with students in their groups
     if (targetRole === "Student") {
       const teacher = await Teacher.findById(teacherId);
@@ -412,15 +473,10 @@ class ContactsService {
       return teacher.groups.some(g => g.name === student.group);
     }
 
-    // Can chat with their assigned teacher assistant
+    // Can chat with teacher assistants of their groups only
     if (targetRole === "TeacherAssistant") {
       const assistant = await TeacherAssistant.findById(targetId);
       if (!assistant) return false;
-      
-      // Check if this teacher is assigned to the assistant
-      if (assistant.assignedTeacher && assistant.assignedTeacher.toString() === teacherId.toString()) {
-        return true;
-      }
       
       // Check if teacher has any group that assistant is allowed to access
       const teacher = await Teacher.findById(teacherId);
@@ -442,45 +498,73 @@ class ContactsService {
     const student = await Student.findById(studentId);
     if (!student || !student.group) return false;
 
+    // Get student's group
+    const group = await Group.findOne({ name: student.group });
+    if (!group) return false;
+
     // Can chat with teacher of their group
     if (targetRole === "Teacher") {
-      const group = await Group.findOne({ name: student.group });
-      return group && group.teacher.toString() === targetId.toString();
+      return group.teacher.toString() === targetId.toString();
+    }
+
+    // Can chat with teacher assistant of their group
+    if (targetRole === "TeacherAssistant") {
+      const assistant = await TeacherAssistant.findById(targetId);
+      if (!assistant || !assistant.allowedGroups) return false;
+      
+      // Check if assistant has access to student's group
+      return assistant.allowedGroups.some(g => g.toString() === group._id.toString());
     }
 
     // Cannot chat with other students directly (group chat only)
     // Cannot chat with admins directly
-    // Cannot chat with teacher assistants directly
+    // Cannot chat with secretaries directly
     return false;
   }
 
   /**
    * Private: Check Teacher Assistant Permissions
-   * - Can only chat with their assigned teacher OR teachers of their allowed groups
+   * - Can chat with students of their allowed groups
+   * - Can chat with teachers of their allowed groups
    */
   async _checkTeacherAssistantPermissions(assistantId, targetId, targetRole) {
-    // Can only chat with teachers
-    if (targetRole !== "Teacher") return false;
-
     const assistant = await TeacherAssistant.findById(assistantId);
     
     if (!assistant) return false;
 
-    // Check if target is the assigned teacher
-    if (assistant.assignedTeacher && assistant.assignedTeacher.toString() === targetId.toString()) {
-      return true;
+    // Can chat with teachers of their groups
+    if (targetRole === "Teacher") {
+      // Check if target is the assigned teacher
+      if (assistant.assignedTeacher && assistant.assignedTeacher.toString() === targetId.toString()) {
+        return true;
+      }
+
+      // Check if target teacher is from one of the allowed groups
+      if (assistant.allowedGroups && assistant.allowedGroups.length > 0) {
+        const groups = await Group.find({ _id: { $in: assistant.allowedGroups } })
+          .select('teacher')
+          .lean();
+        
+        return groups.some(
+          g => g.teacher && g.teacher.toString() === targetId.toString()
+        );
+      }
+      return false;
     }
 
-    // Check if target teacher is from one of the allowed groups
-    if (assistant.allowedGroups && assistant.allowedGroups.length > 0) {
-      // Get groups and check their teachers
-      const groups = await Group.find({ _id: { $in: assistant.allowedGroups } })
-        .select('teacher')
-        .lean();
+    // Can chat with students of their groups
+    if (targetRole === "Student") {
+      if (!assistant.allowedGroups || assistant.allowedGroups.length === 0) return false;
       
-      return groups.some(
-        g => g.teacher && g.teacher.toString() === targetId.toString()
-      );
+      // Get group names from allowed groups
+      const groups = await Group.find({ _id: { $in: assistant.allowedGroups } })
+        .select('name')
+        .lean();
+      const groupNames = groups.map(g => g.name);
+      
+      // Check if student is in one of the allowed groups
+      const student = await Student.findById(targetId).select('group').lean();
+      return student && groupNames.includes(student.group);
     }
 
     return false;
