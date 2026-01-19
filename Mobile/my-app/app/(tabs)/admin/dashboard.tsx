@@ -36,8 +36,18 @@ import type { Group } from "@/Api/groupApi";
 import { getAllTeachers } from "@/Api/teacherApi";
 
 interface ChartData {
-  groupDistribution: { name: string; count: number; percentage: number }[];
-  genderDistribution: { label: string; count: number; percentage: number }[];
+  groupDistribution: {
+    _id?: string;
+    name?: string;
+    count: number;
+    percentage: number;
+  }[];
+  genderDistribution: {
+    _id?: string;
+    label?: string;
+    count: number;
+    percentage: number;
+  }[];
 }
 
 export default function AdminDashboardScreen() {
@@ -322,7 +332,7 @@ export default function AdminDashboardScreen() {
 
           <TouchableOpacity
             style={styles.quickActionButton}
-            onPress={() => router.push('/admin/assistants?add=true')}>
+            onPress={() => router.push("/admin/assistants?add=true")}>
             <View style={styles.quickActionIcon}>
               <Users size={24} color="#10b981" />
             </View>
@@ -331,7 +341,7 @@ export default function AdminDashboardScreen() {
 
           <TouchableOpacity
             style={styles.quickActionButton}
-            onPress={() => router.push('/admin/secretaries?add=true')}>
+            onPress={() => router.push("/admin/secretaries?add=true")}>
             <View style={styles.quickActionIcon}>
               <UserCheck size={24} color="#10b981" />
             </View>
@@ -385,10 +395,14 @@ export default function AdminDashboardScreen() {
           {chartsData.groupDistribution.length > 0 && (
             <View style={styles.chartSection}>
               <View style={styles.chartCard}>
-                <Text style={styles.chartTitle}>📊 توزيع الطلاب حسب الحلقات</Text>
+                <Text style={styles.chartTitle}>
+                  📊 توزيع الطلاب حسب الحلقات
+                </Text>
                 <DonutChart
                   data={chartsData.groupDistribution.map((g) => g.count)}
-                  labels={chartsData.groupDistribution.map((g) => g.name)}
+                  labels={chartsData.groupDistribution.map(
+                    (g) => g._id || g.name || "غير محدد",
+                  )}
                   colors={[
                     "from-green-500 to-green-600",
                     "from-emerald-500 to-emerald-600",
@@ -408,8 +422,8 @@ export default function AdminDashboardScreen() {
                 <Text style={styles.chartTitle}>👥 توزيع الطلاب حسب الجنس</Text>
                 <PieChart
                   data={chartsData.genderDistribution.map((g) => g.count)}
-                  labels={chartsData.genderDistribution.map((g) =>
-                    g.label === "male" ? "ذكور" : "إناث"
+                  labels={chartsData.genderDistribution.map(
+                    (g) => g._id || g.label || "غير محدد",
                   )}
                   colors={[
                     "from-green-500 to-green-600",

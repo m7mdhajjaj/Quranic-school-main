@@ -43,6 +43,8 @@ const InputComponent: React.FC<InputProps> = ({
     setShowPassword((prev) => !prev);
   };
 
+  console.log('Input render:', { showPasswordToggle, value, secureTextEntry });
+
   const hasValue = Boolean(value);
 
   return (
@@ -60,9 +62,7 @@ const InputComponent: React.FC<InputProps> = ({
           style={[
             styles.input,
             leftIcon ? styles.inputWithLeftIcon : undefined,
-            rightIcon || (showPasswordToggle && hasValue)
-              ? styles.inputWithRightIcon
-              : undefined,
+            showPasswordToggle ? styles.inputWithPassword : undefined,
             style,
           ]}
           secureTextEntry={showPasswordToggle ? !showPassword : secureTextEntry}
@@ -70,19 +70,22 @@ const InputComponent: React.FC<InputProps> = ({
           placeholderTextColor="#9ca3af"
           {...props}
         />
-        {rightIcon && <View style={styles.rightIcon}>{rightIcon}</View>}
-        {showPasswordToggle && hasValue && (
+        
+        {/* Password Toggle - Always visible when showPasswordToggle is true */}
+        {showPasswordToggle ? (
           <TouchableOpacity
             onPress={togglePassword}
-            style={styles.passwordToggle}
-            activeOpacity={0.7}>
+            style={styles.eyeButton}
+            activeOpacity={0.6}>
             {showPassword ? (
-              <EyeOff size={20} color="#9ca3af" />
+              <EyeOff size={24} color="#10b981" strokeWidth={2.5} />
             ) : (
-              <Eye size={20} color="#9ca3af" />
+              <Eye size={24} color="#10b981" strokeWidth={2.5} />
             )}
           </TouchableOpacity>
-        )}
+        ) : rightIcon ? (
+          <View style={styles.rightIcon}>{rightIcon}</View>
+        ) : null}
       </View>
       {error && <Text style={styles.errorText}>{error}</Text>}
       {helperText && !error && (
@@ -133,8 +136,8 @@ const styles = StyleSheet.create({
   inputWithLeftIcon: {
     paddingLeft: 48,
   },
-  inputWithRightIcon: {
-    paddingRight: 48,
+  inputWithPassword: {
+    paddingRight: 60,
   },
   leftIcon: {
     position: "absolute",
@@ -150,13 +153,28 @@ const styles = StyleSheet.create({
     transform: [{ translateY: -10 }],
     zIndex: 1,
   },
-  passwordToggle: {
+  eyeButton: {
     position: "absolute",
-    left: 12,
+    right: 12,
     top: "50%",
-    transform: [{ translateY: -10 }],
-    padding: 4,
-    zIndex: 1,
+    marginTop: -16,
+    padding: 8,
+    zIndex: 100,
+  },
+  passwordToggleWrapper: {
+    position: "absolute",
+    right: 0,
+    top: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    width: 60,
+    zIndex: 999,
+  },
+  passwordToggle: {
+    padding: 10,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    borderRadius: 8,
   },
   errorText: {
     fontSize: 14,

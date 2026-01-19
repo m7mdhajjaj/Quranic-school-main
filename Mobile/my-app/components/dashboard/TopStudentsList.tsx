@@ -1,15 +1,9 @@
 import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  Image,
-} from "react-native";
+import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { Medal, Star } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import type { TopStudent } from "@/Api/dashboardApi";
-import Avatar from "@/components/Avatar/Avatar";
+import { Avatar } from "@/components/Avatar/Avatar";
 
 interface TopStudentsListProps {
   students: TopStudent[];
@@ -27,10 +21,91 @@ const getMedalColor = (index: number): string => {
   return colors[index] || "#6B7280";
 };
 
+// مكون منفصل لعرض كل طالب
+const StudentCard: React.FC<{ student: TopStudent; index: number }> = ({
+  student,
+  index,
+}) => {
+  const studentName = student.name || "غير معروف";
+  const medalColor = getMedalColor(index);
+
+  return (
+    <View style={styles.studentCard}>
+      <LinearGradient
+        colors={["#FFFFFF", "#F9FAFB"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.cardGradient}>
+        {/* Medal */}
+        <View style={styles.medalContainer}>
+          <Medal size={32} color={medalColor} />
+        </View>
+
+        {/* Avatar */}
+        <View style={styles.avatarContainer}>
+          <Avatar
+            user={{
+              _id: student._id || "",
+              firstName: studentName.split(" ")[0] || studentName,
+              name: studentName,
+              role: "student",
+              avatar: student.avatar,
+            }}
+            userId={student._id}
+            userRole="student"
+            size="lg"
+            showStatus={true}
+            statusSize="sm"
+          />
+        </View>
+
+        {/* Info */}
+        <View style={styles.infoContainer}>
+          <Text style={styles.studentName} numberOfLines={1}>
+            {studentName}
+          </Text>
+          <Text style={styles.rankText}>المرتبة {index + 1}</Text>
+          {student.group && (
+            <Text style={styles.groupText} numberOfLines={1}>
+              {student.group}
+            </Text>
+          )}
+        </View>
+
+        {/* Score */}
+        <View style={styles.scoreContainer}>
+          <LinearGradient
+            colors={["#10B981", "#059669"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.scoreBadge}>
+            <Star size={16} color="#FCD34D" fill="#FCD34D" />
+            <Text style={styles.scoreText}>{student.totalMarks || 0}</Text>
+          </LinearGradient>
+          {student.averageMark !== undefined &&
+            student.averageMark !== null && (
+              <Text style={styles.averageText}>
+                متوسط: {student.averageMark.toFixed(1)}
+              </Text>
+            )}
+        </View>
+      </LinearGradient>
+    </View>
+  );
+};
+
 export const TopStudentsList: React.FC<TopStudentsListProps> = ({
   students,
   loading = false,
 }) => {
+  // تصفية البيانات مبكراً للتأكد من عدم وجود عناصر فارغة
+  const validStudents = React.useMemo(() => {
+    if (!students || !Array.isArray(students)) return [];
+    return students
+      .filter((s) => s && s._id && typeof s._id === "string")
+      .slice(0, 5);
+  }, [students]);
+
   if (loading) {
     return (
       <View style={styles.container}>
@@ -44,7 +119,7 @@ export const TopStudentsList: React.FC<TopStudentsListProps> = ({
     );
   }
 
-  if (students.length === 0) {
+  if (validStudents.length === 0) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
@@ -57,89 +132,17 @@ export const TopStudentsList: React.FC<TopStudentsListProps> = ({
     );
   }
 
-  const renderStudent = ({ item, index }: { item: TopStudent; index: number }) => {
-    const medalColor = getMedalColor(index);
-
-    return (
-      <View style={styles.studentCard}>
-        <LinearGradient
-          colors={["#FFFFFF", "#F9FAFB"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.cardGradient}
-        >
-          {/* Medal */}
-          <View style={styles.medalContainer}>
-            <Medal size={32} color={medalColor} />
-          </View>
-
-          {/* Avatar */}
-          <View style={styles.avatarContainer}>
-            <Avatar
-              user={{
-                _id: item._id,
-                firstName: item.name?.split(" ")[0] || item.name,
-                name: item.name,
-                role: "student",
-                avatar: item.avatar,
-              }}
-              userId={item._id}
-              userRole="student"
-              size="lg"
-              showStatus={true}
-              statusSize="sm"
-              autoFetch={true}
-            />
-          </View>
-
-          {/* Info */}
-          <View style={styles.infoContainer}>
-            <Text style={styles.studentName} numberOfLines={1}>
-              {item.name}
-            </Text>
-            <Text style={styles.rankText}>المرتبة {index + 1}</Text>
-            {item.group && (
-              <Text style={styles.groupText} numberOfLines={1}>
-                {item.group}
-              </Text>
-            )}
-          </View>
-
-          {/* Score */}
-          <View style={styles.scoreContainer}>
-            <LinearGradient
-              colors={["#10B981", "#059669"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.scoreBadge}
-            >
-              <Star size={16} color="#FCD34D" fill="#FCD34D" />
-              <Text style={styles.scoreText}>{item.totalMarks || 0}</Text>
-            </LinearGradient>
-            {item.averageMark && (
-              <Text style={styles.averageText}>
-                متوسط: {item.averageMark.toFixed(1)}
-              </Text>
-            )}
-          </View>
-        </LinearGradient>
-      </View>
-    );
-  };
-
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Medal size={24} color="#FCD34D" />
         <Text style={styles.title}>أفضل 5 طلاب</Text>
       </View>
-      <FlatList
-        data={students.slice(0, 5)}
-        renderItem={renderStudent}
-        keyExtractor={(item) => item._id}
-        scrollEnabled={false}
-        contentContainerStyle={styles.listContent}
-      />
+      <View style={styles.listContent}>
+        {validStudents.map((student, index) => (
+          <StudentCard key={student._id} student={student} index={index} />
+        ))}
+      </View>
     </View>
   );
 };
