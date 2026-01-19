@@ -168,7 +168,7 @@ const MessageItem: React.FC<MessageItemProps> = React.memo(({
   return (
     <div 
       id={`message-${message._id}`}
-      className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-4 group relative items-end`}
+      className={`flex ${isOwn ? 'justify-start' : 'justify-start flex-row-reverse'} gap-2 mb-4 group relative items-end`}
     >
       {/* Avatar for incoming messages */}
       {!isOwn && message.sender && (
@@ -193,11 +193,11 @@ const MessageItem: React.FC<MessageItemProps> = React.memo(({
       
       <div className={`max-w-[75%] ${isOwn ? 'order-first' : ''} relative group`}>
         {/* Action Buttons - Compact Column Layout */}
-        <div className={`absolute -top-1 -left-9 flex flex-col items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-all duration-200 z-20`}>
+        <div className={`absolute -top-1 ${isOwn ? '-left-9' : '-right-9'} flex flex-col items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-all duration-200 z-20`}>
           {/* Dropdown Menu */}
           <DropdownMenu 
             items={getDropdownItems()} 
-            position="right"
+            position={isOwn ? "right" : "left"}
             buttonClassName="p-1 bg-white/95 backdrop-blur-sm hover:bg-gray-50 text-gray-400 hover:text-gray-700 rounded-full shadow-sm hover:shadow transition-all duration-150 border border-gray-100/50"
           />
           

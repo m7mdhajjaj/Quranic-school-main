@@ -92,39 +92,41 @@ class MessageService {
       readAt: null,
     });
 
-    // Populate sender info
+    // Populate sender info (Critical for UI)
     await message.populate("sender", "firstName lastName avatar");
     await message.populate("replyTo");
 
-    // Update conversation
-    await ConversationService.updateConversationAfterMessage(
-      conversation._id,
-      message._id,
-      data.recipientId
-    );
-
-    // Emit Socket Events
+    // 🚀 Speed Optimization: Emit Socket Event IMMEDIATELY
     this._emitChatEvents(senderId, senderRole, message, data);
 
-    // Send In-App Notification
-    const senderName = `${message.sender.firstName} ${message.sender.lastName}`;
-    await notifyNewMessage(
-      data.recipientId,
-      recipientRole,
-      senderName,
-      data.text,
-      conversation._id,
-      "DM"
-    );
+    // ⚡ Background Tasks: Update Conversation & Notify (Non-blocking)
+    Promise.all([
+      ConversationService.updateConversationAfterMessage(
+        conversation._id,
+        message._id,
+        data.recipientId
+      ).catch(e => console.error("Error updating conversation:", e)),
 
-    // Send Push Notification if offline
-    await this._sendPushIfOffline(
-      data.recipientId,
-      senderId,
-      senderRole,
-      data.text,
-      conversation._id
-    );
+      (async () => {
+         const senderName = `${message.sender.firstName} ${message.sender.lastName}`;
+         await notifyNewMessage(
+            data.recipientId,
+            recipientRole,
+            senderName,
+            data.text,
+            conversation._id,
+            "DM"
+         );
+      })().catch(e => console.error("Error sending notification:", e)),
+
+      this._sendPushIfOffline(
+        data.recipientId,
+        senderId,
+        senderRole,
+        data.text,
+        conversation._id
+      ).catch(e => console.error("Error sending push:", e))
+    ]);
 
     return message;
   }
@@ -222,55 +224,52 @@ class MessageService {
     await message.populate("sender", "firstName lastName avatar");
     await message.populate("replyTo");
 
-    // Update conversation
-    await ConversationService.updateGroupConversationAfterMessage(
-      data.groupId,
-      message._id,
-      senderId
-    );
-
-    // Emit to Group Room
+    // 🚀 Speed Optimization: Emit Socket Event IMMEDIATELY
     this._emitChatEvents(senderId, senderRole, message, data);
 
-    // Send In-App Notifications
-    const senderName = `${message.sender.firstName} ${message.sender.lastName}`;
+    // ⚡ Background Tasks
+    Promise.all([
+      ConversationService.updateGroupConversationAfterMessage(
+        data.groupId,
+        message._id,
+        senderId
+      ).catch(e => console.error("Error updating group conversation:", e)),
 
-    // Handle Mentions Notifications
-    if (data.mentions && data.mentions.length > 0) {
-      const group = await Group.findById(data.groupId);
-      const groupName = group ? group.name : "المجموعة";
+      (async () => {
+         const senderName = `${message.sender.firstName} ${message.sender.lastName}`;
+         
+         // 1. Mentions (Parallel)
+         if (data.mentions && data.mentions.length > 0) {
+            const group = await Group.findById(data.groupId);
+            const groupName = group ? group.name : "المجموعة";
 
-      for (const mention of data.mentions) {
-        if (mention.type === "all") {
-          // Notify everyone (handled by _notifyGroupMembers but with special title maybe?)
-          // For now, standard notification covers it, or we can send a special "Mention All"
-          // Let's stick to standard group notification but ensure it goes out
-        } else if (mention.type === "user" && mention.user) {
-          // Specific user mention
-          await notifyMention(
-            mention.user,
-            "Student", // Assuming mostly students are mentioned, or fetch role
+            const mentionPromises = data.mentions
+                .filter(m => m.type === "user" && m.user)
+                .map(mention => 
+                   notifyMention(
+                      mention.user,
+                      "Student",
+                      senderName,
+                      data.text,
+                      data.groupId,
+                      "GROUP",
+                      groupName
+                   ).catch(e => console.error("Error sending mention notimication:", e))
+                );
+            await Promise.all(mentionPromises);
+         }
+
+         // 2. Standard Group Notification
+         await this._notifyGroupMembers(
+            data.groupId,
+            senderId,
             senderName,
             data.text,
-            data.groupId, // Conversation ID for group is group ID usually or conversation ID
             "GROUP",
-            groupName
-          );
-        }
-      }
-    }
-
-    // Standard Group Notification (skips if already mentioned to avoid double? Or just send standard)
-    // Usually, if mentioned, you get a mention notification. If not, you get a message notification.
-    // We can filter out mentioned users from standard notification list in _notifyGroupMembers
-    await this._notifyGroupMembers(
-      data.groupId,
-      senderId,
-      senderName,
-      data.text,
-      "GROUP",
-      data.mentions
-    );
+            data.mentions
+         );
+      })().catch(e => console.error("Error sending group notifications:", e))
+    ]);
 
     return message;
   }
@@ -655,19 +654,16 @@ class MessageService {
       message.attachments = []; // Remove attachments
       await message.save();
 
-      // Emit deletion
+      // Emit deletion IMMEDIATELY
       if (global.io) {
+        // Prepare payload once
+        const payload = { messageId, deletedForAll: true };
+        
         if (message.chatType === "DM") {
-          global.io
-            .to(message.recipient.toString())
-            .emit("message:deleted", { messageId, deletedForAll: true });
-          global.io
-            .to(message.sender.toString())
-            .emit("message:deleted", { messageId, deletedForAll: true });
+          global.io.to(message.recipient.toString()).emit("message:deleted", payload);
+          global.io.to(message.sender.toString()).emit("message:deleted", payload);
         } else {
-          global.io
-            .to(`group:${message.groupId}`)
-            .emit("message:deleted", { messageId, deletedForAll: true });
+          global.io.to(`group:${message.groupId}`).emit("message:deleted", payload);
         }
       }
     } else {

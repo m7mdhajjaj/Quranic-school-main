@@ -151,20 +151,28 @@ export const useChatWindow = ({ chatType, targetId, onNewMessage }: UseChatWindo
     canSend
   } = useMessageInput({
     onSend: async (text: string) => {
-      setIsSending(true);
-      try {
-        await sendMessage(text, replyTo?._id);
-        clearInput();
-        clearReply();
-        setMentions([]);
-        requestAnimationFrame(() => {
-          setTimeout(() => scrollToBottom('smooth'), 50);
+      // ⚡ Optimistic UI Update: Rocket Speed 🚀
+      // لا نستخدم setIsSending(true) هنا لأننا نريد الإرسال فوري دون أي حالة تحميل على الزر
+      // setIsSending(true); // Removed to prevent UI lock/spinner
+      
+      // Fire and forget (Optimistic) with background error handling
+      sendMessage(text, replyTo?._id)
+        .catch(error => {
+          console.error("Failed to send message:", error);
+          // يمكن هنا إضافة إشعار خطأ (Toast)
         });
-      } catch (error) {
-        console.error("Failed to send message:", error);
-      } finally {
-        setIsSending(false);
-      }
+
+      // Clear UI immediately
+      clearReply();
+      setMentions([]);
+      
+      // Scroll to bottom immediately
+      requestAnimationFrame(() => {
+        scrollToBottom('smooth');
+      });
+      
+      // Return immediately so input clears instantly
+      return Promise.resolve();
     },
     onTyping: handleTyping,
     maxLength: 1000

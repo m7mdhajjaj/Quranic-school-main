@@ -93,12 +93,21 @@ export const useMessageItem = ({ message, onEdit, onDelete }: UseMessageItemProp
         "إلغاء"
       );
       if (confirmed.isConfirmed) {
-        await api.delete(`/chat/messages/${message._id}`, {
-          data: { deleteForAll }
-        });
+        // 🚀 Optimistic Delete: Update UI Immediately (Rocket Speed)
         if (onDelete) {
           onDelete(message._id, deleteForAll);
         }
+
+        // Fire and Forget (Background Sync)
+        api.delete(`/chat/messages/${message._id}`, {
+          data: { deleteForAll }
+        }).catch((error: unknown) => {
+          // Log error but don't block UI
+          console.error("Background delete failed:", error);
+          const err = error as ErrorWithMessage;
+          // Optionally show toast if sync fails
+          // showErrorMessage("تنبيه", "حدث خطأ أثناء مزامنة الحذف مع الخادم");
+        });
       }
     } catch (error: unknown) {
       const err = error as ErrorWithMessage;
