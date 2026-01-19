@@ -228,11 +228,27 @@ const AddSectionModalComponent = ({
             </p>
           </div>
           
-          {/* Quota Error Display */}
+          {/* ✅ V10: Loading indicator for quota check */}
+          {isCheckingQuota && (
+            <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded-lg text-blue-600 text-sm flex items-center gap-2">
+              <div className="animate-spin w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+              <span>جاري التحقق من إمكانية الإضافة...</span>
+            </div>
+          )}
+          {/* ✅ V10: Quota Error Display - Enhanced styling matching the toast format */}
           {quotaError && (
-              <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-start gap-2 animate-pulse">
-                  <span className="font-bold">⚠️ تنبيه:</span>
-                  <span className="whitespace-pre-line">{quotaError}</span>
+              <div className="mt-4 p-4 bg-red-50 border-2 border-red-300 rounded-xl shadow-lg">
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                    <span className="text-xl">❌</span>
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-red-700 bg-yellow-100 px-2 py-0.5 rounded">⚠️ تنبيه:</span>
+                    </div>
+                    <p className="text-sm font-bold text-red-800 whitespace-pre-line leading-relaxed">{quotaError}</p>
+                  </div>
+                </div>
               </div>
           )}
 
@@ -290,6 +306,7 @@ const AddSectionModalComponent = ({
              type="memorization"
              completedSurahs={completedList.filter(s => (s.type || 'memorization') === 'memorization')}
              date={newSection.date ? new Date(newSection.date).toISOString() : undefined}
+             groupId={newSection.group || selectedGroup}
            />
 
            <QuranSegmentInput 
@@ -302,6 +319,7 @@ const AddSectionModalComponent = ({
              completedSurahs={completedList.filter(s => (s.type || 'memorization') === 'review')}
              date={newSection.date ? new Date(newSection.date).toISOString() : undefined}
              onValidationError={setReviewValidationError}
+             groupId={newSection.group || selectedGroup}
            />
         </div>
 
