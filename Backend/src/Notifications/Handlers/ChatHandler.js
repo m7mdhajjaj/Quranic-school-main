@@ -1,10 +1,27 @@
 const Notification = require("../../schema/Notfcation/Notification");
 const { sendRealTimeNotification } = require("../Core/SocketSender");
+const { sendPushNotification } = require("../Core/PushSender");
+
+/**
+ * Normalize recipient role to recipientModel format
+ * Converts "TeacherAssistant" to "TeacherAssistant" (keeps as is)
+ */
+const normalizeRecipientModel = (recipientRole) => {
+  if (!recipientRole) return "Student";
+  
+  // Handle camelCase like "teacherAssistant"
+  if (recipientRole === "teacherAssistant" || recipientRole === "TeacherAssistant") {
+    return "TeacherAssistant";
+  }
+  
+  // Capitalize first letter for other roles
+  return recipientRole.charAt(0).toUpperCase() + recipientRole.slice(1);
+};
 
 /**
  * Notify user about a new message
  * @param {string} recipientId - The ID of the recipient
- * @param {string} recipientModel - The model of the recipient (Student, Teacher, Admin)
+ * @param {string} recipientModel - The model of the recipient (Student, Teacher, Admin, Secretary, TeacherAssistant)
  * @param {string} senderName - The name of the sender
  * @param {string} text - The message text
  * @param {string} conversationId - The ID of the conversation
@@ -13,6 +30,9 @@ const { sendRealTimeNotification } = require("../Core/SocketSender");
  */
 const notifyNewMessage = async (recipientId, recipientModel, senderName, text, conversationId, chatType, groupName) => {
   try {
+    // Normalize recipientModel to ensure it matches schema enum
+    const normalizedRecipientModel = normalizeRecipientModel(recipientModel);
+    
     let title = senderName;
     if (chatType === 'GROUP' && groupName) {
       title = `${senderName} - ${groupName}`;
@@ -22,7 +42,7 @@ const notifyNewMessage = async (recipientId, recipientModel, senderName, text, c
     
     const notificationData = {
       recipient: recipientId,
-      recipientModel: recipientModel,
+      recipientModel: normalizedRecipientModel,
       type: "message",
       category: "general",
       title: title,
@@ -50,6 +70,13 @@ const notifyNewMessage = async (recipientId, recipientModel, senderName, text, c
       console.warn("Socket.io instance (global.io) not found, skipping real-time notification");
     }
 
+    // Send Push Notification (FCM)
+    try {
+      await sendPushNotification(recipientId, notification);
+    } catch (fcmErr) {
+      console.error("❌ Error sending FCM push for chat notification:", fcmErr);
+    }
+
     return notification;
   } catch (error) {
     console.error("Error creating chat notification:", error);
@@ -61,6 +88,9 @@ const notifyNewMessage = async (recipientId, recipientModel, senderName, text, c
  */
 const notifyMention = async (recipientId, recipientModel, senderName, text, conversationId, chatType, groupName) => {
   try {
+    // Normalize recipientModel to ensure it matches schema enum
+    const normalizedRecipientModel = normalizeRecipientModel(recipientModel);
+    
     let title = `إشارة من ${senderName}`;
     if (chatType === 'GROUP' && groupName) {
       title = `إشارة - ${groupName}`;
@@ -70,7 +100,7 @@ const notifyMention = async (recipientId, recipientModel, senderName, text, conv
     
     const notificationData = {
       recipient: recipientId,
-      recipientModel: recipientModel,
+      recipientModel: normalizedRecipientModel,
       type: "mention",
       category: "general",
       title: title,
@@ -90,8 +120,16 @@ const notifyMention = async (recipientId, recipientModel, senderName, text, conv
 
     const notification = await Notification.create(notificationData);
 
+    // Send Real-time (Socket)
     if (global.io) {
       await sendRealTimeNotification(global.io, notification);
+    }
+
+    // Send Push Notification (FCM)
+    try {
+      await sendPushNotification(recipientId, notification);
+    } catch (fcmErr) {
+      console.error("❌ Error sending FCM push for mention notification:", fcmErr);
     }
 
     return notification;

@@ -879,25 +879,40 @@ class MessageService {
           if (isMuted) return;
         }
 
+        // Normalize senderRole to handle camelCase
+        const normalizedSenderRole = senderRole === "teacherAssistant" || senderRole === "TeacherAssistant" 
+          ? "TeacherAssistant" 
+          : senderRole.charAt(0).toUpperCase() + senderRole.slice(1);
+        
         const senderModel =
-          senderRole === "Student"
+          normalizedSenderRole === "Student"
             ? require("../../schema/Student/Student")
-            : senderRole === "Teacher"
+            : normalizedSenderRole === "Teacher"
             ? require("../../schema/Teacher")
-            : require("../../schema/Admin");
+            : normalizedSenderRole === "Admin"
+            ? require("../../schema/Admin")
+            : normalizedSenderRole === "Secretary"
+            ? require("../../schema/Secretary")
+            : normalizedSenderRole === "TeacherAssistant"
+            ? require("../../schema/TeacherAssistant")
+            : require("../../schema/Student/Student"); // Fallback
 
         const sender = await senderModel
           .findById(senderId)
           .select("firstName lastName");
         if (sender) {
-          await sendPushNotification({
-            userId: recipientId,
+          // sendPushNotification expects (recipient, notificationData)
+          await sendPushNotification(recipientId, {
             title: `رسالة من ${sender.firstName} ${sender.lastName}`,
-            body: messageText.substring(0, 100),
+            message: messageText.substring(0, 100),
+            messageSummary: messageText.substring(0, 100),
+            type: "message",
+            category: "general",
             data: {
               type: "chat",
               senderId: senderId.toString(),
               chatType: "DM",
+              action: "new_message",
             },
           });
         }

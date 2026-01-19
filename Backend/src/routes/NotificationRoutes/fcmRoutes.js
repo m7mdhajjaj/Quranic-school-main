@@ -27,6 +27,7 @@ router.post('/token', protect, validate(fcmTokenSchema), async (req, res) => {
     const userModel = req.user.role === 'admin' ? 'Admin' 
                     : req.user.role === 'teacher' ? 'Teacher'
                     : req.user.role === 'secretary' ? 'Secretary'
+                    : req.user.role === 'teacherAssistant' ? 'TeacherAssistant'
                     : 'Student';
     const { token, platform = 'web' } = req.body;
 
