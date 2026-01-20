@@ -279,6 +279,8 @@ export const TeacherTimetableView: React.FC<TeacherTimetableViewProps> = ({
 
       {/* Modal إضافة/تعديل موعد */}
       <SessionModal
+        // ✅ مفتاح لفرض إعادة تحميل المكون عند تغيير الجلسة أو التاريخ
+        key={editingSession?._id || searchParams.get('date') || 'new-session'}
         isOpen={isModalOpen}
         onClose={() => {
           handleCloseModal();

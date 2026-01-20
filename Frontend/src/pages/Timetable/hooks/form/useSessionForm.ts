@@ -60,17 +60,19 @@ export const useSessionForm = ({
     return defaultTeacherId;
   }, [editingSession?.teacherId, defaultTeacherId]);
 
-  // ✅ استخراج sessionDate من editingSession إذا موجود
+  // ✅ استخراج sessionDate من editingSession أو URL إذا موجود
   const getInitialSessionDate = useMemo(() => {
     if (editingSession?.sessionDate) {
       return formatDateForAPI(editingSession.sessionDate);
     }
+    const urlDate = searchParams.get('date');
+    if (urlDate) return urlDate;
     return getTodayDate();
-  }, [editingSession?.sessionDate]);
+  }, [editingSession?.sessionDate, searchParams]);
 
   // ⚠️ النموذج الجديد - sessionDate و teacherId من البداية!
   const [formData, setFormData] = useState<SessionFormData>(() => ({
-    sessionDate: getInitialSessionDate, // ✅ من editingSession أو اليوم
+    sessionDate: getInitialSessionDate, // ✅ من editingSession أو URL أو اليوم
     startHour: editingSession?.startHour || "",
     endHour: editingSession?.endHour || "",
     note: editingSession?.note || initialGroupName || "",
@@ -107,7 +109,10 @@ export const useSessionForm = ({
     const fetchAvailableHours = async () => {
       try {
         setLoadingHours(true);
-        
+        // ✅ QUICK FIX: Clear data before fetching new date
+        setBookedHours([]); 
+        setBookedHoursDetails({});
+
         // 📅 Step 1: جلب جميع الأوقات العامة (صيفي/شتوي)
         const generalResponse = await getAvailableHours();
         if (generalResponse.success) {
@@ -300,9 +305,11 @@ export const useSessionForm = ({
     } else {
       // ➕ وضع الإضافة - استخدام defaultTeacherId المعرف في الأعلى
       const urlSessionType = searchParams.get('sessionType') as any || undefined;
+      const urlDate = searchParams.get('date');
       
       setFormData(prev => ({
-        sessionDate: prev.sessionDate || getTodayDate(),
+        // ✅ الأولوية للتاريخ من الرابط عند تغيير الـ Params
+        sessionDate: urlDate || prev.sessionDate || getTodayDate(),
         startHour: "",
         endHour: "",
         note: initialGroupName || "",
