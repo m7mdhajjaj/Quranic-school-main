@@ -233,7 +233,7 @@ export const SessionModal: React.FC<SessionModalProps> = (props) => {
                           disabled={isBooked}
                           className={`px-2 py-3 rounded-lg font-bold transition-all min-w-0 text-center ${
                             formData.startHour === hour
-                              ? 'bg-emerald-600 text-white shadow-md scale-105 text-sm'
+                              ? 'bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white shadow-md scale-105 text-sm'
                               : isBooked
                               ? 'bg-red-100 text-red-400 cursor-not-allowed opacity-60 line-through text-xs border border-red-200'
                               : 'bg-gray-50 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 border border-gray-200 text-xs'
@@ -356,7 +356,7 @@ export const SessionModal: React.FC<SessionModalProps> = (props) => {
                       onClick={() => setFormData({ ...formData, sessionType: "hifz" })}
                       className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl font-bold transition-all border-2 ${
                         formData.sessionType === "hifz"
-                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-lg scale-105'
+                          ? 'bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white border-teal-700 shadow-lg scale-105'
                           : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 hover:border-amber-400'
                       }`}>
                       <span className="text-2xl">📖</span>
@@ -368,7 +368,7 @@ export const SessionModal: React.FC<SessionModalProps> = (props) => {
                       onClick={() => setFormData({ ...formData, sessionType: "murajaah" })}
                       className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl font-bold transition-all border-2 ${
                         formData.sessionType === "murajaah"
-                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-lg scale-105'
+                          ? 'bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white border-teal-700 shadow-lg scale-105'
                           : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 hover:border-amber-400'
                       }`}>
                       <span className="text-2xl">🔄</span>
@@ -380,7 +380,7 @@ export const SessionModal: React.FC<SessionModalProps> = (props) => {
                       onClick={() => setFormData({ ...formData, sessionType: "both" })}
                       className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl font-bold transition-all border-2 ${
                         formData.sessionType === "both"
-                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-lg scale-105'
+                          ? 'bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white border-teal-700 shadow-lg scale-105'
                           : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 hover:border-amber-400'
                       }`}>
                       <span className="text-2xl">📚</span>

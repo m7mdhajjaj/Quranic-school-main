@@ -226,7 +226,7 @@ export const TeacherTimetableView: React.FC<TeacherTimetableViewProps> = ({
               onClick={() => setViewMode('grid')}
               className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${
                 viewMode === 'grid'
-                  ? 'bg-emerald-600 text-white shadow-md'
+                  ? 'bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white shadow-md'
                   : 'text-gray-600 hover:bg-gray-100'
               }`}>
               <Grid3x3 size={18} />
@@ -236,7 +236,7 @@ export const TeacherTimetableView: React.FC<TeacherTimetableViewProps> = ({
               onClick={() => setViewMode('cards')}
               className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${
                 viewMode === 'cards'
-                  ? 'bg-emerald-600 text-white shadow-md'
+                  ? 'bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white shadow-md'
                   : 'text-gray-600 hover:bg-gray-100'
               }`}>
               <List size={18} />

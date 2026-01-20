@@ -49,7 +49,7 @@ export const GroupsToolbar: React.FC<GroupsToolbarProps> = React.memo(({
             onClick={onToggleFilters}
             className={`px-4 py-2.5 rounded-lg font-medium flex items-center gap-2 text-sm ${
               showFilters || activeFiltersCount > 0
-                ? "bg-emerald-600 text-white shadow-sm"
+                ? "bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white shadow-sm"
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
             aria-label="تبديل الفلاتر"

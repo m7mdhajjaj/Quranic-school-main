@@ -88,9 +88,9 @@ export const StudentsList: React.FC<StudentsListProps> = ({
     <div className="min-h-screen p-4 md:p-6 bg-gray-50" dir="rtl">
       <div className="w-full mx-auto">
         {/* Header */}
-        <div className="relative bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-600 rounded-2xl shadow-xl border-2 border-emerald-500/30 overflow-hidden p-6 mb-6">
-          <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-emerald-700 via-emerald-600 to-teal-700" />
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-700/20 via-emerald-600/20 to-teal-700/20 pointer-events-none" />
+        <div className="relative bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 rounded-2xl shadow-xl border-2 border-emerald-500/30 overflow-hidden p-6 mb-6">
+          <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-emerald-700 via-teal-800 to-slate-800" />
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-700/20 via-teal-700/20 to-slate-700/20 pointer-events-none" />
           
           <div className="relative flex items-center justify-between mb-4">
             <div className="flex items-center gap-4 flex-1">

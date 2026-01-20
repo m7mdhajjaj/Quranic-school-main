@@ -65,7 +65,7 @@ const GroupsFilters: React.FC<GroupsFiltersProps> = ({
                   title="عرض الحلقات النشطة فقط"
                   className={`px-3 py-2 rounded-lg text-xs font-medium ${
                     activeStatusFilter === "active"
-                      ? "bg-emerald-600 text-white shadow-sm"
+                      ? "bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white shadow-sm"
                       : "bg-gray-50 text-gray-700 hover:bg-emerald-50 border border-gray-200"
                   }`}>
                   نشطة
