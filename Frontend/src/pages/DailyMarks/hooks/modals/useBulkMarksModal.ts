@@ -114,15 +114,45 @@ export const useBulkMarksModal = (
         return false;
       }
 
+      // ✅ تحديد ما إذا كان المقطع يحتوي على حفظ أو مراجعة
+      const hasMemorization = !!(
+        section.memorizationSection?.trim() || 
+        (section.memorizationMeta && section.memorizationMeta.length > 0)
+      );
+      const hasReview = !!(
+        section.reviewSection?.trim() || 
+        (section.reviewMeta && section.reviewMeta.length > 0)
+      );
+
       setSubmitting(true);
       try {
         const marksData = studentMarks
-          .filter((sm) => sm.reviewMark !== null || sm.memorizationMark !== null)
-          .map((sm) => ({
-            studentId: sm.studentId,
-            reviewMark: sm.reviewMark ?? null,
-            memorizationMark: sm.memorizationMark ?? null,
-          }));
+          .filter((sm) => {
+            // ✅ فلترة بناءً على ما هو موجود في المقطع
+            if (hasReview && hasMemorization) {
+              return sm.reviewMark !== null || sm.memorizationMark !== null;
+            } else if (hasReview) {
+              return sm.reviewMark !== null;
+            } else if (hasMemorization) {
+              return sm.memorizationMark !== null;
+            }
+            return false;
+          })
+          .map((sm) => {
+            // ✅ إرسال فقط العلامات المتعلقة بالنوع الموجود
+            const mark: { studentId: string; reviewMark?: number | null; memorizationMark?: number | null } = {
+              studentId: sm.studentId,
+            };
+            
+            if (hasReview) {
+              mark.reviewMark = sm.reviewMark ?? null;
+            }
+            if (hasMemorization) {
+              mark.memorizationMark = sm.memorizationMark ?? null;
+            }
+            
+            return mark;
+          });
 
         const response = await setMarksForSection(section._id, marksData);
 

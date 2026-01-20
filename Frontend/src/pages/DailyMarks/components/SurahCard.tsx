@@ -1,63 +1,53 @@
 import { memo } from 'react';
-import { ChevronLeft, BookOpen, CheckCircle2, Clock, Circle, Sparkles, BookMarked } from 'lucide-react';
+import { ChevronLeft, BookOpen, CheckCircle2, Clock, BookMarked } from 'lucide-react';
 import type { GroupedSurah } from '@/Api/DailyMark/studentGroupedSectionsApi';
 
 interface SurahCardProps {
   surah: GroupedSurah;
   onClick: () => void;
-  isActiveMemorization?: boolean;
-  isActiveReview?: boolean;
 }
 
 /**
  * Surah Card Component - عرض بطاقة السورة مع معلومات التقدم
+ * الحالات: مكتمل (100%) أو قيد الإكمال (أقل من 100%)
  */
-export const SurahCard = memo<SurahCardProps>(({ surah, onClick, isActiveMemorization, isActiveReview }) => {
-  const isActive = isActiveMemorization || isActiveReview;
-
+export const SurahCard = memo<SurahCardProps>(({ surah, onClick }) => {
   // تحديد اللون حسب حالة السورة
   const getStatusColor = () => {
-    if (isActive) return 'from-amber-500 via-orange-500 to-amber-600';
     if (surah.status === 'completed') return 'from-green-500 to-emerald-600';
-    if (surah.status === 'in_progress') return 'from-blue-500 to-cyan-600';
-    return 'from-gray-400 to-gray-500';
+    return 'from-blue-500 to-cyan-600'; // قيد الإكمال
   };
 
   const getStatusIcon = () => {
-    if (isActive) 
-      return <Sparkles className="w-6 h-6 text-amber-600" />;
     if (surah.status === 'completed') 
       return <CheckCircle2 className="w-6 h-6 text-green-600" />;
-    if (surah.status === 'in_progress') 
-      return <Clock className="w-6 h-6 text-blue-600" />;
-    return <Circle className="w-6 h-6 text-gray-400" />;
+    return <Clock className="w-6 h-6 text-blue-600" />; // قيد الإكمال
   };
 
   const getStatusText = () => {
-    if (isActiveMemorization && isActiveReview) return 'السورة الفعالة (حفظ + مراجعة)';
-    if (isActiveMemorization) return 'السورة الفعالة للحفظ';
-    if (isActiveReview) return 'السورة الفعالة للمراجعة';
     if (surah.status === 'completed') return 'مكتمل';
-    if (surah.status === 'in_progress') return 'قيد التقدم';
-    return 'لم يبدأ';
+    return 'قيد الإكمال'; // in_progress
   };
 
   const getStatusBg = () => {
-    if (isActive) return 'bg-amber-50 text-amber-700 border-amber-300';
     if (surah.status === 'completed') return 'bg-green-50 text-green-700 border-green-200';
-    if (surah.status === 'in_progress') return 'bg-blue-50 text-blue-700 border-blue-200';
-    return 'bg-gray-50 text-gray-600 border-gray-200';
+    return 'bg-blue-50 text-blue-700 border-blue-200'; // قيد الإكمال
   };
 
-  const cardClasses = `group w-full text-right bg-white rounded-2xl border-2 ${
-    isActive 
-      ? 'border-amber-300 ring-4 ring-amber-200 ring-offset-2 shadow-xl shadow-amber-100' 
-      : 'border-gray-100 hover:border-emerald-300 shadow-sm hover:shadow-xl'
-  } transition-all duration-300 overflow-hidden`;
+  const cardClasses = `group w-full text-right bg-white rounded-2xl border-2 border-gray-100 hover:border-emerald-300 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden`;
 
-  // Count memorization and review segments
-  const memorizationCount = surah.segments?.filter(s => s.type === 'memorization').length || 0;
-  const reviewCount = surah.segments?.filter(s => s.type === 'review').length || 0;
+  // ✅ FIX: Count unique dates for memorization and review sessions
+  // حساب الجلسات الفريدة بناءً على التاريخ وليس عدد المقاطع
+  const getUniqueDateCount = (type: 'memorization' | 'review') => {
+    const segments = surah.segments?.filter(s => s.type === type) || [];
+    const uniqueDates = new Set(
+      segments.map(s => s.sectionDate ? new Date(s.sectionDate).toISOString().split('T')[0] : s.sectionId)
+    );
+    return uniqueDates.size;
+  };
+
+  const memorizationCount = getUniqueDateCount('memorization');
+  const reviewCount = getUniqueDateCount('review');
 
   return (
     <button
@@ -67,28 +57,13 @@ export const SurahCard = memo<SurahCardProps>(({ surah, onClick, isActiveMemoriz
       {/* Header with gradient */}
       <div className={`relative bg-gradient-to-r ${getStatusColor()} p-5`}>
         <div className="absolute inset-0 bg-black/5" />
-        {/* Active Surah Glow Animation */}
-        {isActive && (
-          <div className="absolute inset-0 bg-gradient-to-r from-amber-400/20 via-transparent to-amber-400/20 animate-pulse" />
-        )}
         <div className="relative flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className={`${isActive ? 'bg-amber-100/30' : 'bg-white/20'} backdrop-blur-sm p-2 rounded-xl`}>
-              {isActive ? (
-                <Sparkles className="w-6 h-6 text-white animate-pulse" />
-              ) : (
-                <BookOpen className="w-6 h-6 text-white" />
-              )}
+            <div className="bg-white/20 backdrop-blur-sm p-2 rounded-xl">
+              <BookOpen className="w-6 h-6 text-white" />
             </div>
             <div className="text-right">
-              <div className="flex items-center gap-2">
-                <h3 className="text-xl font-bold text-white">{surah.surahName}</h3>
-                {isActive && (
-                  <span className="bg-white/25 text-white text-xs px-2 py-0.5 rounded-full font-bold animate-pulse">
-                    فعّال
-                  </span>
-                )}
-              </div>
+              <h3 className="text-xl font-bold text-white">{surah.surahName}</h3>
               <p className="text-white/90 text-sm">
                 رقم {surah.surahNumber} • {surah.surahAyahCount} آية
               </p>
@@ -134,17 +109,17 @@ export const SurahCard = memo<SurahCardProps>(({ surah, onClick, isActiveMemoriz
         <div className="grid grid-cols-3 gap-3">
           <div className="bg-gray-50 rounded-xl p-3 text-center border border-gray-100">
             <p className="text-2xl font-bold text-gray-900">{surah.totalSegments}</p>
-            <p className="text-xs text-gray-600 mt-1">مقطع</p>
+            <p className="text-xs text-gray-600 mt-1">عدد الجلسات</p>
           </div>
           <div className="bg-green-50 rounded-xl p-3 text-center border border-green-100">
             <p className="text-2xl font-bold text-green-700">{surah.completedSegments}</p>
-            <p className="text-xs text-green-600 mt-1">مكتمل</p>
+            <p className="text-xs text-green-600 mt-1">الجلسات المنجزة</p>
           </div>
           <div className="bg-blue-50 rounded-xl p-3 text-center border border-blue-100">
             <p className="text-2xl font-bold text-blue-700">
               {surah.averageMark > 0 ? surah.averageMark : '-'}
             </p>
-            <p className="text-xs text-blue-600 mt-1">المعدل</p>
+            <p className="text-xs text-blue-600 mt-1">معدل الجلسات</p>
           </div>
         </div>
 

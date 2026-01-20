@@ -140,30 +140,10 @@ exports.getTeacherAvailableHours = async (req, res) => {
       teacherName: `${teacherValidation.teacher.firstName} ${teacherValidation.teacher.lastName}`
     });
     
-    let query = { 
-      teacherId,
-      sessionDate: { $gte: targetDate, $lt: nextDay }
-    };
+    // ✅ 3. استخدام Cache لجلب المواعيد (أسرع بكثير)
+    const bookedSessions = await getTeacherSessionsOnDateCached(teacherId, date, excludeId);
 
-    // استثناء موعد معين (للتعديل) - فقط إذا كان ObjectId صالح
-    if (excludeId && !excludeId.startsWith('temp_')) {
-      const mongoose = require('mongoose');
-      if (mongoose.Types.ObjectId.isValid(excludeId)) {
-        query._id = { $ne: excludeId };
-      }
-    }
-
-    // ✅ 3. جلب المواعيد المحجوزة مع تفاصيل المقطع والحلقة
-    const bookedSessions = await TimeTable.find(query)
-      .select('startHour endHour note groupId sessionDate sessionType sectionId sectionInfo')
-      .populate('groupId', 'name students')
-      .populate({
-        path: 'sectionId',
-        select: 'memorizationSection reviewSection group date marksStatus'
-      })
-      .lean();
-
-    logger.debug("📋 bookedSessions found:", bookedSessions.length);
+    logger.debug("📋 bookedSessions found (Cached/DB):", bookedSessions.length);
 
     // ✅ 4. تجميع الأوقات المحجوزة مع تفاصيلها
     const bookedHoursMap = new Map(); // Map<timeSlot, sessionDetails[]>
@@ -192,14 +172,14 @@ exports.getTeacherAvailableHours = async (req, res) => {
           bookedHoursMap.get(timeSlot).push({
             sessionId: session._id,
             groupName: session.note || session.groupId?.name || 'غير محدد',
-            groupId: session.groupId?._id,
+            groupId: session.groupId?._id || session.groupId, // handle raw id
             sessionType: session.sessionType,
             sessionTypeAr: session.sessionType === 'hifz' ? 'حفظ' : 
                            session.sessionType === 'murajaah' ? 'مراجعة' : 'حفظ ومراجعة',
             sectionName: session.sectionInfo?.memorizationSection || 
                          session.sectionInfo?.reviewSection || 
-                         session.sectionId?.memorizationSection || 
-                         session.sectionId?.reviewSection || ''
+                         'مقطع',
+            studentName: '', // Optimization: Removed N+1 
           });
         }
         

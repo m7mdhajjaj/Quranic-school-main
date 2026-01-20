@@ -51,6 +51,7 @@ export interface StudentGroupedSectionsResponse {
     notStartedSurahs: number;
     totalSegments: number;
     completedSegments: number;
+    progressPercent: number; // ✅ نسبة التقدم = (السور المكتملة / السور الكلية) * 100
   };
 }
 

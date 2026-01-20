@@ -402,7 +402,7 @@ const getTeacherSessionsOnDateCached = async (teacherId, date, excludeId = null)
     teacherId,
     sessionDate: { $gte: targetDate, $lt: nextDay }
   })
-  .select('_id startHour endHour groupId note sessionDate')
+  .select('_id startHour endHour groupId note sessionDate sessionType sectionInfo sectionId')
   .populate('groupId', 'name')
   .sort({ startHour: 1 })
   .lean();

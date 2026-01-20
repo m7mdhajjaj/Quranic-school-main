@@ -3,6 +3,7 @@ import type { UpdateMarkModalProps } from '../types/types';
 
 /**
  * Modal for updating an existing mark
+ * ✅ FIX: Shows only relevant mark sliders based on section content
  */
 export const UpdateMarkModal = ({
   isOpen,
@@ -17,6 +18,16 @@ export const UpdateMarkModal = ({
 }: UpdateMarkModalProps) => {
   if (!isOpen || !selectedSection || !selectedStudent || !editingMark)
     return null;
+
+  // ✅ تحديد ما إذا كان المقطع يحتوي على حفظ أو مراجعة
+  const hasMemorization = !!(
+    selectedSection.memorizationSection?.trim() || 
+    (selectedSection.memorizationMeta && selectedSection.memorizationMeta.length > 0)
+  );
+  const hasReview = !!(
+    selectedSection.reviewSection?.trim() || 
+    (selectedSection.reviewMeta && selectedSection.reviewMeta.length > 0)
+  );
 
   const handleReviewMarkChange = (value: number) => {
     onChange({
@@ -48,41 +59,51 @@ export const UpdateMarkModal = ({
               timeZone: 'Asia/Jerusalem'
             })}
           </p>
-          <p className="text-sm text-gray-600 mb-1">
-            <span className="font-semibold">مقطع المراجعة:</span>{' '}
-            {selectedSection.reviewSection}
-          </p>
-          <p className="text-sm text-gray-600">
-            <span className="font-semibold">مقطع الحفظ:</span>{' '}
-            {selectedSection.memorizationSection}
-          </p>
+          {hasReview && (
+            <p className="text-sm text-gray-600 mb-1">
+              <span className="font-semibold">مقطع المراجعة:</span>{' '}
+              {selectedSection.reviewSection}
+            </p>
+          )}
+          {hasMemorization && (
+            <p className="text-sm text-gray-600">
+              <span className="font-semibold">مقطع الحفظ:</span>{' '}
+              {selectedSection.memorizationSection}
+            </p>
+          )}
         </Card>
 
-        <div className="mb-6">
-          <RangeSlider
-            label="علامة المراجعة (6-10)"
-            min={6}
-            max={10}
-            step={0.5}
-            value={newMark.reviewMark}
-            onChange={handleReviewMarkChange}
-            showValue={true}
-            color="emerald"
-          />
-        </div>
+        {/* ✅ إظهار slider المراجعة فقط إذا كان هناك مقطع مراجعة */}
+        {hasReview && (
+          <div className="mb-6">
+            <RangeSlider
+              label="علامة المراجعة (6-10)"
+              min={6}
+              max={10}
+              step={0.5}
+              value={newMark.reviewMark}
+              onChange={handleReviewMarkChange}
+              showValue={true}
+              color="emerald"
+            />
+          </div>
+        )}
 
-        <div className="mb-6">
-          <RangeSlider
-            label="علامة الحفظ (6-10)"
-            min={6}
-            max={10}
-            step={0.5}
-            value={newMark.memorizationMark}
-            onChange={handleMemorizationMarkChange}
-            showValue={true}
-            color="emerald"
-          />
-        </div>
+        {/* ✅ إظهار slider الحفظ فقط إذا كان هناك مقطع حفظ */}
+        {hasMemorization && (
+          <div className="mb-6">
+            <RangeSlider
+              label="علامة الحفظ (6-10)"
+              min={6}
+              max={10}
+              step={0.5}
+              value={newMark.memorizationMark}
+              onChange={handleMemorizationMarkChange}
+              showValue={true}
+              color="emerald"
+            />
+          </div>
+        )}
 
         <div className="flex justify-between mt-8">
           <Button
@@ -98,7 +119,7 @@ export const UpdateMarkModal = ({
             type="submit"
             variant="primary"
             className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 py-2 px-8 shadow-md hover:shadow-lg"
-            disabled={isLoading}
+            disabled={isLoading || (!hasReview && !hasMemorization)}
           >
             {isLoading ? (
               <span className="flex items-center gap-2">

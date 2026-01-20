@@ -168,27 +168,151 @@ exports.getStudentSectionsGrouped = async (req, res) => {
     // 6. Convert map to array and calculate progress
     const groupedSurahs = Array.from(surahMap.values())
       .map(surah => {
-        const totalSegments = surah.segments.length;
-        const completedSegments = surah.segments.filter(
-          s => s.mark && (s.mark.memorizationMark > 0 || s.mark.reviewMark > 0)
-        ).length;
+        // ✅ FIX: Group segments by DATE to count "sessions" instead of sectionId
+        // إذا كان هناك حفظ ومراجعة في نفس التاريخ، يُحسبان كجلسة واحدة
+        const sessionsMap = new Map();
         
-        const progressPercentage = totalSegments > 0 
-          ? Math.round((completedSegments / totalSegments) * 100)
-          : 0;
+        // Ranges to check "Completed" status (intervals logic)
+        const coveredAyahs = new Set();
+        
+        surah.segments.forEach(seg => {
+          // ✅ استخدام التاريخ كمفتاح بدلاً من sectionId
+          const dateKey = seg.sectionDate 
+            ? new Date(seg.sectionDate).toISOString().split('T')[0] 
+            : seg.sectionId.toString(); // fallback to sectionId if no date
+          
+          if (!sessionsMap.has(dateKey)) {
+            sessionsMap.set(dateKey, {
+                dateKey: dateKey,
+                sectionIds: [seg.sectionId],
+                sectionDate: seg.sectionDate,
+                hasMemorization: false,
+                hasReview: false,
+                marks: [], 
+                types: []
+            });
+          } else {
+            // إضافة sectionId إذا كان مختلفاً
+            const session = sessionsMap.get(dateKey);
+            if (!session.sectionIds.some(id => id.toString() === seg.sectionId.toString())) {
+              session.sectionIds.push(seg.sectionId);
+            }
+          }
+          
+          const session = sessionsMap.get(dateKey);
+          if (seg.type === 'memorization') {
+              session.hasMemorization = true;
+              session.types.push('memorization');
+          }
+          if (seg.type === 'review') {
+              session.hasReview = true;
+              session.types.push('review');
+          }
+          
+          // تجميع العلامات
+          if (seg.mark) {
+            session.marks.push(seg.mark);
+          }
+          
+          // Add range to covered set
+          for(let i = seg.ayahStart; i <= seg.ayahEnd; i++) {
+              coveredAyahs.add(i);
+          }
+        });
 
-        // Calculate average mark
-        const markedSegments = surah.segments.filter(s => s.mark);
+        // 1. Calculate Status based on FULL Coverage
+        // A surah is completed if size of coveredAyahs == totalAyahs (assuming 1 to Total)
+        // and Surah has totalAyahs > 0
+        const isFullyConstructed = (surah.surahAyahCount > 0 && coveredAyahs.size >= surah.surahAyahCount);
+        
+        // 2. Counts - ✅ تصحيح: استخدام sessionsMap بدلاً من visitsMap
+        const totalSegments = sessionsMap.size; // عدد الجلسات (التواريخ الفريدة)
+        
+        // ✅ FIX: Completed Segments = Sessions where ALL required marks are present
+        // الجلسة مكتملة إذا كانت العلامات المطلوبة موجودة بناءً على نوع المقطع
+        const completedSegments = Array.from(sessionsMap.values()).filter(session => {
+          // جمع كل العلامات الموجودة في الجلسة
+          const hasMemMark = session.marks.some(m => m.memorizationMark && m.memorizationMark > 0);
+          const hasRevMark = session.marks.some(m => m.reviewMark && m.reviewMark > 0);
+          
+          // التحقق بناءً على ما هو موجود في الجلسة:
+          // - إذا كانت الجلسة فيها حفظ ومراجعة → يجب أن تكون كلا العلامتين موجودتين
+          // - إذا كانت الجلسة فيها حفظ فقط → يجب أن تكون علامة الحفظ موجودة
+          // - إذا كانت الجلسة فيها مراجعة فقط → يجب أن تكون علامة المراجعة موجودة
+          if (session.hasMemorization && session.hasReview) {
+            return hasMemMark && hasRevMark; // يجب كلاهما
+          } else if (session.hasMemorization) {
+            return hasMemMark; // يجب حفظ فقط
+          } else if (session.hasReview) {
+            return hasRevMark; // يجب مراجعة فقط
+          }
+          return false;
+        }).length;
+
+        // 3. Average Mark - ✅ تصحيح: استخدام sessionsMap مع نفس منطق الجلسات المكتملة
+        const sessions = Array.from(sessionsMap.values());
+        // ✅ FIX: استخدام نفس منطق التحقق من الجلسات المكتملة
+        const markedSessions = sessions.filter(session => {
+          const hasMemMark = session.marks.some(m => m.memorizationMark && m.memorizationMark > 0);
+          const hasRevMark = session.marks.some(m => m.reviewMark && m.reviewMark > 0);
+          
+          if (session.hasMemorization && session.hasReview) {
+            return hasMemMark && hasRevMark;
+          } else if (session.hasMemorization) {
+            return hasMemMark;
+          } else if (session.hasReview) {
+            return hasRevMark;
+          }
+          return false;
+        });
+        
+        // ✅ FIX: معدل الجلسات = (مجموع كل العلامات / 2) / عدد الجلسات * 100
         let averageMark = 0;
-        if (markedSegments.length > 0) {
-          const totalMarks = markedSegments.reduce((sum, seg) => {
-            const mark = seg.type === 'memorization' 
-              ? (seg.mark.memorizationMark || 0)
-              : (seg.mark.reviewMark || 0);
-            return sum + mark;
-          }, 0);
-          averageMark = Math.round(totalMarks / markedSegments.length);
+        if (completedSegments > 0) {
+          // جمع كل العلامات من جميع الجلسات المكتملة
+          let totalAllMarks = 0;
+          
+          markedSessions.forEach(session => {
+            session.marks.forEach(m => {
+              if (session.hasMemorization && m.memorizationMark && m.memorizationMark > 0) {
+                totalAllMarks += m.memorizationMark;
+              }
+              if (session.hasReview && m.reviewMark && m.reviewMark > 0) {
+                totalAllMarks += m.reviewMark;
+              }
+            });
+          });
+          
+          // المعادلة: (مجموع كل العلامات / 2) / عدد الجلسات المكتملة * 100
+          // لكن العلامة القصوى 10، فنقسم على 10 بدلاً من 2
+          // averageMark = (totalAllMarks / 2) / completedSegments * 100
+          // هذا يعطي نسبة مئوية من 100
+          averageMark = Math.round((totalAllMarks / (completedSegments * 2)) * 100) / 10;
+          // نحول لتكون من 10 بدلاً من 100
+          // أو نبقيها كنسبة مئوية حسب ما يريد المستخدم
         }
+
+        // 4. Progress Percentage
+        // If completed (fully covered) -> 100%
+        // Else -> (Max Covered Ayah / Total) ? Or (Unique Covered Count / Total)?
+        // User said: "calculate percentage according to [last segment you reached]"
+        // So we strictly find the Max Ayah End.
+        let maxReachedAyah = 0;
+        surah.segments.forEach(s => {
+            if (s.ayahEnd > maxReachedAyah) maxReachedAyah = s.ayahEnd;
+        });
+        
+        let progressPercentage = 0;
+        if (surah.surahAyahCount > 0) {
+            progressPercentage = Math.min(100, Math.round((maxReachedAyah / surah.surahAyahCount) * 100));
+        }
+        
+        // Force 100% if isFullyConstructed (Status override logic)
+        if (isFullyConstructed) progressPercentage = 100;
+
+        // ✅ حالتين فقط: مكتمل أو قيد الإكمال (السورة تظهر فقط إذا بدأ بها الطالب)
+        let status = 'in_progress'; // الافتراضي: قيد الإكمال
+        if (isFullyConstructed) status = 'completed';
 
         return {
           ...surah,
@@ -196,8 +320,8 @@ exports.getStudentSectionsGrouped = async (req, res) => {
           completedSegments,
           progressPercentage,
           averageMark,
-          status: progressPercentage === 100 ? 'completed' : 
-                  progressPercentage > 0 ? 'in_progress' : 'not_started'
+          status, // 'completed' only if fully covered
+          segments: surah.segments 
         };
       })
       .sort((a, b) => a.surahNumber - b.surahNumber); // Sort by Surah number
@@ -217,7 +341,11 @@ exports.getStudentSectionsGrouped = async (req, res) => {
         inProgressSurahs: groupedSurahs.filter(s => s.status === 'in_progress').length,
         notStartedSurahs: groupedSurahs.filter(s => s.status === 'not_started').length,
         totalSegments: groupedSurahs.reduce((sum, s) => sum + s.totalSegments, 0),
-        completedSegments: groupedSurahs.reduce((sum, s) => sum + s.completedSegments, 0)
+        completedSegments: groupedSurahs.reduce((sum, s) => sum + s.completedSegments, 0),
+        // ✅ FIX: نسبة التقدم = (عدد السور المكتملة / عدد السور الكلي) * 100
+        progressPercent: groupedSurahs.length > 0 
+          ? Math.round((groupedSurahs.filter(s => s.status === 'completed').length / groupedSurahs.length) * 100)
+          : 0
       }
     }, "تم جلب المقاطع المجمعة بنجاح");
 

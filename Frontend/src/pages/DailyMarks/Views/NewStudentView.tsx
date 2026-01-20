@@ -44,52 +44,37 @@ const EmptyState = () => (
  * Compact Header Component - كارد الهيدر
  */
 const StudentHeader = memo<{
-  totalSurahs: number;
   completedSurahs: number;
-  overallProgress: number;
-  onRefresh?: () => void;
-  isRefreshing?: boolean;
-}>(({ totalSurahs, completedSurahs, overallProgress, onRefresh, isRefreshing }) => {
+}>(({ completedSurahs }) => {
   return (
     <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white rounded-2xl shadow-lg p-6">
       <div className="space-y-4">
         {/* Title Section */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="bg-white/20 backdrop-blur-sm p-2.5 rounded-xl">
-              <BookOpen className="w-6 h-6" />
-            </div>
-            <div>
-              <h1 className="text-xl md:text-2xl font-bold">مقاطعي في القرآن</h1>
-              <p className="text-white/90 text-sm">تتبع تقدمك في الحفظ والمراجعة</p>
-            </div>
+        <div className="flex items-center gap-3">
+          <div className="bg-white/20 backdrop-blur-sm p-2.5 rounded-xl">
+            <BookOpen className="w-6 h-6" />
           </div>
-          {onRefresh && (
-            <button
-              onClick={onRefresh}
-              disabled={isRefreshing}
-              title="تحديث البيانات"
-              aria-label="تحديث البيانات"
-              className="bg-white/15 hover:bg-white/25 backdrop-blur-sm p-3 rounded-xl transition-all"
-            >
-              <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
-            </button>
-          )}
+          <div>
+            <h1 className="text-xl md:text-2xl font-bold">مقاطعي في القرآن</h1>
+            <p className="text-white/90 text-sm">تتبع تقدمك في الحفظ والمراجعة</p>
+          </div>
         </div>
 
         {/* Stats Cards - Second Row */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3">
+          {/* ✅ السور المكتملة من إجمالي سور القرآن (114) */}
           <div className="bg-white/15 backdrop-blur-sm rounded-xl px-4 py-3 text-center">
-            <span className="text-2xl font-bold block">{totalSurahs}</span>
-            <p className="text-xs text-white/80 mt-1">سورة</p>
+            <div className="flex items-center justify-center gap-1">
+              <span className="text-2xl font-bold">{completedSurahs}</span>
+              <span className="text-lg text-white/70">/</span>
+              <span className="text-lg text-white/80">114</span>
+            </div>
+            <p className="text-xs text-white/80 mt-1">سورة مكتملة</p>
           </div>
+          {/* ✅ نسبة التقدم */}
           <div className="bg-white/15 backdrop-blur-sm rounded-xl px-4 py-3 text-center">
-            <span className="text-2xl font-bold block">{completedSurahs}</span>
-            <p className="text-xs text-white/80 mt-1">مكتملة</p>
-          </div>
-          <div className="bg-white/15 backdrop-blur-sm rounded-xl px-4 py-3 text-center">
-            <span className="text-2xl font-bold block">{overallProgress}%</span>
-            <p className="text-xs text-white/80 mt-1">التقدم</p>
+            <span className="text-2xl font-bold block">{Math.round((completedSurahs / 114) * 100)}%</span>
+            <p className="text-xs text-white/80 mt-1">نسبة الإنجاز</p>
           </div>
         </div>
       </div>
@@ -103,8 +88,8 @@ StudentHeader.displayName = 'StudentHeader';
  * Filter and Search Section
  */
 const FilterSection = memo<{
-  filterStatus: 'all' | 'completed' | 'in_progress' | 'not_started';
-  onFilterChange: (status: 'all' | 'completed' | 'in_progress' | 'not_started') => void;
+  filterStatus: 'all' | 'completed' | 'in_progress';
+  onFilterChange: (status: 'all' | 'completed' | 'in_progress') => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
 }>(({ filterStatus, onFilterChange, searchQuery, onSearchChange }) => {
@@ -141,17 +126,7 @@ const FilterSection = memo<{
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            قيد التقدم
-          </button>
-          <button
-            onClick={() => onFilterChange('not_started')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              filterStatus === 'not_started'
-                ? 'bg-emerald-600 text-white shadow-md'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            لم تبدأ
+            قيد الإكمال
           </button>
         </div>
 
@@ -192,14 +167,13 @@ const ActiveSurahBanner = memo<{
   
   if (!hasMemorization && !hasReview) return null;
 
-  // إذا نفس السورة للحفظ والمراجعة
-  const isSameSurah = hasMemorization && hasReview && memActive.surahNumber === revActive.surahNumber;
-
   // Helper to render progress bar
   const renderProgressBar = (surah: typeof memActive, colorClass: string, textColorClass: string) => {
     if (!surah?.totalAyahs || surah.totalAyahs === 0) return null;
-    const progress = surah.progressPercent ?? Math.round((surah.lastAyahEnd / surah.totalAyahs) * 100);
-    const remaining = surah.remainingAyahs ?? (surah.totalAyahs - surah.lastAyahEnd);
+    // ✅ حساب النسبة مع حماية من تجاوز 100%
+    const rawProgress = surah.progressPercent ?? Math.round((surah.lastAyahEnd / surah.totalAyahs) * 100);
+    const progress = Math.min(100, Math.max(0, rawProgress)); // بين 0 و 100
+    const remaining = surah.remainingAyahs ?? Math.max(0, surah.totalAyahs - surah.lastAyahEnd);
     
     return (
       <div className="mt-2 w-full">
@@ -208,10 +182,8 @@ const ActiveSurahBanner = memo<{
           <span>متبقي {remaining} آية</span>
         </div>
         <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
-          {/* Progress bar with inline width - necessary for dynamic progress */}
           <div 
             className={`h-full ${colorClass} transition-all duration-300`}
-            // eslint-disable-next-line react/forbid-component-props
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -223,79 +195,58 @@ const ActiveSurahBanner = memo<{
   };
 
   return (
-    <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-4 mb-6">
-      <div className="flex items-center gap-2 mb-3">
-        <Sparkles className="w-5 h-5 text-amber-500" />
-        <span className="font-bold text-amber-800">السورة الفعالة الآن</span>
-        <span className="text-xs text-amber-600 mr-auto">🔒 يجب إكمالها قبل البدء بسورة جديدة</span>
-      </div>
-
-      <div className="flex flex-wrap gap-3">
-        {isSameSurah ? (
-          // نفس السورة للحفظ والمراجعة
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      {/* ✅ بانر سورة الحفظ الفعالة */}
+      {hasMemorization && (
+        <div className="bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-2xl p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <BookMarked className="w-5 h-5 text-emerald-500" />
+            <span className="font-bold text-emerald-800 text-sm">سورة الحفظ الفعالة</span>
+          </div>
           <button
             onClick={() => onSurahClick?.(memActive.surahNumber)}
-            className="flex flex-col items-stretch bg-white rounded-xl p-3 border border-amber-200 hover:border-amber-400 hover:shadow-md transition-all flex-1 min-w-[200px]"
+            className="flex flex-col bg-white rounded-xl p-3 border border-emerald-200 hover:border-emerald-400 hover:shadow-md transition-all w-full"
           >
             <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-br from-purple-500 to-indigo-500 p-2 rounded-lg">
-                <BookOpen className="w-5 h-5 text-white" />
+              <div className="bg-gradient-to-br from-emerald-500 to-green-500 p-2 rounded-lg">
+                <BookMarked className="w-5 h-5 text-white" />
               </div>
               <div className="text-right flex-1">
                 <p className="font-bold text-gray-900 text-lg">{memActive.surahName}</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">حفظ</span>
-                  <span className="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full">مراجعة</span>
-                </div>
+                <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">حفظ</span>
               </div>
               <ChevronLeft className="w-5 h-5 text-gray-400" />
             </div>
-            {renderProgressBar(memActive, 'bg-gradient-to-r from-purple-500 to-indigo-500', 'text-purple-700')}
+            {renderProgressBar(memActive, 'bg-gradient-to-r from-emerald-500 to-green-500', 'text-emerald-700')}
           </button>
-        ) : (
-          <>
-            {/* سورة الحفظ */}
-            {hasMemorization && (
-              <button
-                onClick={() => onSurahClick?.(memActive.surahNumber)}
-                className="flex flex-col bg-white rounded-xl p-3 border border-emerald-200 hover:border-emerald-400 hover:shadow-md transition-all flex-1 min-w-[180px]"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="bg-gradient-to-br from-emerald-500 to-green-500 p-2 rounded-lg">
-                    <BookMarked className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="text-right flex-1">
-                    <p className="font-bold text-gray-900">{memActive.surahName}</p>
-                    <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">حفظ</span>
-                  </div>
-                  <ChevronLeft className="w-4 h-4 text-gray-400" />
-                </div>
-                {renderProgressBar(memActive, 'bg-gradient-to-r from-emerald-500 to-green-500', 'text-emerald-700')}
-              </button>
-            )}
+        </div>
+      )}
 
-            {/* سورة المراجعة */}
-            {hasReview && (
-              <button
-                onClick={() => onSurahClick?.(revActive.surahNumber)}
-                className="flex flex-col bg-white rounded-xl p-3 border border-blue-200 hover:border-blue-400 hover:shadow-md transition-all flex-1 min-w-[180px]"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="bg-gradient-to-br from-blue-500 to-cyan-500 p-2 rounded-lg">
-                    <Target className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="text-right flex-1">
-                    <p className="font-bold text-gray-900">{revActive.surahName}</p>
-                    <span className="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full">مراجعة</span>
-                  </div>
-                  <ChevronLeft className="w-4 h-4 text-gray-400" />
-                </div>
-                {renderProgressBar(revActive, 'bg-gradient-to-r from-blue-500 to-cyan-500', 'text-blue-700')}
-              </button>
-            )}
-          </>
-        )}
-      </div>
+      {/* ✅ بانر سورة المراجعة الفعالة */}
+      {hasReview && (
+        <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-2xl p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Target className="w-5 h-5 text-blue-500" />
+            <span className="font-bold text-blue-800 text-sm">سورة المراجعة الفعالة</span>
+          </div>
+          <button
+            onClick={() => onSurahClick?.(revActive.surahNumber)}
+            className="flex flex-col bg-white rounded-xl p-3 border border-blue-200 hover:border-blue-400 hover:shadow-md transition-all w-full"
+          >
+            <div className="flex items-center gap-3">
+              <div className="bg-gradient-to-br from-blue-500 to-cyan-500 p-2 rounded-lg">
+                <Target className="w-5 h-5 text-white" />
+              </div>
+              <div className="text-right flex-1">
+                <p className="font-bold text-gray-900 text-lg">{revActive.surahName}</p>
+                <span className="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full">مراجعة</span>
+              </div>
+              <ChevronLeft className="w-5 h-5 text-gray-400" />
+            </div>
+            {renderProgressBar(revActive, 'bg-gradient-to-r from-blue-500 to-cyan-500', 'text-blue-700')}
+          </button>
+        </div>
+      )}
     </div>
   );
 });
@@ -310,7 +261,7 @@ export const NewStudentView = memo<NewStudentViewProps>(({ studentId, groupId })
   const [selectedSurah, setSelectedSurah] = useState<GroupedSurah | null>(null);
   const [activeSurahs, setActiveSurahs] = useState<ActiveSurahsResponse | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [filterStatus, setFilterStatus] = useState<'all' | 'completed' | 'in_progress' | 'not_started'>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'completed' | 'in_progress'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Fetch active surahs
@@ -393,11 +344,7 @@ export const NewStudentView = memo<NewStudentViewProps>(({ studentId, groupId })
     <div className="min-h-screen w-full bg-gray-50" dir="rtl">
       {/* Header */}
       <StudentHeader
-        totalSurahs={summary?.totalSurahs || 0}
         completedSurahs={summary?.completedSurahs || 0}
-        overallProgress={overallProgress}
-        onRefresh={handleRefresh}
-        isRefreshing={isRefreshing}
       />
 
       {/* Content */}
@@ -445,18 +392,13 @@ export const NewStudentView = memo<NewStudentViewProps>(({ studentId, groupId })
         {/* Surahs Grid */}
         {!loading && !error && filteredSurahs.length > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
-            {filteredSurahs.map(surah => {
-              const { isActiveMemorization, isActiveReview } = checkIfActive(surah.surahNumber);
-              return (
-                <SurahCard
-                  key={surah.surahNumber}
-                  surah={surah}
-                  onClick={() => setSelectedSurah(surah)}
-                  isActiveMemorization={isActiveMemorization}
-                  isActiveReview={isActiveReview}
-                />
-              );
-            })}
+            {filteredSurahs.map(surah => (
+              <SurahCard
+                key={surah.surahNumber}
+                surah={surah}
+                onClick={() => setSelectedSurah(surah)}
+              />
+            ))}
           </div>
         )}
       </div>

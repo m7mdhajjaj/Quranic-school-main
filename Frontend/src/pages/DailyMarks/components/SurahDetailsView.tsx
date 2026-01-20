@@ -145,21 +145,21 @@ export const SurahDetailsView = memo<SurahDetailsViewProps>(({ surah, onBack }) 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl">
               <div className="text-center p-4 bg-white rounded-xl border border-gray-100">
                 <p className="text-3xl font-bold text-gray-900">{surah.totalSegments}</p>
-                <p className="text-sm text-gray-600 mt-1">إجمالي المقاطع</p>
+                <p className="text-sm text-gray-600 mt-1">عدد الجلسات</p>
               </div>
               <div className="text-center p-4 bg-green-50 rounded-xl border border-green-100">
                 <p className="text-3xl font-bold text-green-700">{surah.completedSegments}</p>
-                <p className="text-sm text-green-600 mt-1">مكتملة</p>
+                <p className="text-sm text-green-600 mt-1">جلسات منجزة</p>
               </div>
               <div className="text-center p-4 bg-blue-50 rounded-xl border border-blue-100">
-                <p className="text-3xl font-bold text-blue-700">{surah.progressPercentage}%</p>
+               <p className="text-3xl font-bold text-blue-700">{surah.progressPercentage}%</p>
                 <p className="text-sm text-blue-600 mt-1">نسبة الإتمام</p>
               </div>
               <div className="text-center p-4 bg-purple-50 rounded-xl border border-purple-100">
                 <p className="text-3xl font-bold text-purple-700">
                   {surah.averageMark > 0 ? surah.averageMark : '-'}
                 </p>
-                <p className="text-sm text-purple-600 mt-1">المعدل</p>
+                <p className="text-sm text-purple-600 mt-1">معدل الجلسات</p>
               </div>
             </div>
           </div>

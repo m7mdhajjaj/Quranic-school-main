@@ -594,6 +594,70 @@ exports.getActiveSurahs = async (req, res) => {
       return sendNotFound(res, "الحلقة");
     }
 
+    // ✅ Debug log
+    logger.debug(`[getActiveSurahs] Group: ${group.name}`);
+    logger.debug(`[getActiveSurahs] activeMemorizationSurah: ${JSON.stringify(group.activeMemorizationSurah)}`);
+    logger.debug(`[getActiveSurahs] activeReviewSurah: ${JSON.stringify(group.activeReviewSurah)}`);
+
+    // ✅ Self-Healing: دائماً نحسب السورة الفعالة من المقاطع الموجودة
+    const Section = require('../../../schema/DailyMark/Section');
+    
+    const calculateActiveSurahFromSections = async (type) => {
+      const metaField = type === 'memorization' ? 'memorizationMeta' : 'reviewMeta';
+      
+      // جلب جميع المقاطع للحلقة
+      const sections = await Section.find({
+        $or: [{ groupId: group._id }, { group: group.name }],
+        [`${metaField}.0`]: { $exists: true }
+      })
+      .select(`${metaField}`)
+      .lean();
+
+      if (sections.length === 0) return null;
+
+      // تجميع المقاطع حسب السورة
+      const surahProgress = {};
+      sections.forEach(section => {
+        const meta = section[metaField] || [];
+        meta.forEach(seg => {
+          if (!seg.surahNumber) return;
+          if (!surahProgress[seg.surahNumber]) {
+            surahProgress[seg.surahNumber] = {
+              surahNumber: seg.surahNumber,
+              surahName: seg.surahNameCanonical || `سورة ${seg.surahNumber}`,
+              maxAyahEnd: 0
+            };
+          }
+          if (seg.ayahEnd > surahProgress[seg.surahNumber].maxAyahEnd) {
+            surahProgress[seg.surahNumber].maxAyahEnd = seg.ayahEnd;
+          }
+        });
+      });
+
+      // إيجاد سورة غير مكتملة (آخر آية < عدد آيات السورة)
+      // نرتب حسب رقم السورة لإرجاع أول سورة غير مكتملة
+      const sortedSurahs = Object.keys(surahProgress).map(Number).sort((a, b) => a - b);
+      
+      for (const surahNum of sortedSurahs) {
+        const surah = surahProgress[surahNum];
+        const surahInfo = getSurahByNumber(surahNum);
+        const totalAyahs = surahInfo?.ayahCount || 0;
+        
+        if (totalAyahs > 0 && surah.maxAyahEnd < totalAyahs) {
+          logger.debug(`[calculateActiveSurah] Found incomplete ${type} surah: ${surahInfo?.name} (${surah.maxAyahEnd}/${totalAyahs})`);
+          return {
+            surahNumber: surahNum,
+            surahName: surahInfo?.name || surah.surahName,
+            lastAyahEnd: surah.maxAyahEnd,
+            isCompleted: false,
+            startedAt: null
+          };
+        }
+      }
+      
+      return null;
+    };
+
     // ✅ V8: Helper function to add progress info
     const buildActiveSurahData = (activeSurah) => {
       if (!activeSurah?.surahNumber) return null;
@@ -602,29 +666,104 @@ exports.getActiveSurahs = async (req, res) => {
       const totalAyahs = surahInfo?.ayahCount || 0;
       const lastAyahEnd = activeSurah.lastAyahEnd || 0;
       const remainingAyahs = Math.max(0, totalAyahs - lastAyahEnd);
-      const progressPercent = totalAyahs > 0 ? Math.round((lastAyahEnd / totalAyahs) * 100) : 0;
+      // ✅ حماية: النسبة بين 0 و 100
+      const progressPercent = totalAyahs > 0 ? Math.min(100, Math.max(0, Math.round((lastAyahEnd / totalAyahs) * 100))) : 0;
+      
+      // ✅ تصحيح الإكمال: نعتمد حصرياً على عدد الآيات إذا كان معروفاً
+      // هذا يضمن أن السورة تظهر كـ "غير مكتملة" طالما بقي آيات، حتى لو كان العلم في قاعدة البيانات خطأ
+      const isTrulyCompleted = (totalAyahs > 0) 
+        ? (lastAyahEnd >= totalAyahs) 
+        : activeSurah.isCompleted;
       
       return {
         surahNumber: activeSurah.surahNumber,
         surahName: activeSurah.surahName,
         lastAyahEnd,
         totalAyahs,
-        remainingAyahs,
-        progressPercent,
-        isCompleted: activeSurah.isCompleted,
+        remainingAyahs: isTrulyCompleted ? 0 : remainingAyahs,
+        progressPercent: isTrulyCompleted ? 100 : progressPercent,
+        isCompleted: isTrulyCompleted, // ✅ إرسال الحالة الصحيحة
         startedAt: activeSurah.startedAt,
       };
     };
 
+    // ✅ Self-Healing: استراتيجية تحديد السورة الفعالة (DB Priority with Fallback)
+    
+    // 1. حساب السور الفعالة من المقاطع (احتياطي)
+    const calculatedMem = await calculateActiveSurahFromSections('memorization');
+    const calculatedRev = await calculateActiveSurahFromSections('review');
+    
+    logger.debug(`[getActiveSurahs] Calculated Memorization: ${JSON.stringify(calculatedMem)}`);
+    logger.debug(`[getActiveSurahs] Calculated Review: ${JSON.stringify(calculatedRev)}`);
+    
+    // 2. تحديد سورة الحفظ الفعالة
+    let memActiveSurah = null;
+    let memSource = 'none';
+    
+    // أولاً: نتحقق من DB
+    if (group.activeMemorizationSurah?.surahNumber) {
+        const dbSurah = group.activeMemorizationSurah;
+        const surahInfo = getSurahByNumber(dbSurah.surahNumber);
+        const totalAyahs = surahInfo?.ayahCount || 0;
+        const lastAyahEnd = dbSurah.lastAyahEnd || 0;
+        
+        // ✅ تحقق صارم: السورة مكتملة فقط إذا lastAyahEnd >= totalAyahs
+        const isTrulyCompleted = (totalAyahs > 0) ? (lastAyahEnd >= totalAyahs) : dbSurah.isCompleted;
+        
+        if (!isTrulyCompleted) {
+            memActiveSurah = dbSurah;
+            memSource = 'db';
+        }
+    }
+    
+    // ثانياً: إذا لم نجد في DB، نستخدم المحسوبة
+    if (!memActiveSurah && calculatedMem) {
+        memActiveSurah = calculatedMem;
+        memSource = 'calculated';
+    }
+
+    // 3. تحديد سورة المراجعة الفعالة
+    let revActiveSurah = null;
+    let revSource = 'none';
+    
+    // أولاً: نتحقق من DB
+    if (group.activeReviewSurah?.surahNumber) {
+        const dbSurah = group.activeReviewSurah;
+        const surahInfo = getSurahByNumber(dbSurah.surahNumber);
+        const totalAyahs = surahInfo?.ayahCount || 0;
+        const lastAyahEnd = dbSurah.lastAyahEnd || 0;
+        
+        // ✅ تحقق صارم: السورة مكتملة فقط إذا lastAyahEnd >= totalAyahs
+        const isTrulyCompleted = (totalAyahs > 0) ? (lastAyahEnd >= totalAyahs) : dbSurah.isCompleted;
+        
+        logger.debug(`[getActiveSurahs] Review DB Check: surah=${dbSurah.surahNumber}, lastAyahEnd=${lastAyahEnd}, totalAyahs=${totalAyahs}, isTrulyCompleted=${isTrulyCompleted}`);
+        
+        if (!isTrulyCompleted) {
+            revActiveSurah = dbSurah;
+            revSource = 'db';
+        }
+    }
+    
+    // ثانياً: إذا لم نجد في DB، نستخدم المحسوبة
+    if (!revActiveSurah && calculatedRev) {
+        revActiveSurah = calculatedRev;
+        revSource = 'calculated';
+    }
+    
+    logger.debug(`[getActiveSurahs] Memorization Source: ${memSource}, Surah: ${memActiveSurah?.surahName}`);
+    logger.debug(`[getActiveSurahs] Review Source: ${revSource}, Surah: ${revActiveSurah?.surahName}`);
+
+    // ✅ ملاحظة: لا حاجة لتحقق إضافي - التحقق يتم في الخطوات أعلاه
+
     // إحصائيات إضافية
     const memorizationStats = {
-      activeSurah: buildActiveSurahData(group.activeMemorizationSurah),
+      activeSurah: buildActiveSurahData(memActiveSurah),
       completedCount: group.completedSurahs?.memorization?.length || 0,
       completedSurahs: group.completedSurahs?.memorization || [],
     };
 
     const reviewStats = {
-      activeSurah: buildActiveSurahData(group.activeReviewSurah),
+      activeSurah: buildActiveSurahData(revActiveSurah),
       completedCount: group.completedSurahs?.review?.length || 0,
       completedSurahs: group.completedSurahs?.review || [],
     };

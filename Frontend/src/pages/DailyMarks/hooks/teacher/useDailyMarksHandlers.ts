@@ -414,14 +414,39 @@ export const useDailyMarksHandlers = ({
 
     if (!selectedStudentId || !selectedSection) return;
 
-    const totalMark = (newMark.reviewMark || 0) + (newMark.memorizationMark || 0);
+    // ✅ تحديد ما إذا كان المقطع يحتوي على حفظ أو مراجعة
+    const hasMemorization = !!(
+      selectedSection.memorizationSection?.trim() || 
+      (selectedSection.memorizationMeta && selectedSection.memorizationMeta.length > 0)
+    );
+    const hasReview = !!(
+      selectedSection.reviewSection?.trim() || 
+      (selectedSection.reviewMeta && selectedSection.reviewMeta.length > 0)
+    );
 
-    const markData = {
+    // ✅ حساب المجموع فقط للعلامات الموجودة
+    let totalMark = 0;
+    if (hasReview) totalMark += (newMark.reviewMark || 0);
+    if (hasMemorization) totalMark += (newMark.memorizationMark || 0);
+    const maxMark = (hasReview && hasMemorization) ? 20 : 10;
+
+    // ✅ إرسال فقط العلامات المتعلقة بالنوع الموجود
+    const markData: {
+      studentId: string;
+      sectionId: string;
+      reviewMark?: number;
+      memorizationMark?: number;
+    } = {
       studentId: selectedStudentId,
       sectionId: selectedSection._id,
-      reviewMark: newMark.reviewMark,
-      memorizationMark: newMark.memorizationMark,
     };
+
+    if (hasReview) {
+      markData.reviewMark = newMark.reviewMark;
+    }
+    if (hasMemorization) {
+      markData.memorizationMark = newMark.memorizationMark;
+    }
 
     try {
       setIsAddingMarkLoading?.(true);
@@ -435,7 +460,7 @@ export const useDailyMarksHandlers = ({
         // 2. Update UI only after success
         setMarks((prev) => [...prev, savedMark]);
         setIsAddMarkModalOpen(false);
-        showSuccessToast(`✅ تم رصد العلامة بنجاح! العلامة: ${totalMark}/20`);
+        showSuccessToast(`✅ تم رصد العلامة بنجاح! العلامة: ${totalMark}/${maxMark}`);
         
         // Refresh sections status/progress (non-blocking)
         refetchSections?.();
@@ -481,8 +506,23 @@ export const useDailyMarksHandlers = ({
       ? editingMark.studentId 
       : editingMark.studentId._id;
 
+    // ✅ تحديد ما إذا كان المقطع يحتوي على حفظ أو مراجعة
+    const hasMemorization = !!(
+      selectedSection.memorizationSection?.trim() || 
+      (selectedSection.memorizationMeta && selectedSection.memorizationMeta.length > 0)
+    );
+    const hasReview = !!(
+      selectedSection.reviewSection?.trim() || 
+      (selectedSection.reviewMeta && selectedSection.reviewMeta.length > 0)
+    );
+
     const originalMark = { ...editingMark };
-    const totalMark = (newMark.reviewMark || 0) + (newMark.memorizationMark || 0);
+    
+    // ✅ حساب المجموع فقط للعلامات الموجودة
+    let totalMark = 0;
+    if (hasReview) totalMark += (newMark.reviewMark || 0);
+    if (hasMemorization) totalMark += (newMark.memorizationMark || 0);
+    const maxMark = (hasReview && hasMemorization) ? 20 : 10;
 
     try {
       setIsUpdatingMarkLoading?.(true);
@@ -498,14 +538,25 @@ export const useDailyMarksHandlers = ({
       
       setIsUpdateMarkModalOpen(false);
       setEditingMark(null);
-      showSuccessToast(`🔄 تم تحديث العلامة بنجاح! العلامة الجديدة: ${totalMark}/20`);
+      showSuccessToast(`🔄 تم تحديث العلامة بنجاح! العلامة الجديدة: ${totalMark}/${maxMark}`);
 
-      const markData = {
+      // ✅ إرسال فقط العلامات المتعلقة بالنوع الموجود
+      const markData: {
+        studentId: string;
+        sectionId: string;
+        reviewMark?: number;
+        memorizationMark?: number;
+      } = {
         studentId: actualStudentId, // Use actualStudentId from editingMark
         sectionId: selectedSection._id,
-        reviewMark: newMark.reviewMark,
-        memorizationMark: newMark.memorizationMark,
       };
+
+      if (hasReview) {
+        markData.reviewMark = newMark.reviewMark;
+      }
+      if (hasMemorization) {
+        markData.memorizationMark = newMark.memorizationMark;
+      }
 
       // 2. Call API in background (update by ID)
       const response = await updateMark(editingMark._id, markData as never);

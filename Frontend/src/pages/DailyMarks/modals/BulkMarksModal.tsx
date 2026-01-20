@@ -31,6 +31,16 @@ export const BulkMarksModal = ({
     handleSubmit,
   } = useBulkMarksModal(isOpen, section, group);
 
+  // ✅ تحديد ما إذا كان المقطع يحتوي على حفظ أو مراجعة
+  const hasMemorization = !!(
+    section?.memorizationSection?.trim() || 
+    (section?.memorizationMeta && section.memorizationMeta.length > 0)
+  );
+  const hasReview = !!(
+    section?.reviewSection?.trim() || 
+    (section?.reviewMeta && section.reviewMeta.length > 0)
+  );
+
   const onFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const success = await handleSubmit(onSuccess);
@@ -66,14 +76,18 @@ export const BulkMarksModal = ({
                 weekday: 'long',
               })}
             </p>
-            <p className="text-gray-700">
-              <span className="font-semibold">مقطع المراجعة:</span>{' '}
-              <span className="text-emerald-700">{section.reviewSection}</span>
-            </p>
-            <p className="text-gray-700">
-              <span className="font-semibold">مقطع الحفظ:</span>{' '}
-              <span className="text-teal-700">{section.memorizationSection}</span>
-            </p>
+            {hasReview && (
+              <p className="text-gray-700">
+                <span className="font-semibold">مقطع المراجعة:</span>{' '}
+                <span className="text-emerald-700">{section.reviewSection}</span>
+              </p>
+            )}
+            {hasMemorization && (
+              <p className="text-gray-700">
+                <span className="font-semibold">مقطع الحفظ:</span>{' '}
+                <span className="text-teal-700">{section.memorizationSection}</span>
+              </p>
+            )}
           </div>
         </Card>
 
@@ -123,45 +137,49 @@ export const BulkMarksModal = ({
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Review Mark */}
-                    <div>
-                      <RangeSlider
-                        label="علامة المراجعة"
-                        min={6}
-                        max={10}
-                        step={0.5}
-                        value={studentMark.reviewMark ?? 6}
-                        onChange={(value) =>
-                          updateStudentMark(
-                            studentMark.studentId,
-                            'reviewMark',
-                            value
-                          )
-                        }
-                        showValue={true}
-                        color="emerald"
-                      />
-                    </div>
+                    {/* ✅ Review Mark - فقط إذا كان هناك مقطع مراجعة */}
+                    {hasReview && (
+                      <div>
+                        <RangeSlider
+                          label="علامة المراجعة"
+                          min={6}
+                          max={10}
+                          step={0.5}
+                          value={studentMark.reviewMark ?? 6}
+                          onChange={(value) =>
+                            updateStudentMark(
+                              studentMark.studentId,
+                              'reviewMark',
+                              value
+                            )
+                          }
+                          showValue={true}
+                          color="emerald"
+                        />
+                      </div>
+                    )}
 
-                    {/* Memorization Mark */}
-                    <div>
-                      <RangeSlider
-                        label="علامة الحفظ"
-                        min={6}
-                        max={10}
-                        step={0.5}
-                        value={studentMark.memorizationMark ?? 6}
-                        onChange={(value) =>
-                          updateStudentMark(
-                            studentMark.studentId,
-                            'memorizationMark',
-                            value
-                          )
-                        }
-                        showValue={true}
-                        color="teal"
-                      />
-                    </div>
+                    {/* ✅ Memorization Mark - فقط إذا كان هناك مقطع حفظ */}
+                    {hasMemorization && (
+                      <div>
+                        <RangeSlider
+                          label="علامة الحفظ"
+                          min={6}
+                          max={10}
+                          step={0.5}
+                          value={studentMark.memorizationMark ?? 6}
+                          onChange={(value) =>
+                            updateStudentMark(
+                              studentMark.studentId,
+                              'memorizationMark',
+                              value
+                            )
+                          }
+                          showValue={true}
+                          color="teal"
+                        />
+                      </div>
+                    )}
                   </div>
                 </Card>
               ))}
