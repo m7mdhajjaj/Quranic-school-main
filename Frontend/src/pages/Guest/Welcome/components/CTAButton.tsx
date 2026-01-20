@@ -24,7 +24,7 @@ export const CTAButton = ({
       onClick={onClick}
       className={`relative group px-10 py-5 font-bold text-lg rounded-2xl overflow-hidden ${
         primary
-          ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white shadow-lg shadow-emerald-500/30'
+          ? 'bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white shadow-lg shadow-emerald-500/30'
           : 'bg-white/10 backdrop-blur-md text-white border border-white/20'
       }`}
       initial={{ opacity: 0, y: 30 }}

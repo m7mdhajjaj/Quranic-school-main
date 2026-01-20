@@ -81,7 +81,7 @@ export const GroupedExamTable: React.FC<GroupedExamTableProps> = ({
       {groupedExams.map((group) => (
         <div key={group.date} className="bg-white rounded-xl shadow-lg border-2 border-emerald-100 overflow-hidden">
           {/* رأس المجموعة - التاريخ */}
-          <div className="bg-gradient-to-r from-emerald-500 to-teal-600 px-6 py-3">
+          <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 px-6 py-3">
             <div className="flex items-center gap-3">
               <span className="text-2xl">📅</span>
               <div>

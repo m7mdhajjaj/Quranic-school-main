@@ -74,8 +74,8 @@ const SegmentRow = memo<{ segment: SurahSegment }>(({ segment }) => {
 
   const getMarkGradient = (mark: number | null | undefined) => {
     if (!mark) return 'from-slate-400 to-slate-500';
-    if (mark >= 9) return 'from-emerald-500 to-teal-600';
-    if (mark >= 7) return 'from-teal-500 to-cyan-600';
+    if (mark >= 9) return 'from-emerald-600 via-teal-700 to-slate-700';
+    if (mark >= 7) return 'from-teal-600 via-slate-600 to-emerald-700';
     if (mark >= 5) return 'from-amber-500 to-orange-600';
     return 'from-red-500 to-rose-600';
   };
@@ -128,7 +128,7 @@ const SegmentRow = memo<{ segment: SurahSegment }>(({ segment }) => {
           }`}>
             <div className={`p-2.5 rounded-xl shadow-sm ${
               isMemorization 
-                ? 'bg-gradient-to-br from-emerald-500 to-teal-600' 
+                ? 'bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700' 
                 : 'bg-gradient-to-br from-slate-500 to-slate-600'
             }`}>
               <Calendar className="w-5 h-5 text-white" />
@@ -369,7 +369,7 @@ export const SurahDetailsView = memo<SurahDetailsViewProps>(({ surah, onBack }) 
               </div>
               
               {/* جلسات منجزة */}
-              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-emerald-600 to-emerald-700 p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
+              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
                 <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
                 <div className="absolute bottom-0 left-0 w-16 h-16 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2" />
                 <div className="relative">
@@ -379,7 +379,7 @@ export const SurahDetailsView = memo<SurahDetailsViewProps>(({ surah, onBack }) 
               </div>
               
               {/* نسبة الإتمام */}
-              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-teal-500 via-teal-600 to-teal-700 p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
+              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-teal-600 via-slate-600 to-emerald-700 p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
                 <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
                 <div className="absolute bottom-0 left-0 w-16 h-16 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2" />
                 <div className="relative">
@@ -409,7 +409,7 @@ export const SurahDetailsView = memo<SurahDetailsViewProps>(({ surah, onBack }) 
                 className="w-full flex items-center justify-between px-5 py-4 hover:bg-slate-50 transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-2.5 rounded-xl">
+                  <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 p-2.5 rounded-xl">
                     <SlidersHorizontal className="w-5 h-5 text-white" />
                   </div>
                   <div className="text-right">
@@ -566,7 +566,7 @@ export const SurahDetailsView = memo<SurahDetailsViewProps>(({ surah, onBack }) 
                     isActive={markFilter === 'with-mark'}
                     onClick={() => setMarkFilter('with-mark')}
                     count={withMarkCount}
-                    colorClass="bg-gradient-to-r from-emerald-500 to-teal-600"
+                    colorClass="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700"
                   />
                   <FilterTab
                     label="بدون علامة"

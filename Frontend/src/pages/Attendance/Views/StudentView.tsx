@@ -259,7 +259,7 @@ export const StudentView = ({
         {/* ملاحظة للطالب */}
         <div className="p-6 bg-gradient-to-br from-teal-50 to-cyan-50 border-t border-teal-100">
           <div className="flex items-start gap-4 p-4 bg-white/70 backdrop-blur-sm rounded-2xl border border-teal-200">
-            <div className="flex-shrink-0 p-2 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-xl">
+            <div className="flex-shrink-0 p-2 bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 rounded-xl">
              <AlertCircle className="h-6 w-6 text-white" />
             </div>
             <div>

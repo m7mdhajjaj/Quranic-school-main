@@ -11,12 +11,12 @@ export const GenderBadge = ({ gender }: GenderBadgeProps) => {
   const getGenderStyle = () => {
     if (arabicGender === "ذكر") {
       return {
-        bg: "bg-gradient-to-r from-teal-500 to-cyan-500",
+        bg: "bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700",
         icon: "👨",
       };
     } else if (arabicGender === "أنثى") {
       return {
-        bg: "bg-gradient-to-r from-emerald-500 to-teal-500",
+        bg: "bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700",
         icon: "👩",
       };
     } else {

@@ -8,20 +8,20 @@ interface AnimatedBackgroundProps {
 export const AnimatedBackground = ({ variant = "teal" }: AnimatedBackgroundProps) => {
   const gradients = {
     teal: {
-      from: "from-teal-600",
-      via: "via-emerald-500",
-      to: "to-cyan-500",
+      from: "from-emerald-600",
+      via: "via-teal-700",
+      to: "to-slate-700",
       orb1: "bg-teal-400/30",
       orb2: "bg-emerald-300/20",
-      orb3: "bg-cyan-400/25",
+      orb3: "bg-slate-400/25",
     },
     emerald: {
       from: "from-emerald-600",
-      via: "via-green-500",
-      to: "to-teal-500",
+      via: "via-teal-700",
+      to: "to-slate-700",
       orb1: "bg-emerald-400/30",
-      orb2: "bg-green-300/20",
-      orb3: "bg-teal-400/25",
+      orb2: "bg-teal-300/20",
+      orb3: "bg-slate-400/25",
     },
     blue: {
       from: "from-blue-600",

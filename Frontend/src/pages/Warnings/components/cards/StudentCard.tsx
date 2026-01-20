@@ -41,7 +41,7 @@ export const StudentCard: React.FC<StudentCardProps> = React.memo(({
       padding="md"
     >
       {/* خط علوي ملون */}
-      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-500" />
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700" />
       
       <div className="relative z-10 pt-2">
         {/* رأس البطاقة - الاسم والصورة */}

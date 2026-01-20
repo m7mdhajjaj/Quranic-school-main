@@ -205,7 +205,7 @@ const SectionsTableComponent = ({
         {(onMonthChange && onYearChange && selectedMonth && selectedYear) && (
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-emerald-50 to-teal-50 p-4 rounded-xl border border-emerald-200">
             <div className="flex items-center gap-2">
-              <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-2 rounded-lg shadow-sm">
+              <div className="bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 p-2 rounded-lg shadow-sm">
                 <Calendar className="text-white" size={16} />
               </div>
               <div>
@@ -230,7 +230,7 @@ const SectionsTableComponent = ({
                 onClick={handleCurrentMonth}
                 className={`flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-lg transition-all duration-150 font-semibold text-xs shadow-sm active:scale-95 ${
                   isCurrentMonth
-                    ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white border border-emerald-600'
+                    ? 'bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white border border-emerald-600'
                     : 'bg-white hover:bg-emerald-50 active:bg-emerald-100 border border-emerald-300 hover:border-emerald-500 text-emerald-700'
                 }`}
                 type="button"
@@ -281,7 +281,7 @@ const SectionsTableComponent = ({
                 >
                   <div className={`p-3 rounded-lg ${
                     hasMarks
-                      ? 'bg-gradient-to-br from-emerald-500 to-teal-600'
+                      ? 'bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700'
                       : 'bg-gradient-to-br from-cyan-500 to-teal-600'
                   }`}>
                     {hasMarks ? (
@@ -326,7 +326,7 @@ const SectionsTableComponent = ({
             actionsHeader="الإجراءات"
             actionsWidth={isTeacher ? "180px" : undefined}
             className="shadow-none"
-            headerClassName="bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-white"
+            headerClassName="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white"
           />
         </div>
       </div>

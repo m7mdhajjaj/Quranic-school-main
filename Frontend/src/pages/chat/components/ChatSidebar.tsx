@@ -174,7 +174,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
                       }`}
                     >
                       <div className="ml-2">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white font-bold shadow-sm group-hover:scale-105 transition-transform">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 flex items-center justify-center text-white font-bold shadow-sm group-hover:scale-105 transition-transform">
                           {group.name.charAt(0)}
                         </div>
                       </div>

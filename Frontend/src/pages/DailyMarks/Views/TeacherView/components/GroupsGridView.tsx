@@ -41,7 +41,7 @@ export const GroupsGridView = ({
           >
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl shadow-lg">
+                <div className="p-3 bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 rounded-xl shadow-lg">
                   <Users className="text-white" size={24} />
                 </div>
               </div>

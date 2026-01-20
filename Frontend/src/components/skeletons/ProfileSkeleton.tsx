@@ -4,7 +4,7 @@ const ProfileSkeleton = () => {
   return (
     <div className="min-h-screen bg-gray-50" dir="rtl">
       {/* Hero Section Skeleton - matches ProfilePage design */}
-      <div className="relative bg-gradient-to-b from-teal-500 to-gray-50 overflow-hidden pb-16">
+      <div className="relative bg-gradient-to-b from-emerald-600 via-teal-700 to-slate-700 overflow-hidden pb-16">
         <div className="relative container mx-auto px-4 py-12">
           {/* Avatar Skeleton */}
           <div className="flex justify-center mb-8">

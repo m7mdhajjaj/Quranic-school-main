@@ -84,7 +84,7 @@ export const GroupsToolbar: React.FC<GroupsToolbarProps> = ({
           <div className="relative flex items-center bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-1.5 shadow-inner border border-gray-200" dir="rtl">
             {/* Animated Background Slider */}
             <div
-              className={`absolute top-1.5 bottom-1.5 w-[calc(50%-0.375rem)] bg-gradient-to-l from-emerald-500 to-emerald-600 rounded-lg shadow-lg transition-all duration-300 ease-out ${
+              className={`absolute top-1.5 bottom-1.5 w-[calc(50%-0.375rem)] bg-gradient-to-l from-emerald-600 via-teal-700 to-slate-700 rounded-lg shadow-lg transition-all duration-300 ease-out ${
                 viewMode === 'table' ? 'right-1.5' : 'left-1.5'
               }`}
             />

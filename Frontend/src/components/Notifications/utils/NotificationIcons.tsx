@@ -154,7 +154,7 @@ export const getNotificationColorClass = (type: NotificationType | string): stri
     // ========== General ==========
     general: 'from-slate-500 to-slate-600',
     system: 'from-gray-500 to-gray-600',
-    success: 'from-emerald-500 to-emerald-600',
+    success: 'from-emerald-600 via-teal-700 to-slate-700',
     alert: 'from-rose-500 to-rose-600',
     warning: 'from-amber-500 to-amber-600',
     message: 'from-sky-500 to-sky-600',
@@ -164,41 +164,41 @@ export const getNotificationColorClass = (type: NotificationType | string): stri
     reminder: 'from-orange-500 to-orange-600',
     
     // ========== Academic ==========
-    grade: 'from-emerald-500 to-teal-600',
-    daily_marks: 'from-teal-500 to-teal-600',
+    grade: 'from-emerald-600 via-teal-700 to-slate-700',
+    daily_marks: 'from-teal-600 via-slate-600 to-emerald-700',
     exam: 'from-indigo-500 to-indigo-600',
     attendance: 'from-amber-500 to-orange-600',
-    quran_progress: 'from-emerald-500 to-green-600',
+    quran_progress: 'from-emerald-600 via-teal-700 to-slate-700',
     memorization: 'from-green-500 to-green-600',
-    review: 'from-teal-500 to-cyan-600',
+    review: 'from-teal-600 via-slate-600 to-emerald-700',
     test_result: 'from-blue-500 to-indigo-600',
     student_update: 'from-cyan-500 to-sky-600',
     timetable: 'from-indigo-500 to-purple-600',
     
     // ========== Admin - Teacher ==========
-    teacher_added: 'from-emerald-500 to-green-600',
+    teacher_added: 'from-emerald-600 via-teal-700 to-slate-700',
     teacher_updated: 'from-blue-500 to-sky-600',
     teacher_deleted: 'from-rose-500 to-red-600',
     
     // ========== Admin - Student ==========
-    student_added: 'from-emerald-500 to-green-600',
+    student_added: 'from-emerald-600 via-teal-700 to-slate-700',
     student_updated: 'from-blue-500 to-sky-600',
     student_deleted: 'from-rose-500 to-red-600',
     
     // ========== Admin - Group ==========
-    group_assigned: 'from-emerald-500 to-teal-600',
+    group_assigned: 'from-emerald-600 via-teal-700 to-slate-700',
     group_updated: 'from-blue-500 to-indigo-600',
     group_deleted: 'from-rose-500 to-red-600',
     group_transferred: 'from-amber-500 to-yellow-600',
     
     // ========== Admin - Secretary ==========
-    secretary_added: 'from-emerald-500 to-green-600',
+    secretary_added: 'from-emerald-600 via-teal-700 to-slate-700',
     secretary_updated: 'from-blue-500 to-sky-600',
     secretary_deleted: 'from-rose-500 to-red-600',
     
     // ========== Admin - Actions ==========
     admin_action: 'from-slate-500 to-gray-600',
-    user_approval: 'from-emerald-500 to-green-600',
+    user_approval: 'from-emerald-600 via-teal-700 to-slate-700',
     role_change: 'from-purple-500 to-violet-600',
     system_update: 'from-blue-500 to-cyan-600',
     

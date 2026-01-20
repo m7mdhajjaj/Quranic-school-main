@@ -279,7 +279,7 @@ const AdminGroupStudentsView = ({
       {/* Note */}
       <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl p-6 border border-emerald-200">
         <div className="flex items-start gap-4">
-          <div className="flex-shrink-0 p-2 bg-gradient-to-br from-emerald-500 to-green-500 rounded-xl">
+          <div className="flex-shrink-0 p-2 bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 rounded-xl">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-6 w-6 text-white"

@@ -132,7 +132,7 @@ const ExpulsionCard: React.FC<{
           {onRestore && (
             <button
               onClick={onRestore}
-              className="mt-5 w-full flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-bold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98]"
+              className="mt-5 w-full flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 hover:from-emerald-700 hover:via-teal-800 hover:to-slate-800 text-white font-bold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98]"
             >
               <RotateCcw className="w-5 h-5" />
               <span>إرجاع الطالب للحلقة</span>

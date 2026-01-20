@@ -104,7 +104,7 @@ export const GroupCard: React.FC<GroupCardProps> = React.memo(({ group, onClick,
                   : occupancyPercentage >= 70
                   ? "[&::-webkit-progress-value]:bg-gradient-to-r [&::-webkit-progress-value]:from-amber-500 [&::-webkit-progress-value]:to-orange-500 [&::-webkit-progress-value]:rounded-full"
                   : activeStatus
-                  ? "[&::-webkit-progress-value]:bg-gradient-to-r [&::-webkit-progress-value]:from-emerald-500 [&::-webkit-progress-value]:to-teal-500 [&::-webkit-progress-value]:rounded-full"
+                  ? "[&::-webkit-progress-value]:bg-gradient-to-r [&::-webkit-progress-value]:from-emerald-600 [&::-webkit-progress-value]:via-teal-700 [&::-webkit-progress-value]:to-slate-700 [&::-webkit-progress-value]:rounded-full"
                   : "[&::-webkit-progress-value]:bg-gradient-to-r [&::-webkit-progress-value]:from-gray-400 [&::-webkit-progress-value]:to-gray-500 [&::-webkit-progress-value]:rounded-full"
               }`}
             />

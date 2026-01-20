@@ -28,7 +28,7 @@ export const TeacherToolbar = ({
   return (
     <>
       {/* Sticky Header Section */}
-      <div className="sticky top-0 z-30 bg-gradient-to-r from-emerald-500/95 to-teal-500/95 backdrop-blur-sm border-b border-emerald-600 shadow-sm py-4 px-4 sm:px-6 -mx-4 sm:mx-0 sm:rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition-all">
+      <div className="sticky top-0 z-30 bg-gradient-to-r from-emerald-600/95 via-teal-700/95 to-slate-700/95 backdrop-blur-sm border-b border-emerald-600 shadow-sm py-4 px-4 sm:px-6 -mx-4 sm:mx-0 sm:rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition-all">
         <div className="flex items-center gap-4 w-full md:w-auto">
           {onBackToGroups && (
             <button 

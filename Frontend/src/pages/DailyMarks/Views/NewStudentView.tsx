@@ -265,7 +265,7 @@ const ActiveSurahCard = memo<{
     ? 'bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700' 
     : 'bg-gradient-to-r from-slate-500 via-slate-600 to-slate-700';
   const progressColor = isMemorization 
-    ? 'bg-gradient-to-r from-emerald-500 via-teal-600 to-slate-600' 
+    ? 'bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700' 
     : 'bg-gradient-to-r from-slate-400 via-slate-500 to-slate-600';
   const titleColor = isMemorization ? 'text-emerald-700' : 'text-slate-700';
   

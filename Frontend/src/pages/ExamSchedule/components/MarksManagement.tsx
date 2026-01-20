@@ -374,7 +374,7 @@ const MarksManagement: React.FC<MarksManagementProps> = () => {
   return (
     <div className="space-y-6">
       {/* Header with Breadcrumb */}
-      <div className="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl shadow-lg p-6">
+      <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 rounded-xl shadow-lg p-6">
         <h2 className="text-2xl font-bold text-white flex items-center gap-3">
           <Users className="w-8 h-8" />
           إدارة علامات الطلاب
@@ -449,7 +449,7 @@ const MarksManagement: React.FC<MarksManagementProps> = () => {
                 }}
                 className="bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer transform hover:-translate-y-1 overflow-hidden group"
                 dir="rtl">
-                <div className="bg-gradient-to-l from-emerald-500 to-teal-600 p-6">
+                <div className="bg-gradient-to-l from-emerald-600 via-teal-700 to-slate-700 p-6">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">

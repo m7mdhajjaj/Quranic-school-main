@@ -106,7 +106,7 @@ export const DailyMarksPageSkeleton = () => (
     <div className="min-h-screen bg-gradient-to-b from-emerald-50 via-teal-50 to-green-50 py-6 px-3 md:px-4 lg:px-6" dir="rtl">
         <div className="w-full max-w-full mx-auto space-y-8 animate-pulse">
             {/* Header */}
-            <div className="flex items-center justify-between p-6 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl shadow-lg relative overflow-hidden">
+            <div className="flex items-center justify-between p-6 bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 rounded-2xl shadow-lg relative overflow-hidden">
                 <div className="space-y-4 relative z-10">
                    <div className="w-64 h-8 bg-white/20 rounded" />
                    <div className="w-48 md:w-96 h-4 bg-white/20 rounded" />

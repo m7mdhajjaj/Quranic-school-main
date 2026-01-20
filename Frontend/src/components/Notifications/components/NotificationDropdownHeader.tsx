@@ -16,7 +16,7 @@ export const NotificationDropdownHeader: React.FC<NotificationDropdownHeaderProp
   return (
     <div className="relative overflow-hidden">
       {/* Background with Gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-700" />
+      <div className="absolute inset-0 bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700" />
       
       {/* Decorative Elements */}
       <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />

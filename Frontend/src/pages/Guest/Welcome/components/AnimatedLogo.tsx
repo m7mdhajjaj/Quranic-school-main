@@ -57,7 +57,7 @@ export const AnimatedLogo = () => {
         </motion.div>
 
         {/* Inner Circle with Icon */}
-        <div className="absolute inset-2 rounded-full bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 flex items-center justify-center shadow-2xl">
+        <div className="absolute inset-2 rounded-full bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 flex items-center justify-center shadow-2xl">
           <FaQuran className="text-5xl md:text-6xl text-white drop-shadow-lg" />
         </div>
       </motion.div>

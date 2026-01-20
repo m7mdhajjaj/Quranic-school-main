@@ -28,7 +28,7 @@ export const StudentsTable = ({
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
       {/* Header */}
-      <div className="py-4 px-6 border-b border-emerald-600 flex justify-between items-center bg-gradient-to-r from-emerald-500 to-teal-500">
+      <div className="py-4 px-6 border-b border-emerald-600 flex justify-between items-center bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700">
         <h2 className="text-lg font-bold text-white">
           قائمة الطلاب <span className="text-emerald-100 font-normal text-sm mr-2">({students.length})</span>
         </h2>

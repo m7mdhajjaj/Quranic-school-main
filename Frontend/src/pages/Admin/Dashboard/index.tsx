@@ -147,7 +147,7 @@ const AdminDashboard = () => {
                   icon={<FaGraduationCap className="text-3xl text-white" />}
                   title="إجمالي الطلاب"
                   value={stats.totalStudents}
-                  color="bg-gradient-to-br from-emerald-500 to-emerald-600"
+                  color="bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700"
                   bgColor="bg-white"
                 />
 

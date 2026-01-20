@@ -97,7 +97,7 @@ export const SectionsGridView = ({
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             {/* Section Info */}
             <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl shadow-sm shrink-0">
+              <div className="p-2.5 bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 rounded-xl shadow-sm shrink-0">
                 <Users className="text-white" size={22} />
               </div>
               <div>
@@ -155,7 +155,7 @@ export const SectionsGridView = ({
             <Button
               onClick={onAddSection}
               variant="primary"
-              className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-sm hover:shadow transition-all font-medium h-9 px-4 text-sm"
+              className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 hover:from-emerald-700 hover:via-teal-800 hover:to-slate-800 text-white shadow-sm hover:shadow transition-all font-medium h-9 px-4 text-sm"
               type="button"
             >
               <Plus size={16} className="ml-1.5" />

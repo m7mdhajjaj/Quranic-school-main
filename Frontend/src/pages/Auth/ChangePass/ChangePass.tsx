@@ -76,7 +76,7 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
                 showGlow={false}
                 className="!h-14 !w-14 sm:!h-16 sm:!w-16 lg:!h-20 lg:!w-20"
               />
-              <div className="absolute -bottom-1 -right-1 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full p-1 sm:p-1.5 shadow-lg shadow-emerald-500/50 animate-pulse">
+              <div className="absolute -bottom-1 -right-1 bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 rounded-full p-1 sm:p-1.5 shadow-lg shadow-emerald-500/50 animate-pulse">
                 <Lock className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
               </div>
             </div>

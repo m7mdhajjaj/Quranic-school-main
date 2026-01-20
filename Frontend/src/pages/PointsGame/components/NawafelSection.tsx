@@ -17,10 +17,10 @@ const NAWAFEL_ITEMS: Array<{
 ];
 
 const ACTIVE_GRADIENTS = [
-  "from-emerald-500 to-teal-600",
-  "from-emerald-600 to-cyan-600",
-  "from-teal-500 to-emerald-600",
-  "from-teal-600 to-cyan-600",
+  "from-emerald-600 via-teal-700 to-slate-700",
+  "from-emerald-700 via-slate-600 to-teal-700",
+  "from-teal-600 via-emerald-700 to-slate-700",
+  "from-slate-600 via-teal-700 to-emerald-700",
 ] as const;
 
 export const NawafelSection = ({ nawafel, onToggle }: NawafelSectionProps) => {

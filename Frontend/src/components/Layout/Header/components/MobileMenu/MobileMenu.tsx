@@ -148,7 +148,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                           onClick={handleNavClick}
                           className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-all duration-300 ${
                             isSubActive 
-                              ? "bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white shadow-lg shadow-emerald-500/25 font-bold" 
+                              ? "bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white shadow-lg shadow-emerald-500/25 font-bold" 
                               : "text-gray-600 hover:bg-white hover:shadow-sm font-medium"
                           }`}
                         >
@@ -182,7 +182,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
           onClick={handleNavClick}
           className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300 ${
             isActive
-              ? "bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white shadow-xl shadow-emerald-500/30"
+              ? "bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white shadow-xl shadow-emerald-500/30"
               : "bg-white/70 backdrop-blur-sm text-gray-700 hover:bg-white hover:shadow-lg border border-white/50"
           }`}
         >
@@ -279,7 +279,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                   className="mb-6"
                 >
                   <motion.div 
-                    className="relative p-5 rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 shadow-2xl shadow-emerald-500/30 overflow-hidden"
+                    className="relative p-5 rounded-2xl bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 shadow-2xl shadow-emerald-500/30 overflow-hidden"
                     whileHover={{ scale: 1.02 }}
                   >
                     {/* Decorative Pattern */}

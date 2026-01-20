@@ -575,7 +575,7 @@ export const AiChatbot: React.FC = () => {
                         whileHover={{ scale: 1.02, y: -2 }}
                         className={`max-w-[85%] p-4 rounded-2xl text-right shadow-lg relative overflow-hidden ${
                           msg.role === 'user'
-                            ? 'bg-gradient-to-br from-emerald-500 via-teal-500 to-emerald-600 text-white rounded-bl-sm border border-emerald-400/20'
+                            ? 'bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 text-white rounded-bl-sm border border-emerald-400/20'
                             : 'bg-white border border-gray-100 text-gray-800 rounded-br-sm'
                         }`}
                         dir="rtl"
@@ -894,7 +894,7 @@ export const AiChatbot: React.FC = () => {
                       className={`p-4 rounded-2xl flex items-center justify-center transition-all duration-300 relative overflow-hidden min-w-[60px] ${
                         !input.trim() || isListening
                           ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                          : 'bg-gradient-to-br from-emerald-500 via-teal-500 to-emerald-600 text-white hover:shadow-2xl shadow-lg'
+                          : 'bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 text-white hover:shadow-2xl shadow-lg'
                       }`}
                       style={
                         input.trim() && !isListening

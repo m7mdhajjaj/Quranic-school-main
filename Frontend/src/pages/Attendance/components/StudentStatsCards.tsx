@@ -101,7 +101,7 @@ export const WeeklyStatsCard = ({ totalDays, absenceCount, label = "إجمالي
       badgeBorder: "border-emerald-200",
       badgeText: "text-emerald-700",
       titleText: "text-emerald-700",
-      valueGradient: "from-emerald-600 to-teal-600",
+      valueGradient: "from-emerald-600 via-teal-700 to-slate-700",
       unitText: "text-emerald-500",
       subtitleText: "text-emerald-600/70"
     }}

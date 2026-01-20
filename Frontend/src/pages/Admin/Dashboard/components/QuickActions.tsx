@@ -20,15 +20,15 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
     {
       icon: FaUserPlus,
       label: "إضافة طالب",
-      color: "from-emerald-500 to-green-600",
-      hoverColor: "hover:from-emerald-600 hover:to-green-700",
+      color: "from-emerald-600 via-teal-700 to-slate-700",
+      hoverColor: "hover:from-emerald-700 hover:via-teal-800 hover:to-slate-800",
       onClick: onAddStudent,
     },
     {
       icon: FaChalkboardTeacher,
       label: "إضافة معلم",
-      color: "from-teal-500 to-emerald-600",
-      hoverColor: "hover:from-teal-600 hover:to-emerald-700",
+      color: "from-teal-600 via-slate-600 to-emerald-700",
+      hoverColor: "hover:from-teal-700 hover:via-slate-700 hover:to-emerald-800",
       onClick: onAddTeacher,
     },
     {

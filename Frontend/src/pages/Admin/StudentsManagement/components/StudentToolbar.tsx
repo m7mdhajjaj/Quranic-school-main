@@ -91,7 +91,7 @@ const ViewModeToggle = memo(
         dir="rtl"
       >
         <div
-          className={`absolute top-1.5 bottom-1.5 w-[calc(50%-0.375rem)] bg-gradient-to-l from-emerald-500 to-emerald-600 rounded-lg shadow-lg transition-all duration-300 ease-out ${
+          className={`absolute top-1.5 bottom-1.5 w-[calc(50%-0.375rem)] bg-gradient-to-l from-emerald-600 via-teal-700 to-slate-700 rounded-lg shadow-lg transition-all duration-300 ease-out ${
             VIEW_MODE_CONFIG[mode].position
           }`}
         />

@@ -40,7 +40,7 @@ export const SectionDetailsView = ({
         <div className="p-4">
           <div className="flex items-center justify-between mb-3 flex-wrap gap-3">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg">
+              <div className="p-2 bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 rounded-lg">
                 <FileText className="text-white" size={20} />
               </div>
               <div>

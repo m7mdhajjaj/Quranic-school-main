@@ -28,7 +28,7 @@ const IntroductionCard = ({
     },
     emerald: {
       border: 'border-emerald-100',
-      iconGradient: 'from-emerald-500 to-teal-500',
+      iconGradient: 'from-emerald-600 via-teal-700 to-slate-700',
       titleColor: 'text-emerald-800',
       titleHover: 'group-hover:text-emerald-700',
       contentBg: 'from-emerald-50 to-teal-50',
@@ -48,10 +48,10 @@ const IntroductionCard = ({
     },
     teal: {
       border: 'border-teal-100',
-      iconGradient: 'from-teal-500 to-cyan-500',
+      iconGradient: 'from-emerald-600 via-teal-700 to-slate-700',
       titleColor: 'text-teal-800',
       titleHover: 'group-hover:text-teal-700',
-      contentBg: 'from-teal-50 to-cyan-50',
+      contentBg: 'from-teal-50 to-slate-50',
       contentBorder: 'border-teal-500',
       highlightText: 'text-teal-700',
       highlightBg: 'bg-teal-100',

@@ -13,7 +13,7 @@ export const ExamActions: React.FC<{
     <div className="flex items-center justify-center gap-2">
       {/* زر التعديل */}
       <button
-        className="flex items-center gap-1.5 text-sm px-3 py-2 bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 text-white rounded-lg transition-all hover:shadow-lg font-medium transform hover:scale-105"
+        className="flex items-center gap-1.5 text-sm px-3 py-2 bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 hover:from-emerald-700 hover:via-teal-800 hover:to-slate-800 text-white rounded-lg transition-all hover:shadow-lg font-medium transform hover:scale-105"
         onClick={() => onEditExam(exam)}
         title="تعديل الامتحان"
       >

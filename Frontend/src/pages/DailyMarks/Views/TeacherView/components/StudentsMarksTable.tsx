@@ -246,7 +246,7 @@ export const StudentsMarksTable = ({
         hoverable={true}
         bordered={false}
         showHeader={true}
-        headerClassName="bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-white shadow-lg"
+        headerClassName="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white shadow-lg"
         className="rounded-2xl overflow-hidden"
       />
     </div>

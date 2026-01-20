@@ -36,7 +36,7 @@ const Goals = () => {
             {/* Goal 1 */}
             <Card
               className="overflow-hidden flex flex-col md:flex-row bg-white border border-slate-200/60 shadow-sm hover:shadow-xl hover:border-emerald-200 transition-all duration-300 rounded-2xl">
-              <div className="bg-gradient-to-br from-emerald-600 to-teal-600 text-white p-6 md:w-1/4 flex justify-center items-center">
+              <div className="bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 text-white p-6 md:w-1/4 flex justify-center items-center">
                 <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
                   <Users className="w-10 h-10 text-white" />
                 </div>
