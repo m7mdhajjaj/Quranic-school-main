@@ -7,6 +7,7 @@ import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { I18nManager, Platform } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import "react-native-reanimated";
 import "./global.css";
 import Toast from "react-native-toast-message";
@@ -29,9 +30,12 @@ function RootLayoutNav() {
   useEffect(() => {
     if (isLoading) return;
 
+    // Prevent redirect if segments are not yet ready
+    if (segments.length === 0) return;
+
     const inAuthGroup = segments[0] === "(auth)";
     const inWelcome = segments[0] === "welcome";
-    const inHome = segments[0] === "home";
+    const inHome = segments[0] === "home" || segments.includes("home");
 
     if (!isAuthenticated && !inAuthGroup && !inWelcome && !inHome) {
       // Redirect to welcome page if not authenticated
@@ -66,8 +70,10 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <RootLayoutNav />
-    </AuthProvider>
+    <SafeAreaProvider>
+      <AuthProvider>
+        <RootLayoutNav />
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 }

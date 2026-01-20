@@ -10,9 +10,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   Switch,
+  ScrollView,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { ArrowRight, Eye, EyeOff, Info } from "lucide-react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { useLoginLogic } from "./hooks";
 import ForgotPasswordModal from "../../../components/ForgotPasswordModal";
 
@@ -34,45 +37,56 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 150 : 200}>
-      {/* Back to Welcome Button */}
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => router.push("/welcome")}
-        activeOpacity={0.7}>
-        <ArrowRight size={20} color="#059669" />
-        <Text style={styles.backButtonText}>العودة للصفحة الرئيسية</Text>
-      </TouchableOpacity>
+    <LinearGradient
+      colors={["#ecfdf5", "#d1fae5", "#a7f3d0"]}
+      style={styles.container}>
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={Platform.OS === "ios" ? "padding" : "padding"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}>
+        {/* Back to Welcome Button */}
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.push("/welcome")}
+          activeOpacity={0.7}>
+          <ArrowRight size={24} color="#059669" />
+        </TouchableOpacity>
 
-      <View style={styles.content}>
-        {/* Logo Section */}
-        <View style={styles.logoContainer}>
-          {logoLoading ? (
-            <ActivityIndicator size="large" color="#059669" />
-          ) : logoUrl ? (
-            <Image source={{ uri: logoUrl }} style={styles.logo} />
-          ) : (
-            <View style={styles.logoPlaceholder}>
-              <Text style={styles.logoText}>📖</Text>
-            </View>
-          )}
-          <Text style={styles.appName}>مدرسة القرآن الكريم</Text>
-          <Text style={styles.appSubtitle}>نظام إدارة المدرسة</Text>
-        </View>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}>
+          {/* Logo Section */}
+          <Animated.View
+            entering={FadeInDown.delay(200).duration(1000).springify()}
+            style={styles.logoContainer}>
+            {logoLoading ? (
+              <ActivityIndicator size="large" color="#059669" />
+            ) : logoUrl ? (
+              <Image source={{ uri: logoUrl }} style={styles.logo} />
+            ) : (
+              <View style={styles.logoPlaceholder}>
+                <Text style={styles.logoText}>📖</Text>
+              </View>
+            )}
+            <Text style={styles.appName}>مدرسة القرآن الكريم</Text>
+            <Text style={styles.appSubtitle}>نظام إدارة المدرسة</Text>
+          </Animated.View>
 
-        {/* Welcome Text */}
-        <View style={styles.welcomeContainer}>
-          <Text style={styles.welcomeTitle}>مرحباً بعودتك</Text>
-          <Text style={styles.welcomeSubtitle}>
-            سجل الدخول لإدارة بياناتك
-          </Text>
-        </View>
+          {/* Welcome Text */}
+          <Animated.View
+            entering={FadeInDown.delay(400).duration(1000).springify()}
+            style={styles.welcomeContainer}>
+            <Text style={styles.welcomeTitle}>مرحباً بعودتك</Text>
+            <Text style={styles.welcomeSubtitle}>
+              سجل الدخول لإدارة بياناتك
+            </Text>
+          </Animated.View>
 
           {/* Login Card */}
-          <View style={styles.card}>
+          <Animated.View
+            entering={FadeInUp.delay(600).duration(1000).springify()}
+            style={styles.card}>
             {/* User ID Input */}
             <View style={styles.inputContainer}>
               <Text style={styles.label}>رقم المستخدم</Text>
@@ -127,9 +141,7 @@ const Login = () => {
                   thumbColor={rememberMe ? "#10b981" : "#f3f4f6"}
                 />
                 <Text style={styles.rememberMeText}>تذكرني</Text>
-                <TouchableOpacity
-                  style={styles.infoButton}
-                  activeOpacity={0.7}>
+                <TouchableOpacity style={styles.infoButton} activeOpacity={0.7}>
                   <Info size={14} color="#10b981" />
                 </TouchableOpacity>
               </View>
@@ -150,30 +162,38 @@ const Login = () => {
 
             {/* Sign In Button */}
             <TouchableOpacity
-              style={[
-                styles.signInButton,
-                isLoading && styles.signInButtonDisabled,
-              ]}
               onPress={handleSubmit}
-              disabled={isLoading}>
-              {isLoading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <>
-                  <Text style={styles.signInButtonText}>تسجيل الدخول</Text>
-                  <Text style={styles.signInButtonIcon}>←</Text>
-                </>
-              )}
+              disabled={isLoading}
+              activeOpacity={0.8}
+              style={styles.signInButtonContainer}>
+              <LinearGradient
+                colors={["#10b981", "#059669"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={[
+                  styles.signInButton,
+                  isLoading && styles.signInButtonDisabled,
+                ]}>
+                {isLoading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <>
+                    <Text style={styles.signInButtonText}>تسجيل الدخول</Text>
+                    <Text style={styles.signInButtonIcon}>←</Text>
+                  </>
+                )}
+              </LinearGradient>
             </TouchableOpacity>
-          </View>
-        </View>
+          </Animated.View>
+        </ScrollView>
 
-      {/* Forgot Password Modal */}
-      <ForgotPasswordModal
-        visible={showForgotPasswordModal}
-        onClose={() => setShowForgotPasswordModal(false)}
-      />
-    </KeyboardAvoidingView>
+        {/* Forgot Password Modal */}
+        <ForgotPasswordModal
+          visible={showForgotPasswordModal}
+          onClose={() => setShowForgotPasswordModal(false)}
+        />
+      </KeyboardAvoidingView>
+    </LinearGradient>
   );
 };
 
@@ -182,137 +202,142 @@ export default Login;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#d1fae5", // Light green background
   },
   backButton: {
     position: "absolute",
-    top: 50,
+    top: Platform.OS === "ios" ? 60 : 50,
     left: 24,
-    flexDirection: "row",
+    width: 45,
+    height: 45,
+    justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
-    borderRadius: 12,
-    gap: 8,
+    backgroundColor: "#fff",
+    borderRadius: 25,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    zIndex: 10,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+    zIndex: 50,
   },
-  backButtonText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#059669",
-  },
-  content: {
-    flex: 1,
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 24,
-    paddingTop: 100,
+    paddingTop: 80,
     paddingBottom: 40,
   },
   logoContainer: {
     alignItems: "center",
-    marginBottom: 32,
+    marginBottom: 40,
   },
   logo: {
     width: 80,
     height: 80,
     borderRadius: 20,
-    marginBottom: 12,
+    marginBottom: 16,
   },
   logoPlaceholder: {
     width: 80,
     height: 80,
-    borderRadius: 20,
-    backgroundColor: "#059669",
+    borderRadius: 24,
+    backgroundColor: "rgba(255,255,255,0.9)",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 16,
+    shadowColor: "#059669",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 10,
   },
   logoText: {
     fontSize: 40,
   },
   appName: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#065f46",
-    marginBottom: 4,
+    fontSize: 28,
+    fontWeight: "800",
+    color: "#064e3b",
+    marginBottom: 8,
+    letterSpacing: 0.5,
   },
   appSubtitle: {
-    fontSize: 14,
+    fontSize: 16,
     color: "#047857",
+    fontWeight: "500",
   },
   welcomeContainer: {
     alignItems: "center",
-    marginBottom: 24,
+    marginBottom: 32,
+    width: "100%",
   },
   welcomeTitle: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#111827",
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#1f2937",
     marginBottom: 8,
+    textAlign: "center",
   },
   welcomeSubtitle: {
-    fontSize: 14,
+    fontSize: 15,
     color: "#6b7280",
+    textAlign: "center",
+    lineHeight: 22,
   },
   card: {
     width: "100%",
-    backgroundColor: "#ffffff",
-    borderRadius: 24,
-    padding: 24,
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    borderRadius: 32,
+    padding: 28,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
-      height: 4,
+      height: 20,
     },
     shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
+    shadowRadius: 24,
+    elevation: 8,
   },
   inputContainer: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   label: {
     fontSize: 14,
     fontWeight: "600",
     color: "#374151",
     marginBottom: 8,
+    marginLeft: 4,
   },
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#f9fafb",
-    borderRadius: 12,
-    borderWidth: 1,
+    borderRadius: 16,
+    borderWidth: 1.5,
     borderColor: "#e5e7eb",
     paddingHorizontal: 16,
+    height: 56,
   },
   inputIcon: {
     fontSize: 20,
     marginRight: 12,
+    color: "#9ca3af",
   },
   input: {
     flex: 1,
-    height: 50,
+    height: "100%",
     fontSize: 16,
     color: "#111827",
-    paddingRight: 8,
   },
   eyeButton: {
-    padding: 4,
-    marginLeft: 8,
+    padding: 8,
   },
   optionsContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 24,
   },
   rememberMeContainer: {
     flexDirection: "row",
@@ -321,7 +346,7 @@ const styles = StyleSheet.create({
   },
   rememberMeText: {
     fontSize: 14,
-    color: "#374151",
+    color: "#4b5563",
     fontWeight: "500",
   },
   infoButton: {
@@ -330,51 +355,68 @@ const styles = StyleSheet.create({
   forgotPasswordText: {
     fontSize: 14,
     color: "#059669",
-    fontWeight: "500",
+    fontWeight: "600",
   },
   errorContainer: {
-    backgroundColor: "#fee2e2",
-    borderRadius: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fef2f2",
+    borderRadius: 12,
     padding: 12,
-    marginBottom: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: "#fecaca",
   },
   errorText: {
-    color: "#dc2626",
+    color: "#ef4444",
     fontSize: 14,
-    textAlign: "center",
+    marginLeft: 8,
+    flex: 1,
+  },
+  signInButtonContainer: {
+    borderRadius: 16,
+    overflow: "hidden",
+    shadowColor: "#059669",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
   },
   signInButton: {
-    backgroundColor: "#059669",
-    borderRadius: 12,
-    height: 50,
+    height: 56,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
     gap: 8,
   },
   signInButtonDisabled: {
-    opacity: 0.6,
+    opacity: 0.7,
   },
   signInButtonText: {
     color: "#ffffff",
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "bold",
+    letterSpacing: 0.5,
   },
   signInButtonIcon: {
     color: "#ffffff",
-    fontSize: 18,
+    fontSize: 20,
+    fontWeight: "bold",
   },
   signUpContainer: {
     flexDirection: "row",
-    marginTop: 24,
+    justifyContent: "center",
+    marginTop: 32,
+    alignItems: "center",
   },
   signUpText: {
-    fontSize: 14,
+    fontSize: 15,
     color: "#6b7280",
   },
   signUpLink: {
-    fontSize: 14,
+    fontSize: 15,
     color: "#059669",
-    fontWeight: "600",
+    fontWeight: "700",
+    marginLeft: 4,
   },
 });

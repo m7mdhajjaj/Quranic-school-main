@@ -8,13 +8,14 @@ import {
   Animated,
   StatusBar,
 } from "react-native";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { BookOpen, ArrowLeft, ChevronDown } from "lucide-react-native";
 
 const { width, height } = Dimensions.get("window");
 
 const WelcomeScreen = () => {
+  const router = useRouter();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const glowAnim = useRef(new Animated.Value(1)).current;
@@ -52,7 +53,7 @@ const WelcomeScreen = () => {
           duration: 2500,
           useNativeDriver: true,
         }),
-      ])
+      ]),
     ).start();
 
     // Scroll indicator animation
@@ -68,13 +69,17 @@ const WelcomeScreen = () => {
           duration: 1500,
           useNativeDriver: true,
         }),
-      ])
+      ]),
     ).start();
   }, []);
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor="transparent"
+        translucent
+      />
 
       {/* Gradient Background - بدلاً من الفيديو */}
       <LinearGradient
@@ -162,9 +167,7 @@ const WelcomeScreen = () => {
 
         {/* CTA Button */}
         <Link href="/(auth)/login" asChild>
-          <TouchableOpacity
-            style={styles.ctaButton}
-            activeOpacity={0.8}>
+          <TouchableOpacity style={styles.ctaButton} activeOpacity={0.8}>
             <LinearGradient
               colors={["#10b981", "#059669"]}
               start={{ x: 0, y: 0 }}
@@ -177,27 +180,26 @@ const WelcomeScreen = () => {
         </Link>
 
         {/* Scroll Indicator - اكتشف المزيد */}
-        <Link href="/home" asChild>
-          <TouchableOpacity
-            style={styles.scrollIndicator}
-            activeOpacity={0.6}
-            hitSlop={{ top: 20, bottom: 20, left: 40, right: 40 }}>
-            <Animated.View
-              style={{
-                transform: [
-                  {
-                    translateY: scrollIndicatorAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0, 10],
-                    }),
-                  },
-                ],
-              }}>
-              <ChevronDown size={32} color="#d1fae5" />
-            </Animated.View>
-            <Text style={styles.scrollText}>اكتشف المزيد</Text>
-          </TouchableOpacity>
-        </Link>
+        <TouchableOpacity
+          onPress={() => router.push("/home")}
+          style={styles.scrollIndicator}
+          activeOpacity={0.6}
+          hitSlop={{ top: 20, bottom: 20, left: 40, right: 40 }}>
+          <Animated.View
+            style={{
+              transform: [
+                {
+                  translateY: scrollIndicatorAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, 10],
+                  }),
+                },
+              ],
+            }}>
+            <ChevronDown size={32} color="#d1fae5" />
+          </Animated.View>
+          <Text style={styles.scrollText}>اكتشف المزيد</Text>
+        </TouchableOpacity>
       </Animated.View>
     </View>
   );
