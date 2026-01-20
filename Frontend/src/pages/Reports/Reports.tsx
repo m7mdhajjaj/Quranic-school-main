@@ -23,10 +23,10 @@ const Reports: React.FC = () => {
   } = useReportData();
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100 pb-8">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20 pb-8" dir="rtl">
       <ReportHeader />
 
-      <div className="max-w-7xl mx-auto px-4 space-y-6">
+      <div className="container mx-auto px-4 md:px-6 lg:px-8 space-y-6">
         <ReportFilters
           selectedMonth={selectedMonth}
           selectedYear={selectedYear}
@@ -41,7 +41,7 @@ const Reports: React.FC = () => {
         {loading ? (
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
-            <p className="mt-4 text-gray-600">جاري تحميل التقارير...</p>
+            <p className="mt-4 text-slate-600">جاري تحميل التقارير...</p>
           </div>
         ) : (
           <ReportChart

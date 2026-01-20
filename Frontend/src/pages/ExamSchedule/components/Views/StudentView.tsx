@@ -40,7 +40,7 @@ export const StudentView: React.FC<StudentViewProps> = ({
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 max-w-[98%] mx-auto">
       {/* شريط البحث للطالب */}
       <ExamToolbar
         query={query}
@@ -58,16 +58,16 @@ export const StudentView: React.FC<StudentViewProps> = ({
       />
 
       {/* جدول الامتحانات */}
-      <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl border-2 border-emerald-300/70 overflow-hidden">
-        <div className="p-5 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200/60 overflow-hidden">
+        <div className="p-5 bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700">
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
             📖 امتحاناتي
           </h2>
-          <p className="text-emerald-50 text-sm mt-1">
+          <p className="text-white/80 text-sm mt-1">
             تابع امتحاناتك القادمة واطلع على نتائجك
           </p>
         </div>
-        <div className="border-t-2 border-emerald-200">
+        <div className="border-t border-slate-200">
           <Table
             columns={columns}
             data={exams}

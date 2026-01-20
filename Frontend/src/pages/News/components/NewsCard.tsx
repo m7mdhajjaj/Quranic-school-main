@@ -125,9 +125,9 @@ const NewsCard = memo(({
         variant="gradient"
         padding="none"
         hover={true}
-        className="relative group overflow-hidden animate-fadeIn bg-white border border-emerald-200 shadow-md hover:shadow-lg"
+        className="relative group overflow-hidden animate-fadeIn bg-white border border-slate-200/60 shadow-sm hover:shadow-xl hover:border-emerald-200 transition-all duration-300 rounded-2xl"
       >
-      <div className="relative overflow-hidden h-56 sm:h-64 md:h-72 flex items-center justify-center bg-gray-50">
+      <div className="relative overflow-hidden h-72 sm:h-80 md:h-96 flex items-center justify-center bg-gradient-to-br from-slate-100 to-emerald-50">
         {/* Image Skeleton */}
         {imageLoading && !imageError && (
           <div className="absolute inset-0">
@@ -157,14 +157,14 @@ const NewsCard = memo(({
             <>
               <button
                 onClick={handlePrevImage}
-                className="absolute left-3 top-1/2 -translate-y-1/2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full p-2.5 transition-all z-30 backdrop-blur-sm shadow-xl hover:scale-110 opacity-90 hover:opacity-100"
+                className="absolute left-3 top-1/2 -translate-y-1/2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-full p-2.5 transition-all z-30 backdrop-blur-sm shadow-xl hover:scale-110 opacity-90 hover:opacity-100"
                 aria-label="الصورة السابقة"
               >
                 <ChevronLeft size={24} strokeWidth={3} />
               </button>
               <button
                 onClick={handleNextImage}
-                className="absolute right-3 top-1/2 -translate-y-1/2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full p-2.5 transition-all z-30 backdrop-blur-sm shadow-xl hover:scale-110 opacity-90 hover:opacity-100"
+                className="absolute right-3 top-1/2 -translate-y-1/2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-full p-2.5 transition-all z-30 backdrop-blur-sm shadow-xl hover:scale-110 opacity-90 hover:opacity-100"
                 aria-label="الصورة التالية"
               >
                 <ChevronRight size={24} strokeWidth={3} />
@@ -172,7 +172,7 @@ const NewsCard = memo(({
               
               {/* Image Counter */}
               <div className="absolute top-3 left-3 z-30">
-                <div className="bg-emerald-600 text-white text-xs font-semibold px-2 py-1 rounded-md shadow">
+                <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-semibold px-2.5 py-1 rounded-lg shadow-lg">
                   {currentImageIndex + 1} / {images.length}
                 </div>
               </div>
@@ -218,41 +218,41 @@ const NewsCard = memo(({
             </div>
           )}
         </div>
-        <div className="p-5 flex flex-col gap-3">
-          <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+        <div className="p-5 flex flex-col gap-3 bg-gradient-to-br from-white via-white to-emerald-50/30">
+          <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
             <div className="flex items-center gap-2 flex-wrap">
               {/* Visibility Badge */}
               {news.visibility === 'group' ? (
-                <span className="flex items-center gap-1 bg-blue-50 text-blue-700 px-2 py-1 rounded-md border border-blue-100" title="طلاب المعلم">
+                <span className="flex items-center gap-1 bg-gradient-to-r from-blue-50 to-blue-100/50 text-blue-700 px-2.5 py-1 rounded-lg border border-blue-200/60 font-medium" title="طلاب المعلم">
                   <Users size={12} />
                   <span>طلاب المعلم</span>
                 </span>
               ) : (
-                <span className="flex items-center gap-1 bg-gray-100 text-gray-600 px-2 py-1 rounded-md border border-gray-200" title="عام للجميع">
+                <span className="flex items-center gap-1 bg-gradient-to-r from-slate-50 to-slate-100/50 text-slate-600 px-2.5 py-1 rounded-lg border border-slate-200/60 font-medium" title="عام للجميع">
                   <Globe size={12} />
                   <span>عام</span>
                 </span>
               )}
 
               {authorName && (
-                <span className="flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2 py-1 rounded-md border border-emerald-100">
+                <span className="flex items-center gap-1 bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-700 px-2.5 py-1 rounded-lg border border-emerald-200/60">
                   <span className="font-medium">نشر بواسطة:</span> {authorName}
                 </span>
               )}
             </div>
             <AddedAgo date={displayDate} />
           </div>
-          <h2 className="text-xl font-bold text-gray-800 line-clamp-2 leading-tight">
+          <h2 className="text-xl font-bold text-slate-800 line-clamp-2 leading-tight">
             {news.title}
           </h2>
-          <p className="text-gray-600 text-sm leading-relaxed line-clamp-3">
+          <p className="text-slate-600 text-sm leading-relaxed line-clamp-3">
             {news.content}
           </p>
           <div className="flex justify-end mt-2">
             <Button
               variant="primary"
               size="md"
-              className="rounded-xl shadow-md hover:shadow-lg group/btn px-6 py-2.5 text-sm"
+              className="rounded-xl shadow-md hover:shadow-lg group/btn px-6 py-2.5 text-sm bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 border-0"
               onClick={handleOpenGallery}
             >
               <span>اقرأ المزيد</span>

@@ -58,17 +58,19 @@ const News = () => {
   // 2. بعد التحميل: تظهر البيانات أو رسالة فارغة
   if (isLoading && newsItems.length === 0) {
     return (
-      <main className="container mx-auto px-4 py-6" dir="rtl">
+      <main className="min-h-screen bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20" dir="rtl">
         <NewsHeader />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
-          {[1, 2, 3, 4].map((i) => (
-            <CardSkeleton
-              key={i}
-              hasImage={true}
-              imageHeight="h-64 sm:h-72 md:h-80"
-              contentLines={3}
-            />
-          ))}
+        <div className="max-w-[98%] mx-auto px-4 md:px-6 lg:px-8 py-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+            {[1, 2, 3, 4].map((i) => (
+              <CardSkeleton
+                key={i}
+                hasImage={true}
+                imageHeight="h-64 sm:h-72 md:h-80"
+                contentLines={3}
+              />
+            ))}
+          </div>
         </div>
       </main>
     );
@@ -76,12 +78,12 @@ const News = () => {
 
   // بعد التحميل: تظهر الصفحة كاملة
   return (
-    <main className="container mx-auto px-4 py-6" dir="rtl">
+    <main className="min-h-screen bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20" dir="rtl">
       <Suspense fallback={null}>
         <NewsResourceHints newsItems={newsItems} />
       </Suspense>
       <NewsHeader />
-      <div className="space-y-4">
+      <div className="max-w-[98%] mx-auto px-4 md:px-6 lg:px-8 py-6 space-y-6">
         <NewsFilters
           searchTerm={searchTerm}
           sortOrder={sortOrder}
@@ -95,32 +97,32 @@ const News = () => {
           onAddNews={handleOpenModal}
           isTeacherOrAdmin={isTeacherOrAdmin}
         />
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {filteredNews.length === 0 ? (
-          <NewsEmptyState
-            hasError={!!error && newsItems.length === 0}
-            error={error}
-            hasNews={newsItems.length > 0}
-            isFiltered={newsItems.length > 0 && filteredNews.length === 0}
-            isTeacherOrAdmin={isTeacherOrAdmin}
-            onRetry={handleOpenModal}
-            onAddNews={handleOpenModal}
-          />
-        ) : (
-          filteredNews.map((item, index) => (
-            <NewsCard
-              key={`news-${item._id}`}
-              news={item}
-              index={index}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {filteredNews.length === 0 ? (
+            <NewsEmptyState
+              hasError={!!error && newsItems.length === 0}
+              error={error}
+              hasNews={newsItems.length > 0}
+              isFiltered={newsItems.length > 0 && filteredNews.length === 0}
               isTeacherOrAdmin={isTeacherOrAdmin}
-              currentUserId={currentUser?._id}
-              currentUserRole={currentUser?.role}
-              onEdit={handleEditNews}
-              onDelete={handleDeleteNews}
+              onRetry={handleOpenModal}
+              onAddNews={handleOpenModal}
             />
-          ))
-        )}
+          ) : (
+            filteredNews.map((item, index) => (
+              <NewsCard
+                key={`news-${item._id}`}
+                news={item}
+                index={index}
+                isTeacherOrAdmin={isTeacherOrAdmin}
+                currentUserId={currentUser?._id}
+                currentUserRole={currentUser?.role}
+                onEdit={handleEditNews}
+                onDelete={handleDeleteNews}
+              />
+            ))
+          )}
+        </div>
       </div>
       <Suspense fallback={null}>
         <NewsModal

@@ -102,10 +102,10 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
     }
   };
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 max-w-[98%] mx-auto">
       {/* Bulk Delete Bar */}
       {selectedExams.size > 0 && (
-        <div className="bg-gradient-to-r from-red-50 to-rose-50 border-2 border-red-200 rounded-xl p-4 flex items-center justify-between animate-slideDown">
+        <div className="bg-gradient-to-r from-red-50 to-rose-50 border border-red-200 rounded-xl p-4 flex items-center justify-between animate-slideDown">
           <div className="flex items-center gap-3">
             <div className="bg-red-100 p-2 rounded-lg">
               <Trash2 className="w-5 h-5 text-red-600" />
@@ -122,7 +122,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={() => setSelectedExams(new Set())}
-              className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-all font-medium"
+              className="px-4 py-2 bg-slate-500 hover:bg-slate-600 text-white rounded-lg transition-all font-medium"
               disabled={isDeleting}>
               إلغاء التحديد
             </button>

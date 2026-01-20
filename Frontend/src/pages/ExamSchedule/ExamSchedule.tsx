@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { getStudentAllMarks, type Exam } from "@/Api/ExamShedule";
-import PageHeader from "@/components/UI/PageHeader";
 import { Calendar, ClipboardList } from "lucide-react";
 
 // Import modals
@@ -212,28 +211,44 @@ const ExamSchedule: React.FC = () => {
   // ——— واجهة المستخدم
   return (
     <div
-      className="min-h-screen bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100"
+      className="min-h-screen bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20"
       dir="rtl"
       lang="ar">
-      <div className="w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 md:pt-10 pb-12 sm:pb-16 md:pb-20">
-        {/* العنوان */}
-        <PageHeader
-          title="جدول الامتحانات"
-          subtitle="الامتحانات القادمة تظهر هنا، والنتائج تُعرض بعد التصحيح."
-          icon={<Calendar className="w-12 h-12 sm:w-16 sm:h-16 text-white" />}
-        />
+      
+      {/* Header - مثل DailyMarks */}
+      <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white rounded-b-3xl shadow-xl p-6 pb-8 mb-6">
+        <div className="container mx-auto">
+          <div className="flex flex-col items-center text-center space-y-4">
+            {/* أيقونة */}
+            <div className="bg-white/20 backdrop-blur-md p-4 rounded-2xl shadow-lg">
+              <Calendar className="w-10 h-10 md:w-12 md:h-12" />
+            </div>
 
+            {/* العنوان */}
+            <div>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-2">
+                جدول الامتحانات
+              </h1>
+              <p className="text-white/80 text-sm md:text-base max-w-2xl mx-auto">
+                الامتحانات القادمة تظهر هنا، والنتائج تُعرض بعد التصحيح
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-[98%] mx-auto px-4 md:px-6 lg:px-8 pb-12">
         {/* Segmented Control - للمعلمين فقط */}
         {role === "teacher" && (
           <div className="mb-6">
-            <div className="inline-flex bg-white rounded-xl shadow-lg border-2 border-emerald-200 p-1.5">
+            <div className="inline-flex bg-white rounded-xl shadow-lg border border-slate-200/60 p-1.5">
               {/* زر صفحة الامتحانات */}
               <button
                 onClick={() => setActivePage("exams")}
                 className={`flex items-center gap-2 px-6 py-3 rounded-lg font-bold transition-all ${
                   activePage === "exams"
-                    ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md"
-                    : "bg-transparent hover:bg-emerald-50 text-gray-700 hover:text-emerald-700"
+                    ? "bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white shadow-md"
+                    : "bg-transparent hover:bg-emerald-50 text-slate-700 hover:text-emerald-700"
                 }`}>
                 <Calendar className="w-5 h-5" />
                 <span>صفحة الامتحانات</span>
@@ -244,8 +259,8 @@ const ExamSchedule: React.FC = () => {
                 onClick={() => setActivePage("marks")}
                 className={`flex items-center gap-2 px-6 py-3 rounded-lg font-bold transition-all ${
                   activePage === "marks"
-                    ? "bg-emerald-500 text-white"
-                    : "bg-transparent hover:bg-emerald-50 text-gray-700 hover:text-emerald-700"
+                    ? "bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white shadow-md"
+                    : "bg-transparent hover:bg-emerald-50 text-slate-700 hover:text-emerald-700"
                 }`}>
                 <ClipboardList className="w-5 h-5" />
                 <span>إدارة العلامات</span>

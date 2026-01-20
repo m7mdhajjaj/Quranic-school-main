@@ -94,13 +94,14 @@ const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
   };
 
   return (
-    <div className="bg-gradient-to-r from-teal-50 to-emerald-50 rounded-lg shadow-sm p-4 mb-5 border border-teal-100">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-4 flex-wrap flex-1">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-teal-500 rounded-md">
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      {/* Header with gradient - مثل DailyMarks */}
+      <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 px-5 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="bg-white/15 backdrop-blur-sm p-2.5 rounded-xl">
               <svg
-                className="w-4 h-4 text-white"
+                className="w-5 h-5 text-white"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24">
@@ -112,16 +113,51 @@ const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
                 />
               </svg>
             </div>
-            <span className="text-sm font-bold text-gray-700">تصفية وبحث:</span>
+            <div>
+              <h3 className="text-white font-bold text-base">تصفية وبحث</h3>
+              <p className="text-white/70 text-xs">
+                اختر الفترة الزمنية للتقارير
+              </p>
+            </div>
           </div>
 
+          {(selectedMonth || selectedYear) && (
+            <button
+              onClick={handleClearFilters}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/15 hover:bg-white/25 backdrop-blur-sm rounded-lg text-white text-sm font-medium transition-all">
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+              مسح
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Filters Content */}
+      <div className="p-5 bg-gradient-to-br from-slate-50 via-emerald-50/20 to-teal-50/30">
+        <div className="flex items-center gap-4 flex-wrap">
           {/* فلتر الحلقة للمعلم */}
           {userRole === "teacher" && groups.length > 0 && (
-            <div className="w-[220px]">
+            <div className="w-full md:w-auto md:min-w-[220px]">
+              <label htmlFor="group-select" className="block text-sm font-semibold text-slate-700 mb-2">
+                الحلقة
+              </label>
               <select
+                id="group-select"
+                title="اختر الحلقة"
                 value={selectedGroupId}
                 onChange={(e) => onGroupChange?.(e.target.value)}
-                className="w-full px-3 py-2 border border-teal-200 rounded-lg focus:border-teal-500 focus:ring-1 focus:ring-teal-200 transition-all text-sm bg-white">
+                className="w-full px-3 py-2.5 border border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all text-sm bg-white shadow-sm">
                 {groups.map((group) => (
                   <option key={group._id} value={group._id}>
                     {group.name} ({group.totalStudents} طالب)
@@ -131,9 +167,9 @@ const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
             </div>
           )}
 
-          <div className="w-[220px]">
+          <div className="w-full md:w-auto md:min-w-[220px]">
             <FilterSelect
-              label=""
+              label="الفترة الزمنية"
               value={selectedValue}
               options={monthOptions}
               onChange={handleMonthYearChange}
@@ -142,14 +178,6 @@ const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
             />
           </div>
         </div>
-
-        {(selectedMonth || selectedYear) && (
-          <button
-            onClick={handleClearFilters}
-            className="px-4 py-1.5 bg-white hover:bg-red-50 text-gray-600 hover:text-red-600 rounded-md transition-all duration-200 text-sm font-medium border border-gray-200 hover:border-red-300">
-            مسح الفلتر
-          </button>
-        )}
       </div>
     </div>
   );

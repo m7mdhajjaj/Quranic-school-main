@@ -3,39 +3,26 @@ import { Newspaper } from 'lucide-react';
 
 const NewsHeader = memo(() => {
   return (
-    <section className="mb-4">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex-1 text-center">
+    <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white rounded-b-3xl shadow-xl p-6 pb-8 mb-6">
+      <div className="container mx-auto">
+        <div className="flex flex-col items-center text-center space-y-4">
           {/* أيقونة */}
-          <div className="flex justify-center mb-2 sm:mb-3">
-            <div className="relative">
-              {/* خلفية متوهجة */}
-              <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full blur-xl opacity-30 animate-pulse"></div>
-              
-              {/* الأيقونة */}
-              <div className="relative bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full p-4 sm:p-6 shadow-2xl">
-                <Newspaper className="w-12 h-12 sm:w-16 sm:h-16 text-white" />
-              </div>
-            </div>
+          <div className="bg-white/20 backdrop-blur-md p-4 rounded-2xl shadow-lg">
+            <Newspaper className="w-10 h-10 md:w-12 md:h-12" />
           </div>
 
           {/* العنوان */}
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-emerald-700 mb-2 sm:mb-3">
-            آخر الأخبار والفعاليات
-          </h1>
-          
-          {/* الوصف */}
-          <p className="text-gray-600 text-base sm:text-lg lg:text-xl max-w-2xl mx-auto px-4 mb-2 sm:mb-3">
-            تابع أحدث أخبار وفعاليات مدرسة المهاجرين لتعليم القرآن الكريم، واطلع على الأنشطة والمسابقات القادمة
-          </p>
-          
-          {/* خط فاصل */}
-          <div className="flex justify-center mt-2 sm:mt-3">
-            <div className="h-1 w-20 sm:w-24 bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-500 rounded-full"></div>
+          <div>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-2">
+              آخر الأخبار والفعاليات
+            </h1>
+            <p className="text-white/80 text-sm md:text-base max-w-2xl mx-auto">
+              تابع أحدث أخبار وفعاليات مدرسة المهاجرين لتعليم القرآن الكريم
+            </p>
           </div>
         </div>
       </div>
-    </section>
+    </div>
   );
 });
 
