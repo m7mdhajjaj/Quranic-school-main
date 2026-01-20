@@ -50,7 +50,8 @@ interface DrawerMenuProps {
 }
 
 export const DrawerMenu: React.FC<DrawerMenuProps> = ({ isOpen, onClose }) => {
-  const { user, logout, getSecretaryPermissions, isTeacherAssistant } = useAuth();
+  const { user, logout, getSecretaryPermissions, isTeacherAssistant } =
+    useAuth();
   const router = useRouter();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const slideAnim = new Animated.Value(isOpen ? 0 : 300);
@@ -146,13 +147,30 @@ export const DrawerMenu: React.FC<DrawerMenuProps> = ({ isOpen, onClose }) => {
       return secretaryItems;
     }
 
-    // قائمة مساعد المدرس - الصفحة الرئيسية والأهداف والعلامات اليومية والمحادثة
+    // قائمة مساعد المدرس - مثل الويب تماماً
     if (user?.role === "teacherAssistant") {
       return [
         { to: "/(tabs)", label: "الرئيسية", icon: Home },
-        { to: "/(tabs)/goals", label: "الأهداف", icon: Target },
+        { to: "/(tabs)/news", label: "الأخبار", icon: Newspaper },
         { to: "/(tabs)/dailyMarks", label: "العلامات اليومية", icon: Award },
-        { to: "/(tabs)/chat", label: "المحادثة مع المعلم", icon: MessageSquare },
+        { to: "/(tabs)/goals", label: "الأهداف", icon: Target },
+        { to: "/(tabs)/timetable", label: "مواعيد الحلقات", icon: Clock },
+        {
+          to: "/(tabs)/quran",
+          label: "القرآن والأذكار",
+          icon: BookOpen,
+          subItems: [
+            { to: "/(tabs)/quran", label: "قرآن شفهي", icon: BookOpen },
+            { to: "/(tabs)/quran-audio", label: "قرآن صوتي", icon: BookOpen },
+            { to: "/(tabs)/azkar", label: "الأذكار", icon: BookMarked },
+            { to: "/(tabs)/prayer-times", label: "مواقيت الصلاة", icon: Clock },
+          ],
+        },
+        {
+          to: "/(tabs)/chat",
+          label: "المحادثة مع المعلم",
+          icon: MessageSquare,
+        },
       ];
     }
 
@@ -196,7 +214,7 @@ export const DrawerMenu: React.FC<DrawerMenuProps> = ({ isOpen, onClose }) => {
     setExpandedItems((prev) =>
       prev.includes(itemLabel)
         ? prev.filter((item) => item !== itemLabel)
-        : [...prev, itemLabel]
+        : [...prev, itemLabel],
     );
   };
 

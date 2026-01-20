@@ -6,9 +6,12 @@ import {
   ScrollView,
   Dimensions,
   TouchableOpacity,
-  StatusBar,
+  ImageBackground,
+  Platform,
 } from "react-native";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
 import { LinearGradient } from "expo-linear-gradient";
 import {
   BookOpen,
@@ -45,17 +48,44 @@ const HomeScreen = () => {
     },
   ];
 
+  const goals = [
+    {
+      icon: Users,
+      title: "بناء جيل صالح",
+      description:
+        "بناء جيل صالح على منهج أهل السنة والجماعة، يفهم أصول دينه فهمًا صحيحًا.",
+    },
+    {
+      icon: BookOpen,
+      title: "إعداد جيل حافظ",
+      description:
+        "إعداد جيل حافظ متقن لكتاب الله تعالى، يعمل به، ويتقن تلاوته.",
+    },
+    {
+      icon: GraduationCap,
+      title: "تأهيل معلمين",
+      description: "تأهيل معلمين للقرآن الكريم بأسلوب حضاري وحديث.",
+    },
+    {
+      icon: Heart,
+      title: "غرس القيم",
+      description: "غرس القيم والأخلاق الإسلامية المستمدة من القرآن الكريم.",
+    },
+  ];
+
   // القيم الستة
   const values = [
     {
       icon: Sparkles,
       title: "التحفيز",
-      description: "نؤمن بأن التحفيز وقود الإنجاز فكلما زاد التحفيز زاد الإنجاز بإذن الله تعالى",
+      description:
+        "نؤمن بأن التحفيز وقود الإنجاز فكلما زاد التحفيز زاد الإنجاز بإذن الله تعالى",
     },
     {
       icon: BookOpen,
       title: "العمل",
-      description: "العمل بالقرآن غايتنا لنكون على عقيدة نقية على خطى خير البرية ﷺ",
+      description:
+        "العمل بالقرآن غايتنا لنكون على عقيدة نقية على خطى خير البرية ﷺ",
     },
     {
       icon: Heart,
@@ -79,31 +109,82 @@ const HomeScreen = () => {
     },
   ];
 
+  const insets = useSafeAreaInsets();
+  const headerTopPadding =
+    Platform.OS === "android"
+      ? Math.max(insets.top, 44)
+      : Math.max(insets.top, 20);
+
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f8fafc" />
+      <StatusBar style="dark" backgroundColor="#ffffff" translucent={false} />
 
       {/* Header */}
-      <View style={styles.header}>
-        <Link href="/welcome" asChild>
-          <TouchableOpacity style={styles.backButton} activeOpacity={0.7}>
-            <ArrowLeft size={20} color="#059669" />
-            <Text style={styles.backButtonText}>الترحيب</Text>
-          </TouchableOpacity>
-        </Link>
+      <View style={[styles.header, { paddingTop: headerTopPadding }]}>
+        <View style={styles.headerLeft}>
+          <Link href="/welcome" asChild>
+            <TouchableOpacity style={styles.backButton} activeOpacity={0.7}>
+              <ArrowLeft size={20} color="#059669" />
+              <Text style={styles.backButtonText}>الترحيب</Text>
+            </TouchableOpacity>
+          </Link>
+        </View>
 
-        <Link href="/(auth)/login" asChild>
-          <TouchableOpacity style={styles.loginButton} activeOpacity={0.7}>
-            <Text style={styles.loginButtonText}>تسجيل الدخول</Text>
-            <ArrowLeft size={16} color="#ffffff" />
-          </TouchableOpacity>
-        </Link>
+        <View style={styles.headerTitleContainer}>
+          <Text style={styles.headerTitle}>الرئيسية</Text>
+        </View>
+
+        <View style={styles.headerRight}>
+          <Link href="/(auth)/login" asChild>
+            <TouchableOpacity style={styles.loginButton} activeOpacity={0.7}>
+              <Text style={styles.loginButtonText}>دخول</Text>
+              <ArrowLeft size={16} color="#ffffff" />
+            </TouchableOpacity>
+          </Link>
+        </View>
       </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}>
-        
+        {/* Hero Section */}
+        <View style={styles.heroSection}>
+          <LinearGradient
+            colors={["#065f46", "#059669", "#10b981"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.heroGradient}>
+            <View style={styles.heroContent}>
+              <View style={styles.heroBadge}>
+                <Text style={styles.heroBadgeText}>أهلاً بكم في</Text>
+              </View>
+              <Text style={styles.heroTitle}>أكاديمية المهاجرين</Text>
+              <Text style={styles.heroSubtitle}>
+                منصة تعليمية متكاملة لتعلم القرآن الكريم وتحفيظه بمنهجية علمية
+                حديثة
+              </Text>
+
+              <Link href="/(auth)/login" asChild>
+                <TouchableOpacity style={styles.heroButton} activeOpacity={0.9}>
+                  <Text style={styles.heroButtonText}>ابـدأ رحلتـك الآن</Text>
+                  <ArrowLeft size={18} color="#065f46" />
+                </TouchableOpacity>
+              </Link>
+            </View>
+
+            {/* Pattern/Decoration */}
+            <View style={styles.heroDecoration}>
+              <BookOpen size={120} color="rgba(255,255,255,0.1)" />
+            </View>
+          </LinearGradient>
+        </View>
+
+        {/* البرامج الثلاثة section title */}
+        <View style={{ marginTop: 24, paddingHorizontal: 20 }}>
+          <Text style={styles.sectionTitle}>رؤيتنا وبرامجنا</Text>
+          <View style={styles.titleUnderline} />
+        </View>
+
         {/* البرامج الثلاثة */}
         <View style={styles.programsSection}>
           {programs.map((program, index) => (
@@ -112,9 +193,44 @@ const HomeScreen = () => {
                 <program.icon size={32} color="#059669" />
               </View>
               <Text style={styles.programTitle}>{program.title}</Text>
-              <Text style={styles.programDescription}>{program.description}</Text>
+              <Text style={styles.programDescription}>
+                {program.description}
+              </Text>
             </View>
           ))}
+        </View>
+
+        {/* أهدافنا */}
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionTitle}>أهدافنا السامية</Text>
+          <Text style={styles.sectionSubtitle}>
+            نسعى في مدرسة المهاجرين لتحقيق مجموعة من الأهداف التي تعزز الارتقاء
+            بمستوى تعليم القرآن
+          </Text>
+          <View style={styles.titleUnderline} />
+
+          <View style={styles.goalsGrid}>
+            {goals.map((goal, index) => (
+              <View key={index} style={styles.goalCard}>
+                <View
+                  style={[
+                    styles.goalIconContainer,
+                    {
+                      backgroundColor: index % 2 === 0 ? "#d1fae5" : "#e0f2fe",
+                    },
+                  ]}>
+                  <goal.icon
+                    size={28}
+                    color={index % 2 === 0 ? "#059669" : "#0284c7"}
+                  />
+                </View>
+                <View style={styles.goalTextContainer}>
+                  <Text style={styles.goalTitle}>{goal.title}</Text>
+                  <Text style={styles.goalDescription}>{goal.description}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
         </View>
 
         {/* قسم القيم */}
@@ -171,51 +287,149 @@ export default HomeScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8fafc",
+    backgroundColor: "#ffffff",
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingTop: 50,
-    paddingBottom: 16,
+    paddingBottom: 14,
     backgroundColor: "#ffffff",
     borderBottomWidth: 1,
     borderBottomColor: "#e2e8f0",
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  headerLeft: {
+    flex: 1,
+    alignItems: "flex-start",
+  },
+  headerRight: {
+    flex: 1,
+    alignItems: "flex-end",
+  },
+  headerTitleContainer: {
+    flex: 2,
+    alignItems: "center",
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#0f172a",
   },
   backButton: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    gap: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
     backgroundColor: "#f0fdf4",
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#bbf7d0",
   },
   backButtonText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
     color: "#059669",
   },
   loginButton: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    gap: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
     backgroundColor: "#059669",
     borderRadius: 8,
   },
   loginButtonText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
     color: "#ffffff",
   },
   scrollContent: {
-    paddingBottom: 20,
+    paddingBottom: 40,
+  },
+  // Hero Section
+  heroSection: {
+    height: 280,
+    marginBottom: 10,
+    overflow: "hidden",
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+    shadowColor: "#059669",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  heroGradient: {
+    flex: 1,
+    paddingHorizontal: 24,
+    justifyContent: "center",
+    position: "relative",
+  },
+  heroContent: {
+    zIndex: 10,
+    alignItems: "flex-start", // RTL: will be right
+  },
+  heroBadge: {
+    backgroundColor: "rgba(255,255,255,0.2)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.3)",
+  },
+  heroBadgeText: {
+    color: "#ecfdf5",
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  heroTitle: {
+    fontSize: 32,
+    fontWeight: "800",
+    color: "#ffffff",
+    marginBottom: 12,
+    textShadowColor: "rgba(0,0,0,0.1)",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  heroSubtitle: {
+    fontSize: 15,
+    color: "#d1fae5",
+    marginBottom: 24,
+    lineHeight: 24,
+    maxWidth: "85%",
+  },
+  heroButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#ffffff",
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    gap: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  heroButtonText: {
+    color: "#065f46",
+    fontWeight: "bold",
+    fontSize: 15,
+  },
+  heroDecoration: {
+    position: "absolute",
+    bottom: -20,
+    left: -20,
+    transform: [{ rotate: "-15deg" }],
+    opacity: 0.6,
   },
   // البرامج الثلاثة
   programsSection: {
@@ -259,6 +473,69 @@ const styles = StyleSheet.create({
     color: "#6b7280",
     textAlign: "center",
     lineHeight: 16,
+  },
+  // الأهداف
+  sectionContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 40,
+  },
+  sectionTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#111827",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  sectionSubtitle: {
+    fontSize: 14,
+    color: "#6b7280",
+    textAlign: "center",
+    marginBottom: 16,
+    lineHeight: 22,
+    paddingHorizontal: 10,
+  },
+  goalsGrid: {
+    marginTop: 16,
+    gap: 16,
+  },
+  goalCard: {
+    flexDirection: "row",
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    padding: 16,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: "#f0f9ff",
+  },
+  goalIconContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 16,
+  },
+  goalTextContainer: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  goalTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#1f2937",
+    marginBottom: 4,
+    textAlign: "auto",
+  },
+  goalDescription: {
+    fontSize: 12,
+    color: "#6b7280",
+    lineHeight: 18,
+    textAlign: "auto",
   },
   // قسم القيم
   valuesSection: {
