@@ -14,6 +14,11 @@ const logger = createLogger('StudentSectionsGrouped');
  * Get student sections grouped by Surah with progress tracking
  * @route GET /api/daily-marks/student/:studentId/grouped-sections
  * 
+ * @query {string} groupId - اختياري: تصفية حسب الحلقة
+ * @query {string} timeFilter - اختياري: all | month | week | custom
+ * @query {string} dateFrom - اختياري: تاريخ البداية (مطلوب مع custom)
+ * @query {string} dateTo - اختياري: تاريخ النهاية (مطلوب مع custom)
+ * 
  * @description
  * يجمع المقاطع التي تخص الطالب مجمّعة حسب السور
  * يعرض فقط السور التي بدأ بها المعلم للطالب
@@ -23,10 +28,11 @@ const logger = createLogger('StudentSectionsGrouped');
 exports.getStudentSectionsGrouped = async (req, res) => {
   try {
     const { studentId } = req.params;
-    const { groupId } = req.query; // اختياري: تصفية حسب الحلقة
+    const { groupId, timeFilter, dateFrom, dateTo } = req.query;
 
     logger.debug(`Fetching for student: ${studentId}`);
     logger.debug(`groupId from query: ${groupId}`);
+    logger.debug(`timeFilter: ${timeFilter}, dateFrom: ${dateFrom}, dateTo: ${dateTo}`);
 
     // 1. Get student's group
     const Student = require("../../../schema/Student/Student");
@@ -101,8 +107,42 @@ exports.getStudentSectionsGrouped = async (req, res) => {
     logger.debug(`Resolved: groupId=${resolvedGroupId}, groupName="${resolvedGroupName}"`);
     logger.debug(`Final Section Filter: ${JSON.stringify(sectionFilter)}`);
 
+    // ✅ 2.5 إضافة فلتر الفترة الزمنية
+    let dateFilter = {};
+    if (timeFilter && timeFilter !== 'all') {
+      const now = new Date();
+      now.setHours(23, 59, 59, 999);
+      
+      if (timeFilter === 'month') {
+        // بداية الشهر الحالي
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        startOfMonth.setHours(0, 0, 0, 0);
+        dateFilter = { date: { $gte: startOfMonth, $lte: now } };
+        logger.debug(`Time filter: month (${startOfMonth.toISOString()} to ${now.toISOString()})`);
+      } else if (timeFilter === 'week') {
+        // آخر 7 أيام
+        const weekAgo = new Date(now);
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        weekAgo.setHours(0, 0, 0, 0);
+        dateFilter = { date: { $gte: weekAgo, $lte: now } };
+        logger.debug(`Time filter: week (${weekAgo.toISOString()} to ${now.toISOString()})`);
+      } else if (timeFilter === 'custom' && dateFrom && dateTo) {
+        // نطاق مخصص
+        const fromDate = new Date(dateFrom);
+        fromDate.setHours(0, 0, 0, 0);
+        const toDate = new Date(dateTo);
+        toDate.setHours(23, 59, 59, 999);
+        dateFilter = { date: { $gte: fromDate, $lte: toDate } };
+        logger.debug(`Time filter: custom (${fromDate.toISOString()} to ${toDate.toISOString()})`);
+      }
+    }
+
+    // دمج الفلاتر
+    const combinedFilter = { ...sectionFilter, ...dateFilter };
+    logger.debug(`Combined Filter: ${JSON.stringify(combinedFilter)}`);
+
     // 3. Get all sections for this student's group
-    const sections = await Section.find(sectionFilter)
+    const sections = await Section.find(combinedFilter)
       .sort({ date: -1 })
       .lean();
 

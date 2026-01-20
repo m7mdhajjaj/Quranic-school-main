@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getStudentSectionsGrouped } from '@/Api/DailyMark/studentGroupedSectionsApi';
-import type { GroupedSurah, StudentGroupedSectionsResponse } from '@/Api/DailyMark/studentGroupedSectionsApi';
+import type { GroupedSurah, StudentGroupedSectionsResponse, TimeFilterParams } from '@/Api/DailyMark/studentGroupedSectionsApi';
 
 interface UseStudentGroupedSectionsReturn {
   surahs: GroupedSurah[];
@@ -8,21 +8,28 @@ interface UseStudentGroupedSectionsReturn {
   loading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
+  setTimeFilter: (params: TimeFilterParams) => void;
+  timeFilterParams: TimeFilterParams;
 }
 
 /**
  * Hook to fetch student sections grouped by Surah
+ * ✅ مع دعم فلتر الفترة الزمنية
  */
 export const useStudentGroupedSections = (
   studentId: string | undefined,
-  groupId?: string
+  groupId?: string,
+  initialTimeFilter?: TimeFilterParams
 ): UseStudentGroupedSectionsReturn => {
   const [surahs, setSurahs] = useState<GroupedSurah[]>([]);
   const [summary, setSummary] = useState<StudentGroupedSectionsResponse['summary'] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [timeFilterParams, setTimeFilterParams] = useState<TimeFilterParams>(
+    initialTimeFilter || { timeFilter: 'all' }
+  );
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!studentId) {
       setLoading(false);
       return;
@@ -32,7 +39,7 @@ export const useStudentGroupedSections = (
     setError(null);
 
     try {
-      const response = await getStudentSectionsGrouped(studentId, groupId);
+      const response = await getStudentSectionsGrouped(studentId, groupId, timeFilterParams);
 
       if (response.success && response.data) {
         setSurahs(response.data.surahs);
@@ -50,11 +57,15 @@ export const useStudentGroupedSections = (
     } finally {
       setLoading(false);
     }
-  };
+  }, [studentId, groupId, timeFilterParams]);
 
   useEffect(() => {
     fetchData();
-  }, [studentId, groupId]);
+  }, [fetchData]);
+
+  const setTimeFilter = useCallback((params: TimeFilterParams) => {
+    setTimeFilterParams(params);
+  }, []);
 
   return {
     surahs,
@@ -62,5 +73,7 @@ export const useStudentGroupedSections = (
     loading,
     error,
     refetch: fetchData,
+    setTimeFilter,
+    timeFilterParams,
   };
 };

@@ -55,14 +55,28 @@ export interface StudentGroupedSectionsResponse {
   };
 }
 
+// ============================================================================
+// Time Filter Types
+// ============================================================================
+
+export type TimeFilterType = 'all' | 'month' | 'week' | 'custom';
+
+export interface TimeFilterParams {
+  timeFilter?: TimeFilterType;
+  dateFrom?: string;  // YYYY-MM-DD format
+  dateTo?: string;    // YYYY-MM-DD format
+}
+
 /**
  * Get student sections grouped by Surah
  * @param studentId - Student ID
  * @param groupId - Optional group ID for filtering
+ * @param timeFilterParams - Optional time filter parameters
  */
 export const getStudentSectionsGrouped = async (
   studentId: string,
-  groupId?: string
+  groupId?: string,
+  timeFilterParams?: TimeFilterParams
 ): Promise<{
   success: boolean;
   data?: StudentGroupedSectionsResponse;
@@ -73,10 +87,21 @@ export const getStudentSectionsGrouped = async (
     console.log('📡 [API] getStudentSectionsGrouped called');
     console.log('📡 [API] studentId:', studentId);
     console.log('📡 [API] groupId:', groupId);
+    console.log('📡 [API] timeFilterParams:', timeFilterParams);
 
-    const params: any = {};
+    const params: Record<string, string> = {};
     if (groupId) {
       params.groupId = groupId;
+    }
+    
+    // إضافة فلتر الفترة الزمنية
+    if (timeFilterParams?.timeFilter && timeFilterParams.timeFilter !== 'all') {
+      params.timeFilter = timeFilterParams.timeFilter;
+      
+      if (timeFilterParams.timeFilter === 'custom') {
+        if (timeFilterParams.dateFrom) params.dateFrom = timeFilterParams.dateFrom;
+        if (timeFilterParams.dateTo) params.dateTo = timeFilterParams.dateTo;
+      }
     }
 
     const url = `/daily-marks/student/${studentId}/grouped-sections`;
