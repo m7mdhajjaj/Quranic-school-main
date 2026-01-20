@@ -257,7 +257,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                 className="flex items-center justify-between mb-6"
               >
                 <div>
-                  <h2 className="text-xl font-black bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 bg-clip-text text-transparent">
+                  <h2 className="text-xl font-black bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 bg-clip-text text-transparent">
                     القائمة الرئيسية
                   </h2>
                   <p className="text-xs text-gray-500 mt-0.5">مدرسة القرآن الكريم</p>

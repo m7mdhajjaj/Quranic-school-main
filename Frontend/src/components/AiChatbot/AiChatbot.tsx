@@ -249,7 +249,7 @@ export const AiChatbot: React.FC = () => {
               ]
             }}
             transition={{ duration: 2, repeat: Infinity }}
-            className="w-16 h-16 rounded-full bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 flex items-center justify-center relative overflow-hidden"
+            className="w-16 h-16 rounded-full bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 flex items-center justify-center relative overflow-hidden"
           >
             {/* تأثير الضوء المتحرك */}
             <motion.div
@@ -356,7 +356,7 @@ export const AiChatbot: React.FC = () => {
                 />
               )}
               {/* Header عصري مع Gradient وتأثيرات AI */}
-              <div className="relative bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 p-6 shadow-xl overflow-hidden">
+              <div className="relative bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 p-6 shadow-xl overflow-hidden">
                 {/* خلفية متحركة عصرية */}
                 <motion.div
                   animate={{

@@ -62,7 +62,7 @@ export const AssistantForm: React.FC<AssistantFormProps> = memo(({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="relative bg-gradient-to-l from-emerald-600 via-teal-600 to-cyan-600 rounded-t-2xl p-4 overflow-hidden flex-shrink-0">
+        <div className="relative bg-gradient-to-l from-emerald-600 via-teal-700 to-slate-700 rounded-t-2xl p-4 overflow-hidden flex-shrink-0">
           <div className="absolute -top-10 -left-10 w-40 h-40 bg-white/10 rounded-full" />
           <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-white/10 rounded-full" />
           
@@ -96,9 +96,9 @@ export const AssistantForm: React.FC<AssistantFormProps> = memo(({
         <form id="assistant-form" onSubmit={handleSubmit} className="p-4 space-y-4 flex-1 overflow-y-auto overscroll-contain">
           
           {/* =================== Section: الأسماء =================== */}
-          <div className="bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 rounded-xl p-5 border border-emerald-200">
+          <div className="bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20 rounded-xl p-5 border border-emerald-200">
             <div className="flex items-center gap-2 text-emerald-700 mb-4">
-              <div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-lg">
+              <div className="p-2 bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 rounded-lg">
                 <User className="w-5 h-5 text-white" />
               </div>
               <h3 className="font-bold text-base">الأسماء</h3>
@@ -223,9 +223,9 @@ export const AssistantForm: React.FC<AssistantFormProps> = memo(({
           </div>
 
           {/* =================== Section: بيانات الهوية والتواصل =================== */}
-          <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-5 border border-emerald-200">
+          <div className="bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20 rounded-xl p-5 border border-emerald-200">
             <div className="flex items-center gap-2 text-emerald-700 mb-4">
-              <div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-lg">
+              <div className="p-2 bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 rounded-lg">
                 <CreditCard className="w-5 h-5 text-white" />
               </div>
               <h3 className="font-bold text-base">بيانات الهوية والتواصل</h3>
@@ -317,9 +317,9 @@ export const AssistantForm: React.FC<AssistantFormProps> = memo(({
           </div>
 
           {/* =================== Section: البيانات الشخصية =================== */}
-          <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-5 border border-emerald-200">
+          <div className="bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20 rounded-xl p-5 border border-emerald-200">
             <div className="flex items-center gap-2 text-emerald-700 mb-4">
-              <div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-lg">
+              <div className="p-2 bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 rounded-lg">
                 <Calendar className="w-5 h-5 text-white" />
               </div>
               <h3 className="font-bold text-base">البيانات الشخصية</h3>
@@ -412,10 +412,10 @@ export const AssistantForm: React.FC<AssistantFormProps> = memo(({
           </div>
 
           {/* =================== Section: الحلقات المسموحة =================== */}
-          <div className="bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 rounded-xl p-5 border border-emerald-200">
+          <div className="bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20 rounded-xl p-5 border border-emerald-200">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2 text-emerald-700">
-                <div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-lg">
+                <div className="p-2 bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 rounded-lg">
                   <Users className="w-5 h-5 text-white" />
                 </div>
                 <h3 className="font-bold text-base">الحلقات المسموحة *</h3>
@@ -464,7 +464,7 @@ export const AssistantForm: React.FC<AssistantFormProps> = memo(({
                         }}
                         className={`relative p-4 rounded-xl border-2 cursor-pointer transition-all ${
                           isSelected
-                            ? "bg-gradient-to-br from-emerald-100 to-teal-100 border-emerald-400 shadow-md"
+                            ? "bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20 border-emerald-400 shadow-md"
                             : isDisabled
                               ? "bg-gray-100 border-gray-200 opacity-50 cursor-not-allowed"
                               : "bg-white border-gray-200 hover:border-emerald-300 hover:shadow-sm"
@@ -532,7 +532,7 @@ export const AssistantForm: React.FC<AssistantFormProps> = memo(({
               type="submit"
               form="assistant-form"
               disabled={isLoading}
-              className="px-6 py-2.5 bg-gradient-to-l from-emerald-600 to-teal-600 text-white rounded-xl hover:from-emerald-700 hover:to-teal-700 transition-all shadow-lg shadow-emerald-500/25 flex items-center gap-2 disabled:opacity-50"
+              className="px-6 py-2.5 bg-gradient-to-l from-emerald-600 via-teal-700 to-slate-700 text-white rounded-xl hover:from-emerald-700 hover:via-teal-800 hover:to-slate-800 transition-all shadow-lg shadow-emerald-500/25 flex items-center gap-2 disabled:opacity-50"
             >
               {isLoading ? (
                 <>

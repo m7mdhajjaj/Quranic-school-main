@@ -355,26 +355,6 @@ export const AdminView = () => {
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      {/* Header */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-700 rounded-3xl shadow-2xl p-8">
-        <div className="absolute top-0 left-0 w-full h-full opacity-10">
-          <div className="absolute top-10 right-10 w-32 h-32 bg-white rounded-full blur-3xl"></div>
-          <div className="absolute bottom-10 left-10 w-40 h-40 bg-white rounded-full blur-3xl"></div>
-        </div>
-        
-        <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-3 bg-white/20 backdrop-blur-sm rounded-2xl">
-              <Calendar className="w-8 h-8 text-white" />
-            </div>
-            <div>
-              <h2 className="text-3xl font-bold text-white">لوحة مراقبة الحضور</h2>
-              <p className="text-emerald-50 text-sm mt-1">إحصائيات شاملة لحضور جميع الطلاب</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Content */}
       {!selectedGroup ? (
         <AdminGroupsGrid

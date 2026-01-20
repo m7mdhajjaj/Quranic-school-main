@@ -9,12 +9,12 @@ import { UserStatusContext } from "@/Context/UserStatusContext";
 import { useContext } from "react";
 
 const COLOR_VARIANTS = [
-  { gradient: "from-emerald-500 via-teal-500 to-cyan-500", bg: "from-emerald-50 via-teal-50/60 to-cyan-50/40", border: "border-emerald-200", icon: "text-emerald-600", hoverBorder: "hover:border-emerald-400" },
-  { gradient: "from-teal-500 via-cyan-500 to-emerald-500", bg: "from-teal-50 via-cyan-50/60 to-emerald-50/40", border: "border-teal-200", icon: "text-teal-600", hoverBorder: "hover:border-teal-400" },
-  { gradient: "from-cyan-500 via-emerald-500 to-teal-500", bg: "from-cyan-50 via-emerald-50/60 to-teal-50/40", border: "border-cyan-200", icon: "text-cyan-600", hoverBorder: "hover:border-cyan-400" },
-  { gradient: "from-emerald-600 via-teal-600 to-cyan-600", bg: "from-emerald-50/80 via-teal-50/50 to-cyan-50/30", border: "border-emerald-300", icon: "text-emerald-700", hoverBorder: "hover:border-emerald-500" },
-  { gradient: "from-teal-600 via-emerald-500 to-cyan-500", bg: "from-teal-50/80 via-emerald-50/50 to-cyan-50/30", border: "border-teal-300", icon: "text-teal-700", hoverBorder: "hover:border-teal-500" },
-  { gradient: "from-cyan-600 via-teal-500 to-emerald-500", bg: "from-cyan-50/80 via-teal-50/50 to-emerald-50/30", border: "border-cyan-300", icon: "text-cyan-700", hoverBorder: "hover:border-cyan-500" },
+  { gradient: "from-emerald-600 via-teal-700 to-slate-700", bg: "from-emerald-50 via-teal-50/60 to-slate-50/40", border: "border-emerald-200", icon: "text-emerald-600", hoverBorder: "hover:border-emerald-400" },
+  { gradient: "from-teal-600 via-slate-600 to-emerald-600", bg: "from-teal-50 via-slate-50/60 to-emerald-50/40", border: "border-teal-200", icon: "text-teal-600", hoverBorder: "hover:border-teal-400" },
+  { gradient: "from-slate-600 via-emerald-600 to-teal-600", bg: "from-slate-50 via-emerald-50/60 to-teal-50/40", border: "border-slate-200", icon: "text-slate-600", hoverBorder: "hover:border-slate-400" },
+  { gradient: "from-emerald-600 via-teal-700 to-slate-700", bg: "from-emerald-50/80 via-teal-50/50 to-slate-50/30", border: "border-emerald-300", icon: "text-emerald-700", hoverBorder: "hover:border-emerald-500" },
+  { gradient: "from-teal-600 via-emerald-600 to-slate-600", bg: "from-teal-50/80 via-emerald-50/50 to-slate-50/30", border: "border-teal-300", icon: "text-teal-700", hoverBorder: "hover:border-teal-500" },
+  { gradient: "from-slate-600 via-teal-600 to-emerald-600", bg: "from-slate-50/80 via-teal-50/50 to-emerald-50/30", border: "border-slate-300", icon: "text-slate-700", hoverBorder: "hover:border-slate-500" },
 ] as const;
 
 interface StudentsListProps {

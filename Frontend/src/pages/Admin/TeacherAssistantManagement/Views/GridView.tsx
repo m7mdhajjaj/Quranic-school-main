@@ -43,7 +43,7 @@ export const AssistantGridView: React.FC<AssistantGridViewProps> = memo(({
           </div>
 
           {/* Header with gradient */}
-          <div className="bg-gradient-to-r from-emerald-600 to-emerald-500 p-4 relative">
+          <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 p-4 relative">
             
             <div className="absolute top-2 left-2 flex gap-1 z-10">
               <button

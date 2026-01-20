@@ -43,10 +43,10 @@ const FilterContainer: React.FC<FilterContainerProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl shadow-md">
+          <div className="p-2 bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 rounded-xl shadow-md">
             <Filter className="text-white" size={20} />
           </div>
-          <h3 className="text-xl font-bold bg-gradient-to-r from-emerald-700 to-teal-700 bg-clip-text text-transparent">
+          <h3 className="text-xl font-bold bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 bg-clip-text text-transparent">
             {title}
           </h3>
         </div>

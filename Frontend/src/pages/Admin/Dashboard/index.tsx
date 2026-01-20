@@ -109,18 +109,25 @@ const AdminDashboard = () => {
 
   return (
     <div
-      className="min-h-screen"
+      className="min-h-screen bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20"
       dir="rtl"
     >
-      <div className="w-full py-4 sm:py-6 lg:py-8 px-3 sm:px-4 lg:px-6 xl:px-8">
+      <div className="max-w-[98%] mx-auto py-4 sm:py-6 lg:py-8 px-3 sm:px-4 lg:px-6 xl:px-8">
         {/* Header */}
-        <div className="mb-6 sm:mb-8 lg:mb-12 pr-1 pt-2 sm:pt-3 lg:pt-4">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-gray-900 via-emerald-600 to-green-600 bg-clip-text text-transparent mb-2 sm:mb-3 leading-[1.3] sm:leading-[1.35] lg:leading-[1.4] pt-1 sm:pt-2">
-            لوحة الإحصائيات
-          </h1>
-          <p className="text-sm sm:text-base lg:text-lg text-gray-600 font-medium leading-relaxed pr-0.5">
-            نظرة شاملة على أداء المنصة
-          </p>
+        <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 rounded-2xl shadow-xl p-6 border border-white/10 mb-6">
+          <div className="flex items-center gap-4">
+            <div className="bg-white/15 backdrop-blur-sm p-3 rounded-xl">
+              <FaChartLine className="text-3xl text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-white">
+                📊 لوحة الإحصائيات
+              </h1>
+              <p className="text-white/70 text-sm mt-1">
+                نظرة شاملة على أداء المنصة
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Statistics Cards - تظهر فقط إذا كان هناك بيانات أو أثناء التحميل */}

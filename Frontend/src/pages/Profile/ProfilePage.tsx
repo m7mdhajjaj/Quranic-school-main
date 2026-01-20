@@ -187,7 +187,7 @@ const ProfilePage = () => {
     <motion.div
       initial="hidden"
       animate="visible"
-      className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100"
+      className="min-h-screen bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20"
       dir="rtl"
     >
       {/* Hero Section with Animated Background */}

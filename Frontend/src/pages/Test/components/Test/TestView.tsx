@@ -5,7 +5,7 @@
 import type { TestViewProps } from "../../types/test";
 import { Timer, ProgressBar } from ".";
 import { getTestEncouragementMessage } from "../../utils/testHelpers";
-import PageHeader from "@/components/UI/PageHeader";
+import { ClipboardList } from 'lucide-react';
 
 export const TestView: React.FC<TestViewProps> = ({
   questions,
@@ -20,15 +20,21 @@ export const TestView: React.FC<TestViewProps> = ({
 
   return (
     <div
-      className="min-h-screen bg-gradient-to-b from-emerald-50 via-teal-50 to-white p-4 md:p-8"
+      className="min-h-screen bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20 p-4 md:p-8"
       dir="rtl">
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-[98%] mx-auto">
         {/* العنوان */}
-        <PageHeader
-          title="اختبار قرآني"
-          subtitle={`السؤال ${currentQuestionIndex + 1} من ${questions.length}`}
-          icon={<div className="text-6xl">📝</div>}
-        />
+        <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 rounded-2xl shadow-xl p-5 mb-6 border border-white/10">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-white/15 backdrop-blur-sm rounded-xl shadow-sm">
+              <ClipboardList className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-white">📝 اختبار قرآني</h1>
+              <p className="text-white/70 text-sm mt-0.5">السؤال {currentQuestionIndex + 1} من {questions.length}</p>
+            </div>
+          </div>
+        </div>
         {/* شريط التقدم */}
         <ProgressBar
           current={currentQuestionIndex}

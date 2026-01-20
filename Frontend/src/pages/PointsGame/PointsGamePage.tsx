@@ -6,7 +6,7 @@ import { usePointsGameActions } from "./hooks/usePointsGameActions";
 import { useRankings } from "./hooks/useRankings";
 import { useTeacherGroups } from "./hooks/useTeacherGroups";
 import { calculateTotalPoints } from "./utils/pointsCalculator";
-import PageHeader from "@/components/UI/PageHeader";
+import { Gamepad2, BarChart3 } from "lucide-react";
 import {
   RankingsModal,
   BadgesModal,
@@ -176,25 +176,32 @@ const PointsGamePage = () => {
   return (
     <>
       <div
-        className="min-h-screen bg-gradient-to-br from-emerald-50/40 via-teal-50/30 to-cyan-50/40 p-3 sm:p-4 md:p-6 lg:p-8"
+        className="min-h-screen bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20 p-3 sm:p-4 md:p-6 lg:p-8"
         dir="rtl">
-        <div className="max-w-7xl mx-auto px-2 sm:px-0">
+        <div className="max-w-[98%] mx-auto">
           {/* Header */}
-          <PageHeader
-            title={
-              user?.role === "teacher" ? "ترتيب الطلاب" : "لعبة النقاط اليومية"
-            }
-            subtitle={
-              user?.role === "teacher"
-                ? `المعلم: ${user?.firstName} ${user?.lastName} - تابع تقدم طلابك ومنافستهم! 🌟`
-                : `الطالب: ${user?.firstName} ${user?.lastName} - تابع نشاطاتك اليومية واجمع النقاط! 🌟`
-            }
-            icon={
-              <div className="text-6xl">
-                {user?.role === "teacher" ? "📊" : "🎮"}
+          <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 rounded-2xl shadow-xl p-6 border border-white/10 mb-6">
+            <div className="flex items-center gap-4">
+              <div className="bg-white/15 backdrop-blur-sm p-3 rounded-xl">
+                {user?.role === "teacher" ? (
+                  <BarChart3 className="w-8 h-8 text-white" />
+                ) : (
+                  <Gamepad2 className="w-8 h-8 text-white" />
+                )}
               </div>
-            }
-          />
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold text-white">
+                  {user?.role === "teacher" ? "📊 ترتيب الطلاب" : "🎮 لعبة النقاط اليومية"}
+                </h1>
+                <p className="text-white/70 text-sm mt-1">
+                  {user?.role === "teacher"
+                    ? `المعلم: ${user?.firstName} ${user?.lastName} - تابع تقدم طلابك ومنافستهم! 🌟`
+                    : `الطالب: ${user?.firstName} ${user?.lastName} - تابع نشاطاتك اليومية واجمع النقاط! 🌟`
+                  }
+                </p>
+              </div>
+            </div>
+          </div>
 
           {/* المعلم يرى لوحة الترتيب مباشرة */}
           {user?.role === "teacher" ? (

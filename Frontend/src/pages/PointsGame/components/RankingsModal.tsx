@@ -28,7 +28,7 @@ export const RankingsModal = ({
     >
       <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 p-6 text-white relative">
+        <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 p-6 text-white relative">
           <div className="text-center">
             <div className="text-6xl mb-3">
               {rankingType === 'points' ? '🏆' : '🎖️'}
@@ -105,7 +105,7 @@ export const RankingsModal = ({
                     key={student.studentId || index}
                     className={`flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 ${
                       isCurrentUser
-                        ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-xl scale-105'
+                        ? 'bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white shadow-xl scale-105'
                         : student.rank <= 3
                           ? 'bg-gradient-to-r from-yellow-100 to-orange-100 hover:shadow-lg'
                           : 'bg-gray-50 hover:bg-gray-100 hover:shadow-md'
@@ -216,7 +216,7 @@ export const RankingsModal = ({
           <Button
             onClick={onClose}
             variant="primary"
-            className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-8 py-3 rounded-full font-bold hover:scale-105 transition-transform shadow-lg"
+            className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white px-8 py-3 rounded-full font-bold hover:scale-105 transition-transform shadow-lg"
           >
             إغلاق
           </Button>

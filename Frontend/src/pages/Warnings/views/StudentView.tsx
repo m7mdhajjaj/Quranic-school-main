@@ -6,7 +6,6 @@ import React from 'react';
 import type { StudentViewProps } from '../types/warnings';
 import { Card } from '@/components/UI/Card';
 import { EmptyState } from '@/components/UI/EmptyState';
-import PageHeader from '@/components/UI/PageHeader';
 import {
   getWarningLabel,
   getWarningDescription,
@@ -33,16 +32,26 @@ export const StudentView: React.FC<StudentViewProps> = React.memo(
 
     return (
       <div
-        className="min-h-screen bg-gradient-to-br from-emerald-50/50 via-teal-50/40 to-cyan-50/50 p-4 md:p-8"
+        className="min-h-screen bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20 p-4 md:p-8"
         dir="rtl"
       >
-        <div className="max-w-5xl mx-auto space-y-6">
-          {/* Header - يعتمد على PageHeader للمطابقة مع باقي الصفحات */}
-          <PageHeader
-            title="إنذاراتي"
-            subtitle="عرض وتنظيم كل التنبيهات الخاصة بك"
-            icon={<ShieldAlert className="w-6 h-6" />}
-          />
+        <div className="max-w-[98%] mx-auto space-y-6">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 rounded-2xl shadow-xl p-6 border border-white/10">
+            <div className="flex items-center gap-4">
+              <div className="bg-white/15 backdrop-blur-sm p-3 rounded-xl">
+                <ShieldAlert className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold text-white">
+                  ⚠️ إنذاراتي
+                </h1>
+                <p className="text-white/70 text-sm mt-1">
+                  عرض وتنظيم كل التنبيهات الخاصة بك
+                </p>
+              </div>
+            </div>
+          </div>
 
           {/* Warnings List */}
           {loading ? (

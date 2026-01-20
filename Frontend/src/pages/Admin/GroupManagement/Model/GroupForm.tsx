@@ -80,7 +80,7 @@ const GroupForm: React.FC<Props> = memo(({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header with Gradient */}
-        <div className="relative bg-gradient-to-l from-emerald-600 via-teal-600 to-cyan-600 rounded-t-2xl p-4 overflow-hidden flex-shrink-0">
+        <div className="relative bg-gradient-to-l from-emerald-600 via-teal-700 to-slate-700 rounded-t-2xl p-4 overflow-hidden flex-shrink-0">
           {/* Decorative circles */}
           <div className="absolute -top-10 -left-10 w-40 h-40 bg-white/10 rounded-full" />
           <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-white/10 rounded-full" />
@@ -266,7 +266,7 @@ const GroupForm: React.FC<Props> = memo(({
             type="submit"
             form="group-form"
             disabled={isSubmitting || !isFormValid}
-            className="px-4 py-2 text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 rounded-lg transition-all flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-emerald-500/25 font-medium text-sm"
+            className="px-4 py-2 text-white bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 hover:from-emerald-700 hover:via-teal-800 hover:to-slate-800 rounded-lg transition-all flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-emerald-500/25 font-medium text-sm"
           >
             {isSubmitting ? (
               <>

@@ -118,7 +118,7 @@ export const UpdateMarkModal = ({
           <Button
             type="submit"
             variant="primary"
-            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 py-2 px-8 shadow-md hover:shadow-lg"
+            className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 hover:from-emerald-700 hover:via-teal-800 hover:to-slate-800 py-2 px-8 shadow-md hover:shadow-lg"
             disabled={isLoading || (!hasReview && !hasMemorization)}
           >
             {isLoading ? (

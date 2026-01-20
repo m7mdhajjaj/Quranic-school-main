@@ -7,7 +7,7 @@ import { BookOpen } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 
 // UI Components
-import PageHeader from '@/components/UI/PageHeader';
+// PageHeader removed - using custom header
 
 // Custom Hooks - Organized by Role/Category
 import { 
@@ -264,10 +264,10 @@ const DailyMarksPage = () => {
   // Show simple loading instead of skeleton
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-emerald-50 via-teal-50 to-green-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">جاري التحميل...</p>
+          <div className="w-12 h-12 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-600">جاري التحميل...</p>
         </div>
       </div>
     );
@@ -290,24 +290,35 @@ const DailyMarksPage = () => {
   // ==========================================================================
   return (
     <div
-      className="min-h-screen bg-gradient-to-b from-emerald-50 via-teal-50 to-green-50 py-6 px-3 md:px-4 lg:px-6"
+      className="min-h-screen bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20"
       dir="rtl"
     >
-      <div className="w-full max-w-full mx-auto space-y-5">
-        {/* Page Header */}
-        <PageHeader
-          title="نظام العلامات اليومية"
-          subtitle={
-            currentUser
-              ? isStudent
-                ? `${currentUser.firstName} ${currentUser.fatherName || ''} ${currentUser.lastName || ''} - ${currentUser.group || ''}`
-                : `المعلم: ${currentUser.firstName} ${currentUser.lastName || ''}`
-              : 'متابعة وتسجيل علامات الحفظ والمراجعة اليومية للطلاب'
-          }
-          icon={<BookOpen className="w-12 h-12 sm:w-16 sm:h-16 text-white" />}
-          showDivider={true}
-        />
+      {/* Header - مثل باقي الصفحات */}
+      <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white rounded-b-3xl shadow-xl p-6 pb-8 mb-6">
+        <div className="max-w-[98%] mx-auto">
+          <div className="flex flex-col items-center text-center space-y-4">
+            {/* أيقونة */}
+            <div className="bg-white/20 backdrop-blur-md p-4 rounded-2xl shadow-lg">
+              <BookOpen className="w-10 h-10 md:w-12 md:h-12" />
+            </div>
 
+            {/* العنوان */}
+            <div>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-2">
+                نظام العلامات اليومية
+              </h1>
+              <p className="text-white/80 text-sm md:text-base max-w-2xl mx-auto">
+                {currentUser
+                  ? `المعلم: ${currentUser.firstName} ${currentUser.lastName || ''}`
+                  : 'متابعة وتسجيل علامات الحفظ والمراجعة اليومية للطلاب'
+                }
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-[98%] mx-auto px-4 md:px-6 lg:px-8 pb-12 space-y-5">
         {/* Groups Grid View - Teacher Only, shown when no group selected */}
         {isTeacher && (!selectedGroup || selectedGroup === 'all') && (
           <GroupsGridView

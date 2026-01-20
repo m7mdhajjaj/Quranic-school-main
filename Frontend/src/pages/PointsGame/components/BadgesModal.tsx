@@ -60,7 +60,7 @@ export const BadgesModal = ({
     <Modal isOpen={show} onClose={onClose} title="شاراتي" size="xl">
       <div className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden animate-fadeIn">
         {/* Header */}
-        <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 text-white p-6">
+        <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="text-5xl">🏆</div>
@@ -111,7 +111,7 @@ export const BadgesModal = ({
                   key={badge.id}
                   className={`rounded-2xl p-6 transition-all duration-300 ${
                     isEarned
-                      ? 'bg-gradient-to-br from-emerald-50 via-teal-50/50 to-cyan-50/40 border-2 border-emerald-300 shadow-lg hover:shadow-xl'
+                      ? 'bg-gradient-to-br from-emerald-50 via-teal-50/50 to-slate-50/40 border-2 border-emerald-300 shadow-lg hover:shadow-xl'
                       : 'bg-gray-100 border-2 border-gray-300 opacity-60'
                   }`}
                 >
@@ -174,7 +174,7 @@ export const BadgesModal = ({
                         <span>{getBadgeProgressText(badge.id)}</span>
                       </div>
                       <div className="w-full bg-gray-300 rounded-full h-2">
-                        <div className="bg-gradient-to-r from-emerald-600 to-teal-600 h-2 rounded-full transition-all duration-500"></div>
+                        <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 h-2 rounded-full transition-all duration-500"></div>
                       </div>
                     </div>
                   )}
@@ -199,7 +199,7 @@ export const BadgesModal = ({
 
           {/* رسالة البطل الشامل */}
           {earnedBadges.length === allBadges.length && (
-            <div className="mt-6 bg-gradient-to-r from-emerald-100 via-teal-100 to-cyan-100 rounded-2xl p-6 text-center border-2 border-emerald-300">
+            <div className="mt-6 bg-gradient-to-r from-emerald-100 via-teal-100 to-slate-100 rounded-2xl p-6 text-center border-2 border-emerald-300">
               <div className="text-6xl mb-3 animate-bounce">👑</div>
               <h3 className="font-bold text-gray-800 text-2xl mb-2">
                 مبروك! أنت البطل الشامل! 🎉
@@ -216,7 +216,7 @@ export const BadgesModal = ({
           <Button
             onClick={onClose}
             variant="primary"
-            className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-8 py-3 rounded-full font-bold hover:scale-105 transition-transform shadow-lg"
+            className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white px-8 py-3 rounded-full font-bold hover:scale-105 transition-transform shadow-lg"
           >
             إغلاق
           </Button>

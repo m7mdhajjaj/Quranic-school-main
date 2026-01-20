@@ -22,7 +22,7 @@ interface StatCardProps {
 }
 
 const StatCard = memo<StatCardProps>(({ title, value, subtitle, icon }) => (
-  <div className="bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-xl shadow-md p-4 hover:shadow-lg transition-shadow">
+  <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 rounded-xl shadow-md p-4 hover:shadow-lg transition-shadow">
     <div className="flex items-center justify-between">
       <div className="flex-1">
         <p className="text-xs font-medium text-white/90 mb-1">{title}</p>

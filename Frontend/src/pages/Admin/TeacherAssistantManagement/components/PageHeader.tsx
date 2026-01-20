@@ -14,17 +14,17 @@ export const AssistantsHeader: React.FC<AssistantsHeaderProps> = memo(({
   selectedCount = 0,
   onBulkDelete,
 }) => (
-  <div className="bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-xl shadow-md p-3 sm:p-4 lg:p-5 mb-4 sm:mb-6">
+  <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 rounded-2xl shadow-xl p-3 sm:p-4 lg:p-5 mb-4 sm:mb-6 border border-white/10">
     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
       <div className="flex items-center gap-2 sm:gap-3">
-        <div className="p-2 sm:p-2.5 bg-emerald-700 rounded-lg shadow-sm">
+        <div className="p-2 sm:p-2.5 bg-white/15 backdrop-blur-sm rounded-xl shadow-sm">
           <FaHandsHelping className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
         </div>
         <div>
           <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
-            إدارة مساعدي المدرسين
+            🤝 إدارة مساعدي المدرسين
           </h1>
-          <p className="text-white/90 text-xs sm:text-sm mt-0.5 hidden xs:block">
+          <p className="text-white/70 text-xs sm:text-sm mt-0.5 hidden xs:block">
             {selectedCount > 0 ? `تم تحديد ${selectedCount} مساعد` : "نظام متكامل لإدارة بيانات مساعدي المدرسين"}
           </p>
         </div>

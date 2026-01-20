@@ -12,7 +12,7 @@ export const GroupsStatsCards: React.FC<GroupsStatsCardsProps> = ({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
       {/* إجمالي الحلقات */}
-      <div className="bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-xl shadow-md p-4 hover:shadow-lg transition-shadow">
+      <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 rounded-xl shadow-md p-4 hover:shadow-lg transition-shadow">
         <div className="flex items-center justify-between">
           <div className="flex-1">
             <p className="text-xs font-medium text-white/90 mb-1">إجمالي الحلقات</p>
@@ -26,7 +26,7 @@ export const GroupsStatsCards: React.FC<GroupsStatsCardsProps> = ({
       </div>
 
       {/* إجمالي الطلاب */}
-      <div className="bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-xl shadow-md p-4 hover:shadow-lg transition-shadow">
+      <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 rounded-xl shadow-md p-4 hover:shadow-lg transition-shadow">
         <div className="flex items-center justify-between">
           <div className="flex-1">
             <p className="text-xs font-medium text-white/90 mb-1">إجمالي الطلاب</p>
@@ -42,7 +42,7 @@ export const GroupsStatsCards: React.FC<GroupsStatsCardsProps> = ({
       </div>
 
       {/* الحلقات الممتلئة */}
-      <div className="bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-xl shadow-md p-4 hover:shadow-lg transition-shadow">
+      <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 rounded-xl shadow-md p-4 hover:shadow-lg transition-shadow">
         <div className="flex items-center justify-between">
           <div className="flex-1">
             <p className="text-xs font-medium text-white/90 mb-1">حلقات ممتلئة</p>
@@ -67,7 +67,7 @@ export const GroupsStatsCards: React.FC<GroupsStatsCardsProps> = ({
       </div>
 
       {/* حلقات فارغة */}
-      <div className="bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-xl shadow-md p-4 hover:shadow-lg transition-shadow">
+      <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 rounded-xl shadow-md p-4 hover:shadow-lg transition-shadow">
         <div className="flex items-center justify-between">
           <div className="flex-1">
             <p className="text-xs font-medium text-white/90 mb-1">حلقات فارغة</p>
@@ -92,7 +92,7 @@ export const GroupsStatsCards: React.FC<GroupsStatsCardsProps> = ({
       </div>
 
       {/* السعة الإجمالية */}
-      <div className="bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-xl shadow-md p-4 hover:shadow-lg transition-shadow">
+      <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 rounded-xl shadow-md p-4 hover:shadow-lg transition-shadow">
         <div className="flex items-center justify-between">
           <div className="flex-1">
             <p className="text-xs font-medium text-white/90 mb-1">السعة الإجمالية</p>
@@ -115,7 +115,7 @@ export const GroupsStatsCards: React.FC<GroupsStatsCardsProps> = ({
       </div>
 
       {/* المقاعد المتاحة */}
-      <div className="bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-xl shadow-md p-4 hover:shadow-lg transition-shadow">
+      <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 rounded-xl shadow-md p-4 hover:shadow-lg transition-shadow">
         <div className="flex items-center justify-between">
           <div className="flex-1">
             <p className="text-xs font-medium text-white/90 mb-1">مقاعد متاحة</p>

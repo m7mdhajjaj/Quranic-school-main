@@ -9,7 +9,6 @@ import { useViewMode } from "../../Timetable/hooks";
 import { AdvancedTimetableView } from "../../Timetable/DisplayType/AdvancedTimetableView";
 import { WeeklyGridView } from "../../Timetable/DisplayType/WeeklyGridView";
 import { SessionModal } from "../../Timetable/components/SessionModal";
-import PageHeader from "@/components/UI/PageHeader";
 import { Button } from "@/components/UI/Button";
 import { Alert } from "@/components/UI/Alert";
 import { Calendar, Plus, Grid3x3, List } from "lucide-react";
@@ -107,16 +106,22 @@ export const AdminTimetableView: React.FC<AdminTimetableViewProps> = ({
 
   return (
     <div
-      className="min-h-screen p-4 md:p-6 lg:p-8"
+      className="min-h-screen bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20 p-4 md:p-6 lg:p-8"
       dir="rtl"
       lang="ar">
-      <div className="w-full mx-auto">
+      <div className="max-w-[98%] mx-auto">
         {/* رأس الصفحة */}
-        <PageHeader
-          title="جدول الحصص الأسبوعي - لوحة الإدارة"
-          subtitle="إدارة جميع مواعيد الحلقات - كل خانة تمثل نصف ساعة"
-          icon={<Calendar className="w-12 h-12 sm:w-16 sm:h-16 text-white" />}
-        />
+        <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 rounded-2xl shadow-xl p-5 mb-6 border border-white/10">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-white/15 backdrop-blur-sm rounded-xl shadow-sm">
+              <Calendar className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-white">📅 جدول الحصص الأسبوعي - لوحة الإدارة</h1>
+              <p className="text-white/70 text-sm mt-0.5">إدارة جميع مواعيد الحلقات - كل خانة تمثل نصف ساعة</p>
+            </div>
+          </div>
+        </div>
 
         {/* رسالة الخطأ */}
         {error && (

@@ -71,7 +71,7 @@ export const SecretariesStatsCards: React.FC<SecretariesStatsCardsProps> = memo(
         return (
           <div
             key={index}
-            className="bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-lg sm:rounded-xl shadow-md p-3 sm:p-4 hover:shadow-lg transition-shadow"
+            className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 rounded-lg sm:rounded-xl shadow-md p-3 sm:p-4 hover:shadow-lg transition-shadow"
           >
             <div className="flex items-center justify-between gap-2">
               <div className="flex-1 min-w-0">

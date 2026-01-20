@@ -15,7 +15,7 @@ const NotFound = () => {
 
   return (
     <div
-      className="min-h-screen bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100 flex flex-col items-center justify-center p-6 text-center"
+      className="min-h-screen bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20 flex flex-col items-center justify-center p-6 text-center"
       dir="rtl"
     >
       <div className="w-full max-w-md" data-aos="fade-up">

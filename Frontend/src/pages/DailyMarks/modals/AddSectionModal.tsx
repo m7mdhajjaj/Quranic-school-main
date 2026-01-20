@@ -185,7 +185,7 @@ const AddSectionModalComponent = ({
         className={`flex-[2] py-3 px-8 rounded-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 min-h-[52px] transition-all font-bold text-lg
           ${hasErrors 
             ? 'bg-gray-400 cursor-not-allowed hover:bg-gray-400 hover:shadow-none hover:translate-y-0' 
-            : 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700'
+            : 'bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 hover:from-emerald-700 hover:via-teal-800 hover:to-slate-800'
           }`}
         disabled={isLoading || hasErrors || isCheckingQuota || isSchedulerValidating}
         title={hasErrors ? 'يرجى تصحيح الأخطاء أولاً' : isSchedulerValidating ? 'جاري التحقق...' : 'إضافة المقطع'}

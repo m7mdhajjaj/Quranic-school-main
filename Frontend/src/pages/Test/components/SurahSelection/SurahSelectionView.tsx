@@ -6,7 +6,7 @@ import { useState } from 'react';
 import type { SurahSelectionViewProps } from '../../types/test';
 import { Button } from '@/components/UI/';
 import { SurahCard, StatisticsCards } from '.';
-import PageHeader from '@/components/UI/PageHeader';
+import { BookOpen } from 'lucide-react';
 
 export const SurahSelectionView: React.FC<SurahSelectionViewProps> = ({
   surahs,
@@ -22,16 +22,26 @@ export const SurahSelectionView: React.FC<SurahSelectionViewProps> = ({
 
   return (
     <div
-      className="min-h-screen bg-gradient-to-b from-emerald-50 via-teal-50 to-white p-4 md:p-8"
+      className="min-h-screen bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20 p-4 md:p-8"
       dir="rtl"
     >
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-[98%] mx-auto">
         {/* العنوان */}
-        <PageHeader
-          title="اختبار القرآن الكريم"
-          subtitle="اختر السور التي تريد أن تختبر حفظك فيها - يمكنك اختيار سورة واحدة أو عدة سور"
-          icon={<div className="text-6xl">📖</div>}
-        />
+        <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 rounded-2xl shadow-xl p-6 border border-white/10 mb-6">
+          <div className="flex items-center gap-4">
+            <div className="bg-white/15 backdrop-blur-sm p-3 rounded-xl">
+              <BookOpen className="w-8 h-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-white">
+                📖 اختبار القرآن الكريم
+              </h1>
+              <p className="text-white/70 text-sm mt-1">
+                اختر السور التي تريد أن تختبر حفظك فيها
+              </p>
+            </div>
+          </div>
+        </div>
 
         {/* بطاقة السور */}
         <div className="bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl p-6 md:p-8 mb-8 border border-emerald-100">

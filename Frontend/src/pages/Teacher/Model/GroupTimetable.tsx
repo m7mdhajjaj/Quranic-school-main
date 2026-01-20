@@ -113,7 +113,7 @@ export const GroupTimetableModal: React.FC<GroupTimetableModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="relative bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6 overflow-hidden">
+        <div className="relative bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 p-6 overflow-hidden">
           {/* Decorative elements */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32"></div>
           <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full -ml-24 -mb-24"></div>
@@ -198,7 +198,7 @@ export const GroupTimetableModal: React.FC<GroupTimetableModalProps> = ({
                     className="bg-white rounded-xl border-2 border-emerald-100 overflow-hidden shadow-md hover:shadow-lg transition-all duration-200"
                   >
                     {/* Day Header */}
-                    <div className="relative bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-3 overflow-hidden">
+                    <div className="relative bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 px-4 py-3 overflow-hidden">
                       <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-12 -mt-12"></div>
                       <div className="relative flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -227,7 +227,7 @@ export const GroupTimetableModal: React.FC<GroupTimetableModalProps> = ({
                         >
                           <div className="flex items-center gap-3">
                             {/* Number Badge */}
-                            <div className="flex-shrink-0 w-7 h-7 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center shadow-sm">
+                            <div className="flex-shrink-0 w-7 h-7 bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 rounded-lg flex items-center justify-center shadow-sm">
                               <span className="text-white text-xs font-bold">{index + 1}</span>
                             </div>
                             
@@ -271,14 +271,14 @@ export const GroupTimetableModal: React.FC<GroupTimetableModalProps> = ({
               </div>
               <div>
                 <span className="text-sm text-gray-600 font-medium block">إجمالي المواقيت</span>
-                <span className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+                <span className="text-2xl font-bold bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 bg-clip-text text-transparent">
                   {sortedTimetable.length}
                 </span>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="px-8 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl hover:from-emerald-600 hover:to-teal-700 transition-all shadow-lg hover:shadow-xl font-semibold text-base transform hover:scale-105 duration-200"
+              className="px-8 py-3 bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white rounded-xl hover:from-emerald-700 hover:via-teal-800 hover:to-slate-800 transition-all shadow-lg hover:shadow-xl font-semibold text-base transform hover:scale-105 duration-200"
             >
               إغلاق
             </button>

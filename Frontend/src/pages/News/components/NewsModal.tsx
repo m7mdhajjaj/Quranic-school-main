@@ -36,7 +36,7 @@ const NewsModal = ({
       >
         {/* Header */}
         <div
-          className="px-6 py-4 flex items-center justify-between flex-shrink-0 bg-gradient-to-r from-emerald-600 to-teal-600"
+          className="px-6 py-4 flex items-center justify-between flex-shrink-0 bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700"
         >
           <h2 className="text-2xl font-bold text-white flex items-center gap-3">
             {isEditMode ? <Edit size={32} /> : <Plus size={32} />}
@@ -194,7 +194,7 @@ const NewsModal = ({
                 loading={isLoading}
                 variant="primary"
                 size="md"
-                className="px-6 py-2 min-w-[160px] shadow-lg hover:shadow-xl transition-all bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+                className="px-6 py-2 min-w-[160px] shadow-lg hover:shadow-xl transition-all bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 hover:from-emerald-700 hover:via-teal-800 hover:to-slate-800"
                 leftIcon={isEditMode ? <Edit size={20} /> : <Plus size={20} />}
               >
                 {isEditMode ? 'تحديث الخبر' : 'إضافة الخبر'}

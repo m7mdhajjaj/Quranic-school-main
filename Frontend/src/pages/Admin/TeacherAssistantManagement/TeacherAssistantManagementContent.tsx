@@ -293,7 +293,8 @@ export const TeacherAssistantManagementContent: React.FC = () => {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20 p-6 space-y-6">
+      <div className="max-w-[98%] mx-auto space-y-6">
       {/* Header */}
       <PageHeader
         onAddAssistant={handleAddAssistant}
@@ -384,6 +385,7 @@ export const TeacherAssistantManagementContent: React.FC = () => {
         onCancel={closeBulkDeleteConfirmation}
         isLoading={isSubmitting}
       />
+      </div>
     </div>
   );
 };

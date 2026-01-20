@@ -15,7 +15,7 @@ export const PointsSummaryCard = ({
   earnedBadgesCount,
 }: PointsSummaryCardProps) => {
   return (
-    <Card className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 md:p-8 mb-6 sm:mb-8 text-white text-center relative">
+    <Card className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 rounded-2xl shadow-xl p-4 sm:p-6 md:p-8 mb-6 sm:mb-8 text-white text-center relative border border-white/10">
       <div className="flex justify-center mb-3 sm:mb-4">
         <Trophy className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24" />
       </div>

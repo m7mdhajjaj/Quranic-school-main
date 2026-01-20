@@ -355,7 +355,7 @@ const HeroSection = ({
             </>
           ) : (
             // No Images Placeholder
-            <div className="w-full h-full bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-600 flex flex-col items-center justify-center relative overflow-hidden">
+            <div className="w-full h-full bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 flex flex-col items-center justify-center relative overflow-hidden">
               {/* Animated Background Pattern */}
               <div className="absolute inset-0">
                 <div className="absolute top-0 left-0 w-96 h-96 bg-white/5 rounded-full -translate-x-1/2 -translate-y-1/2 animate-pulse" />

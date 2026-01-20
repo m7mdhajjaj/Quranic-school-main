@@ -16,7 +16,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
     <div className="bg-white/90 backdrop-blur-lg rounded-2xl shadow-lg p-4 md:p-6 mb-6 border border-emerald-100">
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center gap-3">
-          <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-4 py-2 rounded-xl font-bold text-sm md:text-base shadow-md">
+          <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white px-4 py-2 rounded-xl font-bold text-sm md:text-base shadow-md">
             السؤال {current + 1} / {total}
           </div>
           <div className="bg-gradient-to-r from-amber-100 to-yellow-100 px-4 py-2 rounded-xl font-bold text-amber-700 border border-amber-200">

@@ -10,7 +10,6 @@ import { useViewMode } from "../hooks";
 import { SessionModal } from "../components/SessionModal";
 import { AdvancedTimetableView } from "../DisplayType/AdvancedTimetableView";
 import { WeeklyGridView } from "../DisplayType/WeeklyGridView";
-import PageHeader from "@/components/UI/PageHeader";
 import { Button } from "@/components/UI/Button";
 import { Alert } from "@/components/UI/Alert";
 import { Calendar, Grid3x3, List, AlertCircle } from "lucide-react";
@@ -181,16 +180,26 @@ export const TeacherTimetableView: React.FC<TeacherTimetableViewProps> = ({
 
   return (
     <div
-      className="min-h-screen bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100 p-4 md:p-6 lg:p-8"
+      className="min-h-screen bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20 p-4 md:p-6 lg:p-8"
       dir="rtl"
       lang="ar">
-      <div className="w-full mx-auto">
+      <div className="max-w-[98%] mx-auto">
         {/* رأس الصفحة */}
-        <PageHeader
-          title="جدول الحصص الأسبوعي"
-          subtitle="إدارة مواعيد حلقاتك - كل خانة تمثل نصف ساعة"
-          icon={<Calendar className="w-12 h-12 sm:w-16 sm:h-16 text-white" />}
-        />
+        <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 rounded-2xl shadow-xl p-6 border border-white/10 mb-6">
+          <div className="flex items-center gap-4">
+            <div className="bg-white/15 backdrop-blur-sm p-3 rounded-xl">
+              <Calendar className="w-8 h-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-white">
+                📅 جدول الحصص الأسبوعي
+              </h1>
+              <p className="text-white/70 text-sm mt-1">
+                إدارة مواعيد حلقاتك - كل خانة تمثل نصف ساعة
+              </p>
+            </div>
+          </div>
+        </div>
 
         {/* رسالة الخطأ */}
         {error && (

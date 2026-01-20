@@ -92,7 +92,7 @@ const AddStudentForm: React.FC<Props> = ({
       dir="rtl">
       <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Modern Gradient Header with Steps */}
-        <div className="relative bg-gradient-to-l from-emerald-600 via-teal-600 to-cyan-600 rounded-t-2xl p-5 pb-6">
+        <div className="relative bg-gradient-to-l from-emerald-600 via-teal-700 to-slate-700 rounded-t-2xl p-5 pb-6">
           {/* Decorative circles */}
           <div className="absolute -top-10 -left-10 w-40 h-40 bg-white/10 rounded-full pointer-events-none" />
           <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-white/10 rounded-full pointer-events-none" />
@@ -607,14 +607,14 @@ const AddStudentForm: React.FC<Props> = ({
 
                   {/* عرض المعلم المسؤول */}
                   {selectedGroupTeacher && (
-                    <div className="bg-gradient-to-r from-teal-50 to-cyan-50 border-2 border-teal-200 rounded-xl p-4">
+                    <div className="bg-gradient-to-r from-emerald-50/30 via-slate-50 to-teal-50/20 border-2 border-emerald-200 rounded-xl p-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-full flex items-center justify-center shadow-md">
+                        <div className="w-10 h-10 bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 rounded-full flex items-center justify-center shadow-md">
                           <User size={20} className="text-white" />
                         </div>
                         <div>
-                          <p className="text-xs text-teal-600 font-medium">المعلم المسؤول</p>
-                          <p className="text-base font-bold text-teal-900">{selectedGroupTeacher}</p>
+                          <p className="text-xs text-emerald-600 font-medium">المعلم المسؤول</p>
+                          <p className="text-base font-bold text-slate-900">{selectedGroupTeacher}</p>
                         </div>
                       </div>
                     </div>
@@ -746,7 +746,7 @@ const AddStudentForm: React.FC<Props> = ({
                   type="button"
                   onClick={handleNextStep}
                   disabled={!isStep1Valid}
-                  className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg hover:from-emerald-700 hover:to-teal-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium flex items-center gap-1.5 shadow-lg shadow-emerald-500/25">
+                  className="px-4 py-2 bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white rounded-lg hover:from-emerald-700 hover:via-teal-800 hover:to-slate-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium flex items-center gap-1.5 shadow-lg shadow-emerald-500/25">
                   التالي
                   <ChevronLeft size={16} />
                 </button>

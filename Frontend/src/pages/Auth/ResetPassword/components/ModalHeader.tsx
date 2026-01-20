@@ -9,11 +9,11 @@ export const ModalHeader = ({ currentStep, onClose }: ModalHeaderProps) => {
   return (
     <div className="flex justify-between items-start mb-4">
       <div className="flex items-center gap-4">
-        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform duration-300">
+        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform duration-300">
           <Lock className="w-7 h-7 text-white" />
         </div>
         <div>
-          <h2 className="text-3xl font-bold bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 bg-clip-text text-transparent">
+          <h2 className="text-3xl font-bold bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 bg-clip-text text-transparent">
             استعادة كلمة المرور
           </h2>
           <p className="text-sm text-gray-500 mt-1">

@@ -203,7 +203,7 @@ export const BulkMarksModal = ({
             variant="primary"
             disabled={submitting || loading || students.length === 0}
             loading={submitting}
-            className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 py-3 px-8 rounded-xl shadow-lg hover:shadow-xl min-h-[52px]"
+            className="flex-1 bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 hover:from-emerald-700 hover:via-teal-800 hover:to-slate-800 py-3 px-8 rounded-xl shadow-lg hover:shadow-xl min-h-[52px]"
           >
             {submitting ? 'جاري الحفظ...' : `حفظ العلامات (${marksCount})`}
           </Button>

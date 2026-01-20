@@ -94,7 +94,7 @@ const SegmentRow = memo<{ segment: SurahSegment }>(({ segment }) => {
       {/* Header Band - شريط ملون علوي */}
       <div className={`px-4 py-3 ${
         isMemorization 
-          ? 'bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700' 
+          ? 'bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700' 
           : 'bg-gradient-to-r from-slate-600 via-slate-700 to-slate-800'
       }`}>
         <div className="flex items-center justify-between">

@@ -127,7 +127,7 @@ export const Modal: React.FC<ModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         {(title || showCloseButton) && (
-          <div className={`flex items-center justify-between p-6 border-b border-emerald-300 bg-gradient-to-r from-emerald-500 to-teal-600 shrink-0 rounded-t-2xl ${headerClassName || ''}`}>
+          <div className={`flex items-center justify-between p-6 border-b border-white/10 bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 shrink-0 rounded-t-2xl ${headerClassName || ''}`}>
             {title && <h2 className="text-2xl font-bold text-white">{title}</h2>}
             {showCloseButton && (
               <button

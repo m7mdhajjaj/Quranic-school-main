@@ -1,8 +1,8 @@
-import PageHeader from "@/components/UI/PageHeader";
 import { Button, Badge } from "@/components/UI";
 import type { AzkarHeaderProps } from "../Types/types";
 import { showConfirmMessage } from "@/utils/sweetalertUtils";
 import { showSuccessToast } from "@/utils/toastUtils";
+import { BookOpen } from 'lucide-react';
 
 const AzkarHeader = ({
   title,
@@ -27,13 +27,18 @@ const AzkarHeader = ({
   };
   return (
     <div className="mb-6">
-      {/* استخدام PageHeader من shared */}
-      <PageHeader
-        title={title}
-        icon={icon}
-        showDivider={false}
-        className="mb-4"
-      />
+      {/* رأس الصفحة مع التدرج الجديد */}
+      <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 rounded-2xl shadow-xl p-5 mb-4 border border-white/10">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-white/15 backdrop-blur-sm rounded-xl shadow-sm">
+            <BookOpen className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-white">{icon} {title}</h1>
+            <p className="text-white/70 text-sm mt-0.5">اذكر الله وتقرب إليه</p>
+          </div>
+        </div>
+      </div>
       
       {/* الأزرار والشارة */}
       <div className="flex items-center justify-between gap-4 px-4" dir="rtl">

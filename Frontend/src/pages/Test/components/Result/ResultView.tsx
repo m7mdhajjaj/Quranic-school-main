@@ -20,10 +20,10 @@ export const ResultView: React.FC<ResultViewProps> = ({
 
   return (
     <div
-      className="min-h-screen bg-gradient-to-b from-emerald-50 via-teal-50 to-white p-4 md:p-8 flex items-center justify-center"
+      className="min-h-screen bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20 p-4 md:p-8 flex items-center justify-center"
       dir="rtl"
     >
-      <div className="max-w-3xl w-full">
+      <div className="max-w-[98%] w-full max-w-3xl">
         <div className="bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl p-6 md:p-10 text-center border border-emerald-100">
           {/* دائرة التقدم */}
           <div className="mb-8 relative">

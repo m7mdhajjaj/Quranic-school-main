@@ -241,7 +241,7 @@ const StudentsManagement: React.FC = () => {
   if (!hasPermission) {
     console.log('🚫 [StudentsManagement] Access Denied - No Permission');
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20 flex items-center justify-center p-4">
         <div className="text-center">
           <FaUserGraduate className="w-16 h-16 text-red-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-800 mb-2">غير مصرح</h2>
@@ -253,8 +253,8 @@ const StudentsManagement: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen p-4 md:p-6" dir="rtl">
-      <div className="max-w-full mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20 p-4 md:p-6" dir="rtl">
+      <div className="max-w-[98%] mx-auto">
         <StudentsHeader
           onAddStudent={handleOpenAddForm}
           onExport={() => handleExport(buildFiltersObject())}

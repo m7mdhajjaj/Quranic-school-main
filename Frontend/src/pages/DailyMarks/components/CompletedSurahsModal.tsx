@@ -105,7 +105,7 @@ export const CompletedSurahsModal: React.FC<CompletedSurahsModalProps> = ({
                  <div className="flex items-center gap-3">
                     <div className={`w-12 h-12 rounded-xl bg-gradient-to-br border flex items-center justify-center font-bold text-xl group-hover:text-white group-hover:shadow-md transition-all duration-300
                         ${activeTab === 'memorization'
-                            ? 'from-emerald-100 to-teal-50 border-emerald-100 text-emerald-700 group-hover:from-emerald-500 group-hover:to-teal-600'
+                            ? 'from-emerald-100 to-teal-50 border-emerald-100 text-emerald-700 group-hover:from-emerald-600 group-hover:via-teal-700 group-hover:to-slate-700'
                             : 'from-blue-100 to-indigo-50 border-blue-100 text-blue-700 group-hover:from-blue-500 group-hover:to-indigo-600'}
                     `}>
                        {surah.surahNumber}

@@ -11,12 +11,19 @@ export const PrayersSection = ({
   onUpdatePrayer,
 }: PrayersSectionProps) => {
   return (
-    <Card className="p-6 mb-6">
-      <div className="flex items-center gap-3 mb-6">
-        <Building2 className="w-10 h-10 text-emerald-600" />
-        <h2 className="text-2xl font-bold text-gray-800">الصلوات الفروض</h2>
-        <span className="text-sm text-gray-500">(اضغط لتحديد الحالة)</span>
+    <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden mb-6">
+      <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 px-5 py-4">
+        <div className="flex items-center gap-3">
+          <div className="bg-white/15 backdrop-blur-sm p-2.5 rounded-xl">
+            <Building2 className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h2 className="text-white font-bold text-lg">🕌 الصلوات الفروض</h2>
+            <span className="text-white/70 text-xs">(اضغط لتحديد الحالة)</span>
+          </div>
+        </div>
       </div>
+      <div className="p-5 bg-gradient-to-br from-slate-50 via-emerald-50/20 to-teal-50/30">
       <div className="grid md:grid-cols-5 gap-4">
         {Object.entries(prayers).map(([key, prayer]) => {
           const prayerKey = key as keyof Prayers;
@@ -80,6 +87,7 @@ export const PrayersSection = ({
           );
         })}
       </div>
-    </Card>
+      </div>
+    </div>
   );
 };

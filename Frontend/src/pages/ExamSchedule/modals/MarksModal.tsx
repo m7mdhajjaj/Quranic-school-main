@@ -90,7 +90,7 @@ export const MarksModal: React.FC<MarksModalProps> = ({
                 >
                   {/* Student Name Badge */}
                   <div className="flex items-center justify-center mb-4">
-                    <div className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-4 py-2 rounded-full shadow-lg">
+                    <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white px-4 py-2 rounded-full shadow-lg">
                       <div className="flex items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -133,7 +133,7 @@ export const MarksModal: React.FC<MarksModalProps> = ({
                       <div className="flex gap-2 pt-2">
                         <button
                           type="button"
-                          className="text-xs flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-lg px-3 py-2 transition-colors"
+                          className="text-xs flex-1 bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 hover:from-emerald-700 hover:via-teal-800 hover:to-slate-800 text-white rounded-lg px-3 py-2 transition-colors"
                           onClick={async () => {
                             await onSaveSingleMark(sid, fullName);
                           }}
@@ -161,7 +161,7 @@ export const MarksModal: React.FC<MarksModalProps> = ({
           </div>
 
           <div className="flex justify-between items-center pt-6 border-t-2 border-emerald-100">
-            <button type="submit" className="text-lg px-8 py-3 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 shadow-lg hover:shadow-xl transform hover:scale-[1.02] text-white rounded-lg transition-all">
+            <button type="submit" className="text-lg px-8 py-3 bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 hover:from-emerald-700 hover:via-teal-800 hover:to-slate-800 shadow-lg hover:shadow-xl transform hover:scale-[1.02] text-white rounded-lg transition-all">
               💾 حفظ جميع العلامات
             </button>
             <button

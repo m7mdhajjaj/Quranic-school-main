@@ -171,7 +171,7 @@ const Home = () => {
 
   return (
     <div
-      className="min-h-screen bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100"
+      className="min-h-screen bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20"
       dir="rtl"
     >
       <div className="container mx-auto py-12 px-4">

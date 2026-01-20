@@ -38,7 +38,7 @@ export const StudentView = ({
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
       {/* Header مع gradient جميل */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 rounded-3xl shadow-2xl p-8">
+      <div className="relative overflow-hidden bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 rounded-3xl shadow-2xl p-8">
         <div className="absolute top-0 left-0 w-full h-full opacity-10">
           <div className="absolute top-10 right-10 w-32 h-32 bg-white rounded-full blur-3xl"></div>
           <div className="absolute bottom-10 left-10 w-40 h-40 bg-white rounded-full blur-3xl"></div>
@@ -147,7 +147,7 @@ export const StudentView = ({
       {/* تفاصيل الغياب - قائمة التواريخ */}
       <div className="bg-white rounded-3xl shadow-xl border border-emerald-100 overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 py-6 px-8">
+        <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 py-6 px-8">
           <h2 className="text-2xl font-bold text-white flex items-center gap-3">
             <div className="p-2 bg-white/10 backdrop-blur-sm rounded-xl">
               <CalendarDays className="w-6 h-6" />

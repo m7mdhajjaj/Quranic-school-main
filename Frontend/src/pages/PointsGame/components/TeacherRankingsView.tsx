@@ -23,10 +23,13 @@ export const TeacherRankingsView = memo(
       <div className="space-y-4 sm:space-y-6">
         {/* اختيار الحلقة */}
         {groups.length > 0 && (
-          <div className="bg-white rounded-2xl shadow-lg p-4">
-            <label htmlFor="group-select" className="block text-sm font-bold text-gray-700 mb-2">
-              اختر الحلقة
-            </label>
+          <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
+            <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 px-5 py-3">
+              <label htmlFor="group-select" className="block text-sm font-bold text-white">
+                🏫 اختر الحلقة
+              </label>
+            </div>
+            <div className="p-4">
             <select
               id="group-select"
               value={selectedGroupId}
@@ -38,11 +41,12 @@ export const TeacherRankingsView = memo(
                 </option>
               ))}
             </select>
+            </div>
           </div>
         )}
 
         {/* أزرار التبديل */}
-        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-6">
+        <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-4 sm:p-6">
           <div className="text-center mb-4 sm:mb-6">
             <div className="text-5xl sm:text-6xl mb-3">
               {rankingType === "points" ? "🏆" : "🎖️"}

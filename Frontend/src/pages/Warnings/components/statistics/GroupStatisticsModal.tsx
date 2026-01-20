@@ -66,7 +66,7 @@ export const GroupStatisticsModal: React.FC<GroupStatisticsModalProps> = React.m
         dir="rtl"
       >
         {/* Header */}
-        <div className="sticky top-0 bg-gradient-to-r from-emerald-600 to-teal-600 text-white p-6 rounded-t-[2rem] flex items-center justify-between">
+        <div className="sticky top-0 bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white p-6 rounded-t-[2rem] flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
               <TrendingUp className="w-6 h-6" />
@@ -148,7 +148,7 @@ export const GroupStatisticsModal: React.FC<GroupStatisticsModalProps> = React.m
           {hasTopStudents && (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
               <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <div className="p-2 bg-gradient-to-br from-teal-500 to-emerald-600 rounded-lg">
+                <div className="p-2 bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 rounded-lg">
                   <AlertTriangle className="w-4 h-4 text-white" />
                 </div>
                 الطلاب الأكثر تنبيهات
@@ -187,7 +187,7 @@ export const GroupStatisticsModal: React.FC<GroupStatisticsModalProps> = React.m
           {/* توزيع التنبيهات */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
             <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-              <div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg">
+              <div className="p-2 bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 rounded-lg">
                 <TrendingUp className="w-4 h-4 text-white" />
               </div>
               توزيع التنبيهات حسب النوع
@@ -237,7 +237,7 @@ export const GroupStatisticsModal: React.FC<GroupStatisticsModalProps> = React.m
           {/* تفاصيل الطلاب - جدول إحصائي */}
           {hasStudentsDetails && (
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white p-4">
+                <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white p-4">
                   <h3 className="text-lg font-bold flex items-center gap-2">
                     <Users className="w-5 h-5" />
                     تفاصيل الطلاب والإنذارات
@@ -353,7 +353,7 @@ export const GroupStatisticsModal: React.FC<GroupStatisticsModalProps> = React.m
                             </span>
                           </td>
                           <td className="p-4 text-center border-b border-gray-100">
-                            <span className="inline-flex items-center justify-center w-10 h-8 rounded-lg font-bold text-sm bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-sm">
+                            <span className="inline-flex items-center justify-center w-10 h-8 rounded-lg font-bold text-sm bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white shadow-sm">
                               {student.warningsCount || 0}
                             </span>
                           </td>

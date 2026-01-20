@@ -6,12 +6,19 @@ import { BookOpen, Book, RefreshCw } from "lucide-react";
 
 export const HalaqahSection = ({ halaqah, onUpdate }: HalaqahSectionProps) => {
   return (
-    <Card className="p-6 mb-6">
-      <div className="flex items-center gap-3 mb-6">
-        <BookOpen className="w-10 h-10 text-emerald-600" />
-        <h2 className="text-2xl font-bold text-gray-800">المتابعة في الحلقة</h2>
-        <span className="text-sm text-gray-500">(الحد الأدنى 10 دقائق)</span>
+    <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden mb-6">
+      <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 px-5 py-4">
+        <div className="flex items-center gap-3">
+          <div className="bg-white/15 backdrop-blur-sm p-2.5 rounded-xl">
+            <BookOpen className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h2 className="text-white font-bold text-lg">📖 المتابعة في الحلقة</h2>
+            <span className="text-white/70 text-xs">(الحد الأدنى 10 دقائق)</span>
+          </div>
+        </div>
       </div>
+      <div className="p-5 bg-gradient-to-br from-slate-50 via-emerald-50/20 to-teal-50/30">
       <div className="grid md:grid-cols-2 gap-6">
         {/* حفظ من الموضع القادم */}
         <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-6 shadow-lg border-2 border-emerald-200">
@@ -127,6 +134,7 @@ export const HalaqahSection = ({ halaqah, onUpdate }: HalaqahSectionProps) => {
           مراجعة
         </p>
       </div>
-    </Card>
+      </div>
+    </div>
   );
 };

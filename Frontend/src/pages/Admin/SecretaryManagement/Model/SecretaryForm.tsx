@@ -56,7 +56,7 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header with Gradient */}
-        <div className="relative bg-gradient-to-l from-emerald-600 via-teal-600 to-cyan-600 rounded-t-2xl p-4 overflow-hidden flex-shrink-0">
+        <div className="relative bg-gradient-to-l from-emerald-600 via-teal-700 to-slate-700 rounded-t-2xl p-4 overflow-hidden flex-shrink-0">
           {/* Decorative circles */}
           <div className="absolute -top-10 -left-10 w-40 h-40 bg-white/10 rounded-full" />
           <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-white/10 rounded-full" />
@@ -90,9 +90,9 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
         {/* Form */}
         <form id="secretary-form" onSubmit={handleSubmit} className="p-4 space-y-4 flex-1 overflow-y-auto overscroll-contain">
           {/* =================== Section: الأسماء =================== */}
-          <div className="bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 rounded-xl p-5 border border-emerald-200">
+          <div className="bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20 rounded-xl p-5 border border-emerald-200">
             <div className="flex items-center gap-2 text-emerald-700 mb-4">
-              <div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-lg">
+              <div className="p-2 bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 rounded-lg">
                 <User className="w-5 h-5 text-white" />
               </div>
               <h3 className="font-bold text-base">الأسماء</h3>
@@ -217,9 +217,9 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
           </div>
 
           {/* =================== Section: الهوية والتواصل =================== */}
-          <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-5 border border-emerald-200">
+          <div className="bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20 rounded-xl p-5 border border-emerald-200">
             <div className="flex items-center gap-2 text-emerald-700 mb-4">
-              <div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-lg">
+              <div className="p-2 bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 rounded-lg">
                 <CreditCard className="w-5 h-5 text-white" />
               </div>
               <h3 className="font-bold text-base">الهوية والتواصل</h3>
@@ -324,9 +324,9 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
           </div>
 
           {/* =================== Section: البيانات الشخصية =================== */}
-          <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-5 border border-emerald-200">
+          <div className="bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20 rounded-xl p-5 border border-emerald-200">
             <div className="flex items-center gap-2 text-emerald-700 mb-4">
-              <div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-lg">
+              <div className="p-2 bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 rounded-lg">
                 <User className="w-5 h-5 text-white" />
               </div>
               <h3 className="font-bold text-base">البيانات الشخصية</h3>
@@ -437,9 +437,9 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
           </div>
 
           {/* =================== Section: الصلاحيات =================== */}
-          <div className="bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 rounded-xl p-5 border border-emerald-200">
+          <div className="bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20 rounded-xl p-5 border border-emerald-200">
             <div className="flex items-center gap-2 text-emerald-700 mb-4">
-              <div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-lg">
+              <div className="p-2 bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 rounded-lg">
                 <Shield className="w-5 h-5 text-white" />
               </div>
               <h3 className="font-bold text-base">الصلاحيات</h3>
@@ -491,9 +491,9 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
               </div>
               
               {/* صلاحية الطلاب */}
-              <div className="p-4 bg-white border-2 rounded-xl border-cyan-200 hover:border-cyan-400 hover:shadow-md transition-all">
+              <div className="p-4 bg-white border-2 rounded-xl border-emerald-200 hover:border-emerald-400 hover:shadow-md transition-all">
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="p-2 bg-gradient-to-br from-cyan-400 to-cyan-600 text-white rounded-lg shadow-sm">
+                  <div className="p-2 bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 text-white rounded-lg shadow-sm">
                     <Users className="w-5 h-5" />
                   </div>
                   <h4 className="font-semibold text-gray-800 text-sm">الطلاب</h4>
@@ -504,7 +504,7 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
                   onChange={(e) => handleChange(e)}
                   title="صلاحية إدارة الطلاب"
                   aria-label="صلاحية إدارة الطلاب"
-                  className="w-full px-3 py-2.5 border-2 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all border-cyan-200 text-sm font-medium bg-cyan-50"
+                  className="w-full px-3 py-2.5 border-2 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all border-emerald-200 text-sm font-medium bg-emerald-50"
                 >
                   <option value="none">🚫 بدون</option>
                   <option value="view">👁️ عرض</option>
@@ -515,7 +515,7 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
               {/* صلاحية الجدول (أسبوعي وشهري) */}
               <div className="p-4 bg-white border-2 rounded-xl border-emerald-200 hover:border-emerald-400 hover:shadow-md transition-all">
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="p-2 bg-gradient-to-br from-emerald-400 to-teal-600 text-white rounded-lg shadow-sm">
+                  <div className="p-2 bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 text-white rounded-lg shadow-sm">
                     <Calendar className="w-5 h-5" />
                   </div>
                   <h4 className="font-semibold text-gray-800 text-sm">الجدول</h4>
@@ -551,7 +551,7 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
             type="submit"
             form="secretary-form"
             disabled={isLoading}
-            className="px-4 py-2 text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 rounded-lg transition-all flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-emerald-500/25 font-medium text-sm"
+            className="px-4 py-2 text-white bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 hover:from-emerald-700 hover:via-teal-800 hover:to-slate-800 rounded-lg transition-all flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-emerald-500/25 font-medium text-sm"
           >
             {isLoading ? (
               <>

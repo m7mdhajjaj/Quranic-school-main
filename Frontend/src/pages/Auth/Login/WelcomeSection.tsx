@@ -120,7 +120,7 @@ export const WelcomeSection: React.FC<WelcomeSectionProps> = ({
         {/* Main Title */}
         <motion.div className="space-y-2" variants={itemVariants}>
           <motion.h1 
-            className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 bg-clip-text text-transparent drop-shadow-lg leading-tight"
+            className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 bg-clip-text text-transparent drop-shadow-lg leading-tight"
             animate={{
               backgroundPosition: ["0%", "100%", "0%"],
             }}

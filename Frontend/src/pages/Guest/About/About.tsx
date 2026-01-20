@@ -149,7 +149,7 @@ const About = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100" dir="rtl">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20" dir="rtl">
       {/* Hero Section */}
       <section className="relative py-20 overflow-hidden">
         {/* Background Decorations */}
@@ -310,7 +310,7 @@ const About = () => {
       <section className="py-20">
         <div className="container mx-auto px-4">
           <motion.div
-            className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 rounded-3xl p-8 md:p-12 shadow-xl"
+            className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 rounded-3xl p-8 md:p-12 shadow-xl"
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}

@@ -29,8 +29,8 @@ export const TransparentModal: React.FC<TransparentModalProps> = ({
   ariaLabel,
   title,
   icon,
-  gradientFrom = "emerald-500",
-  gradientTo = "teal-600",
+  gradientFrom = "emerald-600",
+  gradientTo = "slate-700",
 }) => {
   // منع scroll الصفحة الأساسية عند فتح المودال
   useEffect(() => {
@@ -74,10 +74,7 @@ export const TransparentModal: React.FC<TransparentModalProps> = ({
         )}>
         {title && (
           <div
-            className={cn(
-              "p-6 flex-shrink-0",
-              `bg-gradient-to-r from-${gradientFrom} to-${gradientTo}`
-            )}>
+            className="p-6 flex-shrink-0 bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-3">
                 {icon && (

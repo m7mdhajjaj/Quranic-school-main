@@ -53,10 +53,10 @@ export const TeacherView: React.FC<TeacherViewProps> = React.memo(({
   if (!selectedGroupProp) {
     return (
       <div
-        className="min-h-screen bg-gradient-to-b from-emerald-50 via-teal-50 to-emerald-100 p-4 md:p-8 bg-size-200 animate-gradient"
+        className="min-h-screen bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20 p-4 md:p-8"
         dir="rtl"
       >
-        <div className="max-w-7xl mx-auto space-y-6">
+        <div className="max-w-[98%] mx-auto space-y-6">
           {/* Header */}
           <div className="animate-fade-in-down">
             <WarningsPageHeader />
@@ -118,14 +118,14 @@ export const TeacherView: React.FC<TeacherViewProps> = React.memo(({
   // عرض طلاب الحلقة المختارة
   return (
     <div
-      className="min-h-screen bg-gradient-to-b from-emerald-50 via-teal-50 to-emerald-100 p-4 md:p-8"
+      className="min-h-screen bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20 p-4 md:p-8"
       dir="rtl"
     >
       {/* زر الطلاب المفصولين - Fixed على الشمال - REMOVED */}
       
-      <div className="max-w-[1920px] mx-auto space-y-6">
+      <div className="max-w-[98%] mx-auto space-y-6">
         {/* Header */}
-        <div className="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-3xl shadow-xl p-6 border border-emerald-300 animate-fade-in-down">
+        <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 rounded-2xl shadow-xl p-6 border border-white/10">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <Button
               onClick={handleBack}
