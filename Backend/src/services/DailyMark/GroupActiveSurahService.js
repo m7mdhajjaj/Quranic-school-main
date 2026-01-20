@@ -54,7 +54,7 @@ class GroupActiveSurahService {
     }
 
     // تفعيل السورة
-    const result = await Group.activateSurah(groupId, surahNumber, surahInfo.name, type);
+    const result = await Group.activateSurah(groupId, surahNumber, surahInfo.name, 0, type);
     
     return {
       success: true,
@@ -323,7 +323,7 @@ class GroupActiveSurahService {
       try {
         // البحث عن آخر مقطع حفظ
         const lastMemorizationSection = await Section.findOne({
-          group: group._id,
+          groupId: group._id,
           'memorizationMeta.surahNumber': { $exists: true, $ne: null }
         })
           .sort({ date: -1, createdAt: -1 })
@@ -331,7 +331,7 @@ class GroupActiveSurahService {
 
         // البحث عن آخر مقطع مراجعة
         const lastReviewSection = await Section.findOne({
-          group: group._id,
+          groupId: group._id,
           'reviewMeta.surahNumber': { $exists: true, $ne: null }
         })
           .sort({ date: -1, createdAt: -1 })

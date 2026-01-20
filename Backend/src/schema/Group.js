@@ -507,7 +507,7 @@ groupSchema.statics.getActiveSurahInfo = async function (groupId) {
   
   if (!group) return null;
 
-  // جلب بيانات السور للحساب - نحتاجها قبل calculateProgress
+  // جلب بيانات السور للحساب
   let surahData = [];
   try {
     const quranMeta = require('../utils/Quran/dailyMarkQuranMetadata');
@@ -516,13 +516,40 @@ groupSchema.statics.getActiveSurahInfo = async function (groupId) {
     console.warn('Could not load surah data for progress calculation');
   }
 
+  // ✅ V14: التحقق من وجود مقاطع فعلية (Self-Healing View)
+  // يمنع ظهور سورة "شبح" إذا تم حذف جميع مقاطعها
+  const Section = mongoose.model("Section");
+  const memSurahNum = group.activeMemorizationSurah?.surahNumber;
+  const revSurahNum = group.activeReviewSurah?.surahNumber;
+
+  const [memCount, revCount] = await Promise.all([
+    memSurahNum ? Section.countDocuments({ 
+      $or: [{ groupId: group._id }, { group: group.name }], 
+      'memorizationMeta.surahNumber': memSurahNum 
+    }) : 0,
+    revSurahNum ? Section.countDocuments({ 
+      $or: [{ groupId: group._id }, { group: group.name }], 
+      'reviewMeta.surahNumber': revSurahNum 
+    }) : 0
+  ]);
+
   // مساعد لحساب التفاصيل
-  const calculateProgress = (activeSurah) => {
+  const calculateProgress = (activeSurah, realSectionCount) => {
     if (!activeSurah?.surahNumber) {
       return {
         isActive: false,
         canStartNewSurah: true,
         message: 'يمكن البدء بأي سورة جديدة'
+      };
+    }
+
+    // ✅ إذا السورة مسجلة كفعالة ولكن لا توجد مقاطع (Phantom State)
+    if (realSectionCount === 0) {
+      return {
+        isActive: false,
+        canStartNewSurah: true,
+        surahNumber: null, // نعيدها كـ null للواجهة
+        message: 'تم التحقق: لا توجد مقاطع، يمكنك البدء بسورة جديدة'
       };
     }
 
@@ -575,8 +602,8 @@ groupSchema.statics.getActiveSurahInfo = async function (groupId) {
   return {
     groupId: group._id,
     groupName: group.name,
-    memorization: calculateProgress(group.activeMemorizationSurah),
-    review: calculateProgress(group.activeReviewSurah),
+    memorization: calculateProgress(group.activeMemorizationSurah, memCount),
+    review: calculateProgress(group.activeReviewSurah, revCount),
     completedSurahs: {
       memorization: group.completedSurahs?.memorization || [],
       review: group.completedSurahs?.review || []

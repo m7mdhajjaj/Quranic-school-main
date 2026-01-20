@@ -25,10 +25,23 @@ const logger = createLogger('SectionDelete');
  * 2. حالة الإكمال (isCompleted) - تعود إلى false إذا لم نعد عند آخر آية
  * 3. إذا لم تعد هناك مقاطع للسورة، يتم مسحها
  */
-async function recalculateActiveSurah(groupId, type) {
+async function recalculateActiveSurah(groupId, type, groupName = null) {
   try {
-    const group = await Group.findById(groupId);
+    let group;
+    
+    // محاولة العثور على الحلقة
+    if (groupId) {
+      group = await Group.findById(groupId);
+    } 
+    
+    if (!group && groupName) {
+      group = await Group.findOne({ name: groupName });
+    }
+
     if (!group) return;
+    
+    // تحديث groupId في حال تم العثور عليه بالاسم
+    const validGroupId = group._id;
 
     const activeSurah = type === 'memorization' 
       ? group.activeMemorizationSurah 
@@ -38,11 +51,16 @@ async function recalculateActiveSurah(groupId, type) {
 
     const metaField = type === 'memorization' ? 'memorizationMeta' : 'reviewMeta';
     
-    // البحث عن جميع المقاطع المتبقية لهذه السورة
-    const remainingSections = await Section.find({
-      groupId: groupId,
+    // ✅ البحث عن جميع المقاطع المتبقية (دعم للـ Legacy Data)
+    const sectionQuery = {
+      $or: [
+        { groupId: validGroupId },
+        { group: group.name } // Fallback لاسم الحلقة
+      ],
       [`${metaField}.surahNumber`]: activeSurah.surahNumber
-    }).select(metaField);
+    };
+
+    const remainingSections = await Section.find(sectionQuery).select(metaField);
 
     // إذا لم تعد هناك مقاطع، مسح السورة الفعالة
     if (remainingSections.length === 0) {
@@ -50,7 +68,7 @@ async function recalculateActiveSurah(groupId, type) {
         ? 'activeMemorizationSurah' 
         : 'activeReviewSurah';
       
-      await Group.findByIdAndUpdate(groupId, {
+      await Group.findByIdAndUpdate(validGroupId, {
         [updateField]: {
           surahNumber: null,
           surahName: null,
@@ -86,7 +104,7 @@ async function recalculateActiveSurah(groupId, type) {
       ? 'activeMemorizationSurah' 
       : 'activeReviewSurah';
     
-    await Group.findByIdAndUpdate(groupId, {
+    await Group.findByIdAndUpdate(validGroupId, {
       [`${updateField}.lastAyahEnd`]: maxAyahEnd,
       [`${updateField}.isCompleted`]: isCompleted,
       [`${updateField}.completedAt`]: isCompleted ? activeSurah.completedAt || new Date() : null,
@@ -110,6 +128,7 @@ exports.deleteSection = async (req, res) => {
     }
 
     const groupId = section.groupId;
+    const groupName = section.group;
     const hasMemorization = section.memorizationMeta && section.memorizationMeta.length > 0;
     const hasReview = section.reviewMeta && section.reviewMeta.length > 0;
 
@@ -134,13 +153,12 @@ exports.deleteSection = async (req, res) => {
     ]);
 
     // ✅ V7: إعادة حساب السور الفعالة بعد الحذف
-    if (groupId) {
-      if (hasMemorization) {
-        await recalculateActiveSurah(groupId, 'memorization');
-      }
-      if (hasReview) {
-        await recalculateActiveSurah(groupId, 'review');
-      }
+    // نمرر groupId واسم الحلقة لضمان العثور عليها
+    if (hasMemorization) {
+      await recalculateActiveSurah(groupId, 'memorization', groupName);
+    }
+    if (hasReview) {
+      await recalculateActiveSurah(groupId, 'review', groupName);
     }
 
     sendSuccess(res, { 
@@ -172,12 +190,27 @@ exports.bulkDeleteSections = async (req, res) => {
       .select('timetableId group groupId memorizationMeta reviewMeta');
     
     // جمع الحلقات المتأثرة
-    const affectedGroups = new Map(); // groupId -> { hasMemorization, hasReview }
-    
+    // We use a Map where key is ID (if available) or Name (prefixed with 'NAME:')
+    const affectedGroups = new Map(); 
+
     for (const section of sections) {
+      let key = null;
+      let isName = false;
+
       if (section.groupId) {
-        const groupId = section.groupId.toString();
-        const existing = affectedGroups.get(groupId) || { hasMemorization: false, hasReview: false };
+        key = section.groupId.toString();
+      } else if (section.group) {
+        key = `NAME:${section.group}`; // Prefix to avoid collision with IDs
+        isName = true;
+      }
+
+      if (key) {
+        const existing = affectedGroups.get(key) || { 
+          hasMemorization: false, 
+          hasReview: false,
+          groupId: isName ? null : key,
+          groupName: isName ? section.group : null
+        };
         
         if (section.memorizationMeta && section.memorizationMeta.length > 0) {
           existing.hasMemorization = true;
@@ -186,7 +219,7 @@ exports.bulkDeleteSections = async (req, res) => {
           existing.hasReview = true;
         }
         
-        affectedGroups.set(groupId, existing);
+        affectedGroups.set(key, existing);
       }
     }
     
@@ -220,12 +253,17 @@ exports.bulkDeleteSections = async (req, res) => {
     logger.success(`تم حذف ${sectionsResult.deletedCount} مقطع`);
 
     // ✅ V7: إعادة حساب السور الفعالة لكل حلقة متأثرة
-    for (const [groupId, types] of affectedGroups) {
-      if (types.hasMemorization) {
-        await recalculateActiveSurah(groupId, 'memorization');
+    for (const [key, data] of affectedGroups) {
+      const { groupId, groupName, hasMemorization, hasReview } = data;
+      
+      // If we only have name, we need to pass it. recalculateActiveSurah handles lookup.
+      // If we have groupId, we pass it.
+      
+      if (hasMemorization) {
+        await recalculateActiveSurah(groupId, 'memorization', groupName);
       }
-      if (types.hasReview) {
-        await recalculateActiveSurah(groupId, 'review');
+      if (hasReview) {
+        await recalculateActiveSurah(groupId, 'review', groupName);
       }
     }
 

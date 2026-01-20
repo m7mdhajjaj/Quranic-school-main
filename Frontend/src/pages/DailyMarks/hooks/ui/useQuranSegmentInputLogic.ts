@@ -27,6 +27,8 @@ export function useQuranSegmentInputLogic({ segments = [], groupName, type, onCh
   const [activeSurahInfo, setActiveSurahInfo] = useState<ActiveSurahProgress | null>(null);
   const isInternalUpdate = useRef(false);
 
+  const [isCheckingActiveSurah, setIsCheckingActiveSurah] = useState(false);
+
   // ✅ V13: جلب معلومات Active Surah عند تحميل المكون
   useEffect(() => {
     if (!groupId || !type) {
@@ -34,6 +36,7 @@ export function useQuranSegmentInputLogic({ segments = [], groupName, type, onCh
       return;
     }
 
+    setIsCheckingActiveSurah(true);
     getActiveSurahInfo(groupId).then(response => {
       if (!response.success || !response.data) {
         setActiveSurahInfo(null);
@@ -43,6 +46,8 @@ export function useQuranSegmentInputLogic({ segments = [], groupName, type, onCh
       setActiveSurahInfo(typeData || null);
     }).catch(() => {
       setActiveSurahInfo(null);
+    }).finally(() => {
+      setIsCheckingActiveSurah(false);
     });
   }, [groupId, type]);
 
@@ -63,17 +68,33 @@ export function useQuranSegmentInputLogic({ segments = [], groupName, type, onCh
       return;
     }
 
-    // جلب معلومات Active Surah
+    // 1️⃣ استخدام البيانات المحلية إذا كانت موجودة (تحقق فوري)
+    if (activeSurahInfo) {
+      if (activeSurahInfo.isActive && !activeSurahInfo.canStartNewSurah && activeSurahInfo.surahNumber !== segment.surahNumber) {
+        const typeLabel = type === 'memorization' ? 'حفظ' : 'مراجعة';
+        const progressText = activeSurahInfo.progressPercent ? ` (${activeSurahInfo.progressPercent}% مكتمل)` : '';
+        const remainingText = activeSurahInfo.remainingAyahs ? `، متبقي ${activeSurahInfo.remainingAyahs} آية` : '';
+        
+        setActiveSurahError(
+          `❌ يجب إكمال ${typeLabel} سورة ${activeSurahInfo.surahName} أولاً${progressText}${remainingText}\n\n` +
+          `📊 التقدم: ${activeSurahInfo.lastAyahEnd || 0} من ${activeSurahInfo.totalAyahs} آية\n` +
+          `💡 الحل: أكمل الحفظ حتى الآية ${activeSurahInfo.totalAyahs} ثم يمكنك البدء بسورة جديدة.`
+        );
+      } else {
+        setActiveSurahError(null);
+      }
+      return;
+    }
+
+    // 2️⃣ Fallback: جلب البيانات من السيرفر إذا لم تكن موجودة
     getActiveSurahInfo(groupId).then(response => {
       if (!response.success || !response.data) {
         setActiveSurahError(null);
         return;
       }
 
-      // ✅ V11 FIX: البيانات تُرجع مع الحقول الصحيحة
       const typeData = type === 'memorization' ? response.data.memorization : response.data.review;
       
-      // التحقق من وجود سورة فعالة غير مكتملة
       if (typeData && typeData.isActive && !typeData.canStartNewSurah && typeData.surahNumber !== segment.surahNumber) {
         const typeLabel = type === 'memorization' ? 'حفظ' : 'مراجعة';
         const progressText = typeData.progressPercent ? ` (${typeData.progressPercent}% مكتمل)` : '';
@@ -91,11 +112,23 @@ export function useQuranSegmentInputLogic({ segments = [], groupName, type, onCh
       console.error('Error checking active surah:', err);
       setActiveSurahError(null);
     });
-  }, [groupId, segment.surahNumber, type]);
+  }, [groupId, segment.surahNumber, type, activeSurahInfo]);
 
+  // دالة مساعدة للتحقق من الصلاحية (يمكن استخدامها مستقبلاً)
+  // const checkActiveSurahConstraint = ... (Removed for cleaner code as we rely on useEffect)
+
+  const selectSurah = (s: typeof quranSurahs[0]) => {
+    // ✅ V14: السماح بالاختيار ولكن مع ظهور تحذير (Validation Error)
+    // قمنا بإلغاء الحظر الصارم (return) لأن المستخدم اشتكى من اختفاء النتائج
+    // والآن نعتمد على activeSurahError الذي يظهر رسالة حمراء ويمنع الحفظ
+    
+    setSurahInput(s.name);
+    setSuggestions([]);
+    handleUpdate('surahNumber', s.number, { number: s.number, name: s.name });
+  };
+   
   useEffect(() => {
     if (groupName && (type === 'memorization' || type === 'review') && segment.surahNumber) {
-      
       // Use the actual type to get specific suggestions (Strict Mode)
       // ✅ V9: Pass date to ensure review suggestions respect the selected date (exclude same day)
       getLastSegment(groupName, segment.surahNumber, type, excludeId, date).then(suggestion => {
@@ -256,11 +289,7 @@ export function useQuranSegmentInputLogic({ segments = [], groupName, type, onCh
     setSuggestions(matches);
   };
 
-  const selectSurah = (s: typeof quranSurahs[0]) => {
-    setSurahInput(s.name);
-    setSuggestions([]);
-    handleUpdate('surahNumber', s.number, { number: s.number, name: s.name });
-  };
+
 
   const handleClear = () => {
     setSurahInput('');
@@ -310,6 +339,7 @@ export function useQuranSegmentInputLogic({ segments = [], groupName, type, onCh
     noMemorizationError,
     activeSurahError, // ✅ V10: Active Surah validation error
     activeSurahInfo, // ✅ V13: معلومات السورة الفعالة للتحقق قبل الاختيار
+    isCheckingActiveSurah, // ✅ V14: حالة التحقق من السورة الفعالة
     handleUpdate,
     handleInputChange,
     selectSurah,
