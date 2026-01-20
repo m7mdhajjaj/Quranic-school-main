@@ -1,5 +1,6 @@
 import { memo, useState, useEffect, useCallback, useMemo, useTransition } from 'react';
 import { BookOpen, Target, ChevronLeft, BookMarked, Search, Loader2 } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { useStudentGroupedSections } from '../hooks/data/useStudentGroupedSections';
 import { SurahCard } from '../components/SurahCard';
 import { SurahDetailsView } from '../components/SurahDetailsView';
@@ -482,16 +483,28 @@ StatsLegend.displayName = 'StatsLegend';
 /**
  * New Student View Component - عرض السور المجمعة للطالب
  * ✅ محسّن للأداء مع smooth transitions
+ * ✅ دعم URL للتنقل بين الصفحات (زر الرجوع في المتصفح)
  */
 export const NewStudentView = memo<NewStudentViewProps>(({ studentId, groupId }) => {
+  // ✅ URL State Management
+  const [searchParams, setSearchParams] = useSearchParams();
+  
   // ✅ useTransition للتحديثات السلسة
   const [isPending, startTransition] = useTransition();
   
   const { surahs, summary, loading, error, refetch } = useStudentGroupedSections(studentId, groupId);
-  const [selectedSurah, setSelectedSurah] = useState<GroupedSurah | null>(null);
   const [activeSurahs, setActiveSurahs] = useState<ActiveSurahsResponse | null>(null);
-  const [filterStatus, setFilterStatus] = useState<'all' | 'completed' | 'in_progress'>('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  
+  // ✅ URL-based state: read from URL params
+  const selectedSurahNumber = searchParams.get('surah');
+  const filterStatus = (searchParams.get('filter') as 'all' | 'completed' | 'in_progress') || 'all';
+  const searchQuery = searchParams.get('search') || '';
+  
+  // ✅ Get selected surah from URL param
+  const selectedSurah = useMemo(() => {
+    if (!selectedSurahNumber) return null;
+    return surahs.find(s => s.surahNumber === parseInt(selectedSurahNumber)) || null;
+  }, [selectedSurahNumber, surahs]);
 
   // ✅ Fetch active surahs with memoized callback
   const fetchActiveSurahs = useCallback(async () => {
@@ -510,37 +523,52 @@ export const NewStudentView = memo<NewStudentViewProps>(({ studentId, groupId })
     fetchActiveSurahs();
   }, [fetchActiveSurahs]);
 
-  // ✅ Memoized filter change handler
+  // ✅ URL-aware filter change handler
   const handleFilterChange = useCallback((status: 'all' | 'completed' | 'in_progress') => {
     startTransition(() => {
-      setFilterStatus(status);
+      const newParams = new URLSearchParams(searchParams);
+      if (status === 'all') {
+        newParams.delete('filter');
+      } else {
+        newParams.set('filter', status);
+      }
+      setSearchParams(newParams, { replace: true });
     });
-  }, []);
+  }, [searchParams, setSearchParams]);
 
-  // ✅ Memoized search change handler
+  // ✅ URL-aware search change handler
   const handleSearchChange = useCallback((query: string) => {
     startTransition(() => {
-      setSearchQuery(query);
+      const newParams = new URLSearchParams(searchParams);
+      if (query.trim()) {
+        newParams.set('search', query);
+      } else {
+        newParams.delete('search');
+      }
+      setSearchParams(newParams, { replace: true });
     });
-  }, []);
+  }, [searchParams, setSearchParams]);
 
-  // ✅ Memoized surah click handler
+  // ✅ URL-aware surah click handler
   const handleSurahClick = useCallback((surah: GroupedSurah) => {
-    setSelectedSurah(surah);
-  }, []);
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('surah', surah.surahNumber.toString());
+    setSearchParams(newParams);
+  }, [searchParams, setSearchParams]);
 
-  // ✅ Memoized active surah click handler
+  // ✅ URL-aware active surah click handler
   const handleActiveSurahClick = useCallback((surahNumber: number) => {
-    const surah = surahs.find(s => s.surahNumber === surahNumber);
-    if (surah) {
-      setSelectedSurah(surah);
-    }
-  }, [surahs]);
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('surah', surahNumber.toString());
+    setSearchParams(newParams);
+  }, [searchParams, setSearchParams]);
 
-  // ✅ Memoized back handler
+  // ✅ URL-aware back handler
   const handleBack = useCallback(() => {
-    setSelectedSurah(null);
-  }, []);
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete('surah');
+    setSearchParams(newParams);
+  }, [searchParams, setSearchParams]);
 
   // ✅ Memoized filtered surahs
   const filteredSurahs = useMemo(() => {
