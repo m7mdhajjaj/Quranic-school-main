@@ -140,28 +140,89 @@ export const useWarningsData = (): UseWarningsDataReturn => {
   }, []);
 
   // ✅ استخدام AbortController لمنع race conditions
+  // ✅ FIX: استخدام userId و userRole بدلاً من user object لمنع infinite loop
+  const userId = user?._id;
+  const userRole = user?.role;
+  
   useEffect(() => {
     // ⚡ انتظر حتى يكون المستخدم محدداً
-    if (!user) {
+    if (!userId || !userRole) {
       // المستخدم لم يُحمل بعد، نبقي loading = true
       return;
     }
     
     // ⚡ إذا المستخدم ليس معلم ولا طالب، أوقف التحميل
-    if (!isTeacher && !isStudent) {
+    if (userRole !== 'teacher' && userRole !== 'student') {
       setLoading(false);
       return;
     }
     
     const controller = new AbortController();
+    abortControllerRef.current = controller;
     let isMounted = true;
     
     const loadData = async () => {
       try {
-        await fetchData();
-      } catch (error) {
-        if (!controller.signal.aborted && isMounted) {
+        setLoading(true);
+        
+        if (userRole === 'teacher') {
+          const cacheKey = `teacher_${userId}`;
+          const cached = groupsCache.get(cacheKey);
+          
+          // ✅ استخدام البيانات المخزنة إذا كانت حديثة
+          if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+            if (isMounted) {
+              setGroups(cached.data);
+              setLoading(false);
+            }
+            return;
+          }
+
+          // جلب حلقات المعلم النشطة فقط بدون طلاب (lazy loading)
+          const response = await api.get(
+            `/groups/teacher-id/${userId}/filtered?filter=active`,
+            { signal: controller.signal }
+          );
+
+          const groupsData = response.data?.data?.groups || [];
+
+          // تحويل البيانات للصيغة المطلوبة
+          const groupsList = groupsData.map((group: any) => ({
+            _id: group._id,
+            name: group.name,
+            currentStudents: group.currentStudents || 0,
+            totalStudents: group.totalStudents || 0,
+            students: [],
+          }));
+
+          // ✅ حفظ في الكاش
+          groupsCache.set(cacheKey, {
+            data: groupsList,
+            timestamp: Date.now()
+          });
+
+          if (isMounted) {
+            setGroups(groupsList);
+          }
+        } else if (userRole === 'student') {
+          // جلب إنذارات الطالب
+          const warningsData = await warningApi.getStudentWarnings(userId);
+          if (isMounted) {
+            setWarnings(Array.isArray(warningsData) ? warningsData : []);
+          }
+        }
+      } catch (error: any) {
+        if (error.name === 'AbortError' || error.name === 'CanceledError') {
+          console.log('Request was cancelled');
+          return;
+        }
+        if (isMounted) {
           console.error('Error in loadData:', error);
+          showErrorMessage('خطأ', 'حدث خطأ أثناء تحميل البيانات');
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
         }
       }
     };
@@ -172,7 +233,7 @@ export const useWarningsData = (): UseWarningsDataReturn => {
       isMounted = false;
       controller.abort();
     };
-  }, [user, user?._id, isTeacher, isStudent, fetchData]);
+  }, [userId, userRole]);
 
   return {
     user,

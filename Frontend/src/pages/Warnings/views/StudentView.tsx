@@ -5,6 +5,7 @@
 import React from 'react';
 import type { StudentViewProps } from '../types/warnings';
 import { Card } from '@/components/UI/Card';
+import { EmptyState } from '@/components/UI/EmptyState';
 import PageHeader from '@/components/UI/PageHeader';
 import {
   getWarningLabel,
@@ -23,7 +24,6 @@ import { useStudentView } from '../hooks/useStudentView';
 import {
   ANIMATION_DELAYS,
   LOADING_SKELETON_COUNT,
-  EMPTY_STATES,
 } from '../types/viewsConstants';
 import { getWarningIcon } from './warningIconHelper';
 
@@ -46,30 +46,13 @@ export const StudentView: React.FC<StudentViewProps> = React.memo(
 
           {/* Warnings List */}
           {loading ? (
-            <div className="space-y-4">
-              {Array.from({ length: LOADING_SKELETON_COUNT.warnings }).map(
-                (_, i) => (
-                  <div
-                    key={i}
-                    className="bg-white rounded-2xl p-5 shadow-md border border-gray-100 animate-pulse"
-                  >
-                    <div className="flex gap-4">
-                      <div className="w-12 h-12 bg-gray-200 rounded-xl flex-shrink-0" />
-                      <div className="flex-1 space-y-3">
-                        <div className="h-5 w-1/3 bg-gray-200 rounded-lg" />
-                        <div className="h-4 w-2/3 bg-gray-200 rounded" />
-                        <div className="h-14 bg-gray-200 rounded-xl mt-3" />
-                        <div className="grid grid-cols-3 gap-2 mt-3">
-                          <div className="h-4 bg-gray-200 rounded" />
-                          <div className="h-4 bg-gray-200 rounded" />
-                          <div className="h-4 bg-gray-200 rounded" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )
-              )}
-            </div>
+             <div className="flex justify-center flex-col items-center py-12 gap-4">
+                <div className="relative w-16 h-16">
+                  <div className="absolute top-0 left-0 w-full h-full border-4 border-emerald-100 rounded-full"></div>
+                  <div className="absolute top-0 left-0 w-full h-full border-4 border-emerald-500 rounded-full border-t-transparent animate-spin"></div>
+                </div>
+                <p className="text-emerald-700 font-medium animate-pulse">جاري التحميل...</p>
+             </div>
           ) : hasWarnings ? (
             <div className="space-y-4">
               {warnings.map((warning, index) => {
@@ -175,27 +158,23 @@ export const StudentView: React.FC<StudentViewProps> = React.memo(
               })}
             </div>
           ) : (
-            <div className="animate-fade-in">
-              <div className="bg-white rounded-2xl p-10 text-center shadow-lg border-2 border-emerald-100">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl shadow-lg mb-5">
-                  <CheckCircle className="w-8 h-8 text-white" />
-                </div>
-                <h3 className="text-2xl font-bold text-gray-800 mb-2">
-                  {EMPTY_STATES.noWarnings.title}
-                </h3>
-                <p className="text-gray-600">
-                  {EMPTY_STATES.noWarnings.description}
-                </p>
-              </div>
-            </div>
+            <EmptyState
+              icon={<CheckCircle className="w-16 h-16 text-emerald-500" />}
+              title="سجلك نظيف! 🌟"
+              description="لا توجد إنذارات مسجلة عليك. استمر في التفوق والالتزام"
+              illustration="success"
+            />
           )}
         </div>
       </div>
     );
   },
   (prevProps, nextProps) => {
-    // ✅ Custom comparison for performance
-    return prevProps.warnings.length === nextProps.warnings.length;
+    // ✅ Custom comparison updated to include loading state
+    return (
+      prevProps.loading === nextProps.loading &&
+      prevProps.warnings.length === nextProps.warnings.length
+    );
   }
 );
 
