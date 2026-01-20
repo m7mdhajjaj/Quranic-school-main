@@ -57,7 +57,7 @@ export const StudentTimetableView: React.FC<StudentTimetableViewProps> = ({
                 flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-bold text-sm sm:text-base
                 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5
                 ${viewMode === 'weekly' 
-                  ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white scale-105' 
+                  ? 'bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white scale-105' 
                   : 'bg-white text-gray-600 hover:bg-gray-50 border-2 border-gray-200'
                 }
               `}>
@@ -71,7 +71,7 @@ export const StudentTimetableView: React.FC<StudentTimetableViewProps> = ({
                 flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-bold text-sm sm:text-base
                 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5
                 ${viewMode === 'monthly' 
-                  ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white scale-105' 
+                  ? 'bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white scale-105' 
                   : 'bg-white text-gray-600 hover:bg-gray-50 border-2 border-gray-200'
                 }
               `}>

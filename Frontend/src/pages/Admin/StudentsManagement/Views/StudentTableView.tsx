@@ -128,7 +128,7 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
         <div className="overflow-x-auto">
           <table className="w-full min-w-[800px]">
             {/* Table Header */}
-            <thead className="bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-white shadow-lg">
+            <thead className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white shadow-lg">
               <tr>
                 {!isReadOnly && selectedStudents && onToggleStudent && onToggleAll && (
                   <th className="px-2 sm:px-3 py-3 sm:py-4 text-center font-bold text-xs sm:text-sm whitespace-nowrap w-10 sm:w-12">

@@ -16,7 +16,7 @@ export const GroupCard: React.FC<GroupCardProps> = React.memo(({ group, onClick,
 
   // تحديد لون التدرج حسب الحالة
   const gradientClass = activeStatus
-    ? "from-emerald-500 via-teal-500 to-cyan-500"
+    ? "from-emerald-600 via-teal-700 to-slate-700"
     : "from-gray-400 via-gray-500 to-gray-600";
   
   const bgGradientClass = activeStatus
@@ -139,7 +139,7 @@ export const GroupCard: React.FC<GroupCardProps> = React.memo(({ group, onClick,
             }}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold text-sm transition-all relative z-20 cursor-pointer ${
               activeStatus
-                ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md hover:shadow-lg group-hover:gap-2"
+                ? "bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white shadow-md hover:shadow-lg group-hover:gap-2"
                 : "bg-gray-200 text-gray-700 group-hover:bg-gray-300"
             }`}
           >

@@ -21,7 +21,7 @@ const IntroductionCard = ({
       className="group bg-white/90 backdrop-blur-md border border-emerald-100"
     >
       <div className="flex items-center gap-4 mb-6">
-        <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-2xl shadow-lg group-hover:shadow-xl transition-all duration-300">
+        <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 rounded-2xl shadow-lg group-hover:shadow-xl transition-all duration-300">
           <span className="text-2xl filter drop-shadow-sm">{icon}</span>
         </div>
         <h2 className="text-3xl md:text-4xl font-bold text-emerald-800 group-hover:text-emerald-700 transition-colors duration-300">

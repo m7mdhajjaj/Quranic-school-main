@@ -21,7 +21,7 @@ export const InfoField = ({ icon, label, value }: InfoFieldProps) => (
       <motion.div
         whileHover={{ rotate: [0, -10, 10, 0] }}
         transition={{ duration: 0.5 }}
-        className="flex-shrink-0 p-3 bg-gradient-to-br from-teal-500 to-emerald-600 rounded-xl text-white shadow-md group-hover:shadow-lg transition-all duration-300"
+        className="flex-shrink-0 p-3 bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 rounded-xl text-white shadow-md group-hover:shadow-lg transition-all duration-300"
       >
         {icon}
       </motion.div>

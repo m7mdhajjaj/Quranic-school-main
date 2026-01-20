@@ -49,7 +49,7 @@ export const PrayersSection = ({
                   variant={prayer.status === "home" ? "primary" : "ghost"}
                   className={`p-3 rounded-lg text-center transition-all ${
                     prayer.status === "home"
-                      ? "bg-gradient-to-br from-emerald-600 to-teal-600 text-white shadow-lg scale-105"
+                      ? "bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 text-white shadow-lg scale-105"
                       : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                   }`}>
                   <Home className="w-8 h-8 mx-auto" />

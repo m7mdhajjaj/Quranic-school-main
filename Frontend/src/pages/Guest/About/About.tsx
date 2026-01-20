@@ -64,7 +64,7 @@ const StatCard = ({ icon, number, label, delay }: StatCardProps) => (
     transition={{ duration: 0.5, delay }}
     whileHover={{ y: -5 }}
   >
-    <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-2xl group-hover:scale-110 transition-transform duration-300">
+    <div className="w-16 h-16 bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-2xl group-hover:scale-110 transition-transform duration-300">
       {icon}
     </div>
     <h3 className="text-3xl font-bold text-emerald-700 mb-2">{number}</h3>
@@ -167,7 +167,7 @@ const About = () => {
           >
             {/* Icon */}
             <motion.div
-              className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full mb-6 shadow-lg"
+              className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 rounded-full mb-6 shadow-lg"
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ type: 'spring', bounce: 0.5, delay: 0.2 }}
@@ -177,7 +177,7 @@ const About = () => {
 
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-800 mb-6">
               نبذة عن{' '}
-              <span className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 bg-clip-text text-transparent">
                 أكاديمية المهاجرين
               </span>
             </h1>
@@ -226,7 +226,7 @@ const About = () => {
           <div className="grid md:grid-cols-2 gap-8">
             {/* Vision */}
             <motion.div
-              className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl p-8 text-white shadow-xl"
+              className="bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 rounded-3xl p-8 text-white shadow-xl"
               initial={{ opacity: 0, x: -50 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
@@ -361,7 +361,7 @@ const About = () => {
             </p>
             <motion.a
               href="/login"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white font-bold text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >

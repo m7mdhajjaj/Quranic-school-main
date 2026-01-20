@@ -602,7 +602,7 @@ export const AiChatbot: React.FC = () => {
                                 rotate: [0, 360],
                               }}
                               transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-                              className="w-6 h-6 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-md"
+                              className="w-6 h-6 rounded-lg bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 flex items-center justify-center shadow-md"
                             >
                               <Sparkles size={12} className="text-white" />
                             </motion.div>
@@ -849,7 +849,7 @@ export const AiChatbot: React.FC = () => {
                       className={`p-4 rounded-2xl flex items-center justify-center transition-all duration-300 min-w-[60px] ${
                         isListening
                           ? 'bg-gradient-to-br from-red-500 to-red-600 text-white shadow-lg shadow-red-500/50'
-                          : 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg hover:shadow-emerald-500/50'
+                          : 'bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 text-white shadow-lg hover:shadow-emerald-500/50'
                       }`}
                       title={isListening ? "إيقاف التسجيل" : "🎤 اضغط للتحدث"}
                     >

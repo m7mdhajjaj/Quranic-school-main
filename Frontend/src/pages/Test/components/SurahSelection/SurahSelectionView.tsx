@@ -47,7 +47,7 @@ export const SurahSelectionView: React.FC<SurahSelectionViewProps> = ({
         <div className="bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl p-6 md:p-8 mb-8 border border-emerald-100">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white p-3 rounded-xl shadow-md">
+              <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white p-3 rounded-xl shadow-md">
                 <span className="text-2xl">📖</span>
               </div>
               <div>
@@ -88,7 +88,7 @@ export const SurahSelectionView: React.FC<SurahSelectionViewProps> = ({
                 ◄ السابق
               </Button>
 
-              <div className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-4 py-2 rounded-xl font-bold text-sm shadow-lg">
+              <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white px-4 py-2 rounded-xl font-bold text-sm shadow-lg">
                 {currentPage + 1} / {totalPages}
               </div>
 

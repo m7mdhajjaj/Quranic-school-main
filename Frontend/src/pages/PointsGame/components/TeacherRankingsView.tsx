@@ -67,7 +67,7 @@ export const TeacherRankingsView = memo(
               onClick={() => onChangeType("points")}
               className={`px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold text-xs sm:text-sm transition-all ${
                 rankingType === "points"
-                  ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg scale-105"
+                  ? "bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white shadow-lg scale-105"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               }`}>
               <span className="ml-2">📊</span>
@@ -77,7 +77,7 @@ export const TeacherRankingsView = memo(
               onClick={() => onChangeType("badges")}
               className={`px-6 py-3 rounded-full font-bold text-sm transition-all ${
                 rankingType === "badges"
-                  ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg scale-105"
+                  ? "bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white shadow-lg scale-105"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               }`}>
               <span className="ml-2">🏆</span>

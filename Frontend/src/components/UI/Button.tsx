@@ -29,7 +29,7 @@ export const Button: React.FC<ButtonProps> = ({
 
   const variants = {
     primary: gradient 
-      ? 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg hover:shadow-xl focus:ring-emerald-400 transition-shadow'
+      ? 'bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 hover:from-emerald-700 hover:via-teal-800 hover:to-slate-800 text-white shadow-lg hover:shadow-xl focus:ring-emerald-400 transition-shadow'
       : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md hover:shadow-lg focus:ring-emerald-400 transition-shadow',
     secondary: 'border-2 border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-400',
     danger: 'bg-red-600 hover:bg-red-700 text-white shadow-md hover:shadow-lg focus:ring-red-400 transition-shadow',

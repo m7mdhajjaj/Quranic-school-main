@@ -63,7 +63,7 @@ export const PasswordRequirements: React.FC<PasswordRequirementsProps> = ({
       dir="rtl"
     >
       <div className="flex items-center gap-2 mb-2 sm:mb-3">
-        <div className="w-1 h-4 sm:h-5 bg-gradient-to-b from-emerald-500 to-teal-500 rounded-full" />
+        <div className="w-1 h-4 sm:h-5 bg-gradient-to-b from-emerald-600 via-teal-700 to-slate-700 rounded-full" />
         <p className="text-xs sm:text-sm font-semibold text-emerald-900 text-right">
           متطلبات كلمة المرور الجديدة
         </p>

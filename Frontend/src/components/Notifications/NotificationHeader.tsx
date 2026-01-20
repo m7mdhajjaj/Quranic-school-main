@@ -342,7 +342,7 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
                       flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-semibold rounded-lg whitespace-nowrap
                       transition-all duration-300 ease-out
                       ${categoryFilter === key 
-                        ? 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-200/50 scale-105' 
+                        ? 'bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 text-white shadow-md shadow-emerald-200/50 scale-105' 
                         : 'bg-white text-gray-600 border border-gray-200 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-600 hover:shadow-sm'
                       }
                     `}

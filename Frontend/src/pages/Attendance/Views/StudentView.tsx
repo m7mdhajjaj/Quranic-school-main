@@ -114,7 +114,7 @@ export const StudentView = ({
 
       {/* عنوان القسم */}
       <div className="flex items-center gap-3 px-2">
-        <div className="h-1 w-12 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-full"></div>
+        <div className="h-1 w-12 bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 rounded-full"></div>
         <h3 className="text-lg font-bold text-gray-800">
           {viewMode === 'weekly' ? 'ملخص الأسبوع الحالي' : `إحصائيات شهر ${AR_MONTHS[selectedMonthIndex]} ${selectedYear}`}
         </h3>

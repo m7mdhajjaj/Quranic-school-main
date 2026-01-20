@@ -36,7 +36,7 @@ const PageHeader: React.FC<PageHeaderProps> = memo(({
           <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full blur-xl opacity-30 animate-pulse"></div>
           
           {/* الأيقونة */}
-          <div className="relative bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full p-4 sm:p-6 shadow-2xl">
+          <div className="relative bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 rounded-full p-4 sm:p-6 shadow-2xl">
             {icon || defaultIcon}
           </div>
         </div>

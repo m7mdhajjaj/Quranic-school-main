@@ -157,14 +157,14 @@ const NewsCard = memo(({
             <>
               <button
                 onClick={handlePrevImage}
-                className="absolute left-3 top-1/2 -translate-y-1/2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-full p-2.5 transition-all z-30 backdrop-blur-sm shadow-xl hover:scale-110 opacity-90 hover:opacity-100"
+                className="absolute left-3 top-1/2 -translate-y-1/2 bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 hover:from-emerald-700 hover:via-teal-800 hover:to-slate-800 text-white rounded-full p-2.5 transition-all z-30 backdrop-blur-sm shadow-xl hover:scale-110 opacity-90 hover:opacity-100"
                 aria-label="الصورة السابقة"
               >
                 <ChevronLeft size={24} strokeWidth={3} />
               </button>
               <button
                 onClick={handleNextImage}
-                className="absolute right-3 top-1/2 -translate-y-1/2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-full p-2.5 transition-all z-30 backdrop-blur-sm shadow-xl hover:scale-110 opacity-90 hover:opacity-100"
+                className="absolute right-3 top-1/2 -translate-y-1/2 bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 hover:from-emerald-700 hover:via-teal-800 hover:to-slate-800 text-white rounded-full p-2.5 transition-all z-30 backdrop-blur-sm shadow-xl hover:scale-110 opacity-90 hover:opacity-100"
                 aria-label="الصورة التالية"
               >
                 <ChevronRight size={24} strokeWidth={3} />
@@ -172,7 +172,7 @@ const NewsCard = memo(({
               
               {/* Image Counter */}
               <div className="absolute top-3 left-3 z-30">
-                <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-semibold px-2.5 py-1 rounded-lg shadow-lg">
+                <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white text-xs font-semibold px-2.5 py-1 rounded-lg shadow-lg">
                   {currentImageIndex + 1} / {images.length}
                 </div>
               </div>
@@ -252,7 +252,7 @@ const NewsCard = memo(({
             <Button
               variant="primary"
               size="md"
-              className="rounded-xl shadow-md hover:shadow-lg group/btn px-6 py-2.5 text-sm bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 border-0"
+              className="rounded-xl shadow-md hover:shadow-lg group/btn px-6 py-2.5 text-sm bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 hover:from-emerald-700 hover:via-teal-800 hover:to-slate-800 border-0"
               onClick={handleOpenGallery}
             >
               <span>اقرأ المزيد</span>

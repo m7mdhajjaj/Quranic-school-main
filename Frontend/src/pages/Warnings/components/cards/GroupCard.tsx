@@ -18,7 +18,7 @@ export const GroupCard: React.FC<GroupCardProps> = React.memo(({ group, onClick 
       
       <div className="text-center relative z-10">
         <div className="flex justify-center mb-4">
-          <div className="p-3 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl shadow-lg group-hover:shadow-xl group-hover:scale-110 transition-all duration-300">
+          <div className="p-3 bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 rounded-2xl shadow-lg group-hover:shadow-xl group-hover:scale-110 transition-all duration-300">
             <BookOpen className="w-8 h-8 text-white" />
           </div>
         </div>

@@ -14,7 +14,7 @@ export const SurahCard: React.FC<SurahCardProps> = ({
       onClick={onClick}
       className={`group relative p-3 sm:p-4 rounded-xl sm:rounded-2xl border-2 text-sm transition-all duration-300 transform active:scale-95 md:hover:scale-105 hover:shadow-xl ${
         isSelected
-          ? "bg-gradient-to-br from-emerald-500 to-teal-500 border-emerald-600 text-white shadow-lg scale-[1.02] md:scale-105"
+          ? "bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 border-emerald-600 text-white shadow-lg scale-[1.02] md:scale-105"
           : "bg-white border-gray-300 hover:border-emerald-400 hover:bg-gradient-to-br hover:from-emerald-50 hover:to-teal-50"
       }`}>
       {/* رقم السورة */}

@@ -15,7 +15,7 @@ export const StepsIndicator = ({ currentStep }: StepsIndicatorProps) => {
           <div
             className={`w-14 h-14 rounded-xl flex items-center justify-center font-bold text-lg shadow-lg transition-all duration-500 ${
               currentStep >= 1
-                ? 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-emerald-300'
+                ? 'bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 text-white shadow-emerald-300'
                 : 'bg-white text-gray-400 border-2 border-gray-300'
             }`}
           >
@@ -44,7 +44,7 @@ export const StepsIndicator = ({ currentStep }: StepsIndicatorProps) => {
         <div
           className={`h-2 w-32 rounded-full transition-all duration-700 relative shadow-sm ${
             currentStep >= 2
-              ? 'bg-gradient-to-l from-emerald-500 to-teal-500'
+              ? 'bg-gradient-to-l from-emerald-600 via-teal-700 to-slate-700'
               : 'bg-gray-300'
           }`}
         >
@@ -64,7 +64,7 @@ export const StepsIndicator = ({ currentStep }: StepsIndicatorProps) => {
           <div
             className={`w-14 h-14 rounded-xl flex items-center justify-center font-bold text-lg shadow-lg transition-all duration-500 ${
               currentStep >= 2
-                ? 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-emerald-300'
+                ? 'bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 text-white shadow-emerald-300'
                 : 'bg-white text-gray-400 border-2 border-gray-300'
             }`}
           >

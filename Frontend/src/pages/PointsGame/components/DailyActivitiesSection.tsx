@@ -57,7 +57,7 @@ export const DailyActivitiesSection = ({
               onClick={onSchoolAttendanceToggle}
               className={`w-full py-6 rounded-xl transition-all shadow-lg ${
                 schoolAttendance
-                  ? "bg-gradient-to-br from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700"
+                  ? "bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 hover:from-emerald-700 hover:via-teal-800 hover:to-slate-800"
                   : "bg-gradient-to-br from-orange-400 to-red-400 hover:from-orange-500 hover:to-red-500"
               }`}>
               <div

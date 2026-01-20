@@ -20,7 +20,7 @@ const PlaybackSettings: React.FC<PlaybackSettingsProps> = memo(({
         <div className="flex items-center gap-3">
           <div className={`rounded-lg p-2 transition-colors ${
             highlightWords 
-              ? "bg-gradient-to-br from-emerald-500 to-teal-600" 
+              ? "bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700" 
               : "bg-gray-300"
           }`}>
             <Sparkles className={`w-5 h-5 text-white transition-opacity ${

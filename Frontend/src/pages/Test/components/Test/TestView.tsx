@@ -48,7 +48,7 @@ export const TestView: React.FC<TestViewProps> = ({
         {/* بطاقة السؤال */}
         <div className="bg-white/95 backdrop-blur-lg rounded-3xl shadow-2xl p-6 md:p-8 mb-6 border border-emerald-100">
           <div className="flex items-center gap-2 mb-4">
-            <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-3 py-1 rounded-full text-sm font-bold">
+            <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white px-3 py-1 rounded-full text-sm font-bold">
               سؤال {currentQuestionIndex + 1}
             </div>
             <div className="bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-700 px-3 py-1 rounded-full text-sm font-medium border border-amber-200">

@@ -17,7 +17,7 @@ const ReciterSelector: React.FC<ReciterSelectorProps> = ({
     <Card variant="elevated" padding="lg" className="mb-6 sm:mb-8 border border-emerald-100 animate-slideDown">
       {/* العنوان */}
       <div className="flex items-center gap-3 mb-4 sm:mb-6">
-        <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg p-2 sm:p-3">
+        <div className="bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 rounded-lg p-2 sm:p-3">
           <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
             <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/>
           </svg>

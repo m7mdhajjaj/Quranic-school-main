@@ -24,7 +24,7 @@ export const StatCard: React.FC<StatCardProps> = ({
   className,
 }) => {
   const colors = {
-    emerald: 'from-emerald-500 to-teal-500',
+    emerald: 'from-emerald-600 via-teal-700 to-slate-700',
     blue: 'from-blue-500 to-indigo-500',
     amber: 'from-amber-500 to-orange-500',
     red: 'from-red-500 to-rose-500',

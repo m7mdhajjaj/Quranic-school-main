@@ -75,7 +75,7 @@ export const StudentsList: React.FC<StudentsListProps> = ({
       <div className="w-full mx-auto">
         {/* Header */}
         <div className="relative bg-gradient-to-br from-emerald-50 via-teal-50/50 to-cyan-50 rounded-2xl shadow-lg border-2 border-emerald-100 overflow-hidden p-6 mb-6">
-          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500" />
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700" />
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/60 via-teal-50/40 to-cyan-50/30 pointer-events-none" />
           
           <div className="relative flex items-center justify-between mb-4">
@@ -115,7 +115,7 @@ export const StudentsList: React.FC<StudentsListProps> = ({
             </div>
             <button
               onClick={onAddStudent}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl hover:from-emerald-600 hover:to-teal-700 transition-all shadow-lg hover:shadow-xl font-semibold transform hover:scale-105"
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white rounded-xl hover:from-emerald-700 hover:via-teal-800 hover:to-slate-800 transition-all shadow-lg hover:shadow-xl font-semibold transform hover:scale-105"
             >
               <Plus className="w-5 h-5" />
               إضافة طالب
@@ -155,7 +155,7 @@ export const StudentsList: React.FC<StudentsListProps> = ({
                   onClick={() => setGenderFilter('all')}
                   className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-sm ${
                     genderFilter === 'all'
-                      ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg scale-105'
+                      ? 'bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white shadow-lg scale-105'
                       : 'bg-white/80 text-emerald-800 hover:bg-emerald-50 border-2 border-emerald-100 hover:border-emerald-200'
                   }`}
                 >
@@ -165,7 +165,7 @@ export const StudentsList: React.FC<StudentsListProps> = ({
                   onClick={() => setGenderFilter('ذكر')}
                   className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-sm ${
                     genderFilter === 'ذكر'
-                      ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg scale-105'
+                      ? 'bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white shadow-lg scale-105'
                       : 'bg-white/80 text-emerald-800 hover:bg-emerald-50 border-2 border-emerald-100 hover:border-emerald-200'
                   }`}
                 >
@@ -175,7 +175,7 @@ export const StudentsList: React.FC<StudentsListProps> = ({
                   onClick={() => setGenderFilter('أنثى')}
                   className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-sm ${
                     genderFilter === 'أنثى'
-                      ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg scale-105'
+                      ? 'bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white shadow-lg scale-105'
                       : 'bg-white/80 text-emerald-800 hover:bg-emerald-50 border-2 border-emerald-100 hover:border-emerald-200'
                   }`}
                 >

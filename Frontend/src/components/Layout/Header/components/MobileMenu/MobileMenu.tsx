@@ -104,7 +104,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
               <motion.div 
                 className={`p-2.5 rounded-xl ${
                   isActive 
-                    ? "bg-gradient-to-br from-emerald-500 to-teal-500 shadow-lg shadow-emerald-500/30" 
+                    ? "bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 shadow-lg shadow-emerald-500/30" 
                     : "bg-gradient-to-br from-gray-100 to-gray-200"
                 }`}
                 whileHover={{ scale: 1.1, rotate: 5 }}

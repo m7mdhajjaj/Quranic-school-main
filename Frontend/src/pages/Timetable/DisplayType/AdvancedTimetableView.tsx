@@ -271,7 +271,7 @@ export const AdvancedTimetableView: React.FC<AdvancedTimetableViewProps> = ({
                     
                     {dayInfo.isCurrentMonth && hasSessions && (
                         <div className="flex flex-col items-end gap-1">
-                          <span className="flex items-center gap-1 text-[10px] sm:text-xs bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-2 py-1 rounded-full font-bold shadow-md">
+                          <span className="flex items-center gap-1 text-[10px] sm:text-xs bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white px-2 py-1 rounded-full font-bold shadow-md">
                             <span>{sessionsForDay.length}</span>
                             <span className="hidden sm:inline">موعد</span>
                           </span>

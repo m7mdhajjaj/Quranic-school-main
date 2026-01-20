@@ -31,7 +31,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
       {/* شريط التقدم */}
       <div className="relative w-full bg-gray-200 rounded-full h-3 overflow-hidden shadow-inner">
         <div
-          className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 h-3 rounded-full transition-all duration-500 ease-out shadow-md"
+          className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 h-3 rounded-full transition-all duration-500 ease-out shadow-md"
           style={{ width: `${progress}%` }}>
           <div className="absolute inset-0 bg-white/30 animate-pulse"></div>
         </div>
