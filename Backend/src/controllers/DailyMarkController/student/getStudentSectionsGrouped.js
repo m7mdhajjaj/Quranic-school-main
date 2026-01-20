@@ -266,30 +266,29 @@ exports.getStudentSectionsGrouped = async (req, res) => {
           return false;
         });
         
-        // ✅ FIX: معدل الجلسات = (مجموع كل العلامات / 2) / عدد الجلسات * 100
+        // ✅ معدل الجلسات = مجموع العلامات / عدد العلامات (من 10)
         let averageMark = 0;
         if (completedSegments > 0) {
-          // جمع كل العلامات من جميع الجلسات المكتملة
           let totalAllMarks = 0;
+          let totalMarkCount = 0; // عدد العلامات الفعلية
           
           markedSessions.forEach(session => {
             session.marks.forEach(m => {
               if (session.hasMemorization && m.memorizationMark && m.memorizationMark > 0) {
                 totalAllMarks += m.memorizationMark;
+                totalMarkCount++;
               }
               if (session.hasReview && m.reviewMark && m.reviewMark > 0) {
                 totalAllMarks += m.reviewMark;
+                totalMarkCount++;
               }
             });
           });
           
-          // المعادلة: (مجموع كل العلامات / 2) / عدد الجلسات المكتملة * 100
-          // لكن العلامة القصوى 10، فنقسم على 10 بدلاً من 2
-          // averageMark = (totalAllMarks / 2) / completedSegments * 100
-          // هذا يعطي نسبة مئوية من 100
-          averageMark = Math.round((totalAllMarks / (completedSegments * 2)) * 100) / 10;
-          // نحول لتكون من 10 بدلاً من 100
-          // أو نبقيها كنسبة مئوية حسب ما يريد المستخدم
+          // المعادلة: مجموع العلامات / عدد العلامات = معدل من 10
+          if (totalMarkCount > 0) {
+            averageMark = Math.round((totalAllMarks / totalMarkCount) * 10) / 10;
+          }
         }
 
         // 4. Progress Percentage
