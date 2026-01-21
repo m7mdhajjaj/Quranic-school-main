@@ -31,6 +31,9 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
     formData,
     errors,
     isEditMode,
+    currentStep,
+    nextStep,
+    prevStep,
     handleChange,
     handleSubmit,
   } = useSecretaryForm({ secretary, isOpen, onSubmit, onClose });
@@ -87,10 +90,43 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
           </div>
         </div>
 
+        {/* Steps Indicator */}
+        <div className="bg-gray-50 border-b px-6 py-3">
+          <div className="flex items-center justify-center gap-2">
+            {[1, 2].map((step) => (
+              <React.Fragment key={step}>
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${
+                      currentStep === step
+                        ? "bg-emerald-600 text-white shadow-lg shadow-emerald-200 ring-2 ring-emerald-100"
+                        : currentStep > step
+                        ? "bg-emerald-100 text-emerald-700 border-2 border-emerald-200"
+                        : "bg-gray-100 text-gray-400 border-2 border-gray-200"
+                    }`}>
+                    {currentStep > step ? <CheckCircle2 size={16} /> : step}
+                  </div>
+                  <span
+                    className={`text-sm font-medium transition-colors duration-300 ${
+                      currentStep === step ? "text-emerald-800" : "text-gray-500"
+                    }`}>
+                    {step === 1 ? "البيانات الأساسية" : "التفاصيل والصلاحيات"}
+                  </span>
+                </div>
+                {step < 2 && (
+                  <div className={`w-12 h-0.5 mx-2 ${currentStep > 1 ? "bg-emerald-200" : "bg-gray-200"}`} />
+                )}
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
+
         {/* Form */}
         <form id="secretary-form" onSubmit={handleSubmit} className="p-4 space-y-4 flex-1 overflow-y-auto overscroll-contain">
-          {/* =================== Section: الأسماء =================== */}
-          <div className="bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20 rounded-xl p-5 border border-emerald-200">
+          {currentStep === 1 && (
+            <div className="space-y-4 animate-fadeIn">
+              {/* =================== Section: الأسماء =================== */}
+              <div className="bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20 rounded-xl p-5 border border-emerald-200">
             <div className="flex items-center gap-2 text-emerald-700 mb-4">
               <div className="p-2 bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 rounded-lg">
                 <User className="w-5 h-5 text-white" />
@@ -322,9 +358,13 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
               </div>
             )}
           </div>
+            </div>
+          )}
 
-          {/* =================== Section: البيانات الشخصية =================== */}
-          <div className="bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20 rounded-xl p-5 border border-emerald-200">
+          {currentStep === 2 && (
+            <div className="space-y-4 animate-fadeIn">
+              {/* =================== Section: البيانات الشخصية =================== */}
+              <div className="bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20 rounded-xl p-5 border border-emerald-200">
             <div className="flex items-center gap-2 text-emerald-700 mb-4">
               <div className="p-2 bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 rounded-lg">
                 <User className="w-5 h-5 text-white" />
@@ -535,10 +575,12 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
               </div>
             </div>
           </div>
+            </div>
+          )}
         </form>
 
         {/* Actions - Fixed at bottom */}
-        <div className="flex items-center justify-end gap-2 p-4 border-t border-gray-100 bg-white flex-shrink-0">
+        <div className="flex items-center justify-between p-4 border-t border-gray-100 bg-white flex-shrink-0">
           <button
             type="button"
             onClick={handleClose}
@@ -547,24 +589,49 @@ export const SecretaryForm: React.FC<SecretaryFormProps> = memo(({
           >
             إلغاء
           </button>
-          <button
-            type="submit"
-            form="secretary-form"
-            disabled={isLoading}
-            className="px-4 py-2 text-white bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 hover:from-emerald-700 hover:via-teal-800 hover:to-slate-800 rounded-lg transition-all flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-emerald-500/25 font-medium text-sm"
-          >
-            {isLoading ? (
-              <>
-                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                جاري الحفظ...
-              </>
-            ) : (
-              <>
-                <CheckCircle2 className="w-4 h-4" />
-                {isEditMode ? "حفظ التغييرات" : "إضافة السكرتير"}
-              </>
+
+          <div className="flex items-center gap-2">
+            {currentStep > 1 && (
+              <button
+                type="button"
+                onClick={prevStep}
+                disabled={isLoading}
+                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-all font-medium text-sm"
+              >
+                السابق
+              </button>
             )}
-          </button>
+
+            {currentStep < 2 ? (
+              <button
+                type="button"
+                onClick={nextStep}
+                disabled={isLoading}
+                className="px-4 py-2 text-white bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 hover:from-emerald-700 hover:via-teal-800 hover:to-slate-800 rounded-lg transition-all shadow-lg shadow-emerald-500/25 font-medium text-sm"
+              >
+                التالي
+              </button>
+            ) : (
+              <button
+                type="submit"
+                form="secretary-form"
+                disabled={isLoading}
+                className="px-4 py-2 text-white bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 hover:from-emerald-700 hover:via-teal-800 hover:to-slate-800 rounded-lg transition-all flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-emerald-500/25 font-medium text-sm"
+              >
+                {isLoading ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    جاري الحفظ...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    {isEditMode ? "حفظ التغييرات" : "إضافة السكرتير"}
+                  </>
+                )}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

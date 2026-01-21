@@ -297,6 +297,8 @@ export const useTeacherForm = ({
               'birthDate',
               'gender',
               'residence',
+              'email',
+              'phoneNumber',
             ];
 
             step1Fields.forEach((field) => {
@@ -305,7 +307,7 @@ export const useTeacherForm = ({
               }
             });
           } else if (step === 2) {
-            const step2Fields = ['email', 'phoneNumber'];
+            const step2Fields: string[] = [];
 
             step2Fields.forEach((field) => {
               if (validationResult.errors![field]) {
@@ -339,6 +341,8 @@ export const useTeacherForm = ({
       'birthDate',
       'gender',
       'residence',
+      'email',
+      'phoneNumber',
     ];
 
     // تحقق من أن جميع الحقول المطلوبة ممتلئة
@@ -357,7 +361,7 @@ export const useTeacherForm = ({
   }, [formData, errors, checkingDuplicate]);
 
   const isStep2Valid = useMemo(() => {
-    const requiredFields = ['email', 'phoneNumber'];
+    const requiredFields: string[] = [];
 
     // تحقق من أن جميع الحقول المطلوبة ممتلئة
     const allFieldsFilled = requiredFields.every((field) => {

@@ -2,7 +2,6 @@ import React, { memo, useCallback } from "react";
 import {
   AlertCircle,
   X,
-  Loader2,
   Check,
   User,
   School,
@@ -177,6 +176,7 @@ const TeacherForm: React.FC<Props> = memo(({ onClose, onSuccess, teacher }) => {
               getFieldError={getFieldError}
               checkingDuplicate={checkingDuplicate}
               isDuplicateError={isDuplicateError}
+              touchedFields={touchedFields}
             />
           )}
 

@@ -531,6 +531,90 @@ const AddStudentForm: React.FC<Props> = ({
                   </div>
                 </div>
               </div>
+
+              {/* معلومات التواصل */}
+              <div className="bg-gradient-to-br from-emerald-50 to-teal-50 p-6 rounded-xl border border-emerald-200">
+                <h3 className="text-lg font-semibold text-gray-900 mb-5 flex items-center gap-2">
+                  <div className="w-1 h-6 bg-emerald-500 rounded-full"></div>
+                  <Phone className="text-emerald-600" size={20} />
+                  معلومات التواصل
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* رقم الهاتف */}
+                  <div className="space-y-1">
+                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-1">
+                      <Phone size={14} className="text-gray-500" />
+                      رقم الهاتف
+                    </label>
+                    <input
+                      name="phoneNumber"
+                      type="tel"
+                      inputMode="numeric"
+                      maxLength={10}
+                      value={formData.phoneNumber || ""}
+                      onChange={handleChange}
+                      onBlur={() => handleBlur("phoneNumber")}
+                      placeholder="0512345678 (10 أرقام)"
+                      className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 text-right ${getFieldError("phoneNumber")
+                          ? isDuplicateError("phoneNumber")
+                            ? "border-orange-300 focus:ring-orange-500 bg-orange-50"
+                            : "border-red-300 focus:ring-red-500 bg-red-50"
+                          : "border-gray-300 focus:ring-emerald-500 focus:border-emerald-500"
+                        }`}
+                    />
+                    <p className="text-xs text-gray-500 flex items-center gap-1">
+                      {formData.phoneNumber && (
+                        <span className={formData.phoneNumber.length === 10 ? "text-green-600" : "text-orange-600"}>
+                          {formData.phoneNumber.length}/10 أرقام
+                        </span>
+                      )}
+                      {!formData.phoneNumber && "يجب أن يبدأ بـ 05 ويتكون من 10 أرقام"}
+                    </p>
+                    {getFieldError("phoneNumber") && (
+                      <div
+                        className={`flex items-center gap-1 text-xs animate-fadeIn ${isDuplicateError("phoneNumber")
+                            ? "text-orange-600"
+                            : "text-red-600"
+                          }`}>
+                        <AlertCircle size={12} />
+                        <span>{getFieldError("phoneNumber")}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* البريد الإلكتروني */}
+                  <div className="space-y-1">
+                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-1">
+                      <Mail size={14} className="text-gray-500" />
+                      البريد الإلكتروني
+                    </label>
+                    <input
+                      name="email"
+                      type="email"
+                      value={formData.email || ""}
+                      onChange={handleChange}
+                      onBlur={() => handleBlur("email")}
+                      placeholder="example@email.com"
+                      className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 text-right ${getFieldError("email")
+                          ? isDuplicateError("email")
+                            ? "border-orange-300 focus:ring-orange-500 bg-orange-50"
+                            : "border-red-300 focus:ring-red-500 bg-red-50"
+                          : "border-gray-300 focus:ring-emerald-500 focus:border-emerald-500"
+                        }`}
+                    />
+                    {getFieldError("email") && (
+                      <div
+                        className={`flex items-center gap-1 text-xs animate-fadeIn ${isDuplicateError("email")
+                            ? "text-orange-600"
+                            : "text-red-600"
+                          }`}>
+                        <AlertCircle size={12} />
+                        <span>{getFieldError("email")}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
@@ -622,89 +706,7 @@ const AddStudentForm: React.FC<Props> = ({
                 </div>
               </div>
 
-              {/* معلومات التواصل */}
-              <div className="bg-gradient-to-br from-emerald-50 to-teal-50 p-6 rounded-xl border border-emerald-200">
-                <h3 className="text-lg font-semibold text-gray-900 mb-5 flex items-center gap-2">
-                  <div className="w-1 h-6 bg-emerald-500 rounded-full"></div>
-                  <Phone className="text-emerald-600" size={20} />
-                  معلومات التواصل
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* رقم الهاتف */}
-                  <div className="space-y-1">
-                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-1">
-                      <Phone size={14} className="text-gray-500" />
-                      رقم الهاتف
-                    </label>
-                    <input
-                      name="phoneNumber"
-                      type="tel"
-                      inputMode="numeric"
-                      maxLength={10}
-                      value={formData.phoneNumber || ""}
-                      onChange={handleChange}
-                      onBlur={() => handleBlur("phoneNumber")}
-                      placeholder="0512345678 (10 أرقام)"
-                      className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 text-right ${getFieldError("phoneNumber")
-                          ? isDuplicateError("phoneNumber")
-                            ? "border-orange-300 focus:ring-orange-500 bg-orange-50"
-                            : "border-red-300 focus:ring-red-500 bg-red-50"
-                          : "border-gray-300 focus:ring-emerald-500 focus:border-emerald-500"
-                        }`}
-                    />
-                    <p className="text-xs text-gray-500 flex items-center gap-1">
-                      {formData.phoneNumber && (
-                        <span className={formData.phoneNumber.length === 10 ? "text-green-600" : "text-orange-600"}>
-                          {formData.phoneNumber.length}/10 أرقام
-                        </span>
-                      )}
-                      {!formData.phoneNumber && "يجب أن يبدأ بـ 05 ويتكون من 10 أرقام"}
-                    </p>
-                    {getFieldError("phoneNumber") && (
-                      <div
-                        className={`flex items-center gap-1 text-xs animate-fadeIn ${isDuplicateError("phoneNumber")
-                            ? "text-orange-600"
-                            : "text-red-600"
-                          }`}>
-                        <AlertCircle size={12} />
-                        <span>{getFieldError("phoneNumber")}</span>
-                      </div>
-                    )}
-                  </div>
 
-                  {/* البريد الإلكتروني */}
-                  <div className="space-y-1">
-                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-1">
-                      <Mail size={14} className="text-gray-500" />
-                      البريد الإلكتروني
-                    </label>
-                    <input
-                      name="email"
-                      type="email"
-                      value={formData.email || ""}
-                      onChange={handleChange}
-                      onBlur={() => handleBlur("email")}
-                      placeholder="example@email.com"
-                      className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 text-right ${getFieldError("email")
-                          ? isDuplicateError("email")
-                            ? "border-orange-300 focus:ring-orange-500 bg-orange-50"
-                            : "border-red-300 focus:ring-red-500 bg-red-50"
-                          : "border-gray-300 focus:ring-emerald-500 focus:border-emerald-500"
-                        }`}
-                    />
-                    {getFieldError("email") && (
-                      <div
-                        className={`flex items-center gap-1 text-xs animate-fadeIn ${isDuplicateError("email")
-                            ? "text-orange-600"
-                            : "text-red-600"
-                          }`}>
-                        <AlertCircle size={12} />
-                        <span>{getFieldError("email")}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
             </div>
           )}
         </div>
