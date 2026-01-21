@@ -165,18 +165,18 @@ export const useDailyMarksHandlers = ({
       if (createdSectionResponse) {
         // Handle both simple section response and response with meta
         const createdSection = (createdSectionResponse as any).meta 
-          ? (createdSectionResponse as any) 
+          ? (createdSectionResponse as any) // Note: This might be the wrapping object, checks below imply createdSection is the section
           : createdSectionResponse;
 
-        // ✅ إعادة جلب المقاطع بدلاً من الإضافة المحلية لضمان الحصول على كل البيانات
-        // مثل timetableId, marksStatus, marksProgress
-        if (refetchSections) {
-          await refetchSections();
-        } else {
-          setSections((prev) => [createdSection, ...prev]);
-        }
+        // ✅ تحسين تجربة المستخدم:
+        // 1. تحديث الحالة محلياً فوراً (Optimistic Update)
+        // 2. إغلاق النافذة فوراً
+        // 3. تحديث البيانات في الخلفية
+        
+        setSections((prev) => [createdSection as Section, ...prev]);
         
         setIsAddSectionModalOpen(false);
+        setIsAddingSectionLoading(false); // Force loading off immediately
 
         setNewSection({
           date: new Date().toISOString().split("T")[0],
@@ -189,7 +189,10 @@ export const useDailyMarksHandlers = ({
         // Show success toast immediately
         showSuccessToast("✅ تم إضافة المقطع بنجاح!");
 
-        // Trigger refetches
+        // Trigger refetches in background (Fire and forget-ish)
+        if (refetchSections) {
+           refetchSections().catch(console.error);
+        }
         refetchStats?.();
         refetchCompletedSurahs?.();
 
