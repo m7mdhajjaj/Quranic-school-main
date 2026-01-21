@@ -46,10 +46,14 @@ export interface UseSecretaryFormReturn {
   errors: Record<string, string>;
   showPassword: boolean;
   isEditMode: boolean;
+  currentStep: number;
   setShowPassword: (show: boolean) => void;
   handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
   handleSubmit: (e: React.FormEvent) => Promise<void>;
   validateForm: () => boolean;
+  nextStep: () => void;
+  prevStep: () => void;
+  setCurrentStep: (step: number) => void;
 }
 
 // =================== Initial Data ===================
@@ -93,6 +97,7 @@ export const useSecretaryForm = ({
   const [formData, setFormData] = useState<SecretaryFormData>(initialFormData);
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [currentStep, setCurrentStep] = useState(1);
   
   // تخزين البيانات الأولية للمقارنة
   const [initialData, setInitialData] = useState<SecretaryFormData | null>(null);
@@ -193,12 +198,13 @@ export const useSecretaryForm = ({
       setInitialData(null);
     }
     setErrors({});
+    setCurrentStep(1);
   }, [secretary, isOpen]);
 
   // =================== Validation ===================
-  const validateForm = useCallback((): boolean => {
+  const validateStep1 = useCallback((): boolean => {
     const newErrors: Record<string, string> = {};
-
+    
     // =================== الأسماء ===================
     if (!formData.firstName.trim()) {
       newErrors.firstName = "الاسم الأول مطلوب";
@@ -212,25 +218,16 @@ export const useSecretaryForm = ({
       newErrors.lastName = "اسم العائلة يجب أن يكون حرفين على الأقل";
     }
 
-    // اسم الأب مطلوب
     if (!formData.fatherName || !formData.fatherName.trim()) {
       newErrors.fatherName = "اسم الأب مطلوب";
-    } else if (formData.fatherName.trim().length < 2) {
-      newErrors.fatherName = "اسم الأب يجب أن يكون حرفين على الأقل";
     }
 
-    // اسم الجد مطلوب
     if (!formData.grandFatherName || !formData.grandFatherName.trim()) {
       newErrors.grandFatherName = "اسم الجد مطلوب";
-    } else if (formData.grandFatherName.trim().length < 2) {
-      newErrors.grandFatherName = "اسم الجد يجب أن يكون حرفين على الأقل";
     }
 
-    // اسم الأم مطلوب
     if (!formData.motherName || !formData.motherName.trim()) {
       newErrors.motherName = "اسم الأم مطلوب";
-    } else if (formData.motherName.trim().length < 2) {
-      newErrors.motherName = "اسم الأم يجب أن يكون حرفين على الأقل";
     }
 
     // =================== الهوية والتواصل ===================
@@ -255,16 +252,35 @@ export const useSecretaryForm = ({
       }
     }
 
-    // كلمة المرور الافتراضية = رقم الهوية (لا تحتاج تحقق)
+    setErrors(prev => ({ ...prev, ...newErrors }));
+    // Filter out errors that are not in step 1 from existing errors to avoid blocking logic conflicts, but merging is safer
+    
+    // Check if any errors related to step 1 exist
+    const step1Keys = ['firstName', 'lastName', 'fatherName', 'grandFatherName', 'motherName', 'idNumber', 'email', 'phoneNumber'];
+    const hasStep1Errors = step1Keys.some(key => newErrors[key]);
 
-    // =================== البيانات الشخصية ===================
+    return !hasStep1Errors;
+  }, [formData]);
+
+  const validateForm = useCallback((): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    // Validate Step 1 again to be safe
+    if (!formData.firstName.trim()) newErrors.firstName = "الاسم الأول مطلوب";
+    if (!formData.lastName.trim()) newErrors.lastName = "اسم العائلة مطلوب";
+    if (!formData.fatherName?.trim()) newErrors.fatherName = "اسم الأب مطلوب";
+    if (!formData.grandFatherName?.trim()) newErrors.grandFatherName = "اسم الجد مطلوب";
+    if (!formData.motherName?.trim()) newErrors.motherName = "اسم الأم مطلوب";
+    if (!formData.idNumber.trim()) newErrors.idNumber = "رقم الهوية مطلوب";
+    if (!formData.email.trim()) newErrors.email = "البريد الإلكتروني مطلوب";
+    if (!formData.phoneNumber.trim()) newErrors.phoneNumber = "رقم الهاتف مطلوب";
+
+    // =================== البيانات الشخصية (Step 2) ===================
     if (!formData.birthDate) {
       newErrors.birthDate = "تاريخ الميلاد مطلوب";
     } else {
       const birthDate = new Date(formData.birthDate);
       const today = new Date();
-      
-      // التحقق من صحة التاريخ
       if (isNaN(birthDate.getTime())) {
         newErrors.birthDate = "تاريخ الميلاد غير صحيح";
       } else {
@@ -273,11 +289,9 @@ export const useSecretaryForm = ({
         if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
           age--;
         }
-        
         if (age < 21) {
           newErrors.birthDate = "غير مقبول - يجب أن يكون العمر 21 سنة على الأقل";
         }
-        // إذا كان العمر 21+ لا نضيف error (سيظهر "مقبول" في الواجهة)
       }
     }
 
@@ -290,6 +304,20 @@ export const useSecretaryForm = ({
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }, [formData, isEditMode]);
+
+  const nextStep = useCallback(() => {
+    if (currentStep === 1) {
+      if (validateStep1()) {
+        setCurrentStep(2);
+      }
+    }
+  }, [currentStep, validateStep1]);
+
+  const prevStep = useCallback(() => {
+    if (currentStep > 1) {
+      setCurrentStep(curr => curr - 1);
+    }
+  }, [currentStep]);
 
   // =================== Handlers ===================
   const handleChange = useCallback((
@@ -361,6 +389,10 @@ export const useSecretaryForm = ({
     handleChange,
     handleSubmit,
     validateForm,
+    currentStep,
+    nextStep,
+    prevStep,
+    setCurrentStep,
   };
 };
 

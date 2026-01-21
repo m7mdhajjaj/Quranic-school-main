@@ -44,6 +44,7 @@ export interface UseTeacherAssistantFormReturn {
   isEditMode: boolean;
   groups: Group[];
   isLoadingGroups: boolean;
+  currentStep: number;
   handleChange: (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => void;
@@ -53,6 +54,9 @@ export interface UseTeacherAssistantFormReturn {
     isValid: boolean;
     errors: Record<string, string>;
   }>;
+  nextStep: () => Promise<void>;
+  prevStep: () => void;
+  setCurrentStep: (step: number) => void;
 }
 
 // =================== Initial Data ===================
@@ -83,6 +87,7 @@ export const useTeacherAssistantForm = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [groups, setGroups] = useState<Group[]>([]);
   const [isLoadingGroups, setIsLoadingGroups] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
 
   const [initialData, setInitialData] =
     useState<TeacherAssistantFormData | null>(null);
@@ -183,6 +188,7 @@ export const useTeacherAssistantForm = ({
         setInitialData(null);
       }
       setErrors({});
+      setCurrentStep(1);
     }
   }, [isOpen, assistant]);
 
@@ -286,7 +292,47 @@ export const useTeacherAssistantForm = ({
   const handleGroupsChange = useCallback((groupIds: string[]) => {
     setFormData((prev) => ({ ...prev, allowedGroups: groupIds }));
   }, []);
+const validateStep1 = useCallback(async (): Promise<boolean> => {
+    const step1Fields = ['firstName', 'lastName', 'fatherName', 'grandFatherName', 'motherName', 'idNumber', 'email', 'phoneNumber'];
+    let isValid = true;
+    const newErrors: Record<string, string> = { ...errors }; // Keep existing errors
 
+    for (const field of step1Fields) {
+      const error = await validateAssistantFieldWithYup(
+        field, 
+        (formData as any)[field], 
+        formData, 
+        !isEditMode
+      );
+      
+      if (error) {
+        newErrors[field] = error;
+        isValid = false;
+      } else {
+        delete newErrors[field];
+      }
+    }
+    
+    setErrors(newErrors);
+    return isValid;
+  }, [formData, isEditMode, errors]);
+
+  const nextStep = useCallback(async () => {
+    if (currentStep === 1) {
+      const isValid = await validateStep1();
+      if (isValid) {
+        setCurrentStep(2);
+      }
+    }
+  }, [currentStep, validateStep1]);
+
+  const prevStep = useCallback(() => {
+    if (currentStep > 1) {
+      setCurrentStep(curr => curr - 1);
+    }
+  }, [currentStep]);
+
+  
   // Validate form with Yup
   const validateForm = useCallback(async (): Promise<{
     isValid: boolean;
@@ -357,6 +403,10 @@ export const useTeacherAssistantForm = ({
         // في وضع الإضافة: تحقق إذا البيانات لا تزال فارغة (default values)
         const isStillEmpty = isEqual(formData, initialFormData);
         if (isStillEmpty) {
+    currentStep,
+    nextStep,
+    prevStep,
+    setCurrentStep,
           console.log('⚠️ Form is still empty - cannot submit');
           showInfoToast(MESSAGES.INFO.FILL_REQUIRED);
           return;

@@ -31,7 +31,11 @@ export const AssistantForm: React.FC<AssistantFormProps> = memo(({
     errors,
     isEditMode,
     groups,
-    isLoadingGroups,    handleChange,
+    isLoadingGroups,
+    currentStep,
+    nextStep,
+    prevStep,
+    handleChange,
     handleGroupsChange,
     handleSubmit,
   } = useTeacherAssistantForm({ assistant, isOpen, onSubmit, onClose });
@@ -92,11 +96,50 @@ export const AssistantForm: React.FC<AssistantFormProps> = memo(({
           </div>
         </div>
 
+        {/* Steps Indicator */}
+        <div className="bg-gray-50 border-b px-6 py-3">
+          <div className="flex items-center justify-center gap-2">
+            {[1, 2].map((step) => (
+              <React.Fragment key={step}>
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${
+                      currentStep === step
+                        ? "bg-emerald-600 text-white shadow-lg shadow-emerald-200 ring-2 ring-emerald-100"
+                        : currentStep > step
+                        ? "bg-emerald-100 text-emerald-700 border-2 border-emerald-200"
+                        : "bg-gray-100 text-gray-400 border-2 border-gray-200"
+                    }`}>
+                    {currentStep > step ? (
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : (
+                      step
+                    )}
+                  </div>
+                  <span
+                    className={`text-sm font-medium transition-colors duration-300 ${
+                      currentStep === step ? "text-emerald-800" : "text-gray-500"
+                    }`}>
+                    {step === 1 ? "البيانات الأساسية" : "العلاقات والصلاحيات"}
+                  </span>
+                </div>
+                {step < 2 && (
+                  <div className={`w-12 h-0.5 mx-2 ${currentStep > 1 ? "bg-emerald-200" : "bg-gray-200"}`} />
+                )}
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
+
         {/* Form */}
         <form id="assistant-form" onSubmit={handleSubmit} className="p-4 space-y-4 flex-1 overflow-y-auto overscroll-contain">
           
-          {/* =================== Section: الأسماء =================== */}
-          <div className="bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20 rounded-xl p-5 border border-emerald-200">
+          {currentStep === 1 && (
+            <div className="space-y-4 animate-fadeIn">
+              {/* =================== Section: الأسماء =================== */}
+              <div className="bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20 rounded-xl p-5 border border-emerald-200">
             <div className="flex items-center gap-2 text-emerald-700 mb-4">
               <div className="p-2 bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 rounded-lg">
                 <User className="w-5 h-5 text-white" />
@@ -315,9 +358,13 @@ export const AssistantForm: React.FC<AssistantFormProps> = memo(({
 
             </div>
           </div>
+            </div>
+          )}
 
-          {/* =================== Section: البيانات الشخصية =================== */}
-          <div className="bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20 rounded-xl p-5 border border-emerald-200">
+          {currentStep === 2 && (
+            <div className="space-y-4 animate-fadeIn">
+              {/* =================== Section: البيانات الشخصية =================== */}
+              <div className="bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20 rounded-xl p-5 border border-emerald-200">
             <div className="flex items-center gap-2 text-emerald-700 mb-4">
               <div className="p-2 bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 rounded-lg">
                 <Calendar className="w-5 h-5 text-white" />
@@ -515,11 +562,13 @@ export const AssistantForm: React.FC<AssistantFormProps> = memo(({
               </>
             )}
           </div>
+            </div>
+          )}
         </form>
 
         {/* Footer */}
         <div className="p-4 border-t border-gray-200 bg-gray-50 rounded-b-2xl flex-shrink-0">
-          <div className="flex items-center justify-end gap-3">
+          <div className="flex items-center justify-between gap-3">
             <button
               type="button"
               onClick={handleClose}
@@ -528,21 +577,46 @@ export const AssistantForm: React.FC<AssistantFormProps> = memo(({
             >
               إلغاء
             </button>
-            <button
-              type="submit"
-              form="assistant-form"
-              disabled={isLoading}
-              className="px-6 py-2.5 bg-gradient-to-l from-emerald-600 via-teal-700 to-slate-700 text-white rounded-xl hover:from-emerald-700 hover:via-teal-800 hover:to-slate-800 transition-all shadow-lg shadow-emerald-500/25 flex items-center gap-2 disabled:opacity-50"
-            >
-              {isLoading ? (
-                <>
-                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  جاري الحفظ...
-                </>
-              ) : (
-                isEditMode ? "تحديث البيانات" : "إضافة المساعد"
+            
+            <div className="flex items-center gap-2">
+              {currentStep > 1 && (
+                <button
+                  type="button"
+                  onClick={prevStep}
+                  disabled={isLoading}
+                  className="px-4 py-2 text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-all font-medium text-sm"
+                >
+                  السابق
+                </button>
               )}
-            </button>
+
+              {currentStep < 2 ? (
+                <button
+                  type="button"
+                  onClick={nextStep}
+                  disabled={isLoading}
+                  className="px-4 py-2 text-white bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 hover:from-emerald-700 hover:via-teal-800 hover:to-slate-800 rounded-lg transition-all shadow-lg shadow-emerald-500/25 font-medium text-sm"
+                >
+                  التالي
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  form="assistant-form"
+                  disabled={isLoading}
+                  className="px-6 py-2.5 bg-gradient-to-l from-emerald-600 via-teal-700 to-slate-700 text-white rounded-xl hover:from-emerald-700 hover:via-teal-800 hover:to-slate-800 transition-all shadow-lg shadow-emerald-500/25 flex items-center gap-2 disabled:opacity-50"
+                >
+                  {isLoading ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      جاري الحفظ...
+                    </>
+                  ) : (
+                    isEditMode ? "تحديث البيانات" : "إضافة المساعد"
+                  )}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
