@@ -1,6 +1,5 @@
-const OpenAI = require('openai');
-const { QuranAyah } = require('../../schema/AI/Quran');
-const TafsirIbnKathir = require('../../schema/AI/Quran/TafsirIbnKathir');
+const getOpenAIClient = require('../../config/openai');
+const { QuranAyah, TafsirIbnKathir } = require('../../schema/AI/Quran');
 
 /**
  * 🧠 Embeddings Service
@@ -11,7 +10,6 @@ const TafsirIbnKathir = require('../../schema/AI/Quran/TafsirIbnKathir');
  */
 class EmbeddingsService {
   
-  static openai = null;
   static MODEL = 'text-embedding-3-small'; // 1536 dimensions, cheaper & fast
   static BATCH_SIZE = 100; // OpenAI limit per request
 
@@ -19,14 +17,7 @@ class EmbeddingsService {
    * تهيئة OpenAI Client
    */
   static getClient() {
-    if (!this.openai) {
-      const apiKey = process.env.OPENAI_API_KEY;
-      if (!apiKey) {
-        throw new Error('OPENAI_API_KEY is required for embeddings');
-      }
-      this.openai = new OpenAI({ apiKey });
-    }
-    return this.openai;
+    return getOpenAIClient();
   }
 
   // ═══════════════════════════════════════

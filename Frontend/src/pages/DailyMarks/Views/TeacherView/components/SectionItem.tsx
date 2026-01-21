@@ -65,10 +65,14 @@ const SectionItemComponent = ({
   const handleEditSchedule = (e: React.MouseEvent) => {
     e.stopPropagation();
     const timetable = section.timetableId as any;
-    if (!timetable || typeof timetable === 'string') return;
+    
+    // Handle both populated object and string ID
+    const timetableId = (timetable && typeof timetable === 'object') ? timetable._id : timetable;
+    
+    if (!timetableId) return;
     
     // Navigate to timetable page with edit mode
-    navigate(`/timetable?editSession=${timetable._id}`);
+    navigate(`/timetable?editSession=${timetableId}`);
   };
 
   const statusConfig = {
@@ -217,28 +221,46 @@ const SectionItemComponent = ({
         </div>
         
         {/* Scheduled Time Info */}
-        {section.timetableId && typeof section.timetableId !== 'string' && (
-          <div className="mb-3 bg-cyan-50 border border-cyan-100 rounded-lg p-2.5" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 text-cyan-800">
-                 <Clock size={14} className="text-cyan-600" />
-                 <span className="text-xs font-semibold">موعد الحلقة:</span>
-                 <span className="text-xs">{(section.timetableId as any).day}</span>
-                 <span className="text-cyan-300">|</span>
-                 <span className="text-xs font-mono">{(section.timetableId as any).startHour} - {(section.timetableId as any).endHour}</span>
+        {section.timetableId ? (
+           (typeof section.timetableId === 'object' && 'day' in (section.timetableId as any)) ? (
+             // ✅ الحالة الأولى: بيانات الموعد كاملة موجودة (populated)
+              <div className="mb-3 bg-cyan-50 border border-cyan-100 rounded-lg p-2.5" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-cyan-800">
+                    <Clock size={14} className="text-cyan-600" />
+                    <span className="text-xs font-semibold">موعد الحلقة:</span>
+                    <span className="text-xs">{(section.timetableId as any).day}</span>
+                    <span className="text-cyan-300">|</span>
+                    <span className="text-xs font-mono">{(section.timetableId as any).startHour} - {(section.timetableId as any).endHour}</span>
+                  </div>
+                  <button
+                    onClick={handleEditSchedule}
+                    className="text-xs text-cyan-600 hover:text-cyan-800 hover:bg-cyan-100 px-2 py-1 rounded transition-colors font-medium"
+                  >
+                    تعديل
+                  </button>
+                </div>
               </div>
-              <button
-                onClick={handleEditSchedule}
-                className="text-xs text-cyan-600 hover:text-cyan-800 hover:bg-cyan-100 px-2 py-1 rounded transition-colors font-medium"
-              >
-                تعديل
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Schedule Warning */}
-        {!section.timetableId && (
+           ) : (
+              // ✅ الحالة الثانية: الموعد موجود ولكن كـ ID فقط (ليس populated)
+              <div className="mb-3 bg-cyan-50 border border-cyan-100 rounded-lg p-2.5" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-cyan-800">
+                    <Clock size={14} className="text-cyan-600" />
+                    <span className="text-xs font-semibold">الموعد محجوز</span>
+                    <span className="text-[10px] text-cyan-600">(اضغط للتفاصيل)</span>
+                  </div>
+                  <button
+                    onClick={handleEditSchedule}
+                    className="text-xs text-cyan-600 hover:text-cyan-800 hover:bg-cyan-100 px-2 py-1 rounded transition-colors font-medium"
+                  >
+                    عرض/تعديل
+                  </button>
+                </div>
+              </div>
+           )
+        ) : (
+        // ✅ الحالة الثالثة: لا يوجد موعد (إظهار زر الإضافة)
            <div className="mb-3 bg-amber-50 border border-amber-100 rounded-lg p-2.5" onClick={(e) => e.stopPropagation()}>
              <div className="flex items-center gap-1.5 mb-2">
                <AlertTriangle className="text-amber-500" size={14} />

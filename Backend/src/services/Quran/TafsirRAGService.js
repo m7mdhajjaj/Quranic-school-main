@@ -1,4 +1,4 @@
-const TafsirIbnKathir = require('../../schema/AI/Quran/TafsirIbnKathir');
+const { TafsirIbnKathir } = require('../../schema/AI/Quran');
 const EmbeddingsService = require('./EmbeddingsService');
 
 /**

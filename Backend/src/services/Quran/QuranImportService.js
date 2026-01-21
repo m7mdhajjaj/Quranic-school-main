@@ -1,7 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { QuranSurah, QuranAyah, QuranJuz } = require('../../schema/AI/Quran');
-const TafsirIbnKathir = require('../../schema/AI/Quran/TafsirIbnKathir');
+const { QuranSurah, QuranAyah, TafsirIbnKathir } = require('../../schema/AI/Quran');
 
 /**
  * 📖 Quran Import Service

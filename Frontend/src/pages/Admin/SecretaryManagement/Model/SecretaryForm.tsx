@@ -7,7 +7,7 @@ import {
 import { FaMale, FaFemale } from "react-icons/fa";
 import { DatePicker } from "@/components/UI/DatePicker";
 import type { Secretary } from "../types";
-import { useSecretaryForm, type SecretaryFormData, type AccessLevel } from "../hooks/useSecretaryForm";
+import { useSecretaryForm, type SecretaryFormData } from "../hooks/useSecretaryForm";
 
 // =================== Props ===================
 interface SecretaryFormProps {

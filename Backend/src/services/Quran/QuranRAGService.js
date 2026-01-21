@@ -1,4 +1,4 @@
-const { QuranSurah, QuranJuz, QuranAyah } = require('../../schema/AI/Quran');
+const { QuranSurah, QuranAyah } = require('../../schema/AI/Quran');
 const EmbeddingsService = require('./EmbeddingsService');
 
 /**

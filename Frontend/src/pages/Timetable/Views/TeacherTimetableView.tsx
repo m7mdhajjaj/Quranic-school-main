@@ -139,6 +139,19 @@ export const TeacherTimetableView: React.FC<TeacherTimetableViewProps> = ({
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingSession(null);
+    
+    // ✅ Clear URL params on close to prevent zombie modals
+    setSearchParams(prev => {
+        const newParams = new URLSearchParams(prev);
+        if (!newParams.toString()) return prev; // Avoid unnecessary updates
+        
+        newParams.delete('addSession');
+        newParams.delete('editSession');
+        newParams.delete('sectionId');
+        newParams.delete('groupName');
+        newParams.delete('sessionType');
+        return newParams;
+    }, { replace: true });
   };
 
   const handleSubmit = async (formData: SessionFormData, sessionId?: string) => {
@@ -148,14 +161,6 @@ export const TeacherTimetableView: React.FC<TeacherTimetableViewProps> = ({
       if (urlSectionId) {
         formData.sectionId = urlSectionId;
       }
-      
-      // Inject sessionType from URL if not set (or override?? Usually form data has priority, but initial state should be set correctly)
-      // Actually formData comes from the modal, which should be initialized with URL param.
-      // But let's fallback just in case:
-      // const urlSessionType = searchParams.get('sessionType');
-      // if (!formData.sessionType && urlSessionType) {
-      //   formData.sessionType = urlSessionType as any;
-      // }
     }
 
     const success = sessionId 
@@ -164,16 +169,6 @@ export const TeacherTimetableView: React.FC<TeacherTimetableViewProps> = ({
     
     if (success) {
       handleCloseModal();
-      // Remove query params after successful add/edit to clean up URL
-      setSearchParams(prev => {
-        const newParams = new URLSearchParams(prev);
-        newParams.delete('addSession');
-        newParams.delete('editSession');
-        newParams.delete('sectionId');
-        newParams.delete('groupName');
-        newParams.delete('sessionType'); // Clear this too
-        return newParams;
-      });
     }
     return success;
   };

@@ -7,22 +7,8 @@
  * ✅ فقط من قاعدة البيانات
  */
 
-const OpenAI = require("openai");
 const TafsirIbnKathir = require("../../schema/AI/Quran/TafsirIbnKathir");
-
-// ═══════════════════════════════════════════════════════════════════════════
-// 🔧 OpenAI Client
-// ═══════════════════════════════════════════════════════════════════════════
-
-let aiClient;
-const getOpenAIClient = () => {
-  if (!aiClient) {
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) throw new Error("OPENAI_API_KEY مفقود");
-    aiClient = new OpenAI({ apiKey, timeout: 30000 });
-  }
-  return aiClient;
-};
+const getOpenAIClient = require("../../config/openai");
 
 // ═══════════════════════════════════════════════════════════════════════════
 // 🧠 نظام التصحيح الإملائي الذكي (Fuzzy Matching + AI)
