@@ -2,13 +2,13 @@
 // useChatWindow.ts - Chat Window Main Logic Hook
 // ============================================================================
 
-import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { useAuth } from '../../../hooks/useAuth';
-import { useChat } from './useChat';
-import { useMessageOperations } from './useMessageOperations';
-import { useMessageInput } from './useMessageInput';
-import { useMentions } from './useMentions';
-import type { Message, MentionItem, User, ChatType } from '../types';
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { useAuth } from "../../../hooks/useAuth";
+import { useChat } from "./useChat";
+import { useMessageOperations } from "./useMessageOperations";
+import { useMessageInput } from "./useMessageInput";
+import { useMentions } from "./useMentions";
+import type { Message, MentionItem, User, ChatType } from "../types";
 
 interface UseChatWindowProps {
   chatType: ChatType;
@@ -16,7 +16,11 @@ interface UseChatWindowProps {
   onNewMessage?: (message: Message) => void;
 }
 
-export const useChatWindow = ({ chatType, targetId, onNewMessage }: UseChatWindowProps) => {
+export const useChatWindow = ({
+  chatType,
+  targetId,
+  onNewMessage,
+}: UseChatWindowProps) => {
   const { user } = useAuth();
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [showLoadingSpinner, setShowLoadingSpinner] = useState(false);
@@ -25,12 +29,12 @@ export const useChatWindow = ({ chatType, targetId, onNewMessage }: UseChatWindo
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const previousScrollHeight = useRef<number>(0);
   const isLoadingRef = useRef(false);
-  
+
   // Chat messages and operations
-  const { 
-    messages, 
+  const {
+    messages,
     loading,
-    loadingMore, 
+    loadingMore,
     hasMore,
     fetchMessages,
     sendMessage,
@@ -40,12 +44,13 @@ export const useChatWindow = ({ chatType, targetId, onNewMessage }: UseChatWindo
     isTyping,
     markMessageAsRead,
     jumpToMessage,
-    handleMessageDeleted
+    handleMessageDeleted,
   } = useChat(chatType, targetId);
 
   // Message operations (reply, sending state)
-  const { replyTo, setReplyTo, clearReply, isSending, setIsSending } = useMessageOperations();
-  
+  const { replyTo, setReplyTo, clearReply, isSending, setIsSending } =
+    useMessageOperations();
+
   // Mentions Hook - only for GROUP chats
   const [mentions, setMentions] = useState<MentionItem[]>([]);
   const {
@@ -58,70 +63,89 @@ export const useChatWindow = ({ chatType, targetId, onNewMessage }: UseChatWindo
     textareaRef,
     handleChange: handleMentionChange,
     handleKeyDown: handleMentionKeyDown,
-    closeMentions
-  } = useMentions(chatType, chatType === 'GROUP' ? targetId : undefined);
+    closeMentions,
+  } = useMentions(chatType, chatType === "GROUP" ? targetId : undefined);
 
   // Dedupe messages with useMemo for performance (O(n²) operation)
-  const uniqueMessages = useMemo(() => 
-    messages.filter((msg, index, self) => 
-      index === self.findIndex((m) => (
-        m._id ? m._id === msg._id : m.clientTempId === msg.clientTempId
-      ))
-    ),
-    [messages]
+  const uniqueMessages = useMemo(
+    () =>
+      messages.filter(
+        (msg, index, self) =>
+          index ===
+          self.findIndex((m) =>
+            m._id ? m._id === msg._id : m.clientTempId === msg.clientTempId,
+          ),
+      ),
+    [messages],
   );
 
   // Callbacks
-  const handleReplyCallback = useCallback((message: Message) => {
-    setReplyTo(message);
-  }, [setReplyTo]);
+  const handleReplyCallback = useCallback(
+    (message: Message) => {
+      setReplyTo(message);
+    },
+    [setReplyTo],
+  );
 
-  const handleDeleteCallback = useCallback((messageId: string, deletedForAll: boolean) => {
-    handleMessageDeleted(messageId, deletedForAll);
-  }, [handleMessageDeleted]);
+  const handleDeleteCallback = useCallback(
+    (messageId: string, deletedForAll: boolean) => {
+      handleMessageDeleted(messageId, deletedForAll);
+    },
+    [handleMessageDeleted],
+  );
 
-  const handleEditCallback = useCallback((messageId: string, newText: string) => {
-    editMessage(messageId, newText);
-  }, [editMessage]);
+  const handleEditCallback = useCallback(
+    (messageId: string, newText: string) => {
+      editMessage(messageId, newText);
+    },
+    [editMessage],
+  );
 
   // Scroll to bottom function
-  const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
     messagesEndRef.current?.scrollIntoView({ behavior });
   }, []);
 
   // Handle scroll with pagination and scroll button
-  const handleScroll = useCallback((e?: React.UIEvent<HTMLDivElement>) => {
-    const container = e?.currentTarget || messagesContainerRef.current;
-    if (!container) return;
+  const handleScroll = useCallback(
+    (e?: React.UIEvent<HTMLDivElement>) => {
+      const container = e?.currentTarget || messagesContainerRef.current;
+      if (!container) return;
 
-    // Show/hide scroll button
-    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 200;
-    setShowScrollButton(!isNearBottom);
+      // Show/hide scroll button
+      const isNearBottom =
+        container.scrollHeight - container.scrollTop - container.clientHeight <
+        200;
+      setShowScrollButton(!isNearBottom);
 
-    // Load more messages when near top
-    if (hasMore && !isLoadingRef.current && !loadingMore) {
-      const scrollTop = container.scrollTop;
-      if (scrollTop < 50) {
-        const oldestMessage = messages[0];
-        if (oldestMessage?.createdAt) {
-          isLoadingRef.current = true;
-          setShowLoadingSpinner(true);
-          previousScrollHeight.current = container.scrollHeight;
-          fetchMessages(oldestMessage.createdAt);
+      // Load more messages when near top
+      if (hasMore && !isLoadingRef.current && !loadingMore) {
+        const scrollTop = container.scrollTop;
+        if (scrollTop < 50) {
+          const oldestMessage = messages[0];
+          if (oldestMessage?.createdAt) {
+            isLoadingRef.current = true;
+            setShowLoadingSpinner(true);
+            previousScrollHeight.current = container.scrollHeight;
+            fetchMessages(oldestMessage.createdAt);
+          }
         }
       }
-    }
-  }, [hasMore, loadingMore, messages, fetchMessages, setShowScrollButton]);
+    },
+    [hasMore, loadingMore, messages, fetchMessages, setShowScrollButton],
+  );
 
   // Auto-scroll on new messages
   useEffect(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
 
-    const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150;
+    const isAtBottom =
+      container.scrollHeight - container.scrollTop - container.clientHeight <
+      150;
     if (isAtBottom) {
       requestAnimationFrame(() => {
-        scrollToBottom('smooth');
+        scrollToBottom("smooth");
       });
     }
   }, [messages.length, scrollToBottom]);
@@ -142,81 +166,91 @@ export const useChatWindow = ({ chatType, targetId, onNewMessage }: UseChatWindo
   }, [loadingMore, showLoadingSpinner]);
 
   // Input handling with mentions support
-  const { 
-    inputText, 
-    handleInputChange: handleInputTextChange, 
-    handleKeyDown: baseHandleKeyDown, 
+  const {
+    inputText,
+    handleInputChange: handleInputTextChange,
+    handleKeyDown: baseHandleKeyDown,
     handleSend: baseSend,
     clearInput,
-    canSend
+    canSend,
   } = useMessageInput({
     onSend: async (text: string) => {
       // ⚡ Optimistic UI Update: Rocket Speed 🚀
       // لا نستخدم setIsSending(true) هنا لأننا نريد الإرسال فوري دون أي حالة تحميل على الزر
       // setIsSending(true); // Removed to prevent UI lock/spinner
-      
+
       // Fire and forget (Optimistic) with background error handling
-      sendMessage(text, replyTo?._id)
-        .catch(error => {
-          console.error("Failed to send message:", error);
-          // يمكن هنا إضافة إشعار خطأ (Toast)
-        });
+      sendMessage({ text, replyTo: replyTo?._id }, mentions).catch((error) => {
+        console.error("Failed to send message:", error);
+        // يمكن هنا إضافة إشعار خطأ (Toast)
+      });
 
       // Clear UI immediately
       clearReply();
       setMentions([]);
-      
+
       // Scroll to bottom immediately
       requestAnimationFrame(() => {
-        scrollToBottom('smooth');
+        scrollToBottom("smooth");
       });
-      
+
       // Return immediately so input clears instantly
       return Promise.resolve();
     },
     onTyping: handleTyping,
-    maxLength: 1000
+    maxLength: 1000,
   });
 
   // Handle mention selection
-  const handleSelectMention = useCallback((user: User | 'all') => {
-    if (mentionTriggerIndex === null || !textareaRef.current) return;
+  const handleSelectMention = useCallback(
+    (user: User | "all") => {
+      if (mentionTriggerIndex === null || !textareaRef.current) return;
 
-    const textBefore = inputText.slice(0, mentionTriggerIndex);
-    const textAfter = inputText.slice(textareaRef.current.selectionStart || 0);
-    
-    let mentionText = '';
-    let newMention: MentionItem;
+      const textBefore = inputText.slice(0, mentionTriggerIndex);
+      const textAfter = inputText.slice(
+        textareaRef.current.selectionStart || 0,
+      );
 
-    if (user === 'all') {
-      mentionText = '@الجميع ';
-      newMention = { type: 'all' };
-    } else {
-      mentionText = `@${user.firstName} ${user.lastName} `;
-      newMention = { type: 'user', user };
-    }
+      let mentionText = "";
+      let newMention: MentionItem;
 
-    const newText = textBefore + mentionText + textAfter;
-    handleInputTextChange(newText);
-    setMentions(prev => [...prev, newMention]);
-    closeMentions();
-    
-    setTimeout(() => {
-      if (textareaRef.current) {
-        textareaRef.current.focus();
-        const newCursorPos = textBefore.length + mentionText.length;
-        textareaRef.current.setSelectionRange(newCursorPos, newCursorPos);
+      if (user === "all") {
+        mentionText = "@الجميع ";
+        newMention = { type: "all" };
+      } else {
+        mentionText = `@${user.firstName} ${user.lastName} `;
+        newMention = { type: "user", user };
       }
-    }, 0);
-  }, [mentionTriggerIndex, inputText, textareaRef, handleInputTextChange, closeMentions]);
+
+      const newText = textBefore + mentionText + textAfter;
+      handleInputTextChange(newText);
+      setMentions((prev) => [...prev, newMention]);
+      closeMentions();
+
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+          const newCursorPos = textBefore.length + mentionText.length;
+          textareaRef.current.setSelectionRange(newCursorPos, newCursorPos);
+        }
+      }, 0);
+    },
+    [
+      mentionTriggerIndex,
+      inputText,
+      textareaRef,
+      handleInputTextChange,
+      closeMentions,
+    ],
+  );
 
   // Send with mentions
   const handleSendWithMentions = useCallback(async () => {
     if (!inputText.trim()) return;
-    
+
     // Validate mentions before sending
-    mentions.filter(m => {
-      if (m.type === 'all') return inputText.includes('@الجميع');
+    mentions.filter((m) => {
+      if (m.type === "all") return inputText.includes("@الجميع");
       return true;
     });
 
@@ -224,55 +258,91 @@ export const useChatWindow = ({ chatType, targetId, onNewMessage }: UseChatWindo
   }, [inputText, mentions, baseSend]);
 
   // Combined KeyDown Handler
-  const onKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (isMentionOpen) {
-      const handled = handleMentionKeyDown(e);
-      if (handled && e.key === 'Enter') {
-        const allOption: User | 'all' = 'all';
-        const list = [allOption, ...mentionUsers];
-        const item = list[mentionActiveIndex];
-        if (item) handleSelectMention(item === 'all' ? 'all' : item as User);
-        return;
+  const onKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (isMentionOpen) {
+        const handled = handleMentionKeyDown(e);
+        if (handled && e.key === "Enter") {
+          const allOption: User | "all" = "all";
+          const list = [allOption, ...mentionUsers];
+          const item = list[mentionActiveIndex];
+          if (item)
+            handleSelectMention(item === "all" ? "all" : (item as User));
+          return;
+        }
+        if (handled) return;
       }
-      if (handled) return;
-    }
-    baseHandleKeyDown(e);
-  }, [isMentionOpen, handleMentionKeyDown, mentionActiveIndex, mentionUsers, handleSelectMention, baseHandleKeyDown]);
+      baseHandleKeyDown(e);
+    },
+    [
+      isMentionOpen,
+      handleMentionKeyDown,
+      mentionActiveIndex,
+      mentionUsers,
+      handleSelectMention,
+      baseHandleKeyDown,
+    ],
+  );
 
   // Combined Change Handler
-  const onInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    handleInputTextChange(e.target.value);
-    handleMentionChange(e);
-  }, [handleInputTextChange, handleMentionChange]);
+  const onInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      handleInputTextChange(e.target.value);
+      handleMentionChange(e);
+    },
+    [handleInputTextChange, handleMentionChange],
+  );
 
   // Handle scrolling to replied message
-  const handleReplyClick = useCallback(async (messageId: string) => {
-    const element = document.getElementById(`message-${messageId}`);
-    
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      element.classList.add('bg-yellow-50/50', 'transition-colors', 'duration-1000');
-      setTimeout(() => {
-        element.classList.remove('bg-yellow-50/50', 'transition-colors', 'duration-1000');
-      }, 2000);
-    } else {
-      try {
-        await jumpToMessage(messageId);
+  const handleReplyClick = useCallback(
+    async (messageId: string) => {
+      const element = document.getElementById(`message-${messageId}`);
+
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
+        element.classList.add(
+          "bg-yellow-50/50",
+          "transition-colors",
+          "duration-1000",
+        );
         setTimeout(() => {
-          const newElement = document.getElementById(`message-${messageId}`);
-          if (newElement) {
-            newElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            newElement.classList.add('bg-yellow-50/50', 'transition-colors', 'duration-1000');
-            setTimeout(() => {
-              newElement.classList.remove('bg-yellow-50/50', 'transition-colors', 'duration-1000');
-            }, 2000);
-          }
-        }, 100);
-      } catch (error) {
-        console.error("Failed to jump to message:", error);
+          element.classList.remove(
+            "bg-yellow-50/50",
+            "transition-colors",
+            "duration-1000",
+          );
+        }, 2000);
+      } else {
+        try {
+          await jumpToMessage(messageId);
+          setTimeout(() => {
+            const newElement = document.getElementById(`message-${messageId}`);
+            if (newElement) {
+              newElement.scrollIntoView({
+                behavior: "smooth",
+                block: "center",
+              });
+              newElement.classList.add(
+                "bg-yellow-50/50",
+                "transition-colors",
+                "duration-1000",
+              );
+              setTimeout(() => {
+                newElement.classList.remove(
+                  "bg-yellow-50/50",
+                  "transition-colors",
+                  "duration-1000",
+                );
+              }, 2000);
+            }
+          }, 100);
+        } catch (error) {
+          console.error("Failed to jump to message:", error);
+        }
       }
-    }
-  }, [jumpToMessage]);
+    },
+    [jumpToMessage],
+  );
 
   // Mark unread messages as read
   useEffect(() => {
@@ -282,10 +352,10 @@ export const useChatWindow = ({ chatType, targetId, onNewMessage }: UseChatWindo
       const isFromMe = msg.sender?._id === user._id;
       if (isFromMe) return false;
 
-      if (chatType === 'DM') {
+      if (chatType === "DM") {
         return !msg.readAt && !markingReadRef.current.has(msg._id);
       } else {
-        const seenByMe = msg.seenBy?.some(s => s.userId === user._id);
+        const seenByMe = msg.seenBy?.some((s) => s.userId === user._id);
         return !seenByMe && !markingReadRef.current.has(msg._id);
       }
     });
@@ -315,15 +385,18 @@ export const useChatWindow = ({ chatType, targetId, onNewMessage }: UseChatWindo
 
     const handleWheel = (e: WheelEvent) => {
       const atTop = element.scrollTop === 0;
-      const atBottom = Math.abs(element.scrollHeight - element.scrollTop - element.clientHeight) < 1;
-      
+      const atBottom =
+        Math.abs(
+          element.scrollHeight - element.scrollTop - element.clientHeight,
+        ) < 1;
+
       if ((atTop && e.deltaY < 0) || (atBottom && e.deltaY > 0)) {
         e.preventDefault();
       }
     };
 
-    element.addEventListener('wheel', handleWheel, { passive: false });
-    return () => element.removeEventListener('wheel', handleWheel);
+    element.addEventListener("wheel", handleWheel, { passive: false });
+    return () => element.removeEventListener("wheel", handleWheel);
   }, [messagesContainerRef]);
 
   return {
@@ -339,7 +412,7 @@ export const useChatWindow = ({ chatType, targetId, onNewMessage }: UseChatWindo
     isSending,
     typingUsers,
     isTyping,
-    
+
     // Mentions
     isMentionOpen,
     mentionActiveIndex,
@@ -347,11 +420,11 @@ export const useChatWindow = ({ chatType, targetId, onNewMessage }: UseChatWindo
     mentionPosition,
     mentionQuery,
     textareaRef,
-    
+
     // Refs
     messagesContainerRef,
     messagesEndRef,
-    
+
     // Handlers
     handleReplyCallback,
     handleDeleteCallback,
@@ -363,6 +436,6 @@ export const useChatWindow = ({ chatType, targetId, onNewMessage }: UseChatWindo
     onInputChange,
     onKeyDown,
     handleSendWithMentions,
-    handleSelectMention
+    handleSelectMention,
   };
 };
