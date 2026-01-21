@@ -149,12 +149,15 @@ export const showLogoutConfirmation = async (options: LogoutOptions = {}) => {
       },
     });
 
-    // تنفيذ التنظيف
-    cleanupSession();
-    if (onConfirm) onConfirm();
-
-    // الانتظار قبل الإغلاق
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    if (onConfirm) {
+       // إذا تم توفير دالة تنظيف مخصصة (مثل auth.logout)، نترك لها المهمة
+       // هذا يمنع التعارض ويسمح بإرسال طلبات API قبل مسح التوكن
+       onConfirm();
+    } else {
+       // التنظيف الافتراضي في حالة عدم وجود معالج مخصص
+       cleanupSession();
+       await new Promise((resolve) => setTimeout(resolve, 500));
+    }
 
     return true;
   } else {

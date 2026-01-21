@@ -261,59 +261,79 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // وظيفة تسجيل الخروج
   const logout = async () => {
     try {
-      // 🔒 منع إعادة عرض الشاشة أثناء الخروج - إضافة overlay
+      // 🔒 منع إعادة عرض الشاشة أثناء الخروج - إضافة overlay جميل وسلس
       const overlay = document.createElement('div');
       overlay.id = 'logout-overlay';
       overlay.style.cssText = `
         position: fixed;
         inset: 0;
-        background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(10px);
         z-index: 99999;
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: opacity 0.3s ease;
+        flex-direction: column;
+        transition: all 0.4s ease;
+        opacity: 0;
       `;
       overlay.innerHTML = `
-        <div style="text-align: center; direction: rtl;">
+        <div style="text-align: center; direction: rtl; transform: translateY(20px); transition: transform 0.4s ease;">
           <div style="
-            width: 60px;
-            height: 60px;
-            margin: 0 auto 16px;
-            border: 4px solid #e5e7eb;
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 24px;
+            border: 3px solid rgba(34, 197, 94, 0.1);
             border-top-color: #22c55e;
             border-radius: 50%;
-            animation: spin 1s linear infinite;
+            animation: spin 1s cubic-bezier(0.55, 0.085, 0.68, 0.53) infinite;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
           "></div>
-          <p style="color: #166534; font-size: 18px; font-weight: 600;">جاري تسجيل الخروج...</p>
-          <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+          <h3 style="color: #166534; font-size: 24px; font-weight: 800; margin-bottom: 12px; font-family: ui-sans-serif, system-ui, sans-serif;">جاري تسجيل الخروج</h3>
+          <p style="color: #4b5563; font-size: 16px; font-weight: 500;">شكراً لاستخدامك المنصة، نراك قريباً 👋</p>
+          <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
         </div>
       `;
       document.body.appendChild(overlay);
 
-      // إرسال طلب logout للـ Backend لتحديث lastSeen
+      // تفعيل الانيميشن
+      requestAnimationFrame(() => {
+        overlay.style.opacity = '1';
+        const content = overlay.querySelector('div');
+        if (content) content.style.transform = 'translateY(0)';
+      });
+
+      // إرسال طلب logout للـ Backend لتحديث lastSeen (مع مهلة زمنية قصيرة لمنع التعليق)
       if (token && user) {
         try {
-          const headers = {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          };
-          
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 1500); // مهلة 1.5 ثانية فقط
+
           await fetch(`${API_URL}/auth/logout`, { 
             method: 'POST',
-            headers 
-          });
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+            signal: controller.signal
+          }).catch(() => { /* تجاوز أي خطأ في الشبكة لاستكمال الخروج */ });
+          
+          clearTimeout(timeoutId);
         } catch {
-          // تجاهل أخطاء API - المهم هو تنظيف البيانات المحلية
+          // تجاهل أخطاء API - المهم هو تنظيف البيانات المحلية بسرعة
         }
       }
 
       // قطع اتصال Socket
       if (socketManager.isConnected()) {
-        socketManager.disconnect();
+        try {
+          socketManager.disconnect();
+        } catch (e) {
+          console.warn('Socket disconnection warning:', e);
+        }
       }
 
-      // تنظيف شامل لكل البيانات
+      // 🧹 تنظيف شامل لكل البيانات
       localStorage.clear();
       sessionStorage.clear();
       
@@ -323,15 +343,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
       });
 
-      // انتظار قصير ثم إعادة التوجيه
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // انتظار بسيط جداً لإكمال الجمالية
+      await new Promise(resolve => setTimeout(resolve, 800));
 
-      // إعادة توجه إلى صفحة تسجيل الدخول
-      window.location.href = '/login';
+      // إعادة توجه كاملة (Hard Refresh) لضمان تنظيف الذاكرة
+      window.location.replace('/login');
     } catch (error) {
       console.error('❌ خطأ في تسجيل الخروج:', error);
-      // حتى في حالة الخطأ، نعيد التوجيه
-      window.location.href = '/login';
+      // حتى في حالة الخطأ، نعيد التوجيه فوراً
+      window.location.replace('/login');
     }
   };
 
