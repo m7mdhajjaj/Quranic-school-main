@@ -186,24 +186,6 @@ export const sectionValidationSchema = yup.object<SectionFormData>({
     return Boolean(hasMem || hasRev);
   }
 ).test(
-  'review-starts-from-one',
-  'المراجعة يجب أن تبدأ دائماً من الآية 1',
-  function(value) {
-    // ✅ V9: Review MUST start from ayah 1
-    const v = value as SectionFormData;
-    if (!v?.reviewMeta || !Array.isArray(v.reviewMeta) || v.reviewMeta.length === 0) return true;
-    
-    for (const rev of v.reviewMeta) {
-      if (rev.ayahStart && rev.ayahStart !== 1) {
-        return this.createError({
-          path: 'reviewMeta',
-          message: `❌ المراجعة يجب أن تبدأ دائماً من الآية 1 (أنت أدخلت ${rev.ayahStart})`
-        });
-      }
-    }
-    return true;
-  }
-).test(
   'consistency-check',
   'خطأ في اتساق البيانات المنطقي',
   function(value) {
