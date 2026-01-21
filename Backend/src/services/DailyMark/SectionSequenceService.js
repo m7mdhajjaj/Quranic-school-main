@@ -310,13 +310,7 @@ class SectionSequenceService {
           // 2. نهاية المراجعة = آخر آية محفوظة قبل التاريخ المحدد (ليس نفس اليوم)
           // 3. إذا كانت نفس سورة الحفظ في نفس اليوم: review.end = memorization.start - 1
           
-          // ✅ V9: Review MUST start from 1
-          if (seg.ayahStart !== 1) {
-              return {
-                  isValid: false,
-                  message: `❌ المراجعة يجب أن تبدأ دائماً من الآية 1 (أنت أدخلت ${seg.ayahStart})`
-              };
-          }
+          // ✅ V9: Review range is flexible (previously forced start from 1)
           
           // الحصول على أقصى تقدم في الحفظ لهذه السورة
           // ✅ V9: تمرير newDateKey لضمان احتساب المحفوظات السابقة فقط (قبل اليوم الحالي)

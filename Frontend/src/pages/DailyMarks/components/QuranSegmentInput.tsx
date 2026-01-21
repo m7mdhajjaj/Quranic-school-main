@@ -258,11 +258,8 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
             min={1}
             max={maxAyah}
             disabled={!segment.surahNumber}
-            // ✅ V9: Review ALWAYS starts from 1 (read-only)
-            readOnly={type === 'review'}
             className={`w-full rounded-lg border text-sm font-bold py-2 px-1 text-center transition-all outline-none 
                 disabled:bg-gray-50 disabled:border-gray-50 disabled:text-gray-400
-                ${type === 'review' ? 'bg-gray-100 cursor-not-allowed text-gray-600' : ''}
                 ${
                      (!segment.ayahStart && segment.surahNumber) ? 'border-red-200 bg-red-50/30' : 
                      `border-gray-100 bg-white hover:border-gray-200 ${activeBorder} ${activeRing}`
@@ -271,14 +268,6 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
             value={segment.ayahStart || ''}
             onChange={(e) => handleUpdate('ayahStart', e.target.value)}
           />
-          {/* ✅ V9: Show hint that review always starts from 1 */}
-          {type === 'review' && segment.surahNumber && (
-             <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-1 w-max z-10">
-                 <span className="text-[9px] bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full border border-emerald-100 shadow-sm whitespace-nowrap">
-                   دائماً من 1
-                 </span>
-             </div>
-           )}
         </div>
 
         {/* Ayah End */}
@@ -289,14 +278,11 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
           <input
             type="number"
             min={segment.ayahStart || 1}
-            // ✅ V9: Review end is locked to reviewLimit (auto-determined by backend)
+            // ✅ V9: Review end is capped at reviewLimit but user can edit
             max={type === 'review' && reviewLimit ? reviewLimit : maxAyah}
             disabled={!segment.surahNumber}
-            // ✅ V9: Review end is also read-only (auto-filled by system)
-            readOnly={type === 'review' && !!reviewLimit}
             className={`w-full rounded-lg border text-sm font-bold py-2 px-1 text-center transition-all outline-none 
                 disabled:bg-gray-50 disabled:border-gray-50 disabled:text-gray-400
-                ${type === 'review' && reviewLimit ? 'bg-gray-100 cursor-not-allowed text-gray-600' : ''}
                 ${
                 !segment.ayahEnd && segment.surahNumber ? 'border-red-200 bg-red-50/30' : 
                 `border-gray-100 bg-white hover:border-gray-200 ${activeBorder} ${activeRing}`
