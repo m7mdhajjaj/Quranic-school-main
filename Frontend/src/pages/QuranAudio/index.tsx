@@ -1,6 +1,6 @@
 import React, { useCallback, lazy, Suspense } from "react";
 import { useQuranAudio } from "./hooks/useQuranAudio";
-import { PlaybackSettings } from "./components";
+import { PlaybackSettings, AudioControlBar } from "./components";
 import { LoadingSpinner } from "@/components/UI";
 import { Headphones } from "lucide-react";
 
@@ -39,8 +39,14 @@ const QuranAudio: React.FC = () => {
     }
   }, [isPlaying, pauseAudio, playFullSurah]);
 
+  // Get current reciter name for display
+  const currentReciterName =
+    reciters.find((r) => r.code === reciter)?.name || "";
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20" dir="rtl">
+    <div
+      className="min-h-screen bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20 pb-24"
+      dir="rtl">
       {/* Hidden audio element */}
       <audio ref={audioRef} onEnded={handleAudioEnded} preload="none" />
 
@@ -63,11 +69,15 @@ const QuranAudio: React.FC = () => {
         </div>
 
         {/* ✅ استخدام Suspense واحد لتحميل جميع المكونات الأساسية معاً لتقليل عدد اللودرات */}
-        <Suspense fallback={
-          <div className="flex items-center justify-center py-12">
-            <LoadingSpinner size="lg" text="جاري تحميل صفحة القرآن الكريم..." />
-          </div>
-        }>
+        <Suspense
+          fallback={
+            <div className="flex items-center justify-center py-12">
+              <LoadingSpinner
+                size="lg"
+                text="جاري تحميل صفحة القرآن الكريم..."
+              />
+            </div>
+          }>
           <ReciterSelector
             reciters={reciters}
             selectedReciter={reciter}
@@ -90,8 +100,8 @@ const QuranAudio: React.FC = () => {
             />
           )}
 
-          <AyahsList 
-            ayahs={ayahs} 
+          <AyahsList
+            ayahs={ayahs}
             loading={loading}
             isPlaying={isPlaying}
             currentAyahNumber={currentAyahNumber}
@@ -100,6 +110,17 @@ const QuranAudio: React.FC = () => {
           />
         </Suspense>
       </div>
+
+      {/* 🎵 Audio Control Bar - Fixed at bottom */}
+      {selectedSurah && (
+        <AudioControlBar
+          audioRef={audioRef as React.RefObject<HTMLAudioElement>}
+          isPlaying={isPlaying}
+          onPlayPause={handlePlayPause}
+          surahName={selectedSurah.name}
+          reciterName={currentReciterName}
+        />
+      )}
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -18,6 +18,7 @@ import {
   type Reciter,
 } from "@/Api/quranAudioApi";
 import { Audio } from "expo-av";
+import { AudioControlBar } from "@/components/quran-audio";
 
 const QuranAudio = () => {
   const [surahs, setSurahs] = useState<Surah[]>([]);
@@ -67,7 +68,7 @@ const QuranAudio = () => {
 
       const { sound: newSound } = await Audio.Sound.createAsync(
         { uri: audioUrl },
-        { shouldPlay: true }
+        { shouldPlay: true },
       );
 
       setSound(newSound);
@@ -97,6 +98,19 @@ const QuranAudio = () => {
       setIsPlaying(true);
     }
   };
+
+  // Handle play/pause toggle for AudioControlBar
+  const handlePlayPause = useCallback(() => {
+    if (isPlaying) {
+      pauseAudio();
+    } else {
+      resumeAudio();
+    }
+  }, [isPlaying, sound]);
+
+  // Get current reciter name
+  const currentReciterName =
+    reciters.find((r) => r.code === selectedReciter)?.name || "";
 
   const renderReciterCard = ({ item }: { item: Reciter }) => (
     <TouchableOpacity
@@ -217,6 +231,15 @@ const QuranAudio = () => {
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
       />
+
+      {/* 🎵 Audio Control Bar */}
+      <AudioControlBar
+        sound={sound}
+        isPlaying={isPlaying}
+        onPlayPause={handlePlayPause}
+        surahName={selectedSurah?.name}
+        reciterName={currentReciterName}
+      />
     </View>
   );
 };
@@ -297,7 +320,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   listContainer: {
-    paddingBottom: 24,
+    paddingBottom: 160, // Space for AudioControlBar
   },
   surahCard: {
     flexDirection: "row",
