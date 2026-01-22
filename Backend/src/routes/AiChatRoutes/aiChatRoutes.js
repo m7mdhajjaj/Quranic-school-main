@@ -62,6 +62,9 @@ const {
 // Chat endpoint - يستخدم النظام الصارم للتفسير
 router.post('/', protect, validateChatMessage, aiChatController.chat);
 
+// Get Student Suggestion - اقتراح ذكي للطالب
+router.get('/suggestion', protect, aiChatController.getStudentSuggestion);
+
 // TTS Endpoint - تحويل النص إلى صوت
 router.post('/speak', protect, validateTTS, aiChatController.speak);
 

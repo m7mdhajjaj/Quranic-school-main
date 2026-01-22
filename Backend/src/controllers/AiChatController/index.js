@@ -7,12 +7,19 @@
 // استيراد النظام الصارم للتفسير
 const StrictTafsirController = require('./StrictTafsirController');
 const FavoriteController = require('./FavoriteController');
+const SuggestionController = require('./SuggestionController');
 
 // ═══════════════════════════════════════════════════════════════════════════
 // 💬 Chat - التفسير الصارم
 // ═══════════════════════════════════════════════════════════════════════════
 
 exports.chat = StrictTafsirController.chat;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 💡 Suggestions - الاقتراحات الذكية
+// ═══════════════════════════════════════════════════════════════════════════
+
+exports.getStudentSuggestion = SuggestionController.getStudentSuggestion;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // 🔊 TTS - تحويل النص إلى صوت

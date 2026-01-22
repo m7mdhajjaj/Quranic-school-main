@@ -147,6 +147,7 @@ export const AiChatbot: React.FC = () => {
     isFavorited,
     favoritesList,
     smartSuggestions,
+    showSuggestions,
   } = useAiChatbot();
 
   // Resize logic
@@ -776,7 +777,7 @@ export const AiChatbot: React.FC = () => {
                 <div className="absolute inset-0 bg-gradient-to-r from-emerald-50/30 via-transparent to-teal-50/30"></div>
                 
                 {/* Quick Suggestions */}
-                {messages.length === 1 && (
+                {showSuggestions && smartSuggestions.length > 0 && (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -785,7 +786,7 @@ export const AiChatbot: React.FC = () => {
                   >
                     <p className="text-xs text-gray-600 font-semibold mb-2 flex items-center gap-2">
                       <Sparkles size={14} className="text-emerald-600" />
-                      اقتراحات سريعة:
+                      مقترح لك:
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {smartSuggestions.map((suggestion, index) => (

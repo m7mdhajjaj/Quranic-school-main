@@ -85,3 +85,9 @@ export const deleteFavorite = async (id: string) => {
   const response = await api.delete(`/ai-chat/favorites/${id}`);
   return response.data;
 };
+
+// Get Smart Suggestion
+export const getSmartSuggestion = async () => {
+  const response = await api.get('/ai-chat/suggestion');
+  return response.data;
+};

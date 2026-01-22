@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { sendAiChatMessage, addFavorite, getFavorites, deleteFavorite, generateSpeech, transcribeAudio } from '../../Api/aiChatApi';
+import { sendAiChatMessage, addFavorite, getFavorites, deleteFavorite, generateSpeech, transcribeAudio, getSmartSuggestion } from '../../Api/aiChatApi';
 import { validateData, chatMessageSchema, addFavoriteSchema } from '../../Validation/aiChatValidation';
 
 // Types for chat messages
@@ -10,21 +10,6 @@ export interface Message {
   timestamp: Date;
 }
 
-// اقتراحات التفسير فقط
-const TAFSIR_SUGGESTIONS = [
-  'تفسير سورة الفاتحة',
-  'تفسير سورة الإخلاص',
-  'تفسير آية الكرسي',
-  'سورة البقرة آية 255',
-  'تفسير سورة الملك',
-  'سورة يس آية 1',
-  'تفسير سورة الرحمن',
-  'سورة الكهف آية 10',
-  'تفسير سورة مريم',
-  'سورة النور آية 35',
-  'تفسير سورة الضحى',
-  'سورة طه آية 1'
-];
 
 export const useAiChatbot = () => {
   // بدون رسالة ترحيب - نبدأ بقائمة فارغة
@@ -36,11 +21,8 @@ export const useAiChatbot = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [favoritesList, setFavoritesList] = useState<any[]>([]);
-  const [smartSuggestions, setSmartSuggestions] = useState<string[]>(() => {
-    // اختيار 4 اقتراحات عشوائية من التفسير
-    const shuffled = [...TAFSIR_SUGGESTIONS].sort(() => 0.5 - Math.random());
-    return shuffled.slice(0, 4);
-  });
+  const [smartSuggestions, setSmartSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -62,17 +44,49 @@ export const useAiChatbot = () => {
 
   const userRole = getUserRole();
 
-  // تحديث الاقتراحات بشكل عشوائي من قائمة التفسير
-  const loadSmartSuggestions = () => {
-    const shuffled = [...TAFSIR_SUGGESTIONS].sort(() => 0.5 - Math.random());
-    setSmartSuggestions(shuffled.slice(0, 4));
+  // تحديث الاقتراحات - جلب حسب الطالب
+  const loadSmartSuggestions = async () => {
+    try {
+      // فقط للطلاب نقوم بجلب الاقتراح
+      if (userRole === 'student' || userRole === 'Student' || userRole === 'طالب') {
+        const data = await getSmartSuggestion();
+        if (data && data.success) {
+          if (data.suggestions && Array.isArray(data.suggestions)) {
+            setSmartSuggestions(data.suggestions);
+            setShowSuggestions(data.suggestions.length > 0);
+          } else if (data.suggestion) {
+            setSmartSuggestions([data.suggestion]);
+            setShowSuggestions(true);
+          } else {
+            setSmartSuggestions([]);
+            setShowSuggestions(false);
+          }
+        } else {
+          setSmartSuggestions([]);
+          setShowSuggestions(false);
+        }
+      } else {
+        setSmartSuggestions([]);
+        setShowSuggestions(false);
+      }
+    } catch (error) {
+      console.error("Failed to load suggestions", error);
+      setSmartSuggestions([]);
+      setShowSuggestions(false);
+    }
   };
 
-  // Load favorites and suggestions on mount
+  // Load favorites on mount
   useEffect(() => {
     loadFavorites();
-    loadSmartSuggestions();
   }, []);
+
+  // Load suggestions when chat opens
+  useEffect(() => {
+    if (isOpen) {
+      loadSmartSuggestions();
+    }
+  }, [isOpen]);
 
   // Cleanup audio on unmount
 
@@ -116,6 +130,7 @@ export const useAiChatbot = () => {
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
+    setShowSuggestions(false); // إخفاء الاقتراحات عند بدء المحادثة
 
   // Create new abort controller
     abortControllerRef.current = new AbortController();
@@ -435,5 +450,6 @@ export const useAiChatbot = () => {
     handleRemoveFavorite,
     isFavorited,
     smartSuggestions,
+    showSuggestions
   };
 };

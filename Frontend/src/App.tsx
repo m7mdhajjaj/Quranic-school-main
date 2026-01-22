@@ -30,12 +30,12 @@ import { Layout } from "./components/Layout";
 // ============================================================================
 // Page Components - General
 // ============================================================================
-import { lazy } from "react";
+// import { lazy } from "react";
 
-// Lazy load Home and News pages
-const Home = lazy(() => import("./pages/Home"));
-const News = lazy(() => import("./pages/News"));
-const Goals = lazy(() => import("./pages/Goals/Goals"));
+// Normal Imports
+import Home from "./pages/Home";
+import News from "./pages/News";
+import Goals from "./pages/Goals/Goals";
 
 import Login from "./pages/Auth/Login/index";
 import Profile from "./pages/Profile";
@@ -55,9 +55,9 @@ import {
 // ============================================================================
 // Page Components - Academic
 // ============================================================================
-const DailyMarks = lazy(() => import("./pages/DailyMarks/DailyMarksPage"));
-const Ranking = lazy(() => import("./pages/Ranking"));
-const Test = lazy(() => import("./pages/Test/TestPage"));
+import DailyMarks from "./pages/DailyMarks/DailyMarksPage";
+import Ranking from "./pages/Ranking";
+import Test from "./pages/Test/TestPage";
 import ExamSchedule from "./pages/ExamSchedule";
 import Reports from "./pages/Reports";
 import Timetable from "./pages/Timetable/Views/TimetablePage";
@@ -71,25 +71,25 @@ import Timetable from "./pages/Timetable/Views/TimetablePage";
 // ============================================================================
 // Page Components - Attendance & Management
 // ============================================================================
-const Absence = lazy(() => import("./pages/Attendance/index"));
+import Absence from "./pages/Attendance/index";
 
 // ============================================================================
 // Page Components - Islamic Resources
 // ============================================================================
 import { PrayerTimesPage } from "./pages/PrayerTimes";
-const QuranPage = lazy(() => import("./pages/QuranPage"));
-const QuranAudio = lazy(() => import("./pages/QuranAudio"));
-const Azkar = lazy(() => import("./pages/Azkar"));
+import QuranPage from "./pages/QuranPage";
+import QuranAudio from "./pages/QuranAudio";
+import Azkar from "./pages/Azkar";
 
 // ============================================================================
 // Page Components - Warnings & Discipline
 // ============================================================================
-const Warnings = lazy(() => import("./pages/Warnings/WarningsPage"));
+import Warnings from "./pages/Warnings/WarningsPage";
 
 // ============================================================================
 // Page Components - Teacher Student Management
 // ============================================================================
-const TeacherStudentManagement = lazy(() => import("./pages/Teacher"));
+import TeacherStudentManagement from "./pages/Teacher";
 
 // ============================================================================
 // Page Components - Points Game
@@ -150,13 +150,7 @@ const GuestRoutes: React.FC = () => {
           ============================================ */}
       <Route path="/home" element={
         <Layout isGuest={true}>
-          <React.Suspense fallback={
-            <div className="min-h-screen flex items-center justify-center">
-              <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
-            </div>
-          }>
-            <Home />
-          </React.Suspense>
+          <Home />
         </Layout>
       } />
 
@@ -165,13 +159,7 @@ const GuestRoutes: React.FC = () => {
           ============================================ */}
       <Route path="/goals" element={
         <Layout isGuest={true}>
-          <React.Suspense fallback={
-            <div className="min-h-screen flex items-center justify-center">
-              <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
-            </div>
-          }>
-            <Goals />
-          </React.Suspense>
+          <Goals />
         </Layout>
       } />
 
@@ -306,16 +294,6 @@ const AdminRoutes: React.FC = () => {
  * 7. User Settings & Special Pages
  */
 const TeacherRoutes: React.FC = () => {
-  // Loading fallback component
-  const LoadingFallback = ({ message }: { message: string }) => (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100">
-      <div className="text-center">
-        <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
-        <p className="mt-4 text-gray-600 font-medium">{message}</p>
-      </div>
-    </div>
-  );
-
   return (
     <Layout>
       <Routes>
@@ -332,17 +310,13 @@ const TeacherRoutes: React.FC = () => {
         <Route 
           path="/goals" 
           element={
-            <React.Suspense fallback={<LoadingFallback message="جاري تحميل الأهداف..." />}>
-              <Goals />
-            </React.Suspense>
+            <Goals />
           } 
         />
         <Route 
           path="/daily-marks" 
           element={
-            <React.Suspense fallback={null}>
-              <DailyMarks />
-            </React.Suspense>
+            <DailyMarks />
           } 
         />
         <Route path="/ranking" element={<Ranking />} />
@@ -357,9 +331,7 @@ const TeacherRoutes: React.FC = () => {
         <Route 
           path="/news" 
           element={
-            <React.Suspense fallback={<LoadingFallback message="جاري تحميل الأخبار..." />}>
-              <News />
-            </React.Suspense>
+            <News />
           } 
         />
         {/* <Route path="/chat" element={<NotFound />} /> */}
@@ -371,9 +343,7 @@ const TeacherRoutes: React.FC = () => {
         <Route 
           path="/attendance" 
           element={
-            <React.Suspense fallback={<LoadingFallback message="جاري تحميل الحضور والغياب..." />}>
-              <Absence />
-            </React.Suspense>
+            <Absence />
           } 
         />
         <Route path="/absence" element={<Navigate to="/attendance" replace />} />
@@ -381,9 +351,7 @@ const TeacherRoutes: React.FC = () => {
         <Route 
           path="/students-management" 
           element={
-            <React.Suspense fallback={<LoadingFallback message="جاري تحميل إدارة الطلاب..." />}>
-              <TeacherStudentManagement />
-            </React.Suspense>
+            <TeacherStudentManagement />
           } 
         />
 
@@ -399,22 +367,8 @@ const TeacherRoutes: React.FC = () => {
             الموارد الإسلامية - Islamic Resources
             ============================================ */}
         <Route path="/prayer-times" element={<PrayerTimesPage />} />
-        <Route 
-          path="/quran" 
-          element={
-            <React.Suspense fallback={<LoadingFallback message="جاري تحميل القرآن الكريم..." />}>
-              <QuranPage />
-            </React.Suspense>
-          } 
-        />
-        <Route 
-          path="/quran-audio" 
-          element={
-            <React.Suspense fallback={<LoadingFallback message="جاري تحميل القرآن الصوتي..." />}>
-              <QuranAudio />
-            </React.Suspense>
-          } 
-        />
+        <Route path="/quran" element={<QuranPage />} />
+        <Route path="/quran-audio" element={<QuranAudio />} />
         <Route path="/azkar" element={<Azkar />} />
 
         {/* ============================================
@@ -490,66 +444,22 @@ const SecretaryRoutes: React.FC = () => {
         {/* ============================================
             الأهداف - Goals
             ============================================ */}
-        <Route 
-          path="/goals" 
-          element={
-            <React.Suspense fallback={
-              <div className="min-h-screen flex items-center justify-center">
-                <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
-              </div>
-            }>
-              <Goals />
-            </React.Suspense>
-          } 
-        />
+        <Route path="/goals" element={<Goals />} />
 
         {/* ============================================
             إدارة الطلاب - Students Management
             ============================================ */}
-        <Route 
-          path="/students" 
-          element={
-            <React.Suspense fallback={
-              <div className="min-h-screen flex items-center justify-center">
-                <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
-              </div>
-            }>
-              <StudentsManagement />
-            </React.Suspense>
-          } 
-        />
+        <Route path="/students" element={<StudentsManagement />} />
 
         {/* ============================================
             عرض المعلمين - Teachers View (Read Only)
             ============================================ */}
-        <Route 
-          path="/teachers" 
-          element={
-            <React.Suspense fallback={
-              <div className="min-h-screen flex items-center justify-center">
-                <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
-              </div>
-            }>
-              <TeachersManagement />
-            </React.Suspense>
-          } 
-        />
+        <Route path="/teachers" element={<TeachersManagement />} />
 
         {/* ============================================
             عرض الحلقات - Groups View
             ============================================ */}
-        <Route 
-          path="/groups" 
-          element={
-            <React.Suspense fallback={
-              <div className="min-h-screen flex items-center justify-center">
-                <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
-              </div>
-            }>
-              <GroupManagement />
-            </React.Suspense>
-          } 
-        />
+        <Route path="/groups" element={<GroupManagement />} />
 
         {/* ============================================
             الجدول - Timetable (View Only)
@@ -620,34 +530,12 @@ const TeacherAssistantRoutes: React.FC = () => {
         {/* ============================================
             الأهداف - Goals
             ============================================ */}
-        <Route 
-          path="/goals" 
-          element={
-            <React.Suspense fallback={
-              <div className="min-h-screen flex items-center justify-center">
-                <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
-              </div>
-            }>
-              <Goals />
-            </React.Suspense>
-          } 
-        />
+        <Route path="/goals" element={<Goals />} />
 
         {/* ============================================
             العلامات اليومية - Daily Marks (للحلقات المسموح بها فقط)
             ============================================ */}
-        <Route 
-          path="/daily-marks" 
-          element={
-            <React.Suspense fallback={
-              <div className="min-h-screen flex items-center justify-center">
-                <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
-              </div>
-            }>
-              <DailyMarks />
-            </React.Suspense>
-          } 
-        />
+        <Route path="/daily-marks" element={<DailyMarks />} />
 
         {/* ============================================
             المحادثة مع المعلم - Chat with Teacher
@@ -704,16 +592,6 @@ const TeacherAssistantRoutes: React.FC = () => {
 };
 
 const StudentRoutes: React.FC = () => {
-  // Loading fallback component
-  const LoadingFallback = ({ message }: { message: string }) => (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100">
-      <div className="text-center">
-        <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
-        <p className="mt-4 text-gray-600 font-medium">{message}</p>
-      </div>
-    </div>
-  );
-
   return (
     <Layout>
       <Routes>
@@ -730,17 +608,13 @@ const StudentRoutes: React.FC = () => {
         <Route 
           path="/goals" 
           element={
-            <React.Suspense fallback={<LoadingFallback message="جاري تحميل الأهداف..." />}>
-              <Goals />
-            </React.Suspense>
+            <Goals />
           } 
         />
         <Route 
           path="/daily-marks" 
           element={
-            <React.Suspense fallback={null}>
-              <DailyMarks />
-            </React.Suspense>
+            <DailyMarks />
           } 
         />
         <Route path="/ranking" element={<Ranking />} />
@@ -750,9 +624,7 @@ const StudentRoutes: React.FC = () => {
         <Route 
           path="/test" 
           element={
-            <React.Suspense fallback={<LoadingFallback message="جاري تحميل الاختبار..." />}>
-              <Test />
-            </React.Suspense>
+            <Test />
           } 
         />
 
@@ -762,12 +634,10 @@ const StudentRoutes: React.FC = () => {
         <Route 
           path="/news" 
           element={
-            <React.Suspense fallback={<LoadingFallback message="جاري تحميل الأخبار..." />}>
-              <News />
-            </React.Suspense>
+            <News />
           } 
         />
-        <Route path="/chat" element={<TeacherChatView />} />
+        <Route path="/chat" element={<StudentChatView />} />
 
         {/* ============================================
             الحضور والغياب - Attendance (View Only)
@@ -775,9 +645,7 @@ const StudentRoutes: React.FC = () => {
         <Route 
           path="/attendance" 
           element={
-            <React.Suspense fallback={<LoadingFallback message="جاري تحميل الحضور والغياب..." />}>
-              <Absence />
-            </React.Suspense>
+            <Absence />
           } 
         />
         <Route path="/absence" element={<Navigate to="/attendance" replace />} />
@@ -795,22 +663,8 @@ const StudentRoutes: React.FC = () => {
             الموارد الإسلامية - Islamic Resources
             ============================================ */}
         <Route path="/prayer-times" element={<PrayerTimesPage />} />
-        <Route 
-          path="/quran" 
-          element={
-            <React.Suspense fallback={<LoadingFallback message="جاري تحميل القرآن الكريم..." />}>
-              <QuranPage />
-            </React.Suspense>
-          } 
-        />
-        <Route 
-          path="/quran-audio" 
-          element={
-            <React.Suspense fallback={<LoadingFallback message="جاري تحميل القرآن الصوتي..." />}>
-              <QuranAudio />
-            </React.Suspense>
-          } 
-        />
+        <Route path="/quran" element={<QuranPage />} />
+        <Route path="/quran-audio" element={<QuranAudio />} />
         <Route path="/azkar" element={<Azkar />} />
 
         {/* ============================================
