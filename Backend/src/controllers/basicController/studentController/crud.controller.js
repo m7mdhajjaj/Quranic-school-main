@@ -550,6 +550,16 @@ exports.updateStudent = async (req, res) => {
     const wasInGroup = oldGroup && oldGroup !== "غير محدد";
     const isInGroup = newGroup && newGroup !== "غير محدد";
 
+    // 🧹 إذا تم نقل الطالب لحلقة مختلفة، احذف علاماته من امتحانات الحلقة القديمة
+    if (wasInGroup && oldGroup !== newGroup) {
+      const ExamSchedule = require("../../../schema/ExamShedule/ExamSchedule");
+      const examCleanup = await ExamSchedule.updateMany(
+        { group: oldGroup, "marks.student": req.params.id },
+        { $pull: { marks: { student: req.params.id } } }
+      );
+      console.log(`🧹 تم حذف علامات الطالب من ${examCleanup.modifiedCount} امتحان في الحلقة القديمة`);
+    }
+
     if (!wasInGroup && isInGroup) {
       notifyStudentAddedToGroup(updatedStudent, newGroup, io);
     } else if (wasInGroup && !isInGroup) {
@@ -581,6 +591,31 @@ exports.updateStudent = async (req, res) => {
  */
 exports.deleteStudent = async (req, res) => {
   try {
+    // 1. تنظيف علامات الطالب من الامتحانات قبل الحذف
+    const ExamSchedule = require("../../../schema/ExamShedule/ExamSchedule");
+    const Warning = require("../../../schema/Warning");
+    const DailyPoints = require("../../../schema/DailyPoints");
+    const Ranking = require("../../../schema/Ranking");
+    
+    // إزالة علامات الطالب من جميع الامتحانات
+    const examCleanup = await ExamSchedule.updateMany(
+      { "marks.student": req.params.id },
+      { $pull: { marks: { student: req.params.id } } }
+    );
+    console.log(`🧹 تم حذف علامات الطالب من ${examCleanup.modifiedCount} امتحان`);
+    
+    // حذف إنذارات الطالب
+    const warningCleanup = await Warning.deleteMany({ studentId: req.params.id });
+    console.log(`🧹 تم حذف ${warningCleanup.deletedCount} إنذار للطالب`);
+    
+    // حذف نقاط الطالب اليومية
+    const pointsCleanup = await DailyPoints.deleteMany({ studentId: req.params.id });
+    console.log(`🧹 تم حذف ${pointsCleanup.deletedCount} نقطة يومية للطالب`);
+    
+    // حذف تصنيفات الطالب
+    const rankingCleanup = await Ranking.deleteMany({ studentId: req.params.id });
+    console.log(`🧹 تم حذف ${rankingCleanup.deletedCount} تصنيف للطالب`);
+    
     const deletedStudent = await Student.findByIdAndDelete(req.params.id);
     if (!deletedStudent) {
       return res.status(404).json({
@@ -636,6 +671,28 @@ exports.bulkDeleteStudents = async (req, res) => {
     }
 
     console.log(`🗑️ محاولة حذف ${studentIds.length} طالب...`);
+
+    // 🧹 تنظيف البيانات المرتبطة قبل الحذف
+    const ExamSchedule = require("../../../schema/ExamShedule/ExamSchedule");
+    const Warning = require("../../../schema/Warning");
+    const DailyPoints = require("../../../schema/DailyPoints");
+    const Ranking = require("../../../schema/Ranking");
+    
+    // إزالة علامات الطلاب من الامتحانات
+    const examCleanup = await ExamSchedule.updateMany(
+      { "marks.student": { $in: studentIds } },
+      { $pull: { marks: { student: { $in: studentIds } } } }
+    );
+    console.log(`🧹 تم حذف علامات من ${examCleanup.modifiedCount} امتحان`);
+    
+    // حذف إنذارات الطلاب
+    await Warning.deleteMany({ studentId: { $in: studentIds } });
+    
+    // حذف نقاط الطلاب اليومية
+    await DailyPoints.deleteMany({ studentId: { $in: studentIds } });
+    
+    // حذف تصنيفات الطلاب
+    await Ranking.deleteMany({ studentId: { $in: studentIds } });
 
     // جلب الطلاب المراد حذفهم للحصول على حلقاتهم
     const studentsToDelete = await Student.find({

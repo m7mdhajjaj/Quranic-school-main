@@ -635,9 +635,13 @@ const MarksManagement: React.FC<MarksManagementProps> = () => {
                           timeZone: "Asia/Jerusalem"
                         })}
                       </p>
-                      <div className="flex items-center gap-4 mt-3">
+                      <div className="flex items-center gap-4 mt-3 flex-wrap">
                         <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-lg font-medium">
                           الدرجة: {exam.totalMarks}
+                        </span>
+                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-lg font-medium flex items-center gap-1">
+                          <Users className="w-3 h-3" />
+                          {groupsData.find(g => g.name === selectedGroup)?.totalStudents || 0} طالب
                         </span>
                       </div>
                     </div>

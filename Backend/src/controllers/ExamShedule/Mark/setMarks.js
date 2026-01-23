@@ -4,6 +4,7 @@
 
 const ExamSchedule = require("../../../schema/ExamShedule/ExamSchedule");
 const { updateExamAverage } = require("../Exam/examAverage");
+const { notifyBulkExamMarks } = require("../../../Notifications");
 
 /**
  * Add or update marks for many students in one exam
@@ -56,7 +57,7 @@ exports.setExamMarks = async (req, res) => {
     // Populate student details
     await exam.populate("marks.student");
 
-    // 🔌 Emit Socket.IO event to exams room
+    // � Emit Socket.IO event to exams room
     const io = req.app.get("io");
     if (io) {
       io.to("exams").emit("examMarkCreated", {
@@ -66,6 +67,10 @@ exports.setExamMarks = async (req, res) => {
       });
       console.log("✅ examMarkCreated event emitted to exams room");
     }
+
+    // 📤 إرسال إشعارات للطلاب
+    const marksData = marks.map(m => ({ studentId: m.student, mark: m.mark }));
+    await notifyBulkExamMarks(exam, marksData, io);
 
     res.json(exam.marks);
   } catch (err) {

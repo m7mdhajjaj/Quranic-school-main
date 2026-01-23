@@ -16,8 +16,12 @@ const Group = require("../../../schema/Group");
  */
 const getMyExams = async (req, res) => {
   try {
-    const { role, userId } = req.user;
+    // req.user هو الكائن الكامل للمستخدم من الـ middleware
+    const role = req.user.role;
+    const userId = req.user._id?.toString() || req.user.id;
     const { search = "", date = "", type = "", marksStatus = "" } = req.query;
+
+    console.log(`📋 getMyExams called - role: ${role}, userId: ${userId}`);
 
     // Validate marksStatus
     if (marksStatus && !['graded', 'not-graded'].includes(marksStatus)) {
@@ -30,14 +34,17 @@ const getMyExams = async (req, res) => {
 
     // Build base filter
     const filter = {};
+    const andConditions = [];
 
     // Search filter
     if (search && search.trim()) {
-      filter.$or = [
-        { name: { $regex: search.trim(), $options: "i" } },
-        { title: { $regex: search.trim(), $options: "i" } },
-        { subject: { $regex: search.trim(), $options: "i" } },
-      ];
+      andConditions.push({
+        $or: [
+          { name: { $regex: search.trim(), $options: "i" } },
+          { title: { $regex: search.trim(), $options: "i" } },
+          { subject: { $regex: search.trim(), $options: "i" } },
+        ]
+      });
     }
 
     // Date filter
@@ -59,18 +66,42 @@ const getMyExams = async (req, res) => {
     // Marks status filter
     if (marksStatus) {
       if (marksStatus === 'graded') {
-        filter.marks = { $exists: true, $ne: [] };
+        andConditions.push({ marks: { $exists: true, $ne: [] } });
       } else if (marksStatus === 'not-graded') {
-        filter.$or = [
-          { marks: { $exists: false } },
-          { marks: { $size: 0 } }
-        ];
+        andConditions.push({
+          $or: [
+            { marks: { $exists: false } },
+            { marks: { $size: 0 } }
+          ]
+        });
       }
     }
 
-    // Role-based filtering
-    // عرض جميع الامتحانات لجميع المستخدمين (طلاب، معلمين، إداريين)
-    // لا نضيف أي فلتر حسب الحلقة أو المعلم
+    // Role-based filtering - فلترة حسب الدور
+    if (role === 'student') {
+      // req.user هو الطالب نفسه (من middleware)
+      // الطالب يرى فقط امتحانات حلقته
+      const studentGroup = req.user.group;
+      console.log(`🎓 Student group from req.user: "${studentGroup}"`);
+      
+      // student.group هو String (اسم الحلقة) وليس ObjectId
+      if (!studentGroup || studentGroup === 'غير محدد') {
+        console.log(`⚠️ Student ${userId} has no group assigned`);
+        return res.json([]);
+      }
+      
+      // استخدام اسم الحلقة مباشرة للفلترة
+      filter.group = studentGroup;
+      console.log(`🎓 Filtering exams for student in group: "${studentGroup}"`);
+    }
+    // المعلم والإداري يرون جميع الامتحانات
+
+    // Combine all conditions
+    if (andConditions.length > 0) {
+      filter.$and = andConditions;
+    }
+
+    console.log(`🔍 Final filter:`, JSON.stringify(filter, null, 2));
 
     // Execute query with filters
     const exams = await ExamSchedule.find(filter)
@@ -78,8 +109,27 @@ const getMyExams = async (req, res) => {
       .populate("marks.student", "firstName lastName name")
       .lean();
 
+    console.log(`📊 Found ${exams.length} exams matching filter`);
+
+    // للطالب: فلترة العلامات لتظهر فقط علامته الخاصة
+    let processedExams = exams;
+    if (role === 'student') {
+      processedExams = exams.map(exam => {
+        // فقط أبقِ علامة هذا الطالب
+        const studentMark = exam.marks?.find(m => 
+          m.student?._id?.toString() === userId || 
+          m.student?.toString() === userId
+        );
+        return {
+          ...exam,
+          marks: studentMark ? [studentMark] : [],
+          myMark: studentMark?.mark ?? null // إضافة علامة الطالب مباشرة
+        };
+      });
+    }
+
     // إضافة القيم الافتراضية للبيانات القديمة (الوقت يبقى بصيغة 24 ساعة)
-    const examsWithFormattedTime = exams.map(exam => {
+    const examsWithFormattedTime = processedExams.map(exam => {
       return {
         ...exam,
         subject: exam.subject || '',
@@ -90,7 +140,7 @@ const getMyExams = async (req, res) => {
       };
     });
 
-    console.log(`📚 Retrieved ${exams.length} exams for ${role} (userId: ${userId})`);
+    console.log(`📚 Retrieved ${processedExams.length} exams for ${role} (userId: ${userId})`);
 
     res.json(examsWithFormattedTime);
   } catch (err) {

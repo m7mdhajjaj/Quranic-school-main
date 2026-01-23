@@ -790,7 +790,15 @@ exports.deleteTeacher = async (req, res) => {
       console.log(`✅ تم إزالة المعلم من ${relatedStudents.length} طالب`);
     }
 
-    // 3. حذف المعلم نهائياً
+    // 3. تحديث امتحانات المعلم - تحويلها للنظام بدلاً من حذفها
+    const ExamSchedule = require("../../../schema/ExamShedule/ExamSchedule");
+    const examUpdate = await ExamSchedule.updateMany(
+      { teacher: teacherName },
+      { $set: { teacher: "[معلم محذوف]" } }
+    );
+    console.log(`📝 تم تحديث ${examUpdate.modifiedCount} امتحان للمعلم المحذوف`);
+    
+    // 4. حذف المعلم نهائياً
     await Teacher.findByIdAndDelete(id);
     console.log(`🗑️ تم حذف المعلم ${teacherName} نهائياً من قاعدة البيانات`);
 

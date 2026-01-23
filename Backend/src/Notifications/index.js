@@ -49,6 +49,8 @@ module.exports = {
   notifyExamCreated: ExamHandler.notifyExamCreated,
   notifyExamDeleted: ExamHandler.notifyExamDeleted,
   notifyExamUpdated: ExamHandler.notifyExamUpdated,
+  notifyExamMarkAdded: ExamHandler.notifyExamMarkAdded,
+  notifyBulkExamMarks: ExamHandler.notifyBulkExamMarks,
   
   // Daily Mark Notifications
   notifyMarkAdded: DailyMarksHandler.notifyMarkAdded,
