@@ -27,6 +27,14 @@ export interface DidYouMeanSuggestion {
   chatText: string;
 }
 
+// ✅ نوع المفضلة
+export interface Favorite {
+  _id: string;
+  question: string;
+  answer: string;
+  createdAt?: string;
+}
+
 
 export const useAiChatbot = () => {
   // بدون رسالة ترحيب - نبدأ بقائمة فارغة
@@ -38,7 +46,7 @@ export const useAiChatbot = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isLoadingAudio, setIsLoadingAudio] = useState(false); // ✅ حالة تحميل الصوت
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [favoritesList, setFavoritesList] = useState<any[]>([]);
+  const [favoritesList, setFavoritesList] = useState<Favorite[]>([]);
   const [smartSuggestions, setSmartSuggestions] = useState<SurahSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   // ✅ اقتراحات "هل تقصد؟" عند الخطأ الإملائي
@@ -74,7 +82,7 @@ export const useAiChatbot = () => {
           // ✅ Format جديد: Array من objects
           if (data.suggestions && Array.isArray(data.suggestions)) {
             // تحقق إذا كانت objects أو strings (للتوافق مع القديم)
-            const suggestions: SurahSuggestion[] = data.suggestions.map((s: any) => {
+            const suggestions: SurahSuggestion[] = data.suggestions.map((s: string | SurahSuggestion) => {
               if (typeof s === 'string') {
                 // Format قديم (string) - تحويل
                 return {
@@ -119,6 +127,7 @@ export const useAiChatbot = () => {
     if (isOpen) {
       loadSmartSuggestions();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   // Cleanup audio on unmount
@@ -189,9 +198,10 @@ export const useAiChatbot = () => {
       } else {
         throw new Error(data.message);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Check if cancelled
-      if (error.name === 'CanceledError' || error.code === 'ERR_CANCELED' || error.message === 'canceled') {
+      const err = error as { name?: string; code?: string; message?: string };
+      if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED' || err.message === 'canceled') {
          console.log('Request canceled by user');
          return; // Don't show error message
       }
@@ -220,7 +230,7 @@ export const useAiChatbot = () => {
       const data = await getFavorites();
       if (data.success) {
         // Store message IDs that are favorited
-        const favIds = data.data.map((fav: any) => fav.question);
+        const favIds = data.data.map((fav: Favorite) => fav.question);
         setFavorites(favIds);
         setFavoritesList(data.data);
       }
@@ -248,11 +258,12 @@ export const useAiChatbot = () => {
         return { success: true, message: 'تم إضافة الرسالة إلى المفضلة' };
       }
       return { success: false, message: data.message };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error adding favorite:', error);
+      const err = error as { response?: { data?: { message?: string } } };
       return { 
         success: false, 
-        message: error.response?.data?.message || 'حدث خطأ أثناء إضافة المفضلة' 
+        message: err.response?.data?.message || 'حدث خطأ أثناء إضافة المفضلة' 
       };
     }
   };
@@ -274,11 +285,12 @@ export const useAiChatbot = () => {
         }
       }
       return { success: false, message: 'لم يتم العثور على المفضلة' };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error removing favorite:', error);
+      const err = error as { response?: { data?: { message?: string } } };
       return { 
         success: false, 
-        message: error.response?.data?.message || 'حدث خطأ أثناء إزالة المفضلة' 
+        message: err.response?.data?.message || 'حدث خطأ أثناء إزالة المفضلة' 
       };
     }
   };
@@ -433,10 +445,11 @@ export const useAiChatbot = () => {
         URL.revokeObjectURL(audioUrl);
       };
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('TTS Generation Error:', error);
       // ✅ عرض رسالة خطأ واضحة
-      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+      const err = error as { code?: string; message?: string };
+      if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
         console.error('TTS: Request timeout - text may be too long');
       }
       setIsLoadingAudio(false);
