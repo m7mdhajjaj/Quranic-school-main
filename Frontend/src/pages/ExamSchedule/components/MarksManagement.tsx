@@ -1,11 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Users,
-  Plus,
-  Edit2,
-  Trash2,
   Save,
-  X,
   Search,
   BookOpen,
   Calendar,
@@ -14,6 +10,7 @@ import {
   CheckSquare,
   Square,
   ClipboardList,
+  AlertTriangle,
 } from "lucide-react";
 import {
   getTeacherGroupsForMarks,
@@ -38,6 +35,14 @@ interface Mark {
   examId: string;
 }
 
+// نوع للعلامات المحلية (قبل الحفظ)
+interface LocalMark {
+  studentId: string;
+  mark: string; // نص لأن الحقل input
+  originalMark: number | null; // العلامة الأصلية من السيرفر
+  hasExistingMark: boolean; // هل لديه علامة في السيرفر
+}
+
 // استخدام الأنواع من API
 type Exam = ExamType;
 type GroupCard = TeacherGroup;
@@ -57,13 +62,44 @@ const MarksManagement: React.FC<MarksManagementProps> = () => {
   const [students, setStudents] = useState<Student[]>([]);
   const [marks, setMarks] = useState<Mark[]>([]);
   const [loading, setLoading] = useState(false);
-  const [editingMarkId, setEditingMarkId] = useState<string | null>(null);
-  const [editValue, setEditValue] = useState<number>(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStudents, setSelectedStudents] = useState<Set<string>>(
     new Set()
   );
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // 🆕 State للعلامات المحلية والتغييرات
+  const [localMarks, setLocalMarks] = useState<Record<string, LocalMark>>({});
+  const [isSaving, setIsSaving] = useState(false);
+  const originalMarksRef = useRef<Record<string, number | null>>({});
+
+  // 🆕 حساب إذا كان هناك تغييرات غير محفوظة
+  const hasUnsavedChanges = useCallback(() => {
+    for (const studentId in localMarks) {
+      const local = localMarks[studentId];
+      const originalMark = originalMarksRef.current[studentId];
+      const currentMark = local.mark === "" ? null : Number(local.mark);
+      
+      if (currentMark !== originalMark) {
+        return true;
+      }
+    }
+    return false;
+  }, [localMarks]);
+
+  // 🆕 تحذير عند محاولة الخروج مع وجود تغييرات
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges()) {
+        e.preventDefault();
+        e.returnValue = "لديك تغييرات غير محفوظة. هل أنت متأكد من المغادرة؟";
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasUnsavedChanges]);
 
   // جلب بيانات الحلقات عند التحميل
   useEffect(() => {
@@ -191,118 +227,137 @@ const MarksManagement: React.FC<MarksManagementProps> = () => {
         : [];
 
       setMarks(formattedMarks);
+
+      // 🆕 تهيئة العلامات المحلية
+      const newLocalMarks: Record<string, LocalMark> = {};
+      const newOriginalMarks: Record<string, number | null> = {};
+
+      studentsWithGroup.forEach((student: any) => {
+        const existingMark = formattedMarks.find(
+          (m: any) => m.studentId === student._id
+        );
+        
+        newLocalMarks[student._id] = {
+          studentId: student._id,
+          mark: existingMark ? String(existingMark.mark) : "",
+          originalMark: existingMark ? existingMark.mark : null,
+          hasExistingMark: !!existingMark,
+        };
+        
+        newOriginalMarks[student._id] = existingMark ? existingMark.mark : null;
+      });
+
+      setLocalMarks(newLocalMarks);
+      originalMarksRef.current = newOriginalMarks;
     } catch (error) {
       console.error("Error fetching students and marks:", error);
       showErrorMessage("خطأ", "حدث خطأ أثناء جلب البيانات");
       setStudents([]);
       setMarks([]);
+      setLocalMarks({});
+      originalMarksRef.current = {};
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAddMark = async (studentId: string, studentName: string) => {
-    if (!selectedExam) return;
-
-    // إضافة علامة مؤقتة محلياً لتمكين وضع التحرير
-    const tempId = `temp_${studentId}`;
-    const tempMark: Mark = {
-      _id: tempId,
-      studentId,
-      studentName,
-      mark: 0,
-      examId: String(selectedExam._id),
-    };
-
-    setMarks((prevMarks) => [...prevMarks, tempMark]);
-    setEditingMarkId(tempId);
-    setEditValue(0);
-  };
-
-  const handleUpdateMark = async (markId: string, newMark: number) => {
-    if (
-      !selectedExam ||
-      newMark < 0 ||
-      newMark > (selectedExam.totalMarks || 100)
-    ) {
-      showErrorMessage(
-        "خطأ",
-        `العلامة يجب أن تكون بين 0 و ${selectedExam?.totalMarks || 100}`
-      );
-      return;
+  // 🆕 تحديث العلامة المحلية
+  const handleLocalMarkChange = (studentId: string, value: string) => {
+    // السماح فقط بالأرقام والفراغ
+    if (value !== "" && !/^\d*$/.test(value)) return;
+    
+    // التحقق من الحد الأقصى
+    const maxMark = selectedExam?.totalMarks || 100;
+    if (value !== "" && Number(value) > maxMark) {
+      value = String(maxMark);
     }
 
-    // التحقق إذا كانت علامة مؤقتة (جديدة) أو موجودة
-    const isNewMark = markId.startsWith("temp_");
+    setLocalMarks((prev) => ({
+      ...prev,
+      [studentId]: {
+        ...prev[studentId],
+        mark: value,
+      },
+    }));
+  };
 
-    if (isNewMark) {
-      // إضافة علامة جديدة
-      const mark = marks.find((m) => m._id === markId);
-      if (!mark) return;
+  // 🆕 حفظ جميع العلامات
+  const handleSaveAllMarks = async () => {
+    if (!selectedExam || !hasUnsavedChanges()) return;
 
-      try {
-        const response = await api.post(`/exam-schedule/marks`, {
-          examId: selectedExam._id,
-          studentId: mark.studentId,
-          mark: newMark,
+    setIsSaving(true);
+    
+    try {
+      const examId = String(selectedExam._id);
+      const marksToSave: Array<{ student: string; mark: number }> = [];
+
+      // جمع العلامات التي تغيرت فقط
+      for (const studentId in localMarks) {
+        const local = localMarks[studentId];
+        const originalMark = originalMarksRef.current[studentId];
+        const currentMark = local.mark === "" ? null : Number(local.mark);
+
+        // فقط إذا تغيرت العلامة
+        if (currentMark !== originalMark && currentMark !== null) {
+          marksToSave.push({
+            student: studentId,
+            mark: currentMark,
+          });
+        }
+      }
+
+      if (marksToSave.length === 0) {
+        showSuccessToast("لا توجد تغييرات للحفظ");
+        setIsSaving(false);
+        return;
+      }
+
+      console.log("💾 Saving marks:", marksToSave);
+
+      // إرسال العلامات للسيرفر
+      await api.post(`/exam-schedule/marks/bulk/${examId}`, {
+        marks: marksToSave,
+      });
+
+      // تحديث الأصلي بالقيم الجديدة
+      const newOriginalMarks = { ...originalMarksRef.current };
+      marksToSave.forEach((m) => {
+        newOriginalMarks[m.student] = m.mark;
+      });
+      originalMarksRef.current = newOriginalMarks;
+
+      // تحديث localMarks
+      setLocalMarks((prev) => {
+        const updated = { ...prev };
+        marksToSave.forEach((m) => {
+          if (updated[m.student]) {
+            updated[m.student] = {
+              ...updated[m.student],
+              originalMark: m.mark,
+              hasExistingMark: true,
+            };
+          }
         });
+        return updated;
+      });
 
-        // استبدال العلامة المؤقتة بالعلامة الحقيقية
-        const realMark: Mark = {
-          _id: response.data.mark?._id || response.data._id,
-          studentId: mark.studentId,
-          studentName: mark.studentName,
-          mark: newMark,
-          examId: String(selectedExam._id),
-        };
+      showSuccessToast(`تم حفظ ${marksToSave.length} علامة بنجاح`);
+    } catch (error) {
+      console.error("Error saving marks:", error);
+      showErrorMessage("خطأ", "حدث خطأ أثناء حفظ العلامات");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
-        setMarks((prevMarks) =>
-          prevMarks.map((m) => (m._id === markId ? realMark : m))
-        );
-        setEditingMarkId(null);
-        showSuccessToast("تم إضافة العلامة بنجاح");
-      } catch (error) {
-        console.error("Error adding mark:", error);
-        // حذف العلامة المؤقتة في حالة الخطأ
-        setMarks((prevMarks) => prevMarks.filter((m) => m._id !== markId));
-        setEditingMarkId(null);
-        showErrorMessage("خطأ", "حدث خطأ أثناء إضافة العلامة");
+  // 🆕 التحقق قبل تغيير الصفحة
+  const handleNavigateWithCheck = (callback: () => void) => {
+    if (hasUnsavedChanges()) {
+      if (confirm("لديك تغييرات غير محفوظة. هل تريد المتابعة بدون حفظ؟")) {
+        callback();
       }
     } else {
-      // تحديث علامة موجودة
-      const previousMarks = [...marks];
-      setMarks(
-        marks.map((m) => (m._id === markId ? { ...m, mark: newMark } : m))
-      );
-      setEditingMarkId(null);
-
-      try {
-        await api.put(`/exam-schedule/marks/${markId}`, { mark: newMark });
-        showSuccessToast("تم تحديث العلامة بنجاح");
-      } catch (error) {
-        console.error("Error updating mark:", error);
-        // إرجاع التغيير في حالة الخطأ
-        setMarks(previousMarks);
-        showErrorMessage("خطأ", "حدث خطأ أثناء تحديث العلامة");
-      }
-    }
-  };
-
-  const handleDeleteMark = async (markId: string) => {
-    if (!confirm("هل أنت متأكد من حذف هذه العلامة؟")) return;
-
-    // حذف فوري من الواجهة (Optimistic Delete)
-    const previousMarks = [...marks];
-    setMarks(marks.filter((m) => m._id !== markId));
-
-    try {
-      await api.delete(`/exam-schedule/marks/${markId}`);
-      showSuccessToast("تم حذف العلامة بنجاح");
-    } catch (error) {
-      console.error("Error deleting mark:", error);
-      // إرجاع التغيير في حالة الخطأ
-      setMarks(previousMarks);
-      showErrorMessage("خطأ", "حدث خطأ أثناء حذف العلامة");
+      callback();
     }
   };
 
@@ -312,27 +367,51 @@ const MarksManagement: React.FC<MarksManagementProps> = () => {
       return;
     }
 
-    if (!confirm(`هل أنت متأكد من حذف ${selectedStudents.size} علامة؟`)) return;
+    // فقط الطلاب الذين لديهم علامات محفوظة
+    const studentsWithMarks = Array.from(selectedStudents).filter(
+      (id) => localMarks[id]?.hasExistingMark
+    );
+
+    if (studentsWithMarks.length === 0) {
+      showErrorMessage("خطأ", "لا توجد علامات محفوظة للحذف");
+      return;
+    }
+
+    if (!confirm(`هل أنت متأكد من حذف ${studentsWithMarks.length} علامة؟`)) return;
 
     if (!selectedExam) return;
 
     setIsDeleting(true);
-    const previousMarks = [...marks];
-    const studentIdsArray = Array.from(selectedStudents);
-
-    // حذف فوري
-    setMarks(marks.filter((m) => !selectedStudents.has(m.studentId)));
-    setSelectedStudents(new Set());
 
     try {
       await api.post(`/exam-schedule/marks/bulk-delete`, {
         examId: selectedExam._id,
-        studentIds: studentIdsArray,
+        studentIds: studentsWithMarks,
       });
-      showSuccessToast(`تم حذف ${studentIdsArray.length} علامة بنجاح`);
+
+      // تحديث الحالة المحلية
+      const newLocalMarks = { ...localMarks };
+      const newOriginalMarks = { ...originalMarksRef.current };
+      
+      studentsWithMarks.forEach((id) => {
+        if (newLocalMarks[id]) {
+          newLocalMarks[id] = {
+            ...newLocalMarks[id],
+            mark: "",
+            originalMark: null,
+            hasExistingMark: false,
+          };
+        }
+        newOriginalMarks[id] = null;
+      });
+
+      setLocalMarks(newLocalMarks);
+      originalMarksRef.current = newOriginalMarks;
+      setSelectedStudents(new Set());
+
+      showSuccessToast(`تم حذف ${studentsWithMarks.length} علامة بنجاح`);
     } catch (error) {
       console.error("Error bulk deleting marks:", error);
-      setMarks(previousMarks);
       showErrorMessage("خطأ", "حدث خطأ أثناء حذف العلامات");
     } finally {
       setIsDeleting(false);
@@ -387,9 +466,13 @@ const MarksManagement: React.FC<MarksManagementProps> = () => {
         <div className="flex items-center gap-2 mt-4 bg-white/10 backdrop-blur-sm rounded-lg px-4 py-3 border border-white/20">
           <button
             onClick={() => {
-              setViewMode("groups");
-              setSelectedGroup("");
-              setSelectedExam(null);
+              handleNavigateWithCheck(() => {
+                setViewMode("groups");
+                setSelectedGroup("");
+                setSelectedExam(null);
+                setLocalMarks({});
+                originalMarksRef.current = {};
+              });
             }}
             className="flex items-center gap-2 px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg transition-all text-white font-medium text-sm">
             <BookOpen className="w-4 h-4" />
@@ -400,8 +483,12 @@ const MarksManagement: React.FC<MarksManagementProps> = () => {
               <ChevronRight className="w-5 h-5 text-white/60" />
               <button
                 onClick={() => {
-                  setViewMode("exams");
-                  setSelectedExam(null);
+                  handleNavigateWithCheck(() => {
+                    setViewMode("exams");
+                    setSelectedExam(null);
+                    setLocalMarks({});
+                    originalMarksRef.current = {};
+                  });
                 }}
                 className="flex items-center gap-2 px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg transition-all text-white font-medium text-sm">
                 <Calendar className="w-4 h-4" />
@@ -419,6 +506,14 @@ const MarksManagement: React.FC<MarksManagementProps> = () => {
             </>
           )}
         </div>
+
+        {/* 🆕 تحذير التغييرات غير المحفوظة */}
+        {viewMode === "students" && hasUnsavedChanges() && (
+          <div className="mt-4 flex items-center gap-2 bg-amber-500/20 border border-amber-400/50 rounded-lg px-4 py-2 text-amber-100">
+            <AlertTriangle className="w-5 h-5" />
+            <span className="text-sm font-medium">لديك تغييرات غير محفوظة</span>
+          </div>
+        )}
       </div>
 
       {/* View: Groups Cards */}
@@ -563,26 +658,42 @@ const MarksManagement: React.FC<MarksManagementProps> = () => {
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
           {/* Toolbar */}
           <div className="p-4 border-b border-gray-200 space-y-4">
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                placeholder="ابحث عن طالب..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pr-10 pl-4 py-2 border-2 border-gray-200 rounded-lg focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none"
-              />
+            {/* Search + Save Button */}
+            <div className="flex items-center gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type="text"
+                  placeholder="ابحث عن طالب..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pr-10 pl-4 py-2 border-2 border-gray-200 rounded-lg focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none"
+                />
+              </div>
+              
+              {/* 🆕 زر حفظ الكل */}
+              <button
+                onClick={handleSaveAllMarks}
+                disabled={!hasUnsavedChanges() || isSaving}
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-bold text-sm transition-all ${
+                  hasUnsavedChanges()
+                    ? "bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg"
+                    : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                }`}
+              >
+                <Save className="w-5 h-5" />
+                {isSaving ? "جاري الحفظ..." : "حفظ الكل"}
+              </button>
             </div>
 
             {/* Bulk Actions */}
             {selectedStudents.size > 0 && (
               <div
-                className="flex items-center justify-between bg-emerald-50 p-3 rounded-lg"
+                className="flex items-center justify-between bg-red-50 p-3 rounded-lg"
                 dir="rtl">
                 <div className="flex items-center gap-2">
-                  <CheckSquare className="w-5 h-5 text-emerald-600" />
-                  <span className="text-sm font-medium text-emerald-700">
+                  <CheckSquare className="w-5 h-5 text-red-600" />
+                  <span className="text-sm font-medium text-red-700">
                     تم اختيار {selectedStudents.size} طالب
                   </span>
                 </div>
@@ -590,8 +701,7 @@ const MarksManagement: React.FC<MarksManagementProps> = () => {
                   onClick={handleBulkDelete}
                   disabled={isDeleting}
                   className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white rounded-lg transition-colors text-sm font-medium">
-                  <Trash2 className="w-4 h-4" />
-                  {isDeleting ? "جاري الحذف..." : "حذف المحدد"}
+                  {isDeleting ? "جاري الحذف..." : "حذف العلامات المحددة"}
                 </button>
               </div>
             )}
@@ -624,9 +734,6 @@ const MarksManagement: React.FC<MarksManagementProps> = () => {
                   <th className="px-6 py-4 text-center text-sm font-bold text-gray-700">
                     العلامة (من {selectedExam.totalMarks || 100})
                   </th>
-                  <th className="px-6 py-4 text-center text-sm font-bold text-gray-700">
-                    الإجراءات
-                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -648,15 +755,21 @@ const MarksManagement: React.FC<MarksManagementProps> = () => {
                   </tr>
                 ) : (
                   filteredStudents.map((student, index) => {
-                    const studentMark = getStudentMark(student._id);
-                    const isEditing = editingMarkId === studentMark?._id;
+                    const localMark = localMarks[student._id];
+                    const currentValue = localMark?.mark ?? "";
+                    const originalValue = localMark?.originalMark;
+                    const hasChanged = currentValue !== "" 
+                      ? Number(currentValue) !== originalValue 
+                      : originalValue !== null;
 
                     return (
                       <tr
                         key={student._id}
                         className={`border-b border-gray-100 hover:bg-emerald-50/50 transition-colors ${
                           selectedStudents.has(student._id)
-                            ? "bg-emerald-100/50"
+                            ? "bg-red-100/50"
+                            : hasChanged
+                            ? "bg-amber-50/50"
                             : index % 2 === 0
                             ? "bg-white"
                             : "bg-gray-50/30"
@@ -667,7 +780,7 @@ const MarksManagement: React.FC<MarksManagementProps> = () => {
                             onClick={() => toggleStudentSelection(student._id)}
                             className="p-1 hover:bg-emerald-100 rounded transition-colors">
                             {selectedStudents.has(student._id) ? (
-                              <CheckSquare className="w-5 h-5 text-emerald-600" />
+                              <CheckSquare className="w-5 h-5 text-red-600" />
                             ) : (
                               <Square className="w-5 h-5 text-gray-400" />
                             )}
@@ -676,7 +789,12 @@ const MarksManagement: React.FC<MarksManagementProps> = () => {
 
                         {/* اسم الطالب */}
                         <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                          {student.name}
+                          <div className="flex items-center gap-2">
+                            {student.name}
+                            {hasChanged && (
+                              <span className="w-2 h-2 rounded-full bg-amber-500" title="تم التعديل"></span>
+                            )}
+                          </div>
                         </td>
 
                         {/* الحلقة */}
@@ -684,107 +802,25 @@ const MarksManagement: React.FC<MarksManagementProps> = () => {
                           {student.group}
                         </td>
 
-                        {/* العلامة */}
+                        {/* 🆕 العلامة - حقل إدخال مباشر */}
                         <td className="px-6 py-4 text-center">
-                          {studentMark ? (
-                            isEditing ? (
-                              <input
-                                type="number"
-                                min={0}
-                                max={selectedExam.totalMarks}
-                                value={editValue}
-                                onChange={(e) =>
-                                  setEditValue(Number(e.target.value))
-                                }
-                                className="w-20 px-3 py-2 border-2 border-emerald-500 rounded-lg text-center focus:ring-2 focus:ring-emerald-100 outline-none"
-                                autoFocus
-                              />
-                            ) : (
-                              <span
-                                className={`inline-flex items-center px-3 py-1 rounded-lg font-bold text-sm ${
-                                  studentMark.mark >=
-                                  (selectedExam.totalMarks || 100) * 0.5
-                                    ? "bg-green-100 text-green-700"
-                                    : "bg-red-100 text-red-700"
-                                }`}>
-                                {studentMark.mark} /{" "}
-                                {selectedExam.totalMarks || 100}
-                              </span>
-                            )
-                          ) : (
-                            <span className="text-gray-400 text-sm">
-                              لم يتم الإدخال
-                            </span>
-                          )}
-                        </td>
-
-                        {/* الإجراءات */}
-                        <td className="px-6 py-4">
                           <div className="flex items-center justify-center gap-2">
-                            {studentMark ? (
-                              isEditing ? (
-                                <>
-                                  <button
-                                    onClick={() =>
-                                      handleUpdateMark(
-                                        studentMark._id!,
-                                        editValue
-                                      )
-                                    }
-                                    className="p-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
-                                    title="حفظ">
-                                    <Save className="w-4 h-4" />
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      // إذا كانت علامة مؤقتة، احذفها عند الإلغاء
-                                      if (
-                                        studentMark._id?.startsWith("temp_")
-                                      ) {
-                                        setMarks((prevMarks) =>
-                                          prevMarks.filter(
-                                            (m) => m._id !== studentMark._id
-                                          )
-                                        );
-                                      }
-                                      setEditingMarkId(null);
-                                    }}
-                                    className="p-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors"
-                                    title="إلغاء">
-                                    <X className="w-4 h-4" />
-                                  </button>
-                                </>
-                              ) : (
-                                <>
-                                  <button
-                                    onClick={() => {
-                                      setEditingMarkId(studentMark._id!);
-                                      setEditValue(studentMark.mark);
-                                    }}
-                                    className="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
-                                    title="تعديل">
-                                    <Edit2 className="w-4 h-4" />
-                                  </button>
-                                  <button
-                                    onClick={() =>
-                                      handleDeleteMark(studentMark._id!)
-                                    }
-                                    className="p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
-                                    title="حذف">
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
-                                </>
-                              )
-                            ) : (
-                              <button
-                                onClick={() =>
-                                  handleAddMark(student._id, student.name)
-                                }
-                                className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors text-sm font-medium">
-                                <Plus className="w-4 h-4" />
-                                إضافة علامة
-                              </button>
-                            )}
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              value={currentValue}
+                              onChange={(e) => handleLocalMarkChange(student._id, e.target.value)}
+                              placeholder="—"
+                              className={`w-20 px-3 py-2 border-2 rounded-lg text-center outline-none transition-all ${
+                                hasChanged
+                                  ? "border-amber-400 bg-amber-50 focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
+                                  : "border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                              }`}
+                            />
+                            <span className="text-gray-400 text-sm">
+                              / {selectedExam.totalMarks || 100}
+                            </span>
                           </div>
                         </td>
                       </tr>

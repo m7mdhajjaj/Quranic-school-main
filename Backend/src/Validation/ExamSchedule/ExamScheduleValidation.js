@@ -136,8 +136,10 @@ const validateTeacher = (teacher) => {
 
 /**
  * Validate exam date
+ * @param {string|Date} date - التاريخ للتحقق منه
+ * @param {boolean} isUpdate - هل هي عملية تعديل (true) أم إضافة (false) - غير مستخدم حالياً
  */
-const validateExamDate = (date) => {
+const validateExamDate = (date, isUpdate = false) => {
   if (!isRequired(date)) {
     return { isValid: false, message: 'تاريخ الامتحان مطلوب' };
   }
@@ -147,15 +149,15 @@ const validateExamDate = (date) => {
     return { isValid: false, message: 'تاريخ الامتحان غير صحيح' };
   }
   
-  // Check if date is at least 2 days in the future
   const today = new Date();
   today.setHours(0, 0, 0, 0); // بداية اليوم
   
-  const minDate = new Date(today);
-  minDate.setDate(minDate.getDate() + 2); // بعد يومين على الأقل
-  
   const examDateOnly = new Date(examDate);
   examDateOnly.setHours(0, 0, 0, 0); // بداية يوم الامتحان
+  
+  // الإضافة والتعديل: التاريخ يجب أن يكون بعد يومين على الأقل
+  const minDate = new Date(today);
+  minDate.setDate(minDate.getDate() + 2); // بعد يومين على الأقل
   
   if (examDateOnly < minDate) {
     return { isValid: false, message: 'يجب أن يكون تاريخ الامتحان بعد يومين على الأقل من اليوم' };
@@ -337,7 +339,7 @@ const validateExamScheduleData = async (req, res, next) => {
     }
     
     if (!isUpdate || data.date !== undefined) {
-      const dateValidation = validateExamDate(data.date);
+      const dateValidation = validateExamDate(data.date, isUpdate);
       if (!dateValidation.isValid) {
         errors.push(dateValidation.message);
       } else {

@@ -27,6 +27,7 @@ interface ExamFormModalProps {
   onSubmit: (examData: ExamFormData, selectedGroup?: string) => Promise<void>;
   role: 'student' | 'teacher' | 'admin' | 'secretary';
   teacherGroups: string[];
+  loadingTeacherGroups?: boolean;
   initialData?: ExamFormData & { group?: string };
   mode: 'add' | 'edit';
 }
@@ -133,6 +134,7 @@ export const ExamFormModal = memo<ExamFormModalProps>(({
   onSubmit,
   role,
   teacherGroups,
+  loadingTeacherGroups = false,
   initialData,
   mode,
 }) => {
@@ -148,6 +150,9 @@ export const ExamFormModal = memo<ExamFormModalProps>(({
   // Memoized Values
   // ============================================================================
 
+  // المعلم يحتاج لاختيار حلقة دائماً (سواء كانت الحلقات جاهزة أو لا زالت تُحمّل)
+  const isTeacher = useMemo(() => role === 'teacher', [role]);
+  
   const isTeacherWithGroups = useMemo(
     () => role === 'teacher' && teacherGroups.length > 0,
     [role, teacherGroups.length]
@@ -157,6 +162,22 @@ export const ExamFormModal = memo<ExamFormModalProps>(({
     () => (isTeacherWithGroups ? teacherGroups[0] : ''),
     [isTeacherWithGroups, teacherGroups]
   );
+
+  // حساب الحد الأدنى للتاريخ حسب الوضع (إضافة أو تعديل)
+  const minDateForPicker = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // الإضافة والتعديل: بعد يومين على الأقل
+    const minDate = new Date(today);
+    minDate.setDate(minDate.getDate() + 2);
+    return minDate.toISOString().split('T')[0];
+  }, []);
+
+  // نص التلميح للتاريخ
+  const dateHint = useMemo(() => {
+    return '📅 يجب أن يكون تاريخ الامتحان بعد يومين على الأقل من اليوم';
+  }, []);
 
   const modalConfig = useMemo(() => ({
     add: {
@@ -337,8 +358,8 @@ export const ExamFormModal = memo<ExamFormModalProps>(({
               </select>
             </InputField>
 
-            {/* Group Selection */}
-            {isTeacherWithGroups && (
+            {/* Group Selection - للمعلم دائماً */}
+            {isTeacher && (
               <InputField
                 label="الحلقة"
                 required
@@ -348,18 +369,32 @@ export const ExamFormModal = memo<ExamFormModalProps>(({
                   </svg>
                 }
               >
-                <select
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition duration-200 outline-none bg-white"
-                  value={selectedGroup}
-                  onChange={(e) => setSelectedGroup(e.target.value)}
-                  required
-                  disabled={isSubmitting}
-                  title="الحلقة"
-                >
-                  {teacherGroups.map((group) => (
-                    <option key={group} value={group}>{group}</option>
-                  ))}
-                </select>
+                {loadingTeacherGroups ? (
+                  <div className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-50 text-gray-500 flex items-center gap-2">
+                    <svg className="animate-spin h-5 w-5 text-emerald-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    جاري تحميل الحلقات...
+                  </div>
+                ) : teacherGroups.length === 0 ? (
+                  <div className="w-full px-4 py-3 border-2 border-amber-300 rounded-xl bg-amber-50 text-amber-700">
+                    ⚠️ لا توجد حلقات نشطة (فيها طلاب)
+                  </div>
+                ) : (
+                  <select
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition duration-200 outline-none bg-white"
+                    value={selectedGroup}
+                    onChange={(e) => setSelectedGroup(e.target.value)}
+                    required
+                    disabled={isSubmitting}
+                    title="الحلقة"
+                  >
+                    {teacherGroups.map((group) => (
+                      <option key={group} value={group}>{group}</option>
+                    ))}
+                  </select>
+                )}
               </InputField>
             )}
           </div>
@@ -383,6 +418,9 @@ export const ExamFormModal = memo<ExamFormModalProps>(({
                 value={formData.date}
                 onChange={(date) => updateFormField('date', date)}
                 required
+                minDate={minDateForPicker}
+                hint={dateHint}
+                disabled={isSubmitting}
               />
             </div>
 

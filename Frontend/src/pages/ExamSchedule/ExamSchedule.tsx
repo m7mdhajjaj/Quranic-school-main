@@ -84,7 +84,7 @@ const ExamSchedule: React.FC = () => {
   const [studentMarks, setStudentMarks] = useState<Record<string, string>>({});
 
   // حلقات المعلم (hook)
-  const { teacherGroups } = useTeacherGroups(role);
+  const { teacherGroups, loadingTeacherGroups } = useTeacherGroups(role);
 
   // لم نعد بحاجة لمرجع الإلغاء بعد نقل المنطق للهوك
 
@@ -332,6 +332,7 @@ const ExamSchedule: React.FC = () => {
           onSubmit={handleFormSubmit}
           role={role}
           teacherGroups={teacherGroups}
+          loadingTeacherGroups={loadingTeacherGroups}
           initialData={
             editExam
               ? {

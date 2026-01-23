@@ -57,20 +57,21 @@ export function useTeacherGroups(role: 'student' | 'teacher' | 'admin' | 'secret
         console.log('🔍 [useTeacherGroups] جلب حلقات المعلم بواسطة ID:', currentUser._id);
 
         // استخدام API المخصص للمعلم (لا يحتاج صلاحيات Admin/Secretary)
+        // جلب الحلقات النشطة فقط (التي فيها طلاب)
         const result = await getGroupsByTeacherIdWithFilters(
           currentUser._id,
-          'all', // جلب كل الحلقات
+          'active', // جلب الحلقات النشطة فقط (التي فيها طلاب)
           false  // لا نحتاج تفاصيل الطلاب
         );
 
-        if (!result.success || !Array.isArray(result.data)) {
+        if (!result.success || !result.data?.groups) {
           console.error('❌ [useTeacherGroups] فشل في جلب الحلقات');
           setTeacherGroups([]);
           return;
         }
 
         // ترتيب الحلقات أبجدياً
-        const groupNames = result.data
+        const groupNames = result.data.groups
           .map((g) => g.name)
           .sort((a: string, b: string) => a.localeCompare(b, 'ar'));
         

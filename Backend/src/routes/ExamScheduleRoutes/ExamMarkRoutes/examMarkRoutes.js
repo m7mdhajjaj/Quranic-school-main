@@ -77,8 +77,11 @@ router.get("/teacher-groups", protect, async (req, res) => {
       })
     );
 
+    // 🆕 فلترة الحلقات النشطة فقط (التي فيها طلاب)
+    const activeGroupsWithData = groupsWithData.filter(g => g.hasStudents);
+
     console.log(
-      `🎯 [teacher-groups] Sending response with ${groupsWithData.length} groups`
+      `🎯 [teacher-groups] Sending response with ${activeGroupsWithData.length} active groups (from ${groupsWithData.length} total)`
     );
 
     res.json({
@@ -88,10 +91,10 @@ router.get("/teacher-groups", protect, async (req, res) => {
           _id: teacher._id,
           name: `${teacher.firstName} ${teacher.lastName}`,
         },
-        groups: groupsWithData,
+        groups: activeGroupsWithData,
         summary: {
-          totalGroups: groupsWithData.length,
-          totalStudents: groupsWithData.reduce(
+          totalGroups: activeGroupsWithData.length,
+          totalStudents: activeGroupsWithData.reduce(
             (sum, g) => sum + g.totalStudents,
             0
           ),

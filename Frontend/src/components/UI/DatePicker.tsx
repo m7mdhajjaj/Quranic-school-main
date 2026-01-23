@@ -7,6 +7,7 @@ interface DatePickerProps {
   onChange: (date: string) => void;
   error?: string;
   success?: string;
+  hint?: string; // نص توضيحي تحت الحقل
   required?: boolean;
   disabled?: boolean;
   className?: string;
@@ -23,6 +24,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   onChange,
   error,
   success,
+  hint,
   required = false,
   disabled = false,
   className = '',
@@ -231,6 +233,15 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         <p className="mt-1.5 text-sm text-emerald-600 flex items-center gap-1">
           <CheckCircle2 className="w-3.5 h-3.5" />
           {success}
+        </p>
+      )}
+
+      {!error && !currentDateError && !success && hint && (
+        <p className="mt-1.5 text-sm text-gray-500 flex items-center gap-1">
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          {hint}
         </p>
       )}
     </div>

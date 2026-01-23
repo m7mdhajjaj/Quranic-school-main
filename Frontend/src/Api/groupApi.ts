@@ -333,7 +333,7 @@ export interface GroupsByTeacherResponse {
   };
 }
 
-export type GroupFilter = 'all' | 'withStudents' | 'withoutStudents';
+export type GroupFilter = 'all' | 'withStudents' | 'withoutStudents' | 'active';
 
 export const getGroupsByTeacherIdWithFilters = async (
   teacherId: string,
