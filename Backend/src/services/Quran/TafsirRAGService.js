@@ -1,6 +1,27 @@
 const { TafsirIbnKathir } = require('../../schema/AI/Quran');
 const EmbeddingsService = require('./EmbeddingsService');
 
+// ═══════════════════════════════════════════════════════════════════════════
+// 🔒 Security: Regex Escape (منع ReDoS)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Escape special regex characters to prevent ReDoS attacks
+ */
+function escapeRegex(str) {
+  if (!str || typeof str !== 'string') return '';
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * تنظيف query البحث (منع ReDoS + تحديد الطول)
+ */
+function sanitizeSearchQuery(query, maxLength = 100) {
+  if (!query || typeof query !== 'string') return '';
+  const trimmed = query.trim().substring(0, maxLength);
+  return escapeRegex(trimmed);
+}
+
 /**
  * 📚 Tafsir RAG Service
  * خدمة البحث الذكي في تفسير ابن كثير
@@ -118,24 +139,31 @@ class TafsirRAGService {
   }
 
   /**
-   * البحث بالـ Regex
+   * البحث بالـ Regex (مع حماية ReDoS)
    */
   static async searchByRegex(query, options = {}) {
     const { limit = 10, surahNumber = null } = options;
 
+    // 🔒 تنظيف المدخل (منع ReDoS)
+    const safeQuery = sanitizeSearchQuery(query);
+    if (!safeQuery || safeQuery.length < 2) {
+      return [];
+    }
+
     const filter = {
       $or: [
-        { tafsir: { $regex: query, $options: 'i' } },
-        { ayahText: { $regex: query, $options: 'i' } },
-        { keywords: { $regex: query, $options: 'i' } }
+        { tafsir: { $regex: safeQuery, $options: 'i' } },
+        { ayahText: { $regex: safeQuery, $options: 'i' } },
+        { keywords: { $regex: safeQuery, $options: 'i' } }
       ]
     };
 
-    if (surahNumber) filter.surahNumber = surahNumber;
+    if (surahNumber) filter.surahNumber = parseInt(surahNumber);
 
     return TafsirIbnKathir.find(filter)
-      .limit(limit)
-      .select('surahNumber surahName ayahNumber ayahKey ayahText tafsirShort');
+      .limit(Math.min(parseInt(limit), 50)) // 🔒 حد أقصى
+      .select('surahNumber surahName ayahNumber ayahKey ayahText tafsirShort')
+      .lean();
   }
 
   // ═══════════════════════════════════════

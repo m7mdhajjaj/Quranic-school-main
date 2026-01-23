@@ -3,6 +3,46 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const rateLimit = require('express-rate-limit'); // 🔒 Rate Limiting
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 🔒 Rate Limiters - منع الإساءة
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Rate limiter للـ AI Chat (20 طلب/دقيقة)
+const aiChatLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 دقيقة
+  max: 20,
+  message: { 
+    success: false, 
+    message: 'طلبات كثيرة جداً، انتظر دقيقة واحدة' 
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => req.user?.id || req.ip // ربط بالمستخدم
+});
+
+// Rate limiter للـ TTS (5 طلبات/دقيقة - يكلف مال)
+const ttsLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 5,
+  message: { 
+    success: false, 
+    message: 'حد TTS: 5 طلبات في الدقيقة' 
+  },
+  keyGenerator: (req) => req.user?.id || req.ip
+});
+
+// Rate limiter للـ STT (10 طلبات/دقيقة)
+const sttLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  message: { 
+    success: false, 
+    message: 'حد STT: 10 طلبات في الدقيقة' 
+  },
+  keyGenerator: (req) => req.user?.id || req.ip
+});
 
 // ═══════════════════════════════════════════════════════════════════════════
 // 📁 Multer Configuration - إعداد رفع الملفات الصوتية
@@ -56,20 +96,24 @@ const {
 } = require('../../Validation/ChatBot/aiChatValidation');
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 💬 AI Chat - التفسير الصارم
+// 💬 AI Chat - التفسير الصارم (مع Rate Limiting)
 // ═══════════════════════════════════════════════════════════════════════════
 
 // Chat endpoint - يستخدم النظام الصارم للتفسير
-router.post('/', protect, validateChatMessage, aiChatController.chat);
+router.post('/', protect, aiChatLimiter, validateChatMessage, aiChatController.chat);
 
-// Get Student Suggestion - اقتراح ذكي للطالب
+// Get Student Suggestion - اقتراح ذكي للطالب (أسماء السور فقط)
 router.get('/suggestion', protect, aiChatController.getStudentSuggestion);
 
-// TTS Endpoint - تحويل النص إلى صوت
-router.post('/speak', protect, validateTTS, aiChatController.speak);
+// 🔍 Surah Suggestions - اقتراحات السور عند الخطأ الإملائي
+// GET /api/ai-chat/surah-suggestions?query=الفتحه
+router.get('/surah-suggestions', protect, aiChatController.getSurahSuggestions);
 
-// Transcribe Endpoint - تحويل الصوت إلى نص
-router.post('/transcribe', protect, upload.single('audio'), aiChatController.transcribeAudio);
+// TTS Endpoint - تحويل النص إلى صوت (مع Rate Limiting)
+router.post('/speak', protect, ttsLimiter, validateTTS, aiChatController.speak);
+
+// Transcribe Endpoint - تحويل الصوت إلى نص (مع Rate Limiting)
+router.post('/transcribe', protect, sttLimiter, upload.single('audio'), aiChatController.transcribeAudio);
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ⭐ Favorites - المفضلات

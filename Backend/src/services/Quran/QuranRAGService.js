@@ -1,6 +1,27 @@
 const { QuranSurah, QuranAyah } = require('../../schema/AI/Quran');
 const EmbeddingsService = require('./EmbeddingsService');
 
+// ═══════════════════════════════════════════════════════════════════════════
+// 🔒 Security: Regex Escape (منع ReDoS)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Escape special regex characters to prevent ReDoS attacks
+ */
+function escapeRegex(str) {
+  if (!str || typeof str !== 'string') return '';
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * تنظيف query البحث (منع ReDoS + تحديد الطول)
+ */
+function sanitizeSearchQuery(query, maxLength = 100) {
+  if (!query || typeof query !== 'string') return '';
+  const trimmed = query.trim().substring(0, maxLength);
+  return escapeRegex(trimmed);
+}
+
 /**
  * 📖 Quran RAG Service
  * خدمة البحث الذكي في القرآن الكريم
@@ -126,26 +147,33 @@ class QuranRAGService {
   }
 
   // ═══════════════════════════════════════
-  // البحث بالـ Regex
+  // البحث بالـ Regex (مع حماية ReDoS)
   // ═══════════════════════════════════════
 
   static async searchByRegex(query, options = {}) {
     const { limit = 10, surahNumber = null, juzNumber = null } = options;
 
+    // 🔒 تنظيف المدخل (منع ReDoS)
+    const safeQuery = sanitizeSearchQuery(query);
+    if (!safeQuery || safeQuery.length < 2) {
+      return [];
+    }
+
     const filter = {
       $or: [
-        { textArabic: { $regex: query, $options: 'i' } },
-        { textSimplified: { $regex: query, $options: 'i' } },
-        { tafsirArabic: { $regex: query, $options: 'i' } }
+        { textArabic: { $regex: safeQuery, $options: 'i' } },
+        { textSimplified: { $regex: safeQuery, $options: 'i' } },
+        { tafsirArabic: { $regex: safeQuery, $options: 'i' } }
       ]
     };
 
-    if (surahNumber) filter.surahNumber = surahNumber;
-    if (juzNumber) filter.juzNumber = juzNumber;
+    if (surahNumber) filter.surahNumber = parseInt(surahNumber);
+    if (juzNumber) filter.juzNumber = parseInt(juzNumber);
 
     return QuranAyah.find(filter)
-      .limit(limit)
-      .select('surahNumber ayahNumber ayahKey textArabic tafsirArabic');
+      .limit(Math.min(parseInt(limit), 50)) // 🔒 حد أقصى 50
+      .select('surahNumber ayahNumber ayahKey textArabic tafsirArabic')
+      .lean(); // ✅ أفضل للأداء
   }
 
   // ═══════════════════════════════════════
@@ -212,17 +240,22 @@ class QuranRAGService {
   }
 
   // ═══════════════════════════════════════
-  // البحث عن كلمة محددة
+  // البحث عن كلمة محددة (مع حماية ReDoS)
   // ═══════════════════════════════════════
 
   static async searchWord(word, limit = 50) {
-    const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // 🔒 استخدام escapeRegex بدلاً من escape يدوي
+    const escapedWord = sanitizeSearchQuery(word, 50);
+    if (!escapedWord || escapedWord.length < 2) {
+      return [];
+    }
     
     return QuranAyah.find({
       textArabic: { $regex: escapedWord, $options: 'i' }
     })
-    .limit(limit)
-    .select('surahNumber ayahNumber textArabic');
+    .limit(Math.min(parseInt(limit), 100)) // 🔒 حد أقصى
+    .select('surahNumber ayahNumber textArabic')
+    .lean();
   }
 
   // ═══════════════════════════════════════

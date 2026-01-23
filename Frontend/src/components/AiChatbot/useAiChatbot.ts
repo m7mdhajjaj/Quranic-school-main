@@ -10,6 +10,23 @@ export interface Message {
   timestamp: Date;
 }
 
+// ✅ نوع الاقتراح الجديد (سورة + chatText)
+export interface SurahSuggestion {
+  type: 'memorization' | 'review';
+  surahName: string;
+  surahNumber: number;
+  label: string;
+  chatText: string; // النص الذي يُنقل للـ input
+}
+
+// ✅ نوع اقتراحات "هل تقصد؟"
+export interface DidYouMeanSuggestion {
+  surahName: string;
+  surahNumber: number;
+  label: string;
+  chatText: string;
+}
+
 
 export const useAiChatbot = () => {
   // بدون رسالة ترحيب - نبدأ بقائمة فارغة
@@ -19,10 +36,13 @@ export const useAiChatbot = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isLoadingAudio, setIsLoadingAudio] = useState(false); // ✅ حالة تحميل الصوت
   const [favorites, setFavorites] = useState<string[]>([]);
   const [favoritesList, setFavoritesList] = useState<any[]>([]);
-  const [smartSuggestions, setSmartSuggestions] = useState<string[]>([]);
+  const [smartSuggestions, setSmartSuggestions] = useState<SurahSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  // ✅ اقتراحات "هل تقصد؟" عند الخطأ الإملائي
+  const [didYouMeanSuggestions, setDidYouMeanSuggestions] = useState<DidYouMeanSuggestion[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -51,12 +71,25 @@ export const useAiChatbot = () => {
       if (userRole === 'student' || userRole === 'Student' || userRole === 'طالب') {
         const data = await getSmartSuggestion();
         if (data && data.success) {
+          // ✅ Format جديد: Array من objects
           if (data.suggestions && Array.isArray(data.suggestions)) {
-            setSmartSuggestions(data.suggestions);
-            setShowSuggestions(data.suggestions.length > 0);
-          } else if (data.suggestion) {
-            setSmartSuggestions([data.suggestion]);
-            setShowSuggestions(true);
+            // تحقق إذا كانت objects أو strings (للتوافق مع القديم)
+            const suggestions: SurahSuggestion[] = data.suggestions.map((s: any) => {
+              if (typeof s === 'string') {
+                // Format قديم (string) - تحويل
+                return {
+                  type: 'memorization' as const,
+                  surahName: s,
+                  surahNumber: 0,
+                  label: s,
+                  chatText: s
+                };
+              }
+              // Format جديد (object)
+              return s as SurahSuggestion;
+            });
+            setSmartSuggestions(suggestions);
+            setShowSuggestions(suggestions.length > 0);
           } else {
             setSmartSuggestions([]);
             setShowSuggestions(false);
@@ -146,6 +179,13 @@ export const useAiChatbot = () => {
           timestamp: new Date()
         };
         setMessages(prev => [...prev, aiMessage]);
+        
+        // ✅ معالجة اقتراحات "هل تقصد؟" عند الخطأ الإملائي
+        if (data.data.surahSuggestions && data.data.surahSuggestions.length > 0) {
+          setDidYouMeanSuggestions(data.data.surahSuggestions);
+        } else {
+          setDidYouMeanSuggestions([]);
+        }
       } else {
         throw new Error(data.message);
       }
@@ -265,8 +305,23 @@ export const useAiChatbot = () => {
   };
 
   // Handle quick suggestion click
-  const handleQuickSuggestion = (suggestion: string) => {
-    setInput(suggestion);
+  // ✅ يستقبل SurahSuggestion ويضع chatText في الـ input
+  const handleQuickSuggestion = (suggestion: SurahSuggestion) => {
+    // ينقل النص للـ input - الطالب يُكمل برقم الآية
+    setInput(suggestion.chatText);
+  };
+
+  // ✅ معالجة اختيار "هل تقصد؟"
+  const handleDidYouMeanSuggestion = (suggestion: DidYouMeanSuggestion) => {
+    // ينقل النص للـ input - الطالب يُكمل برقم الآية
+    setInput(suggestion.chatText);
+    // إخفاء الاقتراحات بعد الاختيار
+    setDidYouMeanSuggestions([]);
+  };
+
+  // ✅ رفض اقتراحات "هل تقصد؟"
+  const handleDismissDidYouMean = () => {
+    setDidYouMeanSuggestions([]);
   };
 
   // Text-to-Speech (OpenAI TTS via Backend)
@@ -333,15 +388,38 @@ export const useAiChatbot = () => {
     }
 
     console.log('🔊 TTS will speak:', textToSpeak.substring(0, 100) + '...');
+    console.log('🔊 TTS text length:', textToSpeak.length, 'chars');
     // ═══════════════════════════════════════════════════════════════════════
 
     try {
-      setIsSpeaking(true);
+      setIsLoadingAudio(true); // ✅ بداية تحميل الصوت
+      setIsSpeaking(false);
+      
       const audioBlob = await generateSpeech(textToSpeak);
+      
+      // ✅ التحقق من حجم الـ blob
+      if (!audioBlob || audioBlob.size === 0) {
+        console.error('TTS: Empty audio blob received');
+        setIsLoadingAudio(false);
+        setIsSpeaking(false);
+        return;
+      }
+      
+      console.log('🔊 TTS audio blob size:', audioBlob.size, 'bytes');
+      
       const audioUrl = URL.createObjectURL(audioBlob);
       const audio = new Audio(audioUrl);
       
       audioRef.current = audio;
+      
+      audio.oncanplaythrough = () => {
+        setIsLoadingAudio(false); // ✅ انتهى التحميل
+        setIsSpeaking(true);
+        audio.play().catch(e => {
+          console.error('Audio play error:', e);
+          setIsSpeaking(false);
+        });
+      };
       
       audio.onended = () => {
         setIsSpeaking(false);
@@ -350,12 +428,18 @@ export const useAiChatbot = () => {
       
       audio.onerror = (e) => {
         console.error('Audio Playback Error:', e);
+        setIsLoadingAudio(false);
         setIsSpeaking(false);
+        URL.revokeObjectURL(audioUrl);
       };
 
-      await audio.play();
-    } catch (error) {
+    } catch (error: any) {
       console.error('TTS Generation Error:', error);
+      // ✅ عرض رسالة خطأ واضحة
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        console.error('TTS: Request timeout - text may be too long');
+      }
+      setIsLoadingAudio(false);
       setIsSpeaking(false);
     }
   };
@@ -430,6 +514,7 @@ export const useAiChatbot = () => {
     isLoading,
     isListening,
     isSpeaking,
+    isLoadingAudio, // ✅ حالة تحميل الصوت
     messagesEndRef,
     userRole,
     favoritesList,
@@ -450,6 +535,10 @@ export const useAiChatbot = () => {
     handleRemoveFavorite,
     isFavorited,
     smartSuggestions,
-    showSuggestions
+    showSuggestions,
+    // ✅ اقتراحات "هل تقصد؟"
+    didYouMeanSuggestions,
+    handleDidYouMeanSuggestion,
+    handleDismissDidYouMean
   };
 };

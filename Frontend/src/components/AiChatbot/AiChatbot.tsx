@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Send, X, BookOpen, Sparkles, Trash2, Copy, Mic, MicOff, Volume2, VolumeX, Check, Star, Bookmark, ArrowLeft } from 'lucide-react';
+import { Send, X, BookOpen, Sparkles, Trash2, Copy, Mic, MicOff, Volume2, VolumeX, Check, Star, Bookmark, ArrowLeft, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAiChatbot } from './useAiChatbot';
 import { showSuccessToast } from '../../utils/toastUtils';
@@ -129,6 +129,7 @@ export const AiChatbot: React.FC = () => {
     isLoading,
     isListening,
     isSpeaking,
+    isLoadingAudio, // ✅ حالة تحميل الصوت
     messagesEndRef,
     userRole,
     setIsOpen,
@@ -148,6 +149,10 @@ export const AiChatbot: React.FC = () => {
     favoritesList,
     smartSuggestions,
     showSuggestions,
+    // ✅ اقتراحات "هل تقصد؟"
+    didYouMeanSuggestions,
+    handleDidYouMeanSuggestion,
+    handleDismissDidYouMean,
   } = useAiChatbot();
 
   // Resize logic
@@ -675,11 +680,14 @@ export const AiChatbot: React.FC = () => {
                             <motion.button
                               whileHover={{ scale: 1.1 }}
                               whileTap={{ scale: 0.9 }}
-                              onClick={() => isSpeaking ? handleStopSpeaking() : handleSpeak(msg.content)}
-                              className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-600 hover:text-emerald-600"
-                              title={isSpeaking ? "إيقاف القراءة" : "استماع للرسالة"}
+                              onClick={() => (isSpeaking || isLoadingAudio) ? handleStopSpeaking() : handleSpeak(msg.content)}
+                              disabled={isLoadingAudio}
+                              className={`p-1.5 rounded-lg transition-colors ${isLoadingAudio ? 'text-amber-500 animate-pulse' : 'hover:bg-gray-100 text-gray-600 hover:text-emerald-600'}`}
+                              title={isLoadingAudio ? "جاري تحميل الصوت..." : isSpeaking ? "إيقاف القراءة" : "استماع للرسالة"}
                             >
-                              {isSpeaking ? (
+                              {isLoadingAudio ? (
+                                <Loader2 size={14} className="animate-spin" />
+                              ) : isSpeaking ? (
                                 <VolumeX size={14} />
                               ) : (
                                 <Volume2 size={14} />
@@ -797,10 +805,49 @@ export const AiChatbot: React.FC = () => {
                           onClick={() => handleQuickSuggestion(suggestion)}
                           className="px-3 py-1.5 text-xs bg-white hover:bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-700 font-medium transition-colors shadow-sm"
                         >
-                          {suggestion}
+                          {suggestion.label}
                         </motion.button>
                       ))}
                     </div>
+                  </motion.div>
+                )}
+
+                {/* ✅ اقتراحات "هل تقصد؟" - عند الخطأ الإملائي */}
+                {didYouMeanSuggestions && didYouMeanSuggestions.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-3 p-3 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-300 relative z-10 shadow-sm"
+                    dir="rtl"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm text-amber-800 font-bold flex items-center gap-2">
+                        🔍 هل تقصد إحدى هذه السور؟
+                      </p>
+                      <button
+                        onClick={handleDismissDidYouMean}
+                        className="text-gray-400 hover:text-gray-600 transition-colors"
+                        title="إلغاء"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {didYouMeanSuggestions.map((suggestion, index) => (
+                        <motion.button
+                          key={index}
+                          whileHover={{ scale: 1.05, backgroundColor: '#fef3c7' }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => handleDidYouMeanSuggestion(suggestion)}
+                          className="px-4 py-2 text-sm bg-white hover:bg-amber-100 border-2 border-amber-400 rounded-lg text-amber-800 font-bold transition-all shadow-sm"
+                        >
+                          📖 {suggestion.label}
+                        </motion.button>
+                      ))}
+                    </div>
+                    <p className="text-xs text-amber-600 mt-2">
+                      💡 اختر السورة المطلوبة ثم أكمل برقم الآية
+                    </p>
                   </motion.div>
                 )}
                 

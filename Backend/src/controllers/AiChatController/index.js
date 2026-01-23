@@ -22,6 +22,12 @@ exports.chat = StrictTafsirController.chat;
 exports.getStudentSuggestion = SuggestionController.getStudentSuggestion;
 
 // ═══════════════════════════════════════════════════════════════════════════
+// 🔍 Surah Suggestions - اقتراحات السور عند الخطأ الإملائي
+// ═══════════════════════════════════════════════════════════════════════════
+
+exports.getSurahSuggestions = StrictTafsirController.getSurahSuggestions;
+
+// ═══════════════════════════════════════════════════════════════════════════
 // 🔊 TTS - تحويل النص إلى صوت
 // ═══════════════════════════════════════════════════════════════════════════
 

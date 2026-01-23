@@ -6,33 +6,28 @@ const Group = require("../../schema/Group");
 /**
  * Get AI Chat Suggestion based on Student's Context
  * يسترجع اقتراحاً ذكياً بناءً على حلقة الطالب وما يحفظه حالياً
+ * ✅ يُرجع أسماء السور فقط - الطالب يختار السورة ثم يكتب رقم الآية بنفسه
  */
 exports.getStudentSuggestion = async (req, res) => {
   try {
     // 1. Check if user is a student
-    // Note: 'student' role string might vary ("Student" vs "student"). 
-    // Usually standardized to lowercase or specific constant. 
-    // Checking req.user.role (added by protect middleware)
-    
-    // In protect middleware: req.user.role = "student"; (for students)
-    // But let's be safe with case-insensitive check or check if specific fields exist
     const role = req.user.role?.toLowerCase();
     
     if (role !== "student") {
       return res.status(200).json({ 
         success: true, 
-        suggestion: null,
+        suggestions: null,
         message: "Suggestions available for students only" 
       });
     }
 
     // 2. Get Student's Group Name
-    const groupName = req.user.group; // from Student schema
+    const groupName = req.user.group;
 
     if (!groupName || groupName === "غير محدد") {
       return res.status(200).json({ 
         success: true, 
-        suggestion: null,
+        suggestions: null,
         message: "Student has no group"
       });
     }
@@ -43,75 +38,47 @@ exports.getStudentSuggestion = async (req, res) => {
     if (!group) {
       return res.status(200).json({ 
         success: true, 
-        suggestion: null, 
+        suggestions: null, 
         message: "Group not found"
       });
     }
 
     let suggestions = [];
-    let memSurahNum = null;
 
-    // Helper: Select random ayah between 1 and (limit + 1)
-    // We add 1 to limit because user might want to study the NEXT ayah (limit + 1)
-    // Or review previous ayahs (1 to limit).
-    // Let's bias towards the NEXT ayah (60%) and REVIEW (40%)
-    const getSmartRandomAyah = (lastEnd) => {
-      const next = (lastEnd || 0) + 1;
-      if (lastEnd > 0 && Math.random() > 0.6) {
-        // Return a random review ayah
-        return Math.floor(Math.random() * lastEnd) + 1;
-      }
-      return next;
-    };
-
-    // 4. Determine Suggestions (Include both Memorization and Review)
+    // 4. ✅ إرجاع أسماء السور فقط (بدون رقم الآية)
+    // الطالب يختار السورة → تنتقل للشات → يكتب رقم الآية بنفسه
+    
     if (group.activeMemorizationSurah && group.activeMemorizationSurah.surahName) {
-      // Memorization: Usually we want the NEXT ayah strictly.
-      // But user requested randomness. Let's strictly suggest NEXT for memorization context
-      // to avoid confusion? No, user explicitly asked for randomness.
-      // Let's suggest the NEXT one always (Primary Goal) AND maybe a previous one?
-      // No, let's keep it simple: Just the NEXT one for memorization (Target).
-      const nextAyah = (group.activeMemorizationSurah.lastAyahEnd || 0) + 1;
-      suggestions.push(`تفسير سورة ${group.activeMemorizationSurah.surahName} آية ${nextAyah}`);
-      memSurahNum = group.activeMemorizationSurah.surahNumber;
+      suggestions.push({
+        type: "memorization",
+        surahName: group.activeMemorizationSurah.surahName,
+        surahNumber: group.activeMemorizationSurah.surahNumber,
+        label: `سورة ${group.activeMemorizationSurah.surahName}`,
+        // ✅ نص يُنقل للشات - الطالب يُكمل برقم الآية
+        chatText: `تفسير سورة ${group.activeMemorizationSurah.surahName} آية `
+      });
     }
     
     if (group.activeReviewSurah && group.activeReviewSurah.surahName) {
-      const revSurahNum = group.activeReviewSurah.surahNumber;
+      const revSurahName = group.activeReviewSurah.surahName;
+      const memSurahName = group.activeMemorizationSurah?.surahName;
       
-      // Review: This is where randomness shines.
-      // Reviewing implies going over past material.
-      // Let's pick a RANDOM ayah from the range [1 ... lastAyahEnd] 
-      // OR the next one [lastAyahEnd + 1].
-      const lastReviewEnd = group.activeReviewSurah.lastAyahEnd || 0;
-      let targetReviewAyah = 1;
-
-      if (lastReviewEnd > 0) {
-        // Pick random ayah from 1 to lastReviewEnd + 1
-        targetReviewAyah = Math.floor(Math.random() * (lastReviewEnd + 1)) + 1;
-      } else {
-        targetReviewAyah = 1;
-      }
-      
-      const reviewSuggestion = `تفسير سورة ${group.activeReviewSurah.surahName} آية ${targetReviewAyah}`;
-
-      // Check duplication
-      const isDuplicateByNumber = (memSurahNum && revSurahNum && memSurahNum === revSurahNum);
-      // Even if surah is same, ayah might be different now due to randomness!
-      // Only suppress if the TEXT is identical (same surah AND same ayah)
-      const isDuplicateString = suggestions.includes(reviewSuggestion);
-
-      if (!isDuplicateString) {
-          suggestions.push(reviewSuggestion);
+      // تجنب التكرار
+      if (revSurahName !== memSurahName) {
+        suggestions.push({
+          type: "review",
+          surahName: group.activeReviewSurah.surahName,
+          surahNumber: group.activeReviewSurah.surahNumber,
+          label: `سورة ${group.activeReviewSurah.surahName}`,
+          chatText: `تفسير سورة ${group.activeReviewSurah.surahName} آية `
+        });
       }
     }
-
-    // fallback: if no active surah, suggestions remains empty => frontend handles empty
 
     return res.status(200).json({
       success: true,
       suggestions: suggestions.length > 0 ? suggestions : null,
-      message: suggestions.length > 0 ? "Suggestions found" : "No active surahs found"
+      message: suggestions.length > 0 ? "Surah suggestions found" : "No active surahs found"
     });
 
   } catch (error) {

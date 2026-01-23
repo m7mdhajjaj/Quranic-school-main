@@ -2,6 +2,41 @@ const AiChatFavorite = require('../../schema/AI/AiChatFavorite');
 const mongoose = require('mongoose');
 const { validationResult } = require('express-validator');
 
+// ═══════════════════════════════════════════════════════════════════════════
+// 🔒 Security: Input Sanitization (منع XSS)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * تنظيف Tags من HTML و special characters
+ */
+function sanitizeTags(tags) {
+  if (!Array.isArray(tags)) return [];
+  
+  return tags
+    .map(tag => {
+      if (typeof tag !== 'string') return null;
+      return tag
+        .replace(/<[^>]*>/g, '')        // إزالة HTML tags
+        .replace(/[<>"'&]/g, '')        // إزالة special chars
+        .trim()
+        .substring(0, 50);              // حد أقصى 50 حرف
+    })
+    .filter(tag => tag && tag.length > 0)
+    .slice(0, 10);                      // حد أقصى 10 tags
+}
+
+/**
+ * تنظيف النص من HTML
+ */
+function sanitizeText(text, maxLength = 1000) {
+  if (!text || typeof text !== 'string') return '';
+  return text
+    .replace(/<script[^>]*>.*?<\/script>/gi, '') // إزالة scripts
+    .replace(/<[^>]*>/g, '')                     // إزالة HTML
+    .trim()
+    .substring(0, maxLength);
+}
+
 /**
  * @desc    Add message to favorites
  * @route   POST /api/ai-chat/favorites
@@ -24,7 +59,7 @@ const addFavorite = async (req, res) => {
     // Check if already favorited (same question)
     const existingFavorite = await AiChatFavorite.findOne({
       user: userId,
-      question: question
+      question: sanitizeText(question, 1000) // 🔒 تنظيف للمقارنة
     });
 
     if (existingFavorite) {
@@ -34,12 +69,13 @@ const addFavorite = async (req, res) => {
       });
     }
 
+    // 🔒 تنظيف جميع المدخلات
     const favorite = await AiChatFavorite.create({
       user: userId,
-      question,
-      answer,
-      tags: tags || [],
-      note: note || ''
+      question: sanitizeText(question, 1000),
+      answer: sanitizeText(answer, 5000),
+      tags: sanitizeTags(tags),
+      note: sanitizeText(note, 500)
     });
 
     return res.status(201).json({
@@ -199,11 +235,13 @@ const getTags = async (req, res) => {
   try {
     const userId = req.user.id;
 
+    // 🔒 إصلاح: استخدام new مع ObjectId (Mongoose 7+ compatible)
     const tags = await AiChatFavorite.aggregate([
-      { $match: { user: mongoose.Types.ObjectId(userId) } },
+      { $match: { user: new mongoose.Types.ObjectId(userId) } },
       { $unwind: '$tags' },
       { $group: { _id: '$tags', count: { $sum: 1 } } },
-      { $sort: { count: -1 } }
+      { $sort: { count: -1 } },
+      { $limit: 50 } // 🔒 حد أقصى
     ]);
 
     return res.status(200).json({

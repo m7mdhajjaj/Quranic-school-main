@@ -36,7 +36,7 @@ export const sendAiChatMessage = async (message: string, signal?: AbortSignal) =
 export const generateSpeech = async (text: string) => {
   const response = await api.post('/ai-chat/speak', { text }, {
     responseType: 'blob', // Important: receive audio as blob
-    timeout: 60000 
+    timeout: 120000 // ✅ زيادة الـ timeout لـ 2 دقيقة للنصوص الطويلة
   });
   return response.data;
 };

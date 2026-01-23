@@ -74,26 +74,41 @@ class EmbeddingsService {
   }
 
   // ═══════════════════════════════════════
-  // حساب التشابه بين Vectors
+  // حساب التشابه بين Vectors (مع حماية من NaN)
   // ═══════════════════════════════════════
 
   /**
    * حساب Cosine Similarity بين vectorين
+   * @returns {number} نسبة من 0 إلى 1 (أو 0 في حالة الخطأ)
    */
   static cosineSimilarity(vecA, vecB) {
-    if (!vecA || !vecB || vecA.length !== vecB.length) return 0;
+    // 🔒 التحقق من المدخلات
+    if (!vecA || !vecB) return 0;
+    if (!Array.isArray(vecA) || !Array.isArray(vecB)) return 0;
+    if (vecA.length !== vecB.length) return 0;
+    if (vecA.length === 0) return 0;
     
     let dotProduct = 0;
     let normA = 0;
     let normB = 0;
     
     for (let i = 0; i < vecA.length; i++) {
-      dotProduct += vecA[i] * vecB[i];
-      normA += vecA[i] * vecA[i];
-      normB += vecB[i] * vecB[i];
+      const a = vecA[i] || 0;
+      const b = vecB[i] || 0;
+      dotProduct += a * b;
+      normA += a * a;
+      normB += b * b;
     }
     
-    return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+    // 🔒 منع القسمة على صفر و NaN
+    const denominator = Math.sqrt(normA) * Math.sqrt(normB);
+    if (denominator === 0 || !isFinite(denominator)) return 0;
+    
+    const similarity = dotProduct / denominator;
+    
+    // 🔒 التأكد من أن النتيجة بين 0 و 1
+    if (!isFinite(similarity)) return 0;
+    return Math.max(0, Math.min(1, similarity));
   }
 
   // ═══════════════════════════════════════

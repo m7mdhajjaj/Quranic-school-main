@@ -85,4 +85,14 @@ const TafsirIbnKathirSchema = new mongoose.Schema({
 // Indexes
 TafsirIbnKathirSchema.index({ surahNumber: 1, ayahNumber: 1 }, { unique: true });
 
+// 🔒 Text Index للبحث النصي في التفسير
+TafsirIbnKathirSchema.index(
+  { tafsir: 'text', ayahText: 'text', keywords: 'text' },
+  { 
+    weights: { ayahText: 10, tafsir: 5, keywords: 3 },
+    name: 'tafsir_text_search',
+    default_language: 'arabic'
+  }
+);
+
 module.exports = mongoose.model('TafsirIbnKathir', TafsirIbnKathirSchema);

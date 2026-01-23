@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const quranController = require('../../../controllers/AiChatController/QuranController');
+const { protect, adminProtect } = require('../../../middleware/auth'); // 🔒 إضافة الحماية
 const {
   validateSearchQuran,
   validateSurahNumber,
@@ -30,13 +31,14 @@ router.get('/ayah/:surahNumber/:ayahNumber', quranController.getAyah);
 
 // ============================================================================
 // Import Routes - لاستيراد بيانات القرآن من JSON
+// 🔒 محمية - للـ Admin فقط
 // ============================================================================
 
 // استيراد جميع بيانات القرآن (السور، الآيات، التفسير، التجويد)
-router.post('/import', quranController.importQuranData);
+router.post('/import', adminProtect, quranController.importQuranData);
 
 // الحصول على إحصائيات البيانات المستوردة
-router.get('/stats', quranController.getImportStats);
+router.get('/stats', protect, quranController.getImportStats);
 
 // ============================================================================
 // RAG Search Routes - للبحث الذكي في القرآن
@@ -100,19 +102,20 @@ router.get('/tafsir/semantic-search', quranController.semanticSearchTafsir);
 
 // ============================================================================
 // Embeddings & Semantic Search Routes - البحث الدلالي
+// 🔒 توليد الـ Embeddings محمي (يكلف مال)
 // ============================================================================
 
 // إحصائيات الـ Embeddings
 // GET /api/quran/embeddings/stats
-router.get('/embeddings/stats', quranController.getEmbeddingsStats);
+router.get('/embeddings/stats', protect, quranController.getEmbeddingsStats);
 
-// توليد embeddings للآيات
+// توليد embeddings للآيات - 🔒 Admin فقط
 // POST /api/quran/embeddings/ayahs { startFrom, limit, forceRegenerate }
-router.post('/embeddings/ayahs', quranController.generateAyahEmbeddings);
+router.post('/embeddings/ayahs', adminProtect, quranController.generateAyahEmbeddings);
 
-// توليد embeddings للتفسير
+// توليد embeddings للتفسير - 🔒 Admin فقط
 // POST /api/quran/embeddings/tafsir { startFrom, limit, forceRegenerate }
-router.post('/embeddings/tafsir', quranController.generateTafsirEmbeddings);
+router.post('/embeddings/tafsir', adminProtect, quranController.generateTafsirEmbeddings);
 
 // البحث الدلالي في القرآن
 // GET /api/quran/semantic-search?query=...&limit=10
