@@ -1,26 +1,6 @@
 const { QuranSurah, QuranAyah } = require('../../schema/AI/Quran');
 const EmbeddingsService = require('./EmbeddingsService');
-
-// ═══════════════════════════════════════════════════════════════════════════
-// 🔒 Security: Regex Escape (منع ReDoS)
-// ═══════════════════════════════════════════════════════════════════════════
-
-/**
- * Escape special regex characters to prevent ReDoS attacks
- */
-function escapeRegex(str) {
-  if (!str || typeof str !== 'string') return '';
-  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-/**
- * تنظيف query البحث (منع ReDoS + تحديد الطول)
- */
-function sanitizeSearchQuery(query, maxLength = 100) {
-  if (!query || typeof query !== 'string') return '';
-  const trimmed = query.trim().substring(0, maxLength);
-  return escapeRegex(trimmed);
-}
+const { escapeRegex, sanitizeSearchQuery } = require('../../utils/sanitization');
 
 /**
  * 📖 Quran RAG Service
@@ -44,26 +24,53 @@ class QuranRAGService {
       // توليد embedding للاستعلام
       const queryEmbedding = await EmbeddingsService.generateEmbedding(query);
 
-      // جلب الآيات التي لها embeddings
-      const filter = { embedding: { $exists: true } };
-      if (surahNumber) filter.surahNumber = surahNumber;
+      // 🔥 تحسين الأداء: استخدام MongoDB Aggregation بدلاً من جلب كل الآيات
+      // هذا يقلل من نقل البيانات ويستخدم معالجة قاعدة البيانات
+      const matchFilter = { embedding: { $exists: true } };
+      if (surahNumber) matchFilter.surahNumber = surahNumber;
 
-      const ayahs = await QuranAyah.find(filter)
-        .select('surahNumber ayahNumber ayahKey textArabic tafsirArabic embedding');
-
-      // حساب التشابه مع كل آية
-      const results = ayahs
-        .map(ayah => ({
-          ...ayah.toObject(),
-          similarity: EmbeddingsService.cosineSimilarity(queryEmbedding, ayah.embedding)
-        }))
-        .filter(r => r.similarity >= threshold)
-        .sort((a, b) => b.similarity - a.similarity)
-        .slice(0, limit)
-        .map(r => {
-          delete r.embedding; // لا نرجع الـ embedding في النتيجة
-          return r;
-        });
+      // ✅ استخدام aggregation للحساب على السيرفر
+      // ملاحظة: للأداء الأمثل، استخدم MongoDB Atlas Vector Search
+      const results = await QuranAyah.aggregate([
+        { $match: matchFilter },
+        // اختيار الحقول المطلوبة فقط لتقليل استخدام الذاكرة
+        { $project: {
+          surahNumber: 1,
+          ayahNumber: 1,
+          ayahKey: 1,
+          textArabic: 1,
+          tafsirArabic: 1,
+          embedding: 1
+        }},
+        // 🔥 حساب التشابه باستخدام $function (يتطلب MongoDB 4.4+)
+        // أو استخدام التقريب بـ dot product إذا كانت الـ embeddings normalized
+        { $addFields: {
+          // حساب dot product كتقريب لـ cosine similarity (للـ normalized vectors)
+          similarity: {
+            $reduce: {
+              input: { $range: [0, { $size: { $ifNull: ['$embedding', []] } }] },
+              initialValue: 0,
+              in: {
+                $add: [
+                  '$$value',
+                  { $multiply: [
+                    { $arrayElemAt: ['$embedding', '$$this'] },
+                    { $arrayElemAt: [queryEmbedding, '$$this'] }
+                  ]}
+                ]
+              }
+            }
+          }
+        }},
+        // فلترة بالحد الأدنى للتشابه
+        { $match: { similarity: { $gte: threshold } } },
+        // ترتيب تنازلي حسب التشابه
+        { $sort: { similarity: -1 } },
+        // تحديد عدد النتائج
+        { $limit: limit },
+        // إزالة الـ embedding من النتيجة
+        { $project: { embedding: 0 } }
+      ]);
 
       return results;
     } catch (error) {
@@ -334,10 +341,15 @@ class QuranRAGService {
       };
     }
 
+    // 🔥 إصلاح N+1: جلب كل السور دفعة واحدة
+    const surahNumbers = [...new Set(results.map(r => r.surahNumber))];
+    const surahs = await QuranSurah.find({ number: { $in: surahNumbers } });
+    const surahMap = new Map(surahs.map(s => [s.number, s]));
+
     let context = '📖 نتائج البحث في القرآن الكريم:\n\n';
 
     for (const ayah of results) {
-      const surah = await QuranSurah.findOne({ number: ayah.surahNumber });
+      const surah = surahMap.get(ayah.surahNumber);
       context += `═══════════════════════════════════════\n`;
       context += `📌 سورة ${surah?.nameArabic || ayah.surahNumber} - الآية ${ayah.ayahNumber}`;
       if (ayah.similarity) {
@@ -378,10 +390,15 @@ class QuranRAGService {
       return this.buildRAGContext(query, maxResults); // Fallback
     }
 
+    // 🔥 إصلاح N+1: جلب كل السور دفعة واحدة
+    const surahNumbers = [...new Set(results.map(r => r.surahNumber))];
+    const surahs = await QuranSurah.find({ number: { $in: surahNumbers } });
+    const surahMap = new Map(surahs.map(s => [s.number, s]));
+
     let context = '📖 نتائج البحث الدلالي في القرآن الكريم:\n\n';
 
     for (const ayah of results) {
-      const surah = await QuranSurah.findOne({ number: ayah.surahNumber });
+      const surah = surahMap.get(ayah.surahNumber);
       context += `═══════════════════════════════════════\n`;
       context += `📌 سورة ${surah?.nameArabic || ayah.surahNumber} - الآية ${ayah.ayahNumber}`;
       context += ` (تطابق دلالي: ${Math.round(ayah.similarity * 100)}%)\n`;

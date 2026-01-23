@@ -19,7 +19,7 @@ const aiChatLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.user?.id || req.ip // ربط بالمستخدم
+  keyGenerator: (req) => req.user?.id || 'anonymous' // ربط بالمستخدم
 });
 
 // Rate limiter للـ TTS (5 طلبات/دقيقة - يكلف مال)
@@ -30,7 +30,7 @@ const ttsLimiter = rateLimit({
     success: false, 
     message: 'حد TTS: 5 طلبات في الدقيقة' 
   },
-  keyGenerator: (req) => req.user?.id || req.ip
+  keyGenerator: (req) => req.user?.id || 'anonymous'
 });
 
 // Rate limiter للـ STT (10 طلبات/دقيقة)
@@ -41,7 +41,7 @@ const sttLimiter = rateLimit({
     success: false, 
     message: 'حد STT: 10 طلبات في الدقيقة' 
   },
-  keyGenerator: (req) => req.user?.id || req.ip
+  keyGenerator: (req) => req.user?.id || 'anonymous'
 });
 
 // ═══════════════════════════════════════════════════════════════════════════

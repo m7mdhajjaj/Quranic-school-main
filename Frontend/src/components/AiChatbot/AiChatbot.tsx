@@ -6,7 +6,22 @@ import { showSuccessToast } from '../../utils/toastUtils';
 import { showErrorMessage } from '../../utils/sweetalertUtils';
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 📖 FormattedMessage - عرض التفسير بشكل جميل
+// � sanitizeHTML - تنظيف HTML لمنع XSS
+// ═══════════════════════════════════════════════════════════════════════════
+const sanitizeHTML = (html: string): string => {
+  // السماح فقط بـ <strong> و <em> و <br>
+  return html
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/&lt;strong&gt;/g, '<strong>')
+    .replace(/&lt;\/strong&gt;/g, '</strong>')
+    .replace(/&lt;em&gt;/g, '<em>')
+    .replace(/&lt;\/em&gt;/g, '</em>')
+    .replace(/&lt;br\s*\/?&gt;/g, '<br>');
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// �📖 FormattedMessage - عرض التفسير بشكل جميل
 // يدعم الـ format الجديد من Backend
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -110,13 +125,13 @@ const FormattedMessage = ({ content }: { content: string }) => {
   }
 
   // 3️⃣ Fallback: عرض النص العادي مع Markdown بسيط
-  // تحويل **text** إلى bold
+  // تحويل **text** إلى bold مع تنظيف XSS
   const formattedContent = content.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
   
   return (
     <p 
       className="text-sm leading-relaxed whitespace-pre-wrap relative z-10"
-      dangerouslySetInnerHTML={{ __html: formattedContent }}
+      dangerouslySetInnerHTML={{ __html: sanitizeHTML(formattedContent) }}
     />
   );
 };

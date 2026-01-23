@@ -1,26 +1,6 @@
 const { TafsirIbnKathir } = require('../../schema/AI/Quran');
 const EmbeddingsService = require('./EmbeddingsService');
-
-// ═══════════════════════════════════════════════════════════════════════════
-// 🔒 Security: Regex Escape (منع ReDoS)
-// ═══════════════════════════════════════════════════════════════════════════
-
-/**
- * Escape special regex characters to prevent ReDoS attacks
- */
-function escapeRegex(str) {
-  if (!str || typeof str !== 'string') return '';
-  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-/**
- * تنظيف query البحث (منع ReDoS + تحديد الطول)
- */
-function sanitizeSearchQuery(query, maxLength = 100) {
-  if (!query || typeof query !== 'string') return '';
-  const trimmed = query.trim().substring(0, maxLength);
-  return escapeRegex(trimmed);
-}
+const { escapeRegex, sanitizeSearchQuery } = require('../../utils/sanitization');
 
 /**
  * 📚 Tafsir RAG Service
@@ -35,6 +15,7 @@ class TafsirRAGService {
 
   /**
    * البحث الدلالي في التفسير باستخدام Embeddings
+   * 🔥 محسّن: يستخدم aggregation بدلاً من جلب كل السجلات
    */
   static async semanticSearch(query, options = {}) {
     const { limit = 10, threshold = 0.65, surahNumber = null } = options;
@@ -43,26 +24,45 @@ class TafsirRAGService {
       // توليد embedding للاستعلام
       const queryEmbedding = await EmbeddingsService.generateEmbedding(query);
 
-      // جلب التفاسير التي لها embeddings
-      const filter = { embedding: { $exists: true } };
-      if (surahNumber) filter.surahNumber = surahNumber;
+      // 🔥 تحسين الأداء: استخدام MongoDB Aggregation
+      const matchFilter = { embedding: { $exists: true } };
+      if (surahNumber) matchFilter.surahNumber = surahNumber;
 
-      const tafsirs = await TafsirIbnKathir.find(filter)
-        .select('+embedding surahNumber surahName ayahNumber ayahKey ayahText tafsirShort');
-
-      // حساب التشابه
-      const results = tafsirs
-        .map(t => ({
-          ...t.toObject(),
-          similarity: EmbeddingsService.cosineSimilarity(queryEmbedding, t.embedding)
-        }))
-        .filter(r => r.similarity >= threshold)
-        .sort((a, b) => b.similarity - a.similarity)
-        .slice(0, limit)
-        .map(r => {
-          delete r.embedding;
-          return r;
-        });
+      // ✅ استخدام aggregation للحساب على السيرفر
+      const results = await TafsirIbnKathir.aggregate([
+        { $match: matchFilter },
+        { $project: {
+          surahNumber: 1,
+          surahName: 1,
+          ayahNumber: 1,
+          ayahKey: 1,
+          ayahText: 1,
+          tafsirShort: 1,
+          embedding: 1
+        }},
+        // 🔥 حساب dot product (تقريب لـ cosine similarity للـ normalized vectors)
+        { $addFields: {
+          similarity: {
+            $reduce: {
+              input: { $range: [0, { $size: { $ifNull: ['$embedding', []] } }] },
+              initialValue: 0,
+              in: {
+                $add: [
+                  '$$value',
+                  { $multiply: [
+                    { $arrayElemAt: ['$embedding', '$$this'] },
+                    { $arrayElemAt: [queryEmbedding, '$$this'] }
+                  ]}
+                ]
+              }
+            }
+          }
+        }},
+        { $match: { similarity: { $gte: threshold } } },
+        { $sort: { similarity: -1 } },
+        { $limit: limit },
+        { $project: { embedding: 0 } }
+      ]);
 
       return results;
     } catch (error) {
@@ -214,11 +214,20 @@ class TafsirRAGService {
       };
     }
 
+    // ✅ إصلاح N+1 Query - جلب كل التفاسير دفعة واحدة
+    const ids = results.map(r => r._id);
+    const fullTafsirs = await TafsirIbnKathir.find({ _id: { $in: ids } })
+      .select('_id tafsir')
+      .lean();
+    
+    // تحويل إلى Map للوصول السريع O(1)
+    const tafsirMap = new Map(fullTafsirs.map(t => [t._id.toString(), t.tafsir]));
+
     let context = '📚 تفسير ابن كثير:\n\n';
 
     for (const item of results) {
-      // جلب التفسير الكامل
-      const full = await TafsirIbnKathir.findById(item._id).select('tafsir');
+      // جلب التفسير من الـ Map بدلاً من query جديد
+      const fullTafsir = tafsirMap.get(item._id.toString());
       
       context += `═══════════════════════════════════════\n`;
       context += `📌 سورة ${item.surahName} - الآية ${item.ayahNumber}`;
@@ -227,8 +236,8 @@ class TafsirRAGService {
       }
       context += `\n═══════════════════════════════════════\n`;
       context += `📜 الآية: ${item.ayahText}\n\n`;
-      context += `📝 تفسير ابن كثير:\n${full?.tafsir?.substring(0, 1500) || item.tafsirShort}`;
-      if (full?.tafsir?.length > 1500) context += '...';
+      context += `📝 تفسير ابن كثير:\n${fullTafsir?.substring(0, 1500) || item.tafsirShort}`;
+      if (fullTafsir?.length > 1500) context += '...';
       context += '\n\n';
     }
 

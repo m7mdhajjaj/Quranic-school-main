@@ -29,7 +29,7 @@ const validateChatMessage = [
   body('message')
     .trim()
     .notEmpty().withMessage('الرسالة مطلوبة')
-    .isLength({ min: 2, max: 2000 }).withMessage('الرسالة يجب أن تكون بين 2 و 2000 حرف'),
+    .isLength({ min: 3, max: 2000 }).withMessage('الرسالة يجب أن تكون بين 3 و 2000 حرف'),
   handleValidationErrors
 ];
 
