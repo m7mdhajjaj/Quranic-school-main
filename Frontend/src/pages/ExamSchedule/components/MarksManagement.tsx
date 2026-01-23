@@ -729,6 +729,9 @@ const MarksManagement: React.FC<MarksManagementProps> = () => {
                       )}
                     </button>
                   </th>
+                  <th className="px-4 py-4 text-center text-sm font-bold text-gray-700 w-16">
+                    #
+                  </th>
                   <th className="px-6 py-4 text-right text-sm font-bold text-gray-700">
                     اسم الطالب
                   </th>
@@ -744,7 +747,7 @@ const MarksManagement: React.FC<MarksManagementProps> = () => {
                 {loading ? (
                   <tr>
                     <td
-                      colSpan={4}
+                      colSpan={5}
                       className="px-6 py-8 text-center text-gray-500">
                       جاري التحميل...
                     </td>
@@ -752,7 +755,7 @@ const MarksManagement: React.FC<MarksManagementProps> = () => {
                 ) : filteredStudents.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={4}
+                      colSpan={5}
                       className="px-6 py-8 text-center text-gray-500">
                       لا يوجد طلاب في هذه الحلقة
                     </td>
@@ -789,6 +792,11 @@ const MarksManagement: React.FC<MarksManagementProps> = () => {
                               <Square className="w-5 h-5 text-gray-400" />
                             )}
                           </button>
+                        </td>
+
+                        {/* رقم الترتيب */}
+                        <td className="px-4 py-4 text-center text-sm font-semibold text-gray-500">
+                          {index + 1}
                         </td>
 
                         {/* اسم الطالب */}

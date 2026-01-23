@@ -8,7 +8,7 @@
  */
 const NOTIFICATION_CATEGORIES = {
   general: ['general', 'system', 'success', 'alert', 'warning', 'message'],
-  academic: ['grade', 'daily_marks', 'exam', 'attendance'],
+  academic: ['grade', 'daily_marks', 'exam', 'attendance', 'exam_scheduled', 'mark_added'],
   admin: [
     'teacher_added', 'teacher_updated', 'teacher_deleted',
     'student_added', 'student_updated', 'student_deleted',
@@ -53,7 +53,13 @@ async function sendRealTimeNotification(io, notification) {
       isRead: false,
       // بيانات مختصرة للعرض السريع
       summary: notification.summary || {},
-      data: { action: notification.data?.action }, // فقط الـ action
+      data: { 
+        action: notification.data?.action,
+        examId: notification.data?.examId,
+        examName: notification.data?.examName,
+        mark: notification.data?.mark,
+        totalMarks: notification.data?.totalMarks,
+      },
       link: notification.link,
     };
 

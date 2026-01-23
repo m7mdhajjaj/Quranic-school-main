@@ -133,6 +133,8 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
 
       case 'exam':
       case 'test_result':
+      case 'exam_scheduled':
+      case 'mark_added':
         navigate('/exam-schedule');
         break;
 

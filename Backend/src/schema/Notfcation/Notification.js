@@ -9,7 +9,7 @@ const NOTIFICATION_TYPES = {
   GENERAL: ["general", "system", "success", "alert", "warning", "message", "mention", "news", "chat", "reminder"],
   
   // إشعارات الطلاب والمعلمين
-  ACADEMIC: ["grade", "daily_marks", "exam", "attendance", "quran_progress", "memorization", "review", "test_result", "student_update", "timetable"],
+  ACADEMIC: ["grade", "daily_marks", "exam", "exam_scheduled", "mark_added", "attendance", "quran_progress", "memorization", "review", "test_result", "student_update", "timetable"],
   
   // إشعارات الإدارة
   ADMIN: [
@@ -43,7 +43,7 @@ const notificationSummarySchema = new mongoose.Schema(
     },
     entityType: {
       type: String,
-      enum: ["student", "teacher", "group", "section", "mark", "exam", "news", "timetable", "other"],
+      enum: ["student", "teacher", "group", "section", "mark", "exam", "exam_mark", "news", "timetable", "other"],
     },
     entityId: mongoose.Schema.Types.ObjectId,
     entityName: String,
