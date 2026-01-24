@@ -50,7 +50,9 @@ export const chatMessageSchema = Yup.object().shape({
     .required('الرسالة مطلوبة')
     .min(3, 'الرسالة يجب أن تكون 3 أحرف على الأقل')
     .max(2000, 'الرسالة يجب ألا تتجاوز 2000 حرف')
-    .matches(/^[\u0600-\u06FF\s\w\d.,!?؟:؛]+$/, 'الرسالة تحتوي على أحرف غير مسموحة')
+    .test('no-english', 'يرجى الكتابة باللغة العربية فقط', (value) => {
+      return !/[a-zA-Z]/.test(value || '');
+    })
 });
 
 // Validation schema for get favorites query
