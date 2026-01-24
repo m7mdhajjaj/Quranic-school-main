@@ -7,7 +7,7 @@ import React from 'react';
 import type { NotificationBellProps } from '../types';
 import { Bell } from 'lucide-react';
 
-export const NotificationBell: React.FC<NotificationBellProps & { buttonRef?: React.RefObject<HTMLButtonElement> }> = ({ unreadCount, onClick, buttonRef }) => {
+export const NotificationBell: React.FC<NotificationBellProps> = ({ unreadCount, onClick, buttonRef }) => {
   return (
     <button
       ref={buttonRef}

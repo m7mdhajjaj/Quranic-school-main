@@ -15,7 +15,7 @@ export const NOTIFICATION_TYPES = {
   GENERAL: ["general", "system", "success", "alert", "warning", "message", "mention", "news", "chat", "reminder"] as const,
   
   // إشعارات الطلاب والمعلمين
-  ACADEMIC: ["grade", "daily_marks", "exam", "attendance", "quran_progress", "memorization", "review", "test_result", "student_update", "timetable"] as const,
+  ACADEMIC: ["grade", "daily_marks", "exam", "exam_scheduled", "mark_added", "attendance", "quran_progress", "memorization", "review", "test_result", "student_update", "timetable"] as const,
   
   // إشعارات الإدارة
   ADMIN: [
@@ -37,7 +37,7 @@ export type NotificationType =
   // General
   | 'general' | 'system' | 'success' | 'alert' | 'warning' | 'message' | 'mention' | 'news' | 'chat' | 'reminder'
   // Academic
-  | 'grade' | 'daily_marks' | 'exam' | 'attendance' | 'quran_progress' | 'memorization' | 'review' | 'test_result' | 'student_update' | 'timetable'
+  | 'grade' | 'daily_marks' | 'exam' | 'exam_scheduled' | 'mark_added' | 'attendance' | 'quran_progress' | 'memorization' | 'review' | 'test_result' | 'student_update' | 'timetable'
   // Admin
   | 'teacher_added' | 'teacher_updated' | 'teacher_deleted'
   | 'student_added' | 'student_updated' | 'student_deleted'
@@ -225,6 +225,7 @@ export interface NotificationHeaderProps {
 export interface NotificationBellProps {
   unreadCount: number;
   onClick: () => void;
+  buttonRef?: React.RefObject<HTMLButtonElement | null>;
 }
 
 /**

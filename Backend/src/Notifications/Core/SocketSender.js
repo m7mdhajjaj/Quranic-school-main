@@ -41,7 +41,8 @@ async function sendRealTimeNotification(io, notification) {
       type: notification.type,
       category: notification.category || getCategoryFromType(notification.type),
       title: notification.title,
-      // إرسال ملخص الرسالة فقط
+      // إرسال الرسالة كاملة و الملخص
+      message: notification.message,
       messageSummary: notification.messageSummary || 
         (notification.message && notification.message.length > 150 
           ? notification.message.substring(0, 147) + '...' 
@@ -55,10 +56,14 @@ async function sendRealTimeNotification(io, notification) {
       summary: notification.summary || {},
       data: { 
         action: notification.data?.action,
+        sectionId: notification.data?.sectionId,
+        markId: notification.data?.markId,
         examId: notification.data?.examId,
         examName: notification.data?.examName,
         mark: notification.data?.mark,
         totalMarks: notification.data?.totalMarks,
+        entityType: notification.data?.entityType,
+        date: notification.data?.date,
       },
       link: notification.link,
     };

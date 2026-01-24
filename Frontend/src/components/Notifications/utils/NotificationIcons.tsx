@@ -169,6 +169,8 @@ export const getNotificationColorClass = (type: NotificationType | string): stri
     grade: 'from-emerald-600 via-teal-700 to-slate-700',
     daily_marks: 'from-teal-600 via-slate-600 to-emerald-700',
     exam: 'from-indigo-500 to-indigo-600',
+    exam_scheduled: 'from-indigo-500 to-indigo-600',
+    mark_added: 'from-emerald-600 via-teal-700 to-slate-700',
     attendance: 'from-amber-500 to-orange-600',
     quran_progress: 'from-emerald-600 via-teal-700 to-slate-700',
     memorization: 'from-green-500 to-green-600',

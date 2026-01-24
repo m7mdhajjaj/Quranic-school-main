@@ -15,16 +15,23 @@ const notificationSound = SOUNDS.NOTIFICATION;
 
 // ================== Types ==================
 interface NotificationData {
-  action?: 'section_added' | 'section_updated' | 'section_deleted' | 'mark_added' | 'mark_updated' | 'mark_deleted';
+  action?: 'section_added' | 'section_updated' | 'section_deleted' | 'mark_added' | 'mark_updated' | 'mark_deleted' | 'exam_scheduled';
+  sectionId?: string;
+  examId?: string;
+  examName?: string;
+  mark?: number;
+  totalMarks?: number;
   [key: string]: unknown;
 }
 
 interface Notification {
   _id: string;
   id?: string;
-  type: 'grade' | 'message' | 'prayer_time' | 'attendance' | 'exam' | 'assignment' | 'news' | 'general' | 'daily_marks' | 'warning' | 'system' | 'success' | 'alert';
+  type: 'grade' | 'message' | 'prayer_time' | 'attendance' | 'exam' | 'exam_scheduled' | 'mark_added' | 'assignment' | 'news' | 'general' | 'daily_marks' | 'warning' | 'system' | 'success' | 'alert' | 'timetable' | 'reminder' | 'chat' | 'quran_progress' | 'memorization' | 'review' | 'test_result';
   title: string;
   message: string;
+  messageSummary?: string;
+  category?: 'general' | 'academic' | 'admin' | 'other';
   data?: NotificationData;
   createdAt: string;
   sentAt?: string;
@@ -153,7 +160,7 @@ export const useNotificationsSocket = (): UseNotificationsSocketReturn => {
 
       const notificationData = data as Record<string, unknown>;
       const title = String(notificationData.title || 'إشعار جديد');
-      const message = String(notificationData.message || '');
+      const message = String(notificationData.message || notificationData.messageSummary || '');
 
       // Show system notification if document is hidden or permission granted
       if (document.hidden && Notification.permission === 'granted') {
@@ -169,6 +176,8 @@ export const useNotificationsSocket = (): UseNotificationsSocketReturn => {
         type: (notificationData.type as Notification['type']) || 'general',
         title: title,
         message: message,
+        messageSummary: String(notificationData.messageSummary || message || ''),
+        category: (notificationData.category as 'general' | 'academic' | 'admin' | 'other') || undefined,
         createdAt: String(notificationData.createdAt || new Date().toISOString()),
         sentAt: String(notificationData.sentAt || notificationData.createdAt || new Date().toISOString()),
         isRead: false,

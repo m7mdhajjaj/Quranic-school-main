@@ -23,7 +23,7 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
   // ============================================================================
 
   // Socket & Firebase للإشعارات الفورية
-  const { lastNotification: socketNotification } = useNotificationsSocket();
+  const { lastNotification: socketNotification, notificationStats: socketStats } = useNotificationsSocket();
 
   const { lastNotification: firebaseNotification } = useFirebaseMessaging();
 
@@ -41,6 +41,7 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
     deleteNotificationLocal,
     addNotification,
     setCategory,
+    updateStats,
   } = useNotificationData({ userId });
 
   // إدارة الأصوات
@@ -185,6 +186,16 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
     return () => clearInterval(interval);
   }, []);
 
+  // ✅ مزامنة إحصائيات الـ Socket مع الـ Data Hook (Real-time update)
+  // ملاحظة: socketStats يتم تحديثها من useNotificationsSocket عند وصول إشعار جديد
+  // نستخدمها فقط إذا كانت أكبر من القيمة الحالية (لتجنب التراجع عند القراءة)
+  useEffect(() => {
+    if (socketStats && socketStats.unreadCount > stats.unreadCount) {
+      console.log('🔄 Syncing socket stats with data hook:', socketStats, '(current:', stats.unreadCount, ')');
+      updateStats({ unreadCount: socketStats.unreadCount });
+    }
+  }, [socketStats, stats.unreadCount, updateStats]);
+
   // معالجة الإشعار الجديد من Socket
   useEffect(() => {
     if (socketNotification) {
@@ -276,6 +287,12 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
   }, [showDropdown]);
 
   // ============================================================================
+  // ✅ حساب العداد الفعلي - أخذ القيمة الأعلى بين Socket و API
+  // لأن الـ socket قد يستقبل إشعارات جديدة قبل الـ API
+  // ============================================================================
+  const effectiveUnreadCount = Math.max(stats.unreadCount, socketStats?.unreadCount || 0);
+
+  // ============================================================================
   // Category Filter Handler
   // ============================================================================
 
@@ -300,7 +317,7 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
       <div className="relative" ref={dropdownRef} dir="rtl">
         {/* زر الإشعارات */}
         <NotificationBell
-          unreadCount={stats.unreadCount}
+          unreadCount={effectiveUnreadCount}
           onClick={() => setShowDropdown(!showDropdown)}
           buttonRef={buttonRef}
         />
@@ -326,7 +343,7 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
             {/* رأس القائمة */}
             <div className="flex-shrink-0 overflow-hidden">
               <NotificationDropdownHeader
-                unreadCount={stats.unreadCount}
+                unreadCount={effectiveUnreadCount}
                 isMarkingAll={isMarkingAll}
                 onMarkAllAsRead={handleMarkAllAsRead}
                 onClose={() => setShowDropdown(false)}
