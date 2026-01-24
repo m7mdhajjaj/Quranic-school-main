@@ -17,8 +17,8 @@ export const useCompletedSurahs = (selectedGroup: string, isOpen: boolean) => {
     try {
       const data = await getCompletedSurahs(selectedGroup);
       setCompletedList(data);
-    } catch (e) {
-      console.error(e);
+    } catch {
+      // Error handled silently
     } finally {
       setLoading(false);
     }
@@ -37,8 +37,8 @@ export const useCompletedSurahs = (selectedGroup: string, isOpen: boolean) => {
     try {
       const hist = await getSurahHistory(selectedGroup, surah.surahNumber, surah.type || 'memorization');
       setHistory(hist);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      // Error handled silently
     } finally {
       setLoadingHistory(false);
     }

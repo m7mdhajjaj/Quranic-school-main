@@ -1,11 +1,12 @@
 // ============================================================================
-// Delete Section Controller (V7)
+// Delete Section Controller (V8)
 // ============================================================================
 const Section = require("../../../schema/DailyMark/Section");
 const DailyMark = require("../../../schema/DailyMark/DailyMark");
 const TimeTable = require("../../../schema/TimeTable");
 const Group = require("../../../schema/Group");
 const { notifySectionDeleted } = require("../../../Notifications");
+const activeSurahService = require("../../../services/DailyMark/GroupActiveSurahService");
 const { createLogger } = require("../../../utils/logger");
 const { getSurahByNumber } = require("../../../utils/Quran/dailyMarkQuranMetadata");
 const {
@@ -152,13 +153,23 @@ exports.deleteSection = async (req, res) => {
       Section.findByIdAndDelete(req.params.id)
     ]);
 
-    // ✅ V7: إعادة حساب السور الفعالة بعد الحذف
-    // نمرر groupId واسم الحلقة لضمان العثور عليها
-    if (hasMemorization) {
-      await recalculateActiveSurah(groupId, 'memorization', groupName);
-    }
-    if (hasReview) {
-      await recalculateActiveSurah(groupId, 'review', groupName);
+    // ✅ V8: مزامنة السور الفعالة بعد الحذف باستخدام الـ service
+    if (groupId || groupName) {
+      try {
+        // البحث عن groupId إذا كان لدينا الاسم فقط
+        let finalGroupId = groupId;
+        if (!finalGroupId && groupName) {
+          const group = await Group.findOne({ name: groupName });
+          finalGroupId = group?._id;
+        }
+        
+        if (finalGroupId) {
+          await activeSurahService.syncActiveSurahsFromSections(finalGroupId);
+          logger.debug(`✅ تمت مزامنة السورة الفعالة بعد الحذف للحلقة ${groupName || groupId}`);
+        }
+      } catch (syncError) {
+        logger.warn(`⚠️ خطأ في مزامنة السورة الفعالة بعد الحذف:`, syncError);
+      }
     }
 
     sendSuccess(res, { 
@@ -252,18 +263,23 @@ exports.bulkDeleteSections = async (req, res) => {
     const sectionsResult = await Section.deleteMany({ _id: { $in: sectionIds } });
     logger.success(`تم حذف ${sectionsResult.deletedCount} مقطع`);
 
-    // ✅ V7: إعادة حساب السور الفعالة لكل حلقة متأثرة
+    // ✅ V8: مزامنة السور الفعالة لكل حلقة متأثرة باستخدام الـ service
     for (const [key, data] of affectedGroups) {
-      const { groupId, groupName, hasMemorization, hasReview } = data;
-      
-      // If we only have name, we need to pass it. recalculateActiveSurah handles lookup.
-      // If we have groupId, we pass it.
-      
-      if (hasMemorization) {
-        await recalculateActiveSurah(groupId, 'memorization', groupName);
-      }
-      if (hasReview) {
-        await recalculateActiveSurah(groupId, 'review', groupName);
+      try {
+        let finalGroupId = data.groupId;
+        
+        // إذا كان لدينا الاسم فقط، نبحث عن الـ ID
+        if (!finalGroupId && data.groupName) {
+          const group = await Group.findOne({ name: data.groupName });
+          finalGroupId = group?._id;
+        }
+        
+        if (finalGroupId) {
+          await activeSurahService.syncActiveSurahsFromSections(finalGroupId);
+          logger.debug(`✅ تمت مزامنة السورة الفعالة بعد الحذف للحلقة ${data.groupName || finalGroupId}`);
+        }
+      } catch (syncError) {
+        logger.warn(`⚠️ خطأ في مزامنة السورة الفعالة للحلقة ${key}:`, syncError);
       }
     }
 

@@ -187,15 +187,10 @@ export const validateStudentWithYup = async (
   data: Record<string, unknown>, 
   isNewStudent: boolean = true
 ): Promise<StudentFormData> => {
-  console.log('🔍 التحقق من البيانات - isNewStudent:', isNewStudent);
-  console.log('🔍 البيانات المُدخلة:', JSON.stringify(data, null, 2));
-  
   const validData = await studentValidationSchema.validate(data, {
     abortEarly: false,
     context: { isNewStudent },
   });
-  
-  console.log('✅ البيانات بعد التحقق:', JSON.stringify(validData, null, 2));
   
   return validData;
 };

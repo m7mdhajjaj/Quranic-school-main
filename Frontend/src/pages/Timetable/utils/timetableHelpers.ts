@@ -231,7 +231,6 @@ export const getCurrentUser = (): User | null => {
   try {
     return JSON.parse(userStr);
   } catch {
-    console.error("Error parsing user from localStorage");
     return null;
   }
 };

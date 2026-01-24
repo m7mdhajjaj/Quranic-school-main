@@ -66,8 +66,7 @@ export const useGroupStats = (
       } else {
         setError(response.message || "فشل جلب الإحصائيات");
       }
-    } catch (err) {
-      console.error("❌ Error fetching group stats:", err);
+    } catch {
       setError("حدث خطأ أثناء جلب إحصائيات الحلقة");
     } finally {
       setLoading(false);

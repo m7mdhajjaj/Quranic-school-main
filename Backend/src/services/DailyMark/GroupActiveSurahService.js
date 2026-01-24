@@ -305,6 +305,7 @@ class GroupActiveSurahService {
   /**
    * مزامنة السور الفعالة من المقاطع الموجودة
    * يكتشف آخر سورة تم العمل عليها ويعينها كفعالة
+   * ✅ V15: إصلاح - يحسب lastAyahEnd من جميع مقاطع نفس السورة
    * ✅ إذا لم توجد مقاطع، يمسح السورة الفعالة
    */
   async syncActiveSurahsFromSections(groupId = null) {
@@ -321,54 +322,98 @@ class GroupActiveSurahService {
 
     for (const group of groups) {
       try {
-        // البحث عن آخر مقطع حفظ
+        // ✅ V15: البحث عن آخر مقطع حفظ (مع دعم Array)
         const lastMemorizationSection = await Section.findOne({
-          groupId: group._id,
-          'memorizationMeta.surahNumber': { $exists: true, $ne: null }
+          $or: [{ groupId: group._id }, { group: group.name }],
+          'memorizationMeta.0': { $exists: true }
         })
           .sort({ date: -1, createdAt: -1 })
           .lean();
 
-        // البحث عن آخر مقطع مراجعة
+        // ✅ V15: البحث عن آخر مقطع مراجعة (مع دعم Array)
         const lastReviewSection = await Section.findOne({
-          groupId: group._id,
-          'reviewMeta.surahNumber': { $exists: true, $ne: null }
+          $or: [{ groupId: group._id }, { group: group.name }],
+          'reviewMeta.0': { $exists: true }
         })
           .sort({ date: -1, createdAt: -1 })
           .lean();
 
         const updates = {};
 
-        // مزامنة الحفظ
-        if (lastMemorizationSection?.memorizationMeta?.surahNumber) {
-          const meta = lastMemorizationSection.memorizationMeta;
-          const surahInfo = getSurahByNumber(meta.surahNumber);
+        // ✅ V15: مزامنة الحفظ - التعامل مع memorizationMeta كـ Array
+        if (lastMemorizationSection?.memorizationMeta && 
+            Array.isArray(lastMemorizationSection.memorizationMeta) && 
+            lastMemorizationSection.memorizationMeta.length > 0) {
+          
+          const firstMeta = lastMemorizationSection.memorizationMeta[0];
+          const surahNumber = firstMeta.surahNumber;
+          const surahInfo = getSurahByNumber(surahNumber);
+          
+          // ✅ V15: حساب lastAyahEnd من جميع مقاطع نفس السورة في جميع الـ Sections
+          const allMemSections = await Section.find({
+            $or: [{ groupId: group._id }, { group: group.name }],
+            'memorizationMeta.surahNumber': surahNumber
+          }).select('memorizationMeta').lean();
+          
+          let maxAyahEnd = 0;
+          for (const sec of allMemSections) {
+            for (const seg of (sec.memorizationMeta || [])) {
+              if (seg.surahNumber === surahNumber && seg.ayahEnd > maxAyahEnd) {
+                maxAyahEnd = seg.ayahEnd;
+              }
+            }
+          }
+          
+          const totalAyahs = surahInfo?.ayahCount || 0;
+          const isCompleted = totalAyahs > 0 && maxAyahEnd >= totalAyahs;
           
           updates.activeMemorizationSurah = {
-            surahNumber: meta.surahNumber,
-            surahName: surahInfo?.name || `سورة ${meta.surahNumber}`,
+            surahNumber: surahNumber,
+            surahName: surahInfo?.name || `سورة ${surahNumber}`,
             startedAt: lastMemorizationSection.date,
-            lastAyahEnd: meta.ayahEnd || 0,
-            isCompleted: surahInfo ? (meta.ayahEnd >= surahInfo.ayahCount) : false,
-            completedAt: null
+            lastAyahEnd: maxAyahEnd,
+            isCompleted: isCompleted,
+            completedAt: isCompleted ? new Date() : null
           };
         } else {
           // ✅ لا توجد مقاطع حفظ - مسح السورة الفعالة
           updates.activeMemorizationSurah = null;
         }
 
-        // مزامنة المراجعة
-        if (lastReviewSection?.reviewMeta?.surahNumber) {
-          const meta = lastReviewSection.reviewMeta;
-          const surahInfo = getSurahByNumber(meta.surahNumber);
+        // ✅ V15: مزامنة المراجعة - التعامل مع reviewMeta كـ Array
+        if (lastReviewSection?.reviewMeta && 
+            Array.isArray(lastReviewSection.reviewMeta) && 
+            lastReviewSection.reviewMeta.length > 0) {
+          
+          const firstMeta = lastReviewSection.reviewMeta[0];
+          const surahNumber = firstMeta.surahNumber;
+          const surahInfo = getSurahByNumber(surahNumber);
+          
+          // ✅ V15: حساب lastAyahEnd من جميع مقاطع نفس السورة في جميع الـ Sections
+          const allRevSections = await Section.find({
+            $or: [{ groupId: group._id }, { group: group.name }],
+            'reviewMeta.surahNumber': surahNumber
+          }).select('reviewMeta').lean();
+          
+          let maxAyahEnd = 0;
+          for (const sec of allRevSections) {
+            for (const seg of (sec.reviewMeta || [])) {
+              if (seg.surahNumber === surahNumber && seg.ayahEnd > maxAyahEnd) {
+                maxAyahEnd = seg.ayahEnd;
+              }
+            }
+          }
+          
+          const totalAyahs = surahInfo?.ayahCount || 0;
+          const isCompleted = totalAyahs > 0 && maxAyahEnd >= totalAyahs;
           
           updates.activeReviewSurah = {
-            surahNumber: meta.surahNumber,
-            surahName: surahInfo?.name || `سورة ${meta.surahNumber}`,
+            surahNumber: surahNumber,
+            surahName: surahInfo?.name || `سورة ${surahNumber}`,
             startedAt: lastReviewSection.date,
-            lastAyahEnd: meta.ayahEnd || 0,
-            isCompleted: surahInfo ? (meta.ayahEnd >= surahInfo.ayahCount) : false,
-            completedAt: null
+            lastAyahEnd: maxAyahEnd,
+            isCompleted: isCompleted,
+            completedAt: isCompleted ? new Date() : null
           };
         } else {
           // ✅ لا توجد مقاطع مراجعة - مسح السورة الفعالة
@@ -378,12 +423,12 @@ class GroupActiveSurahService {
         // تطبيق التحديثات
         await Group.findByIdAndUpdate(group._id, { $set: updates });
         
-        if (!lastMemorizationSection && !lastReviewSection) {
+        if (!updates.activeMemorizationSurah && !updates.activeReviewSurah) {
           results.cleared++;
           logger.debug(`🧹 تم مسح السور الفعالة لحلقة ${group.name} (لا توجد مقاطع)`);
         } else {
           results.synced++;
-          logger.debug(`✅ مزامنة حلقة ${group.name}`);
+          logger.debug(`✅ مزامنة حلقة ${group.name}: حفظ=${updates.activeMemorizationSurah?.surahName || 'لا يوجد'} (${updates.activeMemorizationSurah?.lastAyahEnd || 0}/${updates.activeMemorizationSurah?.isCompleted ? 'مكتمل' : 'جاري'})`);
         }
 
       } catch (error) {

@@ -1,5 +1,6 @@
 import { Card } from "@/components/UI";
 import { Users, BookOpen } from "lucide-react";
+import { PeriodFilterToggle } from "../../../components/PeriodFilterToggle";
 
 interface GroupsGridViewProps {
   groupsWithStats: Array<{
@@ -11,6 +12,8 @@ interface GroupsGridViewProps {
   }>;
   onGroupSelect: (groupName: string) => void;
   isLoading?: boolean;
+  selectedFilterMode?: 'week' | 'all';
+  onFilterModeChange?: (mode: 'week' | 'all') => void;
 }
 
 
@@ -21,15 +24,24 @@ interface GroupsGridViewProps {
 export const GroupsGridView = ({ 
   groupsWithStats, 
   onGroupSelect,
-  isLoading = false 
+  isLoading = false,
+  selectedFilterMode = 'all',
+  onFilterModeChange
 }: GroupsGridViewProps) => {
   // Skeleton logic removed per user request
   
   return (
     <div className="animate-fade-in">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">اختر حلقة</h2>
-        <p className="text-gray-600">اختر حلقة لعرض مقاطعها وعلاماتها</p>
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">اختر حلقة</h2>
+          <p className="text-gray-600">اختر حلقة لعرض مقاطعها وعلاماتها</p>
+        </div>
+        {/* ✅ فلتر الفترة - دائماً ظاهر */}
+        <PeriodFilterToggle
+          selectedMode={selectedFilterMode}
+          onModeChange={onFilterModeChange}
+        />
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

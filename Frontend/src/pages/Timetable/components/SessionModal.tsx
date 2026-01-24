@@ -181,7 +181,25 @@ export const SessionModal: React.FC<SessionModalProps> = (props) => {
               </div>
               
               {/* ⚠️ اختيار التاريخ (بدلاً من اليوم) */}
-              {!formData.sectionId && (
+              {formData.sectionId ? (
+                // ✅ عرض التاريخ واليوم تلقائياً (بدون تعديل) لما يكون مرتبط بمقطع
+                <div className="mb-5 bg-emerald-50 border-2 border-emerald-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-5 h-5 text-emerald-600" />
+                      <span className="text-sm font-bold text-emerald-900">التاريخ (من المقطع):</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-base font-bold text-emerald-800">{formData.sessionDate}</span>
+                      {selectedDayName && (
+                        <div className="bg-emerald-600 text-white px-3 py-1.5 rounded-lg font-bold text-sm">
+                          📅 {selectedDayName}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : (
               <div className="mb-5">
                 <label htmlFor="session-date-input" className="block text-sm font-bold text-blue-900 mb-3">
                   التاريخ *

@@ -15,7 +15,7 @@ export const useAiRepair = () => {
     repairError: null,
     repairSuccess: false,
     handleRepairWithAI: () => {
-      console.warn('useAiRepair: This feature has been removed in V7');
+      // Feature removed in V7
     },
     resetRepairState: () => {},
   };

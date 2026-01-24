@@ -34,8 +34,7 @@ export const useBulkMarksModal = (
       } else {
         setError(response.message || 'فشل في جلب الطلاب');
       }
-    } catch (err) {
-      console.error('Error fetching students:', err);
+    } catch {
       setError('حدث خطأ أثناء جلب الطلاب');
     } finally {
       setLoading(false);
@@ -164,8 +163,7 @@ export const useBulkMarksModal = (
           showErrorMessage('خطأ', response.message || 'فشل في حفظ العلامات');
           return false;
         }
-      } catch (err) {
-        console.error('Error submitting marks:', err);
+      } catch {
         showErrorMessage('خطأ', 'حدث خطأ أثناء حفظ العلامات');
         return false;
       } finally {

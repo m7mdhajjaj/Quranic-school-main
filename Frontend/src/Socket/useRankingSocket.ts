@@ -19,18 +19,14 @@ export const useRankingSocket = () => {
    */
   useEffect(() => {
     if (!user) {
-      console.log('⚠️ No user, skipping rankings socket connection');
       return;
     }
 
-    console.log('🔌 Initializing Rankings Socket...');
-    
     // الاتصال (SocketManager يدير Heartbeat تلقائياً)
     socketManager.connect(user._id, user.role);
 
     // الاشتراك في تحديثات الاتصال
     const unsubscribe = socketManager.onConnectionChange((connected) => {
-      console.log('📡 Ranking socket connection:', connected);
       setIsConnected(connected);
       setSocketId(socketManager.getSocketId() || null);
       
@@ -45,8 +41,6 @@ export const useRankingSocket = () => {
     // الانضمام لغرف العلامات والطلاب (الترتيب يعتمد عليهما)
     const joinRankingRoom = () => {
       if (socketManager.isConnected() && !hasJoinedRoom.current) {
-        console.log('🏆 Joining ranking related rooms...');
-        
         // الانضمام لغرفة العلامات (marks)
         socketManager.emit('joinMarks', {
           userId: user._id,
@@ -70,8 +64,6 @@ export const useRankingSocket = () => {
     }
 
     return () => {
-      console.log('🧹 Cleaning up Ranking Socket...');
-      
       // مغادرة الغرف
       if (hasJoinedRoom.current) {
         socketManager.emit('leaveMarks', { userId: user._id });
@@ -91,32 +83,25 @@ export const useRankingSocket = () => {
   useEffect(() => {
     if (!isConnected) return;
 
-    console.log('👂 Setting up Ranking event listeners...');
-
     // أحداث العلامات
-    const handleMarkCreated = (...args: unknown[]) => {
-      console.log('➕ Mark created (affecting ranking):', args[0]);
+    const handleMarkCreated = () => {
       setLastUpdate(new Date());
     };
 
-    const handleMarkUpdated = (...args: unknown[]) => {
-      console.log('✏️ Mark updated (affecting ranking):', args[0]);
+    const handleMarkUpdated = () => {
       setLastUpdate(new Date());
     };
 
-    const handleMarkDeleted = (...args: unknown[]) => {
-      console.log('🗑️ Mark deleted (affecting ranking):', args[0]);
+    const handleMarkDeleted = () => {
       setLastUpdate(new Date());
     };
 
     // أحداث الطلاب (قد تؤثر على الترتيب)
-    const handleStudentUpdated = (...args: unknown[]) => {
-      console.log('✏️ Student updated (may affect ranking):', args[0]);
+    const handleStudentUpdated = () => {
       setLastUpdate(new Date());
     };
 
-    const handleStudentDeleted = (...args: unknown[]) => {
-      console.log('🗑️ Student deleted (affecting ranking):', args[0]);
+    const handleStudentDeleted = () => {
       setLastUpdate(new Date());
     };
 
@@ -129,7 +114,6 @@ export const useRankingSocket = () => {
 
     // التنظيف
     return () => {
-      console.log('🧹 Removing Rankings event listeners...');
       socketManager.off('markCreated', handleMarkCreated);
       socketManager.off('markUpdated', handleMarkUpdated);
       socketManager.off('markDeleted', handleMarkDeleted);

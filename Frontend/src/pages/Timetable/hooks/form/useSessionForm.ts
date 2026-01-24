@@ -123,11 +123,6 @@ export const useSessionForm = ({
         // ✅ استخدام القيم الفعلية بدلاً من formData
         if (effectiveTeacherId && effectiveSessionDate) {
           const excludeId = editingSession?._id;
-          console.log("🔍 Fetching teacher hours:", {
-            teacherId: effectiveTeacherId,
-            sessionDate: effectiveSessionDate,
-            excludeId
-          });
           
           const teacherResponse = await getTeacherAvailableHours(
             effectiveTeacherId,
@@ -135,13 +130,9 @@ export const useSessionForm = ({
             excludeId
           );
           
-          console.log("📋 Teacher response:", teacherResponse);
-          
           if (teacherResponse.success) {
             // ✅ استخدام bookedHours مباشرة من الـ API (تحتوي على كل الأوقات من start إلى end)
             const bookedFromAPI = teacherResponse.data.bookedHours || [];
-            console.log("🚫 Booked hours from API:", bookedFromAPI);
-            console.log("✅ Available hours:", teacherResponse.data.availableHours?.length);
             setBookedHours(bookedFromAPI);
             
             // ✅ تخزين تفاصيل الأوقات المحجوزة (للـ tooltip)
@@ -150,13 +141,9 @@ export const useSessionForm = ({
             }
           }
         } else {
-          console.log("⏳ No teacherId or sessionDate, clearing booked hours");
           setBookedHours([]);
         }
       } catch (error: any) {
-        console.error("❌ Error fetching hours:", error);
-        const errorMsg = error?.response?.data?.message || error?.message || "حدث خطأ في تحميل الأوقات المتاحة";
-        console.error("❌ خطأ في تحميل الأوقات:", errorMsg);
         const fallbackHours = generateFallbackHours();
         setHours(fallbackHours);
         setBookedHours([]);
@@ -262,12 +249,6 @@ export const useSessionForm = ({
   // 🔄 تحديث النموذج عند التعديل
   // ============================================
   useEffect(() => {
-    console.log("🔄 [useSessionForm] editingSession changed:", {
-      hasEditingSession: !!editingSession,
-      sessionId: editingSession?._id,
-      sessionDate: editingSession?.sessionDate,
-    });
-    
     if (editingSession) {
       const teacherIdValue = typeof editingSession.teacherId === 'string' 
         ? editingSession.teacherId 
@@ -282,10 +263,6 @@ export const useSessionForm = ({
       }
 
       const formattedDate = editingSession.sessionDate ? formatDateForAPI(editingSession.sessionDate) : getTodayDate();
-      console.log("📅 [useSessionForm] Formatted date:", {
-        original: editingSession.sessionDate,
-        formatted: formattedDate,
-      });
 
       setFormData({
         sessionDate: formattedDate,

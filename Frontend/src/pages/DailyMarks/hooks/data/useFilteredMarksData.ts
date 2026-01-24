@@ -103,7 +103,6 @@ export const useFilteredMarksData = (
     if (sectionsResponse.success && sectionsResponse.data) {
       setSections(sectionsResponse.data);
     } else {
-      console.warn("⚠️ Failed to load sections:", sectionsResponse.message);
       setSections([]);
     }
   }, [enabled, selectedGroup, getFilters]);
@@ -122,7 +121,7 @@ export const useFilteredMarksData = (
       search: f.search,
       group: f.group,
       studentId: f.studentId,
-      limit: 500,
+      limit: 200, // ✅ تقليل الحد لتحسين الأداء
       startDate: f.startDate,
       endDate: f.endDate,
     });
@@ -130,7 +129,6 @@ export const useFilteredMarksData = (
     if (marksResponse.success && marksResponse.data) {
       setMarks(marksResponse.data);
     } else {
-      console.warn("⚠️ Failed to load marks:", marksResponse.message);
       setMarks([]);
     }
   }, [enabled, selectedGroup, getFilters]);
@@ -168,7 +166,7 @@ export const useFilteredMarksData = (
           search: f.search,
           group: f.group,
           studentId: f.studentId,
-          limit: 500, // Increased limit for better performance
+          limit: 200, // ✅ تقليل الحد لتحسين الأداء
           startDate: f.startDate,
           endDate: f.endDate,
         }),

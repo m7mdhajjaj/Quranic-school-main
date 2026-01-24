@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { getGroupStats } from "@/Api/DailyMark/dailyMarksApi";
 
 interface GroupStatsData {
@@ -7,9 +7,13 @@ interface GroupStatsData {
   loading: boolean;
 }
 
+// ✅ Cache للإحصائيات - يبقى لمدة 5 دقائق
+const statsCache: Record<string, { data: GroupStatsData; timestamp: number }> = {};
+const CACHE_DURATION = 5 * 60 * 1000; // 5 دقائق
+
 /**
  * Custom hook لجلب إحصائيات جميع الحلقات بشكل متوازي
- * يستخدم useEffect و useState لجلب البيانات بشكل صحيح
+ * ✅ محسّن: يستخدم cache ويجلب فقط 4 حلقات في المرة الواحدة (batching)
  */
 export const useAllGroupsStats = (
   teacherGroups: string[],
@@ -20,8 +24,9 @@ export const useAllGroupsStats = (
   const [groupsStats, setGroupsStats] = useState<
     Record<string, GroupStatsData>
   >({});
+  const fetchingRef = useRef(false);
 
-  // جلب إحصائيات كل الحلقات بشكل متوازي
+  // جلب إحصائيات الحلقات مع التحسينات
   useEffect(() => {
     // لا تجلب إذا كان هناك group محدد
     if (selectedGroup && selectedGroup !== "all") {
@@ -35,17 +40,45 @@ export const useAllGroupsStats = (
       return;
     }
 
-    let isMounted = true;
+    // منع الجلب المتزامن
+    if (fetchingRef.current) return;
 
-    // جلب إحصائيات كل الحلقات بشكل متوازي
+    let isMounted = true;
+    fetchingRef.current = true;
+
     const fetchAllStats = async () => {
-      // تعيين loading state لكل حلقة
-      setGroupsStats((prev) => {
-        const newStats: Record<string, GroupStatsData> = {};
-        teacherGroups.forEach((group) => {
+      const now = Date.now();
+      const cacheKey = `${selectedMonth}-${selectedYear}`;
+      
+      // ✅ تحقق من الـ Cache أولاً
+      const cachedStats: Record<string, GroupStatsData> = {};
+      const groupsToFetch: string[] = [];
+      
+      teacherGroups.forEach((group) => {
+        const cached = statsCache[`${group}-${cacheKey}`];
+        if (cached && (now - cached.timestamp) < CACHE_DURATION) {
+          cachedStats[group] = cached.data;
+        } else {
+          groupsToFetch.push(group);
+        }
+      });
+
+      // إذا كل البيانات موجودة في الـ Cache
+      if (groupsToFetch.length === 0) {
+        if (isMounted) {
+          setGroupsStats(cachedStats);
+          fetchingRef.current = false;
+        }
+        return;
+      }
+
+      // تعيين البيانات من الـ Cache + loading للباقي
+      setGroupsStats(() => {
+        const newStats: Record<string, GroupStatsData> = { ...cachedStats };
+        groupsToFetch.forEach((group) => {
           newStats[group] = {
-            studentsCount: prev[group]?.studentsCount || 0,
-            sectionsCount: prev[group]?.sectionsCount || 0,
+            studentsCount: 0,
+            sectionsCount: 0,
             loading: true,
           };
         });
@@ -53,71 +86,63 @@ export const useAllGroupsStats = (
       });
 
       try {
-        // جلب كل الإحصائيات بشكل متوازي
-        const statsPromises = teacherGroups.map(async (group) => {
-          try {
-            const response = await getGroupStats(
-              group,
-              selectedMonth || undefined,
-              selectedYear || undefined
-            );
+        // ✅ جلب بـ batches (4 حلقات في المرة) لتقليل الضغط
+        const BATCH_SIZE = 4;
+        const batches: string[][] = [];
+        for (let i = 0; i < groupsToFetch.length; i += BATCH_SIZE) {
+          batches.push(groupsToFetch.slice(i, i + BATCH_SIZE));
+        }
 
-            if (!isMounted) return null;
+        for (const batch of batches) {
+          if (!isMounted) break;
 
-            if (response.success && response.data) {
-              return {
-                group,
-                studentsCount: response.data.studentsCount,
-                sectionsCount: response.data.sectionsCount,
-              };
-            }
-            return {
-              group,
-              studentsCount: 0,
-              sectionsCount: 0,
-            };
-          } catch (error) {
-            console.error(`❌ Error fetching stats for group ${group}:`, error);
-            return {
-              group,
-              studentsCount: 0,
-              sectionsCount: 0,
-            };
-          }
-        });
+          const batchResults = await Promise.all(
+            batch.map(async (group) => {
+              try {
+                const response = await getGroupStats(
+                  group,
+                  selectedMonth || undefined,
+                  selectedYear || undefined
+                );
 
-        const results = await Promise.all(statsPromises);
+                const result = {
+                  group,
+                  studentsCount: response.success ? response.data?.studentsCount || 0 : 0,
+                  sectionsCount: response.success ? response.data?.sectionsCount || 0 : 0,
+                };
 
-        if (!isMounted) return;
+                // ✅ حفظ في الـ Cache
+                statsCache[`${group}-${cacheKey}`] = {
+                  data: { ...result, loading: false },
+                  timestamp: now,
+                };
 
-        // تحديث الإحصائيات
-        const newStats: Record<string, GroupStatsData> = {};
-        results.forEach((result) => {
-          if (result) {
-            newStats[result.group] = {
-              studentsCount: result.studentsCount,
-              sectionsCount: result.sectionsCount,
-              loading: false,
-            };
-          }
-        });
+                return result;
+              } catch {
+                return { group, studentsCount: 0, sectionsCount: 0 };
+              }
+            })
+          );
 
-        setGroupsStats(newStats);
-      } catch (error) {
-        console.error("❌ Error fetching all groups stats:", error);
-        if (isMounted) {
+          if (!isMounted) break;
+
+          // تحديث الحالة تدريجياً
           setGroupsStats((prev) => {
-            const newStats: Record<string, GroupStatsData> = {};
-            teacherGroups.forEach((group) => {
-              newStats[group] = {
-                studentsCount: prev[group]?.studentsCount || 0,
-                sectionsCount: prev[group]?.sectionsCount || 0,
+            const updated = { ...prev };
+            batchResults.forEach((result) => {
+              updated[result.group] = {
+                studentsCount: result.studentsCount,
+                sectionsCount: result.sectionsCount,
                 loading: false,
               };
             });
-            return newStats;
+            return updated;
           });
         }
+      } catch {
+        // Silent error
+      } finally {
+        fetchingRef.current = false;
       }
     };
 

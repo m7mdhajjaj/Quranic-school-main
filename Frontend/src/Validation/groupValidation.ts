@@ -199,12 +199,6 @@ export const groupBusinessRules = {
     if (!schedule || schedule.trim() === "" || schedule === "غير محدد")
       return null;
 
-    console.log("🔍 فحص تضارب الجدول:", {
-      schedule,
-      currentGroupId,
-      existingGroupsCount: existingGroups.length,
-    });
-
     // البحث عن تضارب مع حلقات أخرى (عدا الحلقة الحالية في التعديل)
     const conflictingGroup = existingGroups.find((group) => {
       // تجاهل الحلقات بجدول فارغ أو غير محدد
@@ -216,22 +210,13 @@ export const groupBusinessRules = {
         return false;
       }
 
-      const hasConflict =
-        group.schedule === schedule && group._id !== currentGroupId;
-      console.log(`📋 مقارنة مع ${group.name}:`, {
-        groupSchedule: group.schedule,
-        groupId: group._id,
-        hasConflict,
-      });
-      return hasConflict;
+      return group.schedule === schedule && group._id !== currentGroupId;
     });
 
     if (conflictingGroup) {
-      console.log("❌ تضارب موجود مع:", conflictingGroup.name);
       return `يوجد تضارب في الجدول مع الحلقة: ${conflictingGroup.name}`;
     }
 
-    console.log("✅ لا يوجد تضارب في الجدول");
     return null;
   },
 

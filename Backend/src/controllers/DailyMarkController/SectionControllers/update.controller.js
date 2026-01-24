@@ -4,6 +4,7 @@ const Group = require("../../../schema/Group");
 const Teacher = require("../../../schema/Teacher");
 const { notifySectionUpdated } = require("../../../Notifications");
 const sequenceService = require("../../../services/DailyMark/SectionSequenceService");
+const activeSurahService = require("../../../services/DailyMark/GroupActiveSurahService");
 const { createLogger } = require("../../../utils/logger");
 const { getSurahByNumber } = require("../../../utils/Quran/dailyMarkQuranMetadata");
 const {
@@ -27,20 +28,6 @@ exports.updateSection = async (req, res) => {
 
     // Use validated data from middleware
     const updateData = req.validatedData || req.body;
-
-    // 🔍 LOG: طباعة البيانات الواردة
-    console.log('\n========== UPDATE SECTION START ==========');
-    console.log('📥 Section ID:', req.params.id);
-    console.log('📥 Current Section Data:');
-    console.log('   - date:', section.date);
-    console.log('   - group:', section.group);
-    console.log('   - memorizationMeta:', JSON.stringify(section.memorizationMeta, null, 2));
-    console.log('   - reviewMeta:', JSON.stringify(section.reviewMeta, null, 2));
-    console.log('📥 Update Data:');
-    console.log('   - date:', updateData.date);
-    console.log('   - group:', updateData.group);
-    console.log('   - memorizationMeta:', JSON.stringify(updateData.memorizationMeta, null, 2));
-    console.log('   - reviewMeta:', JSON.stringify(updateData.reviewMeta, null, 2));
 
     // ✅ جلب groupId من اسم الحلقة (إذا تم تحديث اسم الحلقة)
     if (updateData.group && updateData.group !== section.group) {
@@ -284,43 +271,15 @@ exports.updateSection = async (req, res) => {
     const allCompleted = [...completedMem, ...completedRev];
 
     // ============================================
-    // 🔄 UPDATE ACTIVE SURAH - تحديث السورة الفعالة بعد التحديث
+    // 🔄 V15: SYNC ACTIVE SURAH - مزامنة السورة الفعالة من جميع المقاطع
+    // ✅ الآن يحسب lastAyahEnd من جميع مقاطع نفس السورة في DB
     // ============================================
     if (targetGroupId) {
-      // تحديث السورة الفعالة للحفظ
-      const memMetaToUpdate = updateData.memorizationMeta || section.memorizationMeta;
-      if (memMetaToUpdate && memMetaToUpdate.length > 0) {
-        const memSegment = memMetaToUpdate[0];
-        const maxAyahEnd = Math.max(...memMetaToUpdate.map(s => s.ayahEnd));
-        const surahInfo = getSurahByNumber(memSegment.surahNumber);
-        const totalAyahs = surahInfo?.ayahCount || 0;
-        
-        // تحديث آخر آية
-        await Group.updateLastAyah(targetGroupId, maxAyahEnd, 'memorization');
-        
-        // ✅ التحقق من إكمال السورة تلقائياً
-        if (totalAyahs > 0 && maxAyahEnd >= totalAyahs) {
-          await Group.checkAndCompleteSurah(targetGroupId, maxAyahEnd, totalAyahs, 'memorization');
-          logger.info(`🎉 سورة ${surahInfo.name} مكتملة الحفظ! (${maxAyahEnd}/${totalAyahs})`);
-        }
-      }
-
-      // تحديث السورة الفعالة للمراجعة
-      const revMetaToUpdate = updateData.reviewMeta || section.reviewMeta;
-      if (revMetaToUpdate && revMetaToUpdate.length > 0) {
-        const revSegment = revMetaToUpdate[0];
-        const maxRevAyahEnd = Math.max(...revMetaToUpdate.map(s => s.ayahEnd));
-        const revSurahInfo = getSurahByNumber(revSegment.surahNumber);
-        const revTotalAyahs = revSurahInfo?.ayahCount || 0;
-        
-        // تحديث آخر آية
-        await Group.updateLastAyah(targetGroupId, maxRevAyahEnd, 'review');
-        
-        // ✅ التحقق من إكمال السورة تلقائياً
-        if (revTotalAyahs > 0 && maxRevAyahEnd >= revTotalAyahs) {
-          await Group.checkAndCompleteSurah(targetGroupId, maxRevAyahEnd, revTotalAyahs, 'review');
-          logger.info(`🎉 سورة ${revSurahInfo.name} مكتملة المراجعة! (${maxRevAyahEnd}/${revTotalAyahs})`);
-        }
+      try {
+        await activeSurahService.syncActiveSurahsFromSections(targetGroupId);
+        logger.debug(`✅ تمت مزامنة السورة الفعالة للحلقة ${targetGroup}`);
+      } catch (syncError) {
+        logger.warn(`⚠️ خطأ في مزامنة السورة الفعالة:`, syncError);
       }
     }
     // ============================================

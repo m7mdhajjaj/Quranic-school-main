@@ -80,7 +80,6 @@ export const useTimetableActions = ({
     async (formData: SessionFormData) => {
       // ✅ منع العمليات المتزامنة
       if (operationInProgressRef.current) {
-        console.warn('⚠️ Operation already in progress');
         return false;
       }
       operationInProgressRef.current = true;
@@ -180,7 +179,6 @@ export const useTimetableActions = ({
     async (sessionId: string, formData: SessionFormData) => {
       // ✅ منع العمليات المتزامنة
       if (operationInProgressRef.current) {
-        console.warn('⚠️ Operation already in progress');
         return false;
       }
       operationInProgressRef.current = true;
@@ -270,7 +268,6 @@ export const useTimetableActions = ({
     async (session: Session) => {
       // ✅ منع العمليات المتزامنة
       if (operationInProgressRef.current) {
-        console.warn('⚠️ Operation already in progress');
         return false;
       }
       

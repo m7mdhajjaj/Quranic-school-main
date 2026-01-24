@@ -197,7 +197,6 @@ class SocketManager {
    * قطع الاتصال
    */
   disconnect(): void {
-    console.log('🔌 Disconnecting socket...');
     this.stopHeartbeat();
     this.socket?.disconnect();
     this.socket = null;

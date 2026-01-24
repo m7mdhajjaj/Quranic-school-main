@@ -104,14 +104,13 @@ export const SectionsGridView = ({
                 <h2 className="text-lg font-bold text-gray-800">{selectedGroup}</h2>
                 <p className="text-xs text-gray-500">حلقة الدراسة</p>
               </div>
-              {sections.length > 0 && (
-                <div className="mr-4">
-                  <PeriodFilterToggle
-                    selectedMode={selectedFilterMode}
-                    onModeChange={onFilterModeChange}
-                  />
-                </div>
-              )}
+              {/* ✅ فلتر الفترة - دائماً ظاهر */}
+              <div className="mr-4">
+                <PeriodFilterToggle
+                  selectedMode={selectedFilterMode}
+                  onModeChange={onFilterModeChange}
+                />
+              </div>
             </div>
 
             {/* Filters Row */}

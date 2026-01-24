@@ -96,17 +96,12 @@ export const useNotificationsSocket = (): UseNotificationsSocketReturn => {
   useEffect(() => {
     if (!user) return;
 
-    console.log('🔔 [NotificationsSocket] Initializing notification socket for user:', user._id);
-
     // Subscribe to connection status
     const unsubscribeConnection = socketManager.onConnectionChange((connected) => {
       setIsConnected(connected);
       if (connected) {
         const id = socketManager.getSocketId();
         setSocketId(id || null);
-        console.log('🔔 [NotificationsSocket] Connected - Socket ID:', id);
-      } else {
-        console.log('🔔 [NotificationsSocket] Disconnected');
       }
     });
 
@@ -127,8 +122,6 @@ export const useNotificationsSocket = (): UseNotificationsSocketReturn => {
   useEffect(() => {
     if (!isConnected || !user) return;
 
-    console.log('🔔 [NotificationsSocket] Joining notifications room...');
-
     // Join the notifications room for this user
     socketManager.emit('joinNotifications', {
       userId: user._id,
@@ -137,7 +130,6 @@ export const useNotificationsSocket = (): UseNotificationsSocketReturn => {
 
     // Cleanup: Leave room on unmount
     return () => {
-      console.log('🔔 [NotificationsSocket] Leaving notifications room...');
       socketManager.emit('leaveNotifications', {
         userId: user._id,
       });
@@ -157,9 +149,7 @@ export const useNotificationsSocket = (): UseNotificationsSocketReturn => {
       // Play notification sound
       const audio = new Audio(notificationSound);
       audio.volume = 1.0;
-      audio.play()
-        .then(() => console.log('🔊 Notification sound played successfully'))
-        .catch((err) => console.error('❌ Error playing notification sound (Check Autoplay Policy):', err));
+      audio.play().catch(() => { /* Autoplay policy - silent */ });
 
       const notificationData = data as Record<string, unknown>;
       const title = String(notificationData.title || 'إشعار جديد');
@@ -236,8 +226,6 @@ export const useNotificationsSocket = (): UseNotificationsSocketReturn => {
 
   // Handler for all notifications marked as read
   const handleAllNotificationsRead = useCallback(() => {
-    console.log('✓✓ [NotificationsSocket] All notifications marked as read');
-
     setNotificationStats((prev) => ({
       ...prev,
       unreadCount: 0,
@@ -250,8 +238,6 @@ export const useNotificationsSocket = (): UseNotificationsSocketReturn => {
 
   // Handler for notification deleted
   const handleNotificationDeleted = useCallback((data: unknown) => {
-    console.log('🗑️ [NotificationsSocket] Notification deleted:', data);
-
     try {
       const deleteData = data as Record<string, unknown>;
       if (String(deleteData.notificationId) === lastNotification?._id) {
@@ -276,8 +262,6 @@ export const useNotificationsSocket = (): UseNotificationsSocketReturn => {
   useEffect(() => {
     if (!isConnected) return;
 
-    console.log('🔔 [NotificationsSocket] Registering notification event listeners...');
-
     // Register all event listeners
     socketManager.on('newNotification', handleNewNotification);
     socketManager.on('notificationStatsUpdate', handleStatsUpdate);
@@ -287,7 +271,6 @@ export const useNotificationsSocket = (): UseNotificationsSocketReturn => {
 
     // Prayer time notifications (special type)
     socketManager.on('prayerNotification', (data: unknown) => {
-      console.log('🕌 [NotificationsSocket] Prayer notification received');
       const prayerData = data as Record<string, unknown>;
       handleNewNotification({
         ...prayerData,
@@ -297,7 +280,6 @@ export const useNotificationsSocket = (): UseNotificationsSocketReturn => {
 
     // Cleanup listeners on unmount
     return () => {
-      console.log('🔔 [NotificationsSocket] Unregistering notification event listeners...');
       socketManager.off('newNotification', handleNewNotification);
       socketManager.off('notificationStatsUpdate', handleStatsUpdate);
       socketManager.off('notificationRead', handleNotificationRead);

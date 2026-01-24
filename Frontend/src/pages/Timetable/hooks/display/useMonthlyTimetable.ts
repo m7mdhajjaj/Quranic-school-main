@@ -74,15 +74,12 @@ export const useMonthlyTimetable = (refreshTrigger?: any) => {
     try {
       setLoading(true);
       
-      console.log(`📅 Fetching monthly data for ${month}/${year}`);
-      
       const response = await getMonthlyPlan(month, year);
       
       if (response.success && response.data) {
         // تحويل Timetable[] إلى Session[]
         const sessions = response.data.map(mapTimetableToSession);
         setMonthlySessions(sessions);
-        console.log(`✅ Loaded ${sessions.length} sessions for ${month}/${year}`);
       }
     } catch (error: any) {
       const errorMsg = error?.response?.data?.message || error?.message || "حدث خطأ في تحميل الخطة الشهرية";

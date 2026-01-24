@@ -7,6 +7,8 @@ interface StudentFormStep2Props {
     email: string;
     phoneNumber: string;
     group: string;
+        fatherName: string;
+
     teacher: string;
   };
   touchedFields: Set<string>;
@@ -57,6 +59,36 @@ const StudentFormStep2: React.FC<StudentFormStep2Props> = ({
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          
+
+
+<div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              اسم الأب <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="fatherName"
+              value={formData.fatherName}
+              onChange={handleChange}
+              onBlur={() => handleBlur("fatherName")}
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-colors dark:bg-gray-700 dark:text-gray-100 ${
+                getFieldError("fatherName")
+                  ? "border-red-500 focus:ring-red-500 dark:border-red-600"
+                  : "border-gray-300 focus:ring-blue-500 dark:border-gray-600"
+              }`}
+              placeholder="أدخل اسم الأب"
+            />
+            {getFieldError("fatherName") && (
+              <p className="text-red-500 text-sm mt-1">
+                {getFieldError("fatherName")}
+              </p>
+            )}
+          </div>
+
+
+
+
           {/* Email */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">

@@ -21,18 +21,14 @@ export const useDashboardSocket = (
    */
   useEffect(() => {
     if (!user || user.role !== 'admin') {
-      console.log('⚠️ [DashboardSocket] User is not admin, skipping socket connection');
       return;
     }
 
-    console.log('🔌 [DashboardSocket] Initializing socket for admin dashboard...');
-    
     // الاتصال (SocketManager يدير Heartbeat تلقائياً)
     socketManager.connect(user._id, user.role);
 
     // الاشتراك في تحديثات الاتصال
     const unsubscribe = socketManager.onConnectionChange((connected) => {
-      console.log('📡 [DashboardSocket] Connection status:', connected);
       setIsConnected(connected);
     });
 
@@ -48,8 +44,6 @@ export const useDashboardSocket = (
    */
   useEffect(() => {
     if (!isConnected || !user || user.role !== 'admin') return;
-
-    console.log('👂 [DashboardSocket] Setting up absentStudentsUpdated listener...');
 
     const handleAbsentStudentsUpdate = (data: unknown) => {
       // تحديث state بشكل غير متزامن لتقليل وقت معالجة الـ event
@@ -69,7 +63,6 @@ export const useDashboardSocket = (
 
     // التنظيف
     return () => {
-      console.log('🧹 [DashboardSocket] Cleaning up absentStudentsUpdated listener...');
       socketManager.off('absentStudentsUpdated', handleAbsentStudentsUpdate);
     };
   }, [isConnected, user, onAbsentStudentsUpdate]);

@@ -12,7 +12,7 @@ import { AdvancedTimetableView } from "../DisplayType/AdvancedTimetableView";
 import { WeeklyGridView } from "../DisplayType/WeeklyGridView";
 import { Button } from "@/components/UI/Button";
 import { Alert } from "@/components/UI/Alert";
-import { Calendar, Grid3x3, List, AlertCircle } from "lucide-react";
+import { Calendar, Grid3x3, List,  } from "lucide-react";
 import { showErrorMessage } from "@/utils/sweetalertUtils";
 import { getTimetableById } from "@/Api/TimeTable.Api";
 import { getDayNameFromDate } from "../utils";
@@ -32,7 +32,6 @@ export const TeacherTimetableView: React.FC<TeacherTimetableViewProps> = ({
   sessions,
   loading,
   error,
-  teacherGroups,
   onAddSession,
   onEditSession,
   onDeleteSession,
@@ -47,7 +46,6 @@ export const TeacherTimetableView: React.FC<TeacherTimetableViewProps> = ({
   useEffect(() => {
     // انتظر حتى تحميل الجلسات
     if (loading) {
-      console.log("⏳ Still loading sessions...");
       return;
     }
 
@@ -56,22 +54,14 @@ export const TeacherTimetableView: React.FC<TeacherTimetableViewProps> = ({
     const sectionId = searchParams.get('sectionId');
     const urlSessionType = searchParams.get('sessionType');
     
-    console.log("🔍 URL Params:", { addSession, editSessionId, sectionId, urlSessionType });
-    console.log("📋 Sessions count:", sessions.length);
-    console.log("📋 All session IDs:", sessions.map(s => ({ id: s._id, type: s.sessionType, group: s.groupName })));
-    
     // الحالة 1: تعديل جلسة مباشرة بالـ ID
     if (editSessionId) {
-      console.log("🔧 Looking for session to edit:", editSessionId);
       const sessionToEdit = sessions.find(s => s._id === editSessionId);
-      console.log("📝 Found session:", sessionToEdit);
       if (sessionToEdit) {
         setEditingSession(sessionToEdit);
         setIsModalOpen(true);
-        console.log("✅ Opening edit modal for session:", sessionToEdit._id);
       } else {
         // 🔄 Fallback: جلب الـ session مباشرة من الـ API
-        console.log("🔄 Session not in list, fetching from API...");
         getTimetableById(editSessionId)
           .then(response => {
             if (response.success && response.data) {
@@ -90,17 +80,14 @@ export const TeacherTimetableView: React.FC<TeacherTimetableViewProps> = ({
                 teacherId: t.teacherId,
                 sectionId: typeof t.sectionId === 'object' ? t.sectionId?._id : t.sectionId,
               };
-              console.log("✅ Fetched session from API:", fetchedSession._id);
               setEditingSession(fetchedSession);
               setIsModalOpen(true);
             } else {
-              console.warn("⚠️ Session not found in API");
               setSearchParams({}, { replace: true });
               showErrorMessage("خطأ", "الجلسة غير موجودة أو تم حذفها");
             }
           })
-          .catch(error => {
-            console.error("❌ Error fetching session:", error);
+          .catch(() => {
             setSearchParams({}, { replace: true });
             showErrorMessage("خطأ", "الجلسة غير موجودة أو تم حذفها");
           });
@@ -113,7 +100,15 @@ export const TeacherTimetableView: React.FC<TeacherTimetableViewProps> = ({
       const matchingSessions = sessions.filter(s => s.sectionId === sectionId);
       
       if (matchingSessions.length >= 1) {
-        // يوجد جلسة مرتبطة - فتح التعديل
+        // يوجد جلسة مرتبطة - فتح التعديل فقط إذا لم يكن addSession=true
+        // إذا كان addSession=true يعني المستخدم أراد الإضافة لكن الموعد موجود مسبقاً
+        if (addSession === 'true') {
+          // المستخدم ضغط "إضافة موعد" لكن الموعد موجود - لا نفتح شيء
+          // فقط ننظف الـ URL
+          setSearchParams({}, { replace: true });
+          return;
+        }
+        
         let targetSession = matchingSessions[0];
         if (urlSessionType && matchingSessions.length > 1) {
           const specificMatch = matchingSessions.find(s => s.sessionType === urlSessionType);

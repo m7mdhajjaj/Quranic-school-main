@@ -235,6 +235,8 @@ const AddStudentForm: React.FC<Props> = ({
                   <Users className="text-emerald-600" size={20} />
                   الاسم الكامل
                 </h3>
+
+                
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {/* الاسم الأول */}
                   <div className="space-y-1">
@@ -646,11 +648,13 @@ const AddStudentForm: React.FC<Props> = ({
 
                     <div className="relative">
                       <select
+                        id="group-select"
                         name="group"
                         value={formData.group}
                         onChange={handleChange}
                         onBlur={() => handleBlur("group")}
                         disabled={loadingGroups}
+                        aria-label="اختيار الحلقة الدراسية"
                         className={`w-full px-4 py-3 pr-12 border-2 rounded-xl focus:outline-none focus:ring-2 text-right appearance-none ${
                           getFieldError("group")
                             ? "border-red-300 focus:ring-red-500 bg-red-50"

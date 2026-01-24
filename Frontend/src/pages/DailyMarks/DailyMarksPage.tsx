@@ -5,6 +5,7 @@
 import { lazy, Suspense, useCallback, useEffect, useRef } from 'react';
 import { BookOpen } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
+import { useDebounce } from '@/hooks/useDebounce';
 
 // UI Components
 // PageHeader removed - using custom header
@@ -34,13 +35,17 @@ import { useAllGroupsStats } from './Views/TeacherView/hooks';
 // Page Components
 import { AveragesSection } from './components/AveragesSection';
 import { NewStudentView } from './Views/NewStudentView';
-import { ModalsContainer } from './modals/ModalsContainer';
 import { GroupsGridView } from './Views/TeacherView/components/GroupsGridView';
 
 
-// Lazy load heavy component
+// ✅ Lazy load heavy components
 const TeacherView = lazy(() =>
   import('./Views/TeacherView/TeacherView').then((m) => ({ default: m.TeacherView }))
+);
+
+// ✅ Lazy load ModalsContainer - لا يُحمّل إلا عند الحاجة
+const ModalsContainer = lazy(() =>
+  import('./modals/ModalsContainer').then((m) => ({ default: m.ModalsContainer }))
 );
 
 // ============================================================================
@@ -120,6 +125,9 @@ const DailyMarksPage = () => {
   // For teachers: use selectedStudentId (null to see all marks)
   const studentIdForMarksFilter = currentUser?.role === "student" ? currentUser._id : selectedStudentId;
 
+  // ✅ Debounce البحث لتحسين الأداء - 300ms تأخير
+  const debouncedSearchQuery = useDebounce(state.searchQuery, 300);
+
   // Fetch filtered sections and marks
   const {
     sections,
@@ -135,7 +143,7 @@ const DailyMarksPage = () => {
     selectedMonth,
     selectedYear,
     selectedDay || null,
-    state.searchQuery,
+    debouncedSearchQuery, // ✅ استخدام القيمة المؤخرة
     !!currentUser && !!selectedGroup,
     startDate,
     endDate,
@@ -325,6 +333,8 @@ const DailyMarksPage = () => {
             groupsWithStats={groupsWithStats}
             onGroupSelect={(g) => setGroupWithUrl(g, false)}
             isLoading={loading || isAnyGroupLoading}
+            selectedFilterMode={filterMode}
+            onFilterModeChange={setFilterMode}
           />
         )}
 
@@ -383,29 +393,31 @@ const DailyMarksPage = () => {
           </Suspense>
       </div>
 
-      {/* Modals - Teacher Only */}
-      <ModalsContainer
-          currentUser={currentUser}
-          selectedStudentId={selectedStudentId}
-        selectedGroup={selectedGroup}
-        sections={sections}
-        refetchMarks={refetchMarksOnly}
-        onMarkChange={refetchSectionsOnly}
-        state={{
-          ...state,
-          selectedStudent: state.selectedStudent,
-          setSelectedStudent: state.setSelectedStudent,
-        }}
-        handlers={handlers}
-        handleSectionInputChange={handleSectionInputChange}
-        handleEditSectionInputChange={handleEditSectionInputChange}
-        handleMarkInputChange={handleMarkInputChange}
-        openAddMarkModal={openAddMarkModal}
-        openUpdateMarkModal={openUpdateMarkModal}
-        openEditSectionModal={openEditSectionModal}
-        toggleSectionSelection={toggleSectionSelection}
-        getSelectedStudent={getSelectedStudent}
-        />
+      {/* Modals - Teacher Only (Lazy Loaded) */}
+      <Suspense fallback={null}>
+        <ModalsContainer
+            currentUser={currentUser}
+            selectedStudentId={selectedStudentId}
+          selectedGroup={selectedGroup}
+          sections={sections}
+          refetchMarks={refetchMarksOnly}
+          onMarkChange={refetchSectionsOnly}
+          state={{
+            ...state,
+            selectedStudent: state.selectedStudent,
+            setSelectedStudent: state.setSelectedStudent,
+          }}
+          handlers={handlers}
+          handleSectionInputChange={handleSectionInputChange}
+          handleEditSectionInputChange={handleEditSectionInputChange}
+          handleMarkInputChange={handleMarkInputChange}
+          openAddMarkModal={openAddMarkModal}
+          openUpdateMarkModal={openUpdateMarkModal}
+          openEditSectionModal={openEditSectionModal}
+          toggleSectionSelection={toggleSectionSelection}
+          getSelectedStudent={getSelectedStudent}
+          />
+      </Suspense>
     </div>
   );
 };

@@ -11,13 +11,6 @@ export const useEditSectionModal = (editingSection: Section | null) => {
   // Sync local state when modal opens or section changes
   useEffect(() => {
     if (editingSection) {
-      console.log('📋 [useEditSectionModal] Syncing with editingSection:');
-      console.log('   - _id:', editingSection._id);
-      console.log('   - date:', editingSection.date);
-      console.log('   - group:', editingSection.group);
-      console.log('   - memorizationMeta:', JSON.stringify(editingSection.memorizationMeta));
-      console.log('   - reviewMeta:', JSON.stringify(editingSection.reviewMeta));
-      
       setLocalSection(editingSection);
       setLocalReviewMeta((editingSection.reviewMeta || []) as QuranSegmentUI[]);
       setLocalMemorizationMeta((editingSection.memorizationMeta || []) as QuranSegmentUI[]);
@@ -25,7 +18,6 @@ export const useEditSectionModal = (editingSection: Section | null) => {
   }, [editingSection]);
 
   const handleDateChange = useCallback((date: string) => {
-    console.log('📅 [useEditSectionModal] Date changed to:', date);
     setLocalSection((prev) => (prev ? { ...prev, date } : null));
   }, []);
 

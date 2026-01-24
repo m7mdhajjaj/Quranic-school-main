@@ -23,32 +23,31 @@ export const useTeacherViewData = (selectedGroup: string, studentsFromParent?: S
   
   /**
    * جلب بيانات المقطع (الطلاب والعلامات)
+   * ✅ محسّن: جلب متوازي للطلاب والعلامات
    */
   const handleSectionSelect = async (section: Section) => {
     setSelectedSection(section);
     setLoadingSectionData(true);
     
     try {
-      // إذا كان لدينا طلاب من الـ parent (مساعد المدرس)، نستخدمهم مباشرة
-      if (studentsFromParent && studentsFromParent.length > 0) {
-        // فلترة الطلاب حسب الحلقة المحددة
-        const groupStudents = studentsFromParent.filter(s => s.group === selectedGroup);
-        setSectionStudents(groupStudents);
-      } else {
-        // جلب الطلاب من API (للمعلم والأدمن)
-        const studentsResponse = await getStudentsByGroup(selectedGroup);
-        if (studentsResponse.success && studentsResponse.data) {
-          setSectionStudents(studentsResponse.data);
-        }
+      // ✅ جلب الطلاب والعلامات بشكل متوازي لتحسين الأداء
+      const studentsPromise = (studentsFromParent && studentsFromParent.length > 0)
+        ? Promise.resolve({ success: true, data: studentsFromParent.filter(s => s.group === selectedGroup) })
+        : getStudentsByGroup(selectedGroup);
+      
+      const marksPromise = getSectionMarks(section._id);
+      
+      const [studentsResult, marksResponse] = await Promise.all([studentsPromise, marksPromise]);
+      
+      if (studentsResult.success && studentsResult.data) {
+        setSectionStudents(studentsResult.data);
       }
-
-      // Fetch marks for this section
-      const marksResponse = await getSectionMarks(section._id);
+      
       if (marksResponse.success && marksResponse.data) {
         setSectionMarks(marksResponse.data);
       }
-    } catch (error) {
-      console.error('Error fetching section data:', error);
+    } catch {
+      // Silent error handling
     } finally {
       setLoadingSectionData(false);
     }

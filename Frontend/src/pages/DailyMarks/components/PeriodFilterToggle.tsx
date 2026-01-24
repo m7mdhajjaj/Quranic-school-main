@@ -9,12 +9,17 @@ export const PeriodFilterToggle: React.FC<PeriodFilterToggleProps> = ({
   selectedMode = 'all',
   onModeChange,
 }) => {
-  if (!onModeChange) return null;
+  // ✅ دائماً نعرض الفلتر (حتى لو لم يكن هناك onModeChange)
+  const handleClick = (mode: 'week' | 'all') => {
+    if (onModeChange) {
+      onModeChange(mode);
+    }
+  };
 
   return (
     <div className="flex items-center bg-white rounded-lg border border-gray-200 p-1 shadow-sm">
       <button
-        onClick={() => onModeChange('all')}
+        onClick={() => handleClick('all')}
         className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
           selectedMode !== 'week'
             ? 'bg-emerald-100 text-emerald-800 shadow-sm'
@@ -25,7 +30,7 @@ export const PeriodFilterToggle: React.FC<PeriodFilterToggleProps> = ({
         الكل
       </button>
       <button
-        onClick={() => onModeChange('week')}
+        onClick={() => handleClick('week')}
         className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
           selectedMode === 'week'
             ? 'bg-emerald-100 text-emerald-800 shadow-sm'

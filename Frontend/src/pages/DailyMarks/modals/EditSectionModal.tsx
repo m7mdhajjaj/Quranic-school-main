@@ -126,15 +126,6 @@ const EditSectionModalComponent = ({
       // For now we keep legacy fields as is or empty if not used
     };
 
-    // 🔍 LOG: طباعة البيانات قبل الإرسال
-    console.log('📤 [EditSectionModal] Submitting update:');
-    console.log('   - Section ID:', localSection._id);
-    console.log('   - Date:', localSection.date);
-    console.log('   - Group:', localSection.group);
-    console.log('   - MemorizationMeta:', JSON.stringify(localMemorizationMeta));
-    console.log('   - ReviewMeta:', JSON.stringify(localReviewMeta));
-    console.log('   - Full Payload:', JSON.stringify(payload, null, 2));
-
     // Sync with parent before submit (optional if we pass payload)
     syncWithParent(onChange);
     

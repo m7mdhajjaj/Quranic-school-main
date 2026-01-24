@@ -49,8 +49,7 @@ export const useStudentGroupedSections = (
         setSurahs([]);
         setSummary(null);
       }
-    } catch (err) {
-      console.error('Error in useStudentGroupedSections:', err);
+    } catch {
       setError('حدث خطأ غير متوقع');
       setSurahs([]);
       setSummary(null);

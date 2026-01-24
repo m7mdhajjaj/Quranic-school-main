@@ -74,8 +74,11 @@ export const useDailyMarksData = (): UseDailyMarksDataReturn => {
         if (user.role === "teacher" || user.role === "admin") {
           const teacherName = `${user.firstName} ${user.lastName}`;
 
-          // 🆕 استخدام API الحلقات النشطة فقط من daily-marks endpoint
-          const groupsResponse = await getActiveGroups(user._id, "basic");
+          // ✅ جلب متوازي للحلقات والطلاب
+          const [groupsResponse, studentsResponse] = await Promise.all([
+            getActiveGroups(user._id, "basic"),
+            getStudentsByTeacher(teacherName)
+          ]);
 
           if (!isMounted) return;
 
@@ -83,15 +86,9 @@ export const useDailyMarksData = (): UseDailyMarksDataReturn => {
             const groups = groupsResponse.data.map((g: any) => g.name);
             setTeacherGroups(groups);
           } else {
-            console.error("❌ [DailyMarks] Failed to load groups:", groupsResponse.message || groupsResponse.error);
             setTeacherGroups([]);
           }
 
-          // Fetch students
-          const studentsResponse = await getStudentsByTeacher(teacherName);
-          
-          if (!isMounted) return;
-          
           const students =
             studentsResponse.success && Array.isArray(studentsResponse.data)
               ? studentsResponse.data
@@ -100,28 +97,24 @@ export const useDailyMarksData = (): UseDailyMarksDataReturn => {
         }
         // 🆕 مساعد المدرس - جلب الحلقات المسموح له بها فقط
         else if (user.role === "teacherAssistant") {
-          // جلب الحلقات المسموح بها لمساعد المدرس
-          const groupsResponse = await getTeacherAssistantGroups();
+          // ✅ جلب متوازي للحلقات والطلاب
+          const [groupsResponse, studentsResponse] = await Promise.all([
+            getTeacherAssistantGroups(),
+            getTeacherAssistantStudents()
+          ]);
 
           if (!isMounted) return;
 
           if (groupsResponse.success && groupsResponse.data) {
             const groups = groupsResponse.data.map((g: any) => g.name);
             setTeacherGroups(groups);
-
-            // جلب طلاب الحلقات المسموح بها باستخدام API مخصص
-            const studentsResponse = await getTeacherAssistantStudents();
-              
-            if (!isMounted) return;
-              
-            if (studentsResponse.success && Array.isArray(studentsResponse.data)) {
-              setStudents(studentsResponse.data);
-            } else {
-              setStudents([]);
-            }
           } else {
-            console.error("Failed to load teacherAssistant groups:", groupsResponse.message || groupsResponse.error);
             setTeacherGroups([]);
+          }
+
+          if (studentsResponse.success && Array.isArray(studentsResponse.data)) {
+            setStudents(studentsResponse.data);
+          } else {
             setStudents([]);
           }
         }
