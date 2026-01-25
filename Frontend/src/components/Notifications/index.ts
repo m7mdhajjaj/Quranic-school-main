@@ -4,7 +4,6 @@
 
 // Main Component
 export { default as NotificationHeader } from './NotificationHeader';
-export { default as NotificationPermissionPrompt } from './NotificationPermissionPrompt';
 
 // Hooks
 export {
@@ -53,7 +52,6 @@ export type {
   NotificationDropdownHeaderProps,
   NotificationListProps,
   NotificationCardProps,
-  NotificationPermissionPromptProps,
   
   // Hook Types
   UseNotificationDataProps,

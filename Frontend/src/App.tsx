@@ -120,7 +120,6 @@ import TeacherAssistantChatView from "./pages/chat/Views/TeacherAssistantChatVie
 // Other Components
 // ============================================================================
 import Soon from "./pages/Soon";
-import NotificationPermissionPrompt from "./components/Notifications/NotificationPermissionPrompt";
 
 // ============================================================================
 // Guest Routes Component
@@ -786,8 +785,6 @@ function AppContent() {
     <>
       <PageTracker />
       {routeComponent}
-      {/* Show notification permission prompt after login */}
-      <NotificationPermissionPrompt autoShow={true} />
     </>
   );
 }

@@ -394,7 +394,7 @@ const ProfilePage = () => {
           )}
 
           {/* مكان السكن */}
-          {shouldShow(Boolean(user.residence)) && (
+          {shouldShow(Boolean(user.residence) || isEditing) && (
             <motion.div variants={itemVariants}>
               <InfoField
                 icon={<MapPin className="w-5 h-5" />}
@@ -430,7 +430,7 @@ const ProfilePage = () => {
           )}
 
           {/* رقم الهاتف */}
-          {shouldShow(Boolean(user.phoneNumber)) && (
+          {shouldShow(Boolean(user.phoneNumber) || isEditing) && (
             <motion.div variants={itemVariants}>
               <InfoField
                 icon={<Phone className="w-5 h-5" />}
@@ -471,7 +471,7 @@ const ProfilePage = () => {
           )}
 
           {/* اسم الأم */}
-          {shouldShow(Boolean(user.motherName)) && (
+          {shouldShow(Boolean(user.motherName) || isEditing) && (
             <motion.div variants={itemVariants}>
               <InfoField
                 icon={<UserIcon className="w-5 h-5" />}

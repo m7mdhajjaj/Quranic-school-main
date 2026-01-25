@@ -263,17 +263,7 @@ export interface NotificationCardProps {
   onClick?: () => void;
 }
 
-/**
- * خصائص مكون NotificationPermissionPrompt
- */
-export interface NotificationPermissionPromptProps {
-  /** Show prompt automatically on mount */
-  autoShow?: boolean;
-  /** Callback when user grants permission */
-  onPermissionGranted?: () => void;
-  /** Callback when user denies permission */
-  onPermissionDenied?: () => void;
-}
+
 
 // ============================================================================
 // Hook Types

@@ -94,7 +94,7 @@ export const useFirebaseMessaging = (): UseFirebaseMessagingReturn => {
           }
         })();
       } else if (Notification.permission === 'default') {
-        // لا تطلب الصلاحيات أوتوماتيكياً - دع المكون NotificationPermissionPrompt يتولى الأمر
+        // لا تطلب الصلاحيات أوتوماتيكياً
         console.log('💡 يمكن طلب صلاحيات الإشعارات من خلال الـ UI');
         setIsPermissionGranted(false);
       } else if (Notification.permission === 'denied') {
