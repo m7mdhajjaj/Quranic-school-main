@@ -126,6 +126,12 @@ export const getPrimaryNavItems = (
         color: "from-purple-500 to-pink-500",
       },
       {
+        to: "/goals",
+        label: "الأهداف",
+        icon: Target,
+        color: "from-green-500 to-emerald-500",
+      },
+      {
         to: "#management",
         label: "إدارة الحلقة",
         icon: UserCheck,
@@ -163,12 +169,6 @@ export const getPrimaryNavItems = (
         icon: ClipboardList,
         color: "from-green-500 to-emerald-500",
         subItems: [
-          {
-            to: "/goals",
-            label: "الأهداف",
-            icon: Target,
-            color: "from-green-500 to-emerald-500",
-          },
           {
             to: "/reports",
             label: "التقارير",
@@ -376,17 +376,17 @@ export const getPrimaryNavItems = (
         color: "from-purple-500 to-pink-500",
       },
       {
+        to: "/goals",
+        label: "أهدافي",
+        icon: Target,
+        color: "from-green-500 to-emerald-500",
+      },
+      {
         to: "#academic",
         label: "أكاديميتي",
         icon: GraduationCap,
         color: "from-green-500 to-emerald-500",
         subItems: [
-          {
-            to: "/goals",
-            label: "أهدافي الحالية",
-            icon: Target,
-            color: "from-green-500 to-emerald-500",
-          },
           {
             to: "/daily-marks",
             label: "سجل علاماتي",
