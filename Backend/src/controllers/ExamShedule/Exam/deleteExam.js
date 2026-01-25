@@ -19,6 +19,20 @@ const deleteExam = async (req, res) => {
     if (!exam) {
       return res.status(404).json({ error: "Exam not found" });
     }
+
+    // ✅ FIX: التحقق من أن المعلم يحذف فقط امتحانات حلقاته
+    if (req.user && req.user.role === 'teacher') {
+      const teacherGroups = req.user.groups || [];
+      const teacherGroupNames = teacherGroups.map(g => g.name).filter(Boolean);
+      
+      if (!teacherGroupNames.includes(exam.group)) {
+        return res.status(403).json({
+          success: false,
+          message: "غير مصرح لك بحذف هذا الامتحان",
+          error: `لا يمكنك حذف امتحان للحلقة "${exam.group}" لأنها ليست من حلقاتك`
+        });
+      }
+    }
     
     // Get Socket.IO instance
     const io = req.app.get("io");

@@ -42,10 +42,27 @@ const bulkDeleteExams = async (req, res) => {
       });
     }
 
-    // Delete all exams with the given IDs
-    const result = await ExamSchedule.deleteMany({
-      _id: { $in: examIds }
-    });
+    // ✅ FIX: بناء شرط الحذف - للمعلم فقط حلقاته
+    let deleteQuery = { _id: { $in: examIds } };
+    
+    if (req.user && req.user.role === 'teacher') {
+      const teacherGroups = req.user.groups || [];
+      const teacherGroupNames = teacherGroups.map(g => g.name).filter(Boolean);
+      
+      if (teacherGroupNames.length === 0) {
+        return res.status(403).json({
+          success: false,
+          message: 'غير مصرح لك بحذف الامتحانات',
+          error: 'لا توجد حلقات مرتبطة بحسابك'
+        });
+      }
+      
+      // إضافة شرط الحلقة للمعلم
+      deleteQuery.group = { $in: teacherGroupNames };
+    }
+
+    // Delete all exams with the given IDs (filtered by teacher's groups if applicable)
+    const result = await ExamSchedule.deleteMany(deleteQuery);
 
     console.log(`🗑️ Bulk deleted ${result.deletedCount} exams out of ${examIds.length} requested`);
 

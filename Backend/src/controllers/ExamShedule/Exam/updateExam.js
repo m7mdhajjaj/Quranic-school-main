@@ -56,6 +56,31 @@ const updateExam = async (req, res) => {
       }
     }
 
+    // ✅ FIX: التحقق من أن المعلم يعدل فقط امتحانات حلقاته
+    if (req.user && req.user.role === 'teacher') {
+      const currentExam = await ExamSchedule.findById(examId);
+      const teacherGroups = req.user.groups || [];
+      const teacherGroupNames = teacherGroups.map(g => g.name).filter(Boolean);
+      
+      // التحقق من الحلقة الحالية للامتحان
+      if (currentExam && !teacherGroupNames.includes(currentExam.group)) {
+        return res.status(403).json({
+          success: false,
+          message: "غير مصرح لك بتعديل هذا الامتحان",
+          errors: [`لا يمكنك تعديل امتحان للحلقة "${currentExam.group}" لأنها ليست من حلقاتك`]
+        });
+      }
+      
+      // التحقق من الحلقة الجديدة (إذا تم تغييرها)
+      if (group !== undefined && !teacherGroupNames.includes(group)) {
+        return res.status(403).json({
+          success: false,
+          message: "غير مصرح لك بنقل الامتحان لهذه الحلقة",
+          errors: [`لا يمكنك نقل الامتحان للحلقة "${group}" لأنها ليست من حلقاتك`]
+        });
+      }
+    }
+
     // Check for teacher time conflict (only for teachers and if time/date changed)
     if (req.user && req.user.role === 'teacher' && (time || date || duration)) {
       const currentExam = await ExamSchedule.findById(examId);

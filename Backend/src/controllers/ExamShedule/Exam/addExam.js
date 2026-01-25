@@ -61,6 +61,20 @@ const addExam = async (req, res) => {
       }
     }
 
+    // ✅ FIX: التحقق من أن المعلم يضيف امتحان لحلقاته فقط
+    if (req.user && req.user.role === 'teacher' && group) {
+      const teacherGroups = req.user.groups || [];
+      const teacherGroupNames = teacherGroups.map(g => g.name).filter(Boolean);
+      
+      if (!teacherGroupNames.includes(group)) {
+        return res.status(403).json({
+          success: false,
+          message: "غير مصرح لك بإضافة امتحان لهذه الحلقة",
+          errors: [`لا يمكنك إضافة امتحان للحلقة "${group}" لأنها ليست من حلقاتك`]
+        });
+      }
+    }
+
     // Check for teacher time conflict (only for teachers)
     if (req.user && req.user.role === 'teacher' && time) {
       const timeConflict = await checkTeacherTimeConflict(

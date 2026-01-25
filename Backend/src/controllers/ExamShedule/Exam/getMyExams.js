@@ -93,8 +93,23 @@ const getMyExams = async (req, res) => {
       // استخدام اسم الحلقة مباشرة للفلترة
       filter.group = studentGroup;
       console.log(`🎓 Filtering exams for student in group: "${studentGroup}"`);
+    } else if (role === 'teacher') {
+      // ✅ FIX: المعلم يرى فقط امتحانات حلقاته
+      const teacherGroups = req.user.groups || [];
+      const teacherGroupNames = teacherGroups.map(g => g.name).filter(Boolean);
+      
+      console.log(`👨‍🏫 Teacher groups from req.user:`, teacherGroupNames);
+      
+      if (teacherGroupNames.length === 0) {
+        console.log(`⚠️ Teacher ${userId} has no groups assigned`);
+        return res.json([]);
+      }
+      
+      // فلترة الامتحانات حسب حلقات المعلم
+      filter.group = { $in: teacherGroupNames };
+      console.log(`👨‍🏫 Filtering exams for teacher's groups: ${teacherGroupNames.join(', ')}`);
     }
-    // المعلم والإداري يرون جميع الامتحانات
+    // الإداري (admin) يرى جميع الامتحانات
 
     // Combine all conditions
     if (andConditions.length > 0) {
