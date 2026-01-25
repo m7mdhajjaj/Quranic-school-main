@@ -248,9 +248,17 @@ const DailyMarksPage = () => {
   const handleAddSectionClick = useCallback(() => {
     const today = new Date();
     const localDate = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
-    state.setNewSection(prev => ({ ...prev, date: localDate }));
+    // ✅ FIX: Reset ALL fields to prevent stale data from previous section
+    state.setNewSection({
+      date: localDate,
+      memorizationSection: "",
+      reviewSection: "",
+      memorizationMeta: [],
+      reviewMeta: [],
+      group: selectedGroup !== 'all' ? selectedGroup : undefined,
+    });
     state.setIsAddSectionModalOpen(true);
-  }, [state]);
+  }, [state, selectedGroup]);
 
   // ==========================================================================
   // ROLE & DEFAULT VALUES

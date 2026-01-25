@@ -21,6 +21,14 @@ export const useAddSectionModal = () => {
     setLocalMemorizationMeta((section.memorizationMeta || []) as QuranSegmentUI[]);
   }, []);
 
+  // ✅ FIX: Reset all local state to empty values
+  const resetLocalState = useCallback(() => {
+    setLocalReviewSection('');
+    setLocalMemorizationSection('');
+    setLocalReviewMeta([]);
+    setLocalMemorizationMeta([]);
+  }, []);
+
   // Handle Meta Changes (Structured Data)
   const handleMetaChange = useCallback(
     (
@@ -83,6 +91,7 @@ export const useAddSectionModal = () => {
     localReviewMeta,
     localMemorizationMeta,
     syncLocalState,
+    resetLocalState,
     handleInputChange,
     handleMetaChange,
   };

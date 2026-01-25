@@ -86,7 +86,12 @@ export const useModalAndFormActions = ({
   }, [setEditingMark, setSelectedSection, setSelectedStudent, setNewMark, setIsUpdateMarkModalOpen]);
 
   const openEditSectionModal = useCallback((section: Section) => {
-    setEditingSection({ ...section });
+    // ✅ FIX: Deep copy to ensure nested arrays are also new references
+    setEditingSection({
+      ...section,
+      memorizationMeta: section.memorizationMeta ? [...section.memorizationMeta] : [],
+      reviewMeta: section.reviewMeta ? [...section.reviewMeta] : [],
+    });
     setIsEditSectionModalOpen(true);
   }, [setEditingSection, setIsEditSectionModalOpen]);
 

@@ -1,10 +1,12 @@
 // ============================================================================
-// Delete Section Controller (V8)
+// Delete Section Controller (V9)
 // ============================================================================
 const Section = require("../../../schema/DailyMark/Section");
 const DailyMark = require("../../../schema/DailyMark/DailyMark");
 const TimeTable = require("../../../schema/TimeTable");
 const Group = require("../../../schema/Group");
+const Attendance = require("../../../schema/Attendance");
+const Student = require("../../../schema/Student/Student");
 const { notifySectionDeleted } = require("../../../Notifications");
 const activeSurahService = require("../../../services/DailyMark/GroupActiveSurahService");
 const { createLogger } = require("../../../utils/logger");
@@ -16,6 +18,50 @@ const {
 } = require("../utils/responseHelpers");
 
 const logger = createLogger('SectionDelete');
+
+/**
+ * ============================================================================
+ * حذف سجلات الحضور المرتبطة بمقطع (حلقة + تاريخ)
+ * ============================================================================
+ * عند حذف مقطع، يجب حذف سجلات الحضور المرتبطة بالحلقة في نفس التاريخ
+ * لأن الحضور مرتبط بوجود المقطع (لا يمكن تسجيل حضور بدون مقطع)
+ */
+async function deleteAttendanceForSection(groupName, dateKey) {
+  try {
+    if (!groupName || !dateKey) {
+      logger.warn('⚠️ حذف الحضور: لا يوجد اسم حلقة أو تاريخ');
+      return { deletedCount: 0 };
+    }
+
+    // 1. جلب طلاب الحلقة
+    const students = await Student.find({ group: groupName }).select('_id');
+    if (students.length === 0) {
+      logger.debug(`لا يوجد طلاب في الحلقة: ${groupName}`);
+      return { deletedCount: 0 };
+    }
+
+    const studentIds = students.map(s => s._id);
+
+    // 2. تحويل dateKey إلى Date للمقارنة
+    // dateKey بصيغة YYYY-MM-DD
+    const targetDate = new Date(dateKey + 'T00:00:00.000Z');
+
+    // 3. حذف سجلات الحضور للطلاب في هذا التاريخ
+    const result = await Attendance.deleteMany({
+      studentId: { $in: studentIds },
+      date: targetDate
+    });
+
+    if (result.deletedCount > 0) {
+      logger.info(`🗑️ تم حذف ${result.deletedCount} سجل حضور للحلقة "${groupName}" في ${dateKey}`);
+    }
+
+    return result;
+  } catch (error) {
+    logger.error('❌ خطأ في حذف سجلات الحضور:', error);
+    return { deletedCount: 0, error };
+  }
+}
 
 /**
  * ============================================================================
@@ -130,6 +176,7 @@ exports.deleteSection = async (req, res) => {
 
     const groupId = section.groupId;
     const groupName = section.group;
+    const dateKey = section.dateKey;
     const hasMemorization = section.memorizationMeta && section.memorizationMeta.length > 0;
     const hasReview = section.reviewMeta && section.reviewMeta.length > 0;
 
@@ -137,6 +184,12 @@ exports.deleteSection = async (req, res) => {
     if (section.timetableId) {
       await TimeTable.findByIdAndDelete(section.timetableId);
       logger.debug(`تم حذف TimeTable المرتبط: ${section.timetableId}`);
+    }
+
+    // ✅ V9: حذف سجلات الحضور المرتبطة بهذا التاريخ والحلقة
+    const attendanceResult = await deleteAttendanceForSection(groupName, dateKey);
+    if (attendanceResult.deletedCount > 0) {
+      logger.debug(`تم حذف ${attendanceResult.deletedCount} سجل حضور مرتبط`);
     }
 
     // إرسال إشعارات في الخلفية
@@ -196,9 +249,9 @@ exports.bulkDeleteSections = async (req, res) => {
 
     logger.debug(`بدء حذف ${sectionIds.length} مقطع...`);
 
-    // جلب المقاطع للحصول على timetableIds و groupIds
+    // جلب المقاطع للحصول على timetableIds و groupIds و dateKey
     const sections = await Section.find({ _id: { $in: sectionIds } })
-      .select('timetableId group groupId memorizationMeta reviewMeta');
+      .select('timetableId group groupId memorizationMeta reviewMeta dateKey');
     
     // جمع الحلقات المتأثرة
     // We use a Map where key is ID (if available) or Name (prefixed with 'NAME:')
@@ -245,6 +298,18 @@ exports.bulkDeleteSections = async (req, res) => {
       logger.debug(`تم حذف ${timetableIds.length} TimeTable مرتبط`);
     }
 
+    // ✅ V9: حذف سجلات الحضور المرتبطة بكل مقطع
+    let totalAttendanceDeleted = 0;
+    for (const section of sections) {
+      if (section.group && section.dateKey) {
+        const attendanceResult = await deleteAttendanceForSection(section.group, section.dateKey);
+        totalAttendanceDeleted += attendanceResult.deletedCount || 0;
+      }
+    }
+    if (totalAttendanceDeleted > 0) {
+      logger.debug(`تم حذف ${totalAttendanceDeleted} سجل حضور مرتبط`);
+    }
+
     // إرسال إشعارات في الخلفية
     const io = req.app.get("io");
     for (const section of sections) {
@@ -288,6 +353,7 @@ exports.bulkDeleteSections = async (req, res) => {
       deletedSectionIds: sectionIds,
       deletedTimeTables: timetableIds.length,
       deletedMarks: marksResult.deletedCount,
+      deletedAttendance: totalAttendanceDeleted,
       recalculatedGroups: affectedGroups.size
     }, `تم حذف ${sectionsResult.deletedCount} مقطع بنجاح.`);
   } catch (error) {

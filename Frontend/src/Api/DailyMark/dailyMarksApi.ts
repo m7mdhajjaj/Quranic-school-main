@@ -59,6 +59,19 @@ export interface Section {
   reviewSection: string;
   group?: string;
   teacher?: string;
+  // ✅ Structured Meta for Quran segments
+  memorizationMeta?: Array<{
+    surahNumber?: number;
+    surahName?: string;
+    ayahStart?: number;
+    ayahEnd?: number;
+  }>;
+  reviewMeta?: Array<{
+    surahNumber?: number;
+    surahName?: string;
+    ayahStart?: number;
+    ayahEnd?: number;
+  }>;
   marksStatus?: "completed" | "in_progress" | "not_started";
   marksProgress?: {
     totalStudents: number;

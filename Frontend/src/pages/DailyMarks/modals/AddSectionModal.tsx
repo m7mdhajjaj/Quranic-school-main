@@ -36,6 +36,7 @@ const AddSectionModalComponent = ({
     localReviewMeta,
     localMemorizationMeta,
     syncLocalState,
+    resetLocalState,
     // handleInputChange, // Legacy unused
     handleMetaChange,
   } = useAddSectionModal();
@@ -47,11 +48,21 @@ const AddSectionModalComponent = ({
   const [quotaError, setQuotaError] = useState<string | null>(null);
   const [isCheckingQuota, setIsCheckingQuota] = useState(false);
 
-  // Sync with parent state when modal opens
+  // ✅ FIX: Reset local state when modal closes, sync when opens
   useEffect(() => {
     if (isOpen) {
+      // Reset first, then sync with new data
+      resetLocalState();
       syncLocalState(newSection);
       setQuotaError(null); // Reset error on open
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]); // Only depend on isOpen to trigger reset/sync on open
+
+  // ✅ FIX: Sync when newSection.date changes (for date picker updates)
+  useEffect(() => {
+    if (isOpen && newSection) {
+      syncLocalState(newSection);
     }
   }, [isOpen, newSection, syncLocalState]);
 

@@ -52,8 +52,10 @@ async function extractVerseKey(question) {
   //search for patterns like "سورة البقرة آية 255" or "سورة الفاتحة 1"
   let foundSurah = null;
   let foundAyah = null;
+  let longestMatchLength = 0; // ✅ لتتبع أطول تطابق
 
-  // البحث عن أطول اسم أولاً لتجنب التداخل
+  // ✅ البحث عن أطول اسم مطابق لتجنب التداخل
+  // مثال: "ابراهيم" يحتوي على "براه" (براءة)، لكن "ابراهيم" أطول فيجب اختياره
   for (const surah of SURAH_CANONICAL) {
     for (const name of surah.names) {
       const normalizedName = normalizeArabic(name);
@@ -66,23 +68,29 @@ async function extractVerseKey(question) {
           'i',
         );
         if (regex.test(normalizedText)) {
-          foundSurah = surah.number;
-          console.log(
-            `📌 Surah name detected (short): ${name} = ${surah.number}`,
-          );
-          break;
+          // ✅ فقط إذا كان هذا الاسم أطول من التطابق السابق
+          if (normalizedName.length > longestMatchLength) {
+            foundSurah = surah.number;
+            longestMatchLength = normalizedName.length;
+            console.log(
+              `📌 Surah name detected (short): ${name} = ${surah.number} (length: ${longestMatchLength})`,
+            );
+          }
         }
       } else {
         if (normalizedText.includes(normalizedName)) {
-          foundSurah = surah.number;
-          console.log(
-            `📌 Surah name detected (exact): ${name} = ${surah.number}`,
-          );
-          break;
+          // ✅ فقط إذا كان هذا الاسم أطول من التطابق السابق
+          if (normalizedName.length > longestMatchLength) {
+            foundSurah = surah.number;
+            longestMatchLength = normalizedName.length;
+            console.log(
+              `📌 Surah name detected (exact): ${name} = ${surah.number} (length: ${longestMatchLength})`,
+            );
+          }
         }
       }
     }
-    if (foundSurah) break;
+    // ✅ لا نتوقف عند أول تطابق، نستمر للبحث عن الأطول
   }
 
   // 4️⃣ إذا وجدنا تطابق دقيق، نبحث عن رقم الآية
@@ -113,7 +121,7 @@ async function extractVerseKey(question) {
       surah: null,
       ayah: null,
       needsConfirmation: true,
-      suggestions: suggestions.slice(0, 1),
+      suggestions: suggestions.slice(0, 3),
     };
   }
 
