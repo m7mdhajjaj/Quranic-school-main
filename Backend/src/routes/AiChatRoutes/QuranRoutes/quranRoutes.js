@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const quranController = require('../../../controllers/AiChatController/QuranController');
+const quranSettingsController = require('../../../controllers/AiChatController/QuranController/QuranSettingsController');
 const { protect, adminProtect } = require('../../../middleware/auth'); // 🔒 إضافة الحماية
 const {
   validateSearchQuran,
@@ -15,6 +16,25 @@ const {
  * Quran Routes
  * Routes for accessing Quran data (Surahs, Ayahs, Search, RAG)
  */
+
+// ============================================================================
+// Reading Settings & Bookmarks - إعدادات القراءة والإشارات المرجعية
+// ============================================================================
+
+// Get reading settings
+router.get('/reading-settings', protect, quranSettingsController.getReadingSettings);
+
+// Save reading settings
+router.post('/reading-settings', protect, quranSettingsController.saveReadingSettings);
+
+// Get bookmark
+router.get('/bookmark', protect, quranSettingsController.getBookmark);
+
+// Save bookmark
+router.post('/bookmark', protect, quranSettingsController.saveBookmark);
+
+// Delete bookmark
+router.delete('/bookmark', protect, quranSettingsController.deleteBookmark);
 
 // ============================================================================
 // Surah & Ayah Routes - جلب البيانات الأساسية
