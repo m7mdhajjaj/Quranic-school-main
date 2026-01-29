@@ -7,7 +7,7 @@
 
 // Backend URLs
 export const BACKEND_PORT = "5005";
-export const BACKEND_HOST = "192.168.1.1"; // Change this to your computer's IP address
+export const BACKEND_HOST = "172.23.225.50"; // Change this to your computer's IP address
 export const API_BASE_URL = `http://${BACKEND_HOST}:${BACKEND_PORT}`;
 export const API_URL = `${API_BASE_URL}/api`;
 export const SOCKET_URL = API_BASE_URL;

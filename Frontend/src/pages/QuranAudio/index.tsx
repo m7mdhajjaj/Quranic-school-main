@@ -111,7 +111,7 @@ const QuranAudio: React.FC = () => {
         </Suspense>
       </div>
 
-      {/* 🎵 Audio Control Bar - Fixed at bottom */}
+      🎵 Audio Control Bar - Fixed at bottom
       {selectedSurah && (
         <AudioControlBar
           audioRef={audioRef as React.RefObject<HTMLAudioElement>}
