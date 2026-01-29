@@ -248,7 +248,7 @@ cd Backend && npm install && npm run dev
 cd Frontend && npm install && npm run dev
 
 # Mobile
-cd Mobile/my-app && npm install && npm start
+cd Mobile/my-app && npm install && npx expo start
 ```
 
 ### 📄 API Endpoints
