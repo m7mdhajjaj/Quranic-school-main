@@ -1,7 +1,10 @@
 const Student = require("../../../schema/Student");
 const Group = require("../../../schema/Group");
 const bcrypt = require("bcryptjs");
-const { checkDuplicateFields } = require("../../../Validation/validators/duplicateChecker");
+const { TIMEZONE } = require("../../../config/timezone");
+const {
+  checkDuplicateFields,
+} = require("../../../Validation/validators/duplicateChecker");
 const { invalidateCache } = require("../../../middleware");
 const {
   validateTeacherGroupMatch,
@@ -29,7 +32,7 @@ exports.getStudents = async (req, res) => {
     // Sorting
     const sortOptions = {};
     if (sortBy) {
-      sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
+      sortOptions[sortBy] = sortOrder === "desc" ? -1 : 1;
     } else {
       sortOptions.studentId = 1; // Default: sort by studentId ascending (oldest first)
     }
@@ -63,7 +66,7 @@ exports.getStudents = async (req, res) => {
         total,
         page: pageNum,
         limit: limitNum,
-        pages: Math.ceil(total / limitNum)
+        pages: Math.ceil(total / limitNum),
       },
       message: `تم تحميل ${students.length} طالب بنجاح`,
     });
@@ -89,10 +92,10 @@ exports.getStudentById = async (req, res) => {
       });
     }
     const studentObj = student.toObject();
-    
+
     // إضافة اسم المعلم الثلاثي
     const studentWithTeacherName = await populateTeacherFullName(studentObj);
-    
+
     res.status(200).json({
       success: true,
       data: {
@@ -116,7 +119,10 @@ exports.getStudentById = async (req, res) => {
  */
 exports.createStudent = async (req, res) => {
   try {
-    console.log("Received request to create student:", JSON.stringify(req.body, null, 2));
+    console.log(
+      "Received request to create student:",
+      JSON.stringify(req.body, null, 2),
+    );
 
     // توليد رقم طالب متسلسل
     let studentId;
@@ -149,7 +155,10 @@ exports.createStudent = async (req, res) => {
 
     // التحقق من توافق المعلم مع الحلقة
     const { teacher, group } = req.body;
-    const teacherGroupValidation = await validateTeacherGroupMatch(teacher, group);
+    const teacherGroupValidation = await validateTeacherGroupMatch(
+      teacher,
+      group,
+    );
     if (!teacherGroupValidation.valid) {
       return res.status(400).json({
         success: false,
@@ -161,7 +170,7 @@ exports.createStudent = async (req, res) => {
     const capacityValidation = await validateGroupCapacity(
       group,
       null,
-      teacherGroupValidation.groupData
+      teacherGroupValidation.groupData,
     );
     if (!capacityValidation.valid) {
       return res.status(400).json({
@@ -171,9 +180,12 @@ exports.createStudent = async (req, res) => {
     }
 
     // تشفير كلمة المرور - استخدام رقم الهوية إذا لم تُدخل كلمة مرور
-    const rawPassword = req.body.password || req.body.idNumber || '1234';
+    const rawPassword = req.body.password || req.body.idNumber || "1234";
     console.log("🔐 تشفير كلمة المرور:", rawPassword ? "موجودة" : "غير موجودة");
-    console.log("🔑 كلمة المرور المستخدمة:", req.body.password ? "مخصصة" : "رقم الهوية");
+    console.log(
+      "🔑 كلمة المرور المستخدمة:",
+      req.body.password ? "مخصصة" : "رقم الهوية",
+    );
     const hashedPassword = await bcrypt.hash(rawPassword, 10);
 
     const studentData = {
@@ -183,7 +195,10 @@ exports.createStudent = async (req, res) => {
       age: parseInt(req.body.age || 0, 10) || 0,
     };
 
-    console.log("✅ إنشاء طالب بالبيانات:", { ...studentData, password: "***ENCRYPTED***" });
+    console.log("✅ إنشاء طالب بالبيانات:", {
+      ...studentData,
+      password: "***ENCRYPTED***",
+    });
 
     const student = new Student(studentData);
     const newStudent = await student.save();
@@ -191,7 +206,7 @@ exports.createStudent = async (req, res) => {
 
     // Invalidate caches and emit events using helpers
     await invalidateStudentCaches();
-    emitStudentEvent('created', newStudent);
+    emitStudentEvent("created", newStudent);
 
     return res.status(201).json({
       success: true,
@@ -215,7 +230,7 @@ exports.updateStudent = async (req, res) => {
     // معالجة كلمة المرور (if not hashed by validation middleware)
     if (updatedData.password && updatedData.password.trim() !== "") {
       // Check if already hashed (starts with $2)
-      if (!updatedData.password.startsWith('$2')) {
+      if (!updatedData.password.startsWith("$2")) {
         updatedData.password = await bcrypt.hash(updatedData.password, 10);
       }
     } else {
@@ -225,7 +240,10 @@ exports.updateStudent = async (req, res) => {
     // التحقق من توافق المعلم مع الحلقة عند التعديل
     const { teacher, group } = updatedData;
     if (teacher && group) {
-      const teacherGroupValidation = await validateTeacherGroupMatch(teacher, group);
+      const teacherGroupValidation = await validateTeacherGroupMatch(
+        teacher,
+        group,
+      );
       if (!teacherGroupValidation.valid) {
         return res.status(400).json({
           success: false,
@@ -239,7 +257,7 @@ exports.updateStudent = async (req, res) => {
         const capacityValidation = await validateGroupCapacity(
           group,
           req.params.id,
-          teacherGroupValidation.groupData
+          teacherGroupValidation.groupData,
         );
         if (!capacityValidation.valid) {
           return res.status(400).json({
@@ -257,7 +275,7 @@ exports.updateStudent = async (req, res) => {
         new: true,
         runValidators: true,
         context: "query",
-      }
+      },
     );
 
     if (!updatedStudent) {
@@ -269,8 +287,8 @@ exports.updateStudent = async (req, res) => {
 
     // Invalidate caches and emit events using helpers
     await invalidateStudentCaches();
-    emitStudentEvent('updated', updatedStudent);
-    
+    emitStudentEvent("updated", updatedStudent);
+
     // Emit profile update event
     const io = req.app.get("io");
     if (io) {
@@ -282,7 +300,6 @@ exports.updateStudent = async (req, res) => {
       });
       console.log("✅ profileUpdated event emitted to profile room");
     }
-
 
     res.json({ success: true, data: updatedStudent });
   } catch (error) {
@@ -306,7 +323,7 @@ exports.deleteStudent = async (req, res) => {
 
     // Invalidate caches and emit events using helpers
     await invalidateStudentCaches();
-    emitStudentEvent('deleted', {
+    emitStudentEvent("deleted", {
       studentId: req.params.id,
       student: deletedStudent,
     });
@@ -345,19 +362,20 @@ exports.bulkDeleteStudents = async (req, res) => {
       _id: { $in: studentIds },
     });
 
-    console.log(`✅ تم حذف ${result.deletedCount} طالب من أصل ${studentIds.length}`);
+    console.log(
+      `✅ تم حذف ${result.deletedCount} طالب من أصل ${studentIds.length}`,
+    );
 
     // Invalidate caches and emit events using helpers
     await invalidateStudentCaches();
-    
+
     // Emit delete events for each student
     if (global.io) {
       console.log("📡 Broadcasting bulk students deleted event");
       studentIds.forEach((studentId) => {
-        emitStudentEvent('deleted', { studentId });
+        emitStudentEvent("deleted", { studentId });
       });
     }
-    
 
     res.status(200).json({
       success: true,
@@ -393,29 +411,29 @@ exports.getStudentsStatistics = async (req, res) => {
           _id: null,
           total: { $sum: 1 },
           maleCount: {
-            $sum: { $cond: [{ $eq: ['$gender', 'ذكر'] }, 1, 0] }
+            $sum: { $cond: [{ $eq: ["$gender", "ذكر"] }, 1, 0] },
           },
           femaleCount: {
-            $sum: { $cond: [{ $eq: ['$gender', 'أنثى'] }, 1, 0] }
+            $sum: { $cond: [{ $eq: ["$gender", "أنثى"] }, 1, 0] },
           },
-          totalAge: { $sum: '$age' },
+          totalAge: { $sum: "$age" },
           withGroupCount: {
             $sum: {
               $cond: [
                 {
                   $and: [
-                    { $ne: ['$group', null] },
-                    { $ne: ['$group', ''] },
-                    { $ne: ['$group', 'غير محدد'] }
-                  ]
+                    { $ne: ["$group", null] },
+                    { $ne: ["$group", ""] },
+                    { $ne: ["$group", "غير محدد"] },
+                  ],
                 },
                 1,
-                0
-              ]
-            }
-          }
-        }
-      }
+                0,
+              ],
+            },
+          },
+        },
+      },
     ]);
 
     const result = stats[0] || {
@@ -423,10 +441,11 @@ exports.getStudentsStatistics = async (req, res) => {
       maleCount: 0,
       femaleCount: 0,
       totalAge: 0,
-      withGroupCount: 0
+      withGroupCount: 0,
     };
 
-    const avgAge = result.total > 0 ? (result.totalAge / result.total).toFixed(1) : 0;
+    const avgAge =
+      result.total > 0 ? (result.totalAge / result.total).toFixed(1) : 0;
 
     const duration = Date.now() - startTime;
     console.log(`✅ تم حساب الإحصائيات في ${duration}ms`);
@@ -439,8 +458,8 @@ exports.getStudentsStatistics = async (req, res) => {
         female: result.femaleCount,
         active: result.withGroupCount,
         inactive: result.total - result.withGroupCount,
-        avgAge: avgAge
-      }
+        avgAge: avgAge,
+      },
     });
   } catch (error) {
     console.error("❌ خطأ في حساب الإحصائيات:", error);
@@ -466,7 +485,11 @@ exports.checkDuplicate = async (req, res) => {
     }
 
     const data = { [field]: value };
-    const duplicateError = await checkDuplicateFields(data, excludeId, 'student');
+    const duplicateError = await checkDuplicateFields(
+      data,
+      excludeId,
+      "student",
+    );
 
     if (duplicateError) {
       return res.json({
@@ -498,10 +521,10 @@ exports.checkDuplicate = async (req, res) => {
 exports.exportStudentsToCSV = async (req, res) => {
   try {
     console.log("📥 تصدير بيانات الطلاب إلى CSV...");
-    
+
     // Build query from filters
     const query = buildStudentQuery(req.query);
-    
+
     // Fetch all students matching the query
     const students = await Student.find(query)
       .select("-password -avatar -__v")
@@ -538,18 +561,11 @@ exports.exportStudentsToCSV = async (req, res) => {
     const escapeCSV = (field) => {
       if (field == null || field === undefined) return "";
       const str = String(field);
-      // If contains semicolon, newline, or quote, wrap and escape
-      if (str.includes(";") || str.includes("\n") || str.includes('"')) {
+      // If contains comma, newline, or quote, wrap and escape
+      if (str.includes(",") || str.includes("\n") || str.includes('"')) {
         return `"${str.replace(/"/g, '""')}"`;
       }
       return str;
-    };
-
-    // Helper to format numbers as text for Excel (prevents scientific notation)
-    const formatAsText = (value) => {
-      if (value == null || value === undefined || value === "") return "";
-      // Use Excel formula to force text format
-      return `="${value}"`;
     };
 
     // Format date helper
@@ -570,7 +586,7 @@ exports.exportStudentsToCSV = async (req, res) => {
       student.grandFatherName || "",
       student.motherName || "",
       student.lastName || "",
-      formatAsText(student.idNumber), // Format as text to prevent scientific notation
+      student.idNumber || "",
       formatDate(student.birthDate),
       student.age || "",
       student.gender || "",
@@ -578,18 +594,18 @@ exports.exportStudentsToCSV = async (req, res) => {
       student.teacherFullName || student.teacher || "غير محدد",
       student.group || "غير محدد",
       student.email || "",
-      formatAsText(student.phoneNumber), // Format as text
+      student.phoneNumber || "",
     ]);
 
     // Generate CSV content
-    const delimiter = ";";
+    const delimiter = ",";
     const csvContent = [headers, ...rows]
       .map((row) => row.map(escapeCSV).join(delimiter))
       .join("\r\n");
 
     // Send CSV with UTF-8 BOM for Excel compatibility
     const filename = `students_${new Date().toISOString().split("T")[0]}.csv`;
-    
+
     res.setHeader("Content-Type", "text/csv; charset=utf-8");
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
     res.send("\ufeff" + csvContent);

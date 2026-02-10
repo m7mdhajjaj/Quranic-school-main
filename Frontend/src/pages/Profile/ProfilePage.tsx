@@ -109,10 +109,8 @@ const ProfilePage = () => {
   } = useProfileEdit(user, endpoint, updateUser);
 
   // Profile validation hook
-  const {
-    fieldErrors: validationFieldErrors,
-    validateFieldValue,
-  } = useProfileValidation(user);
+  const { fieldErrors: validationFieldErrors, validateFieldValue } =
+    useProfileValidation(user);
 
   // Duplicate check hook
   const { checkingDuplicate, checkPhoneNumber } = useDuplicateCheck();
@@ -141,7 +139,7 @@ const ProfilePage = () => {
     resetAvatar,
     saveProfileEdit,
     uploadAvatar,
-    avatarFile
+    avatarFile,
   );
 
   // Merge field errors
@@ -156,14 +154,12 @@ const ProfilePage = () => {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-amber-50 p-6 flex items-center justify-center"
-      >
+        className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-amber-50 p-6 flex items-center justify-center">
         <motion.div
           initial={{ scale: 0.9, y: 20 }}
           animate={{ scale: 1, y: 0 }}
           transition={{ type: "spring", stiffness: 100 }}
-          className="max-w-md w-full"
-        >
+          className="max-w-md w-full">
           <Card variant="elevated" className="p-10">
             <EmptyState
               icon={<AlertCircle className="w-12 h-12 text-red-600" />}
@@ -188,13 +184,11 @@ const ProfilePage = () => {
       initial="hidden"
       animate="visible"
       className="min-h-screen bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20"
-      dir="rtl"
-    >
+      dir="rtl">
       {/* Hero Section with Animated Background */}
       <motion.div
         variants={heroVariants}
-        className="relative overflow-hidden pb-24"
-      >
+        className="relative overflow-hidden pb-24">
         {/* Animated Background */}
         <AnimatedBackground variant="teal" />
 
@@ -209,8 +203,7 @@ const ProfilePage = () => {
               stiffness: 200,
               damping: 20,
               delay: 0.2,
-            }}
-          >
+            }}>
             <AvatarSection
               user={user}
               avatarUrl={avatarUrl}
@@ -225,8 +218,7 @@ const ProfilePage = () => {
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.5 }}
-          >
+            transition={{ delay: 0.4, duration: 0.5 }}>
             <ProfileHeader
               fullName={fullName}
               age={age}
@@ -248,8 +240,7 @@ const ProfilePage = () => {
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
             className="w-full h-auto"
-            preserveAspectRatio="none"
-          >
+            preserveAspectRatio="none">
             <motion.path
               initial={{ pathLength: 0 }}
               animate={{ pathLength: 1 }}
@@ -262,13 +253,14 @@ const ProfilePage = () => {
       </motion.div>
 
       {/* Content Section */}
-      <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 -mt-8" dir="rtl">
+      <div
+        className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 -mt-8"
+        dir="rtl">
         <motion.div
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-5"
-        >
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-5">
           {/* الاسم الكامل */}
           {shouldShow(Boolean(fullName)) && (
             <motion.div variants={itemVariants}>
@@ -303,7 +295,7 @@ const ProfilePage = () => {
                         onBlur={() =>
                           handleFieldBlur(
                             "grandFatherName",
-                            edited?.grandFatherName
+                            edited?.grandFatherName,
                           )
                         }
                         error={fieldErrors?.["grandFatherName"]}
@@ -348,14 +340,17 @@ const ProfilePage = () => {
                     <div className="space-y-3 mt-3">
                       <DatePicker
                         value={
-                          edited?.birthDate && !isNaN(new Date(edited.birthDate).getTime())
+                          edited?.birthDate &&
+                          !isNaN(new Date(edited.birthDate).getTime())
                             ? edited.birthDate.slice(0, 10)
                             : ""
                         }
                         onChange={(dateString) => {
                           updateField(
                             "birthDate",
-                            dateString ? new Date(dateString).toISOString() : ""
+                            dateString
+                              ? new Date(dateString).toISOString()
+                              : "",
                           );
                         }}
                         error={fieldErrors?.["birthDate"]}
@@ -367,10 +362,13 @@ const ProfilePage = () => {
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: 1, x: 0 }}
                           className="flex items-center gap-2 text-xs bg-gradient-to-r from-amber-50 to-orange-50 text-amber-700 px-4 py-2.5 rounded-xl border border-amber-300 shadow-sm"
-                          dir="rtl"
-                        >
-                          <span className="font-semibold">عدد التعديلات المتبقية:</span>
-                          <span className="font-bold bg-amber-100 px-2 py-1 rounded-lg">{remainingBirth} / 2</span>
+                          dir="rtl">
+                          <span className="font-semibold">
+                            عدد التعديلات المتبقية:
+                          </span>
+                          <span className="font-bold bg-amber-100 px-2 py-1 rounded-lg">
+                            {remainingBirth} / 2
+                          </span>
                         </motion.div>
                       )}
                     </div>
@@ -419,12 +417,26 @@ const ProfilePage = () => {
           )}
 
           {/* البريد الإلكتروني */}
-          {shouldShow(Boolean(user.email)) && (
+          {shouldShow(Boolean(user.email) || isEditing) && (
             <motion.div variants={itemVariants}>
               <InfoField
                 icon={<Mail className="w-5 h-5" />}
                 label="البريد الإلكتروني"
-                value={nv(user.email)}
+                value={
+                  isEditing ? (
+                    <TextInput
+                      type="email"
+                      inputMode="email"
+                      placeholder="example@email.com"
+                      value={edited?.email ?? ""}
+                      onChange={(value) => updateField("email", value)}
+                      onBlur={() => handleFieldBlur("email", edited?.email)}
+                      error={fieldErrors?.["email"]}
+                    />
+                  ) : (
+                    nv(user.email)
+                  )
+                }
               />
             </motion.div>
           )}
@@ -455,8 +467,7 @@ const ProfilePage = () => {
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           className="text-xs text-teal-600 font-medium text-right flex items-center gap-1"
-                          dir="rtl"
-                        >
+                          dir="rtl">
                           <span className="animate-spin inline-block w-3 h-3 border-2 border-teal-600 border-t-transparent rounded-full"></span>
                           جاري التحقق من التكرار...
                         </motion.p>

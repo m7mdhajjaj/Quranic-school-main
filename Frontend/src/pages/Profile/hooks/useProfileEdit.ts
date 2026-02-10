@@ -4,7 +4,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { showSuccessToast, showInfoToast } from "@/utils/toastUtils";
 import { showErrorMessage } from "@/utils/sweetalertUtils";
 import { updateUserById } from "@/Api/profileApi";
-import { validateProfileData, type FieldErrors } from "@/Validation/profileValidation";
+import {
+  validateProfileData,
+  type FieldErrors,
+} from "@/Validation/profileValidation";
 import { canEditFieldLocal } from "../utils/editLimits";
 import { isEqual } from "@/utils/objectUtils";
 import type { UserProfile, Endpoint } from "../types/profile.types";
@@ -12,7 +15,7 @@ import type { UserProfile, Endpoint } from "../types/profile.types";
 export const useProfileEdit = (
   user: UserProfile | null,
   endpoint: Endpoint,
-  onSuccess?: (updatedUser: UserProfile) => void
+  onSuccess?: (updatedUser: UserProfile) => void,
 ) => {
   const { updateUser: updateAuthUser } = useAuth();
 
@@ -49,7 +52,7 @@ export const useProfileEdit = (
 
   const saveProfile = async (avatarFile?: File | null) => {
     if (!user) return;
-    
+
     // إذا المستخدم بس بدو يرفع صورة بدون تعديل البيانات
     if (!edited) {
       // ما في شي لازم نحفظه، الصورة رح ترفع بشكل منفصل
@@ -58,20 +61,20 @@ export const useProfileEdit = (
 
     // مقارنة البيانات الأصلية مع المعدلة
     const fieldsToCompare: (keyof UserProfile)[] = [
-      'firstName',
-      'fatherName',
-      'grandFatherName',
-      'motherName',
-      'lastName',
-      'birthDate',
-      'residence',
-      'idNumber',
-      'phoneNumber',
+      "firstName",
+      "fatherName",
+      "grandFatherName",
+      "motherName",
+      "lastName",
+      "birthDate",
+      "residence",
+      "idNumber",
+      "phoneNumber",
     ];
 
     // إضافة مجموعات المعلم إذا كان الدور معلم
     if (user.role === "teacher") {
-      fieldsToCompare.push('groups');
+      fieldsToCompare.push("groups");
     }
 
     // بناء كائنات للمقارنة
@@ -80,15 +83,21 @@ export const useProfileEdit = (
 
     for (const field of fieldsToCompare) {
       // تطبيع التواريخ للمقارنة
-      if (field === 'birthDate') {
-        const normalizeForCompare = (date: string | Date | undefined | null): string | null => {
+      if (field === "birthDate") {
+        const normalizeForCompare = (
+          date: string | Date | undefined | null,
+        ): string | null => {
           if (!date) return null;
           if (typeof date === "string") return date.split("T")[0].trim();
           if (date instanceof Date) return date.toISOString().split("T")[0];
           return null;
         };
-        originalData[field] = normalizeForCompare(user[field] as string | Date | undefined) as any;
-        editedData[field] = normalizeForCompare(edited[field] as string | Date | undefined) as any;
+        originalData[field] = normalizeForCompare(
+          user[field] as string | Date | undefined,
+        ) as any;
+        editedData[field] = normalizeForCompare(
+          edited[field] as string | Date | undefined,
+        ) as any;
       } else {
         originalData[field] = user[field];
         editedData[field] = edited[field];
@@ -136,6 +145,7 @@ export const useProfileEdit = (
       residence: edited.residence,
       idNumber: edited.idNumber,
       phoneNumber: edited.phoneNumber,
+      email: edited.email,
     };
 
     if (user.role === "teacher" && edited.groups !== undefined) {
@@ -143,7 +153,9 @@ export const useProfileEdit = (
     }
 
     // Compare birthDate values properly
-    const normalizeDate = (date: string | Date | undefined | null): string | null => {
+    const normalizeDate = (
+      date: string | Date | undefined | null,
+    ): string | null => {
       if (!date) return null;
       if (typeof date === "string") {
         return date.split("T")[0].trim();
@@ -162,7 +174,10 @@ export const useProfileEdit = (
     if (changingBirth) {
       const b = await canEditFieldLocal();
       if (!b.allowed) {
-        showErrorMessage("خطأ", "لا يمكنك تعديل تاريخ الميلاد أكثر من مرتين خلال شهر كامل من آخر تعديلاتك");
+        showErrorMessage(
+          "خطأ",
+          "لا يمكنك تعديل تاريخ الميلاد أكثر من مرتين خلال شهر كامل من آخر تعديلاتك",
+        );
         setIsSaving(false);
         return;
       }
@@ -180,7 +195,7 @@ export const useProfileEdit = (
       const updatedUser = { ...user, ...payload };
       setEdited(null);
       setIsEditing(false);
-      
+
       if (onSuccess) {
         onSuccess(updatedUser);
       }
@@ -207,7 +222,7 @@ export const useProfileEdit = (
         showErrorMessage(
           "خطأ",
           axiosError.response.data.message ||
-            "لا يمكنك تعديل تاريخ الميلاد أكثر من مرتين خلال شهر كامل من آخر تعديلاتك"
+            "لا يمكنك تعديل تاريخ الميلاد أكثر من مرتين خلال شهر كامل من آخر تعديلاتك",
         );
       } else {
         const msg =
