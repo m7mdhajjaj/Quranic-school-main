@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { showSuccessToast, showInfoToast } from "@/utils/toastUtils";
 import { showErrorMessage } from "@/utils/sweetalertUtils";
-import { updateUserById } from "@/Api/profileApi";
+import { updateProfile } from "@/Api/profileApi";
 import {
   validateProfileData,
   type FieldErrors,
@@ -70,6 +70,7 @@ export const useProfileEdit = (
       "residence",
       "idNumber",
       "phoneNumber",
+      "email",
     ];
 
     // إضافة مجموعات المعلم إذا كان الدور معلم
@@ -135,13 +136,27 @@ export const useProfileEdit = (
 
     setIsSaving(true);
 
+    // Helper to normalize date to YYYY-MM-DD format
+    const formatDateForBackend = (
+      date: string | Date | undefined | null,
+    ): string | undefined => {
+      if (!date) return undefined;
+      if (typeof date === "string") {
+        return date.split("T")[0].trim();
+      }
+      if (date instanceof Date) {
+        return date.toISOString().split("T")[0];
+      }
+      return undefined;
+    };
+
     const payload: Partial<UserProfile> = {
       firstName: edited.firstName,
       fatherName: edited.fatherName,
       grandFatherName: edited.grandFatherName,
       motherName: edited.motherName,
       lastName: edited.lastName,
-      birthDate: edited.birthDate,
+      birthDate: formatDateForBackend(edited.birthDate),
       residence: edited.residence,
       idNumber: edited.idNumber,
       phoneNumber: edited.phoneNumber,
@@ -184,7 +199,7 @@ export const useProfileEdit = (
     }
 
     try {
-      await updateUserById(endpoint, user._id, payload);
+      await updateProfile(payload);
 
       // Update remainingBirth count if birthDate was changed
       if (changingBirth) {
