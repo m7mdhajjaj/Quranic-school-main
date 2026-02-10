@@ -2,16 +2,16 @@
 // IMPORTS
 // ============================================================================
 
-import { lazy, Suspense, useCallback, useEffect, useRef } from 'react';
-import { BookOpen } from 'lucide-react';
-import { useSearchParams } from 'react-router-dom';
-import { useDebounce } from '@/hooks/useDebounce';
+import { lazy, Suspense, useCallback, useEffect, useRef } from "react";
+import { BookOpen } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
+import { useDebounce } from "@/hooks/useDebounce";
 
 // UI Components
 // PageHeader removed - using custom header
 
 // Custom Hooks - Organized by Role/Category
-import { 
+import {
   // Data hooks
   useDailyMarksData,
   useFilteredMarksData,
@@ -29,23 +29,26 @@ import {
   useStudentIdForAverages,
   // UI hooks
   useModalAndFormActions,
-} from './hooks';
-import { useAllGroupsStats } from './Views/TeacherView/hooks';
+} from "./hooks";
+import { useAllGroupsStats } from "./Views/TeacherView/hooks";
 
 // Page Components
-import { AveragesSection } from './components/AveragesSection';
-import { NewStudentView } from './Views/NewStudentView';
-import { GroupsGridView } from './Views/TeacherView/components/GroupsGridView';
-
+import { AveragesSection } from "./components/AveragesSection";
+import { SimpleStudentTableView } from "./Views/SimpleStudentTableView";
+import { GroupsGridView } from "./Views/TeacherView/components/GroupsGridView";
 
 // ✅ Lazy load heavy components
 const TeacherView = lazy(() =>
-  import('./Views/TeacherView/TeacherView').then((m) => ({ default: m.TeacherView }))
+  import("./Views/TeacherView/TeacherView").then((m) => ({
+    default: m.TeacherView,
+  })),
 );
 
 // ✅ Lazy load ModalsContainer - لا يُحمّل إلا عند الحاجة
 const ModalsContainer = lazy(() =>
-  import('./modals/ModalsContainer').then((m) => ({ default: m.ModalsContainer }))
+  import("./modals/ModalsContainer").then((m) => ({
+    default: m.ModalsContainer,
+  })),
 );
 
 // ============================================================================
@@ -72,29 +75,32 @@ const DailyMarksPage = () => {
     useStudentSelection(currentUser, teacherGroups, loading);
 
   // URL <-> state sync for navigation (browser back/forward)
-  const setGroupWithUrl = useCallback((group: string, replace = false) => {
-    // prevent re-entry loops
-    syncingUrlRef.current = true;
+  const setGroupWithUrl = useCallback(
+    (group: string, replace = false) => {
+      // prevent re-entry loops
+      syncingUrlRef.current = true;
 
-    const next = new URLSearchParams(searchParams);
-    if (group) next.set('group', group);
-    else next.delete('group');
-    // when leaving group, also clear section
-    if (!group) next.delete('sectionId');
+      const next = new URLSearchParams(searchParams);
+      if (group) next.set("group", group);
+      else next.delete("group");
+      // when leaving group, also clear section
+      if (!group) next.delete("sectionId");
 
-    setSearchParams(next, { replace });
-    setSelectedGroup(group);
+      setSearchParams(next, { replace });
+      setSelectedGroup(group);
 
-    // release in microtask
-    queueMicrotask(() => {
-      syncingUrlRef.current = false;
-    });
-  }, [searchParams, setSearchParams, setSelectedGroup]);
+      // release in microtask
+      queueMicrotask(() => {
+        syncingUrlRef.current = false;
+      });
+    },
+    [searchParams, setSearchParams, setSelectedGroup],
+  );
 
   // when URL changes (back/forward), update state
   useEffect(() => {
     if (syncingUrlRef.current) return;
-    const urlGroup = searchParams.get('group') || '';
+    const urlGroup = searchParams.get("group") || "";
     if (urlGroup !== selectedGroup) {
       setSelectedGroup(urlGroup);
     }
@@ -116,14 +122,15 @@ const DailyMarksPage = () => {
     endDate,
     setStartDate,
     setEndDate,
-    filterMode,      // New
-    setFilterMode    // New
+    filterMode, // New
+    setFilterMode, // New
   } = useSectionsFilter();
 
   // Determine student ID for filtering marks
   // For students: use their own ID (currentUser._id)
   // For teachers: use selectedStudentId (null to see all marks)
-  const studentIdForMarksFilter = currentUser?.role === "student" ? currentUser._id : selectedStudentId;
+  const studentIdForMarksFilter =
+    currentUser?.role === "student" ? currentUser._id : selectedStudentId;
 
   // ✅ Debounce البحث لتحسين الأداء - 300ms تأخير
   const debouncedSearchQuery = useDebounce(state.searchQuery, 300);
@@ -147,13 +154,13 @@ const DailyMarksPage = () => {
     !!currentUser && !!selectedGroup,
     startDate,
     endDate,
-    filterMode // Pass new filter mode
+    filterMode, // Pass new filter mode
   );
 
   // Student ID for averages calculation
   const studentIdForAverages = useStudentIdForAverages(
     currentUser,
-    selectedStudentId
+    selectedStudentId,
   );
 
   // Fetch student averages
@@ -162,7 +169,7 @@ const DailyMarksPage = () => {
     selectedGroup,
     selectedMonth,
     selectedYear,
-    !!currentUser && !!selectedGroup && !!studentIdForAverages
+    !!currentUser && !!selectedGroup && !!studentIdForAverages,
   );
 
   // Fetch Group Stats (for Progress Bar)
@@ -170,18 +177,18 @@ const DailyMarksPage = () => {
     selectedGroup,
     selectedMonth,
     selectedYear,
-    !!currentUser && !!selectedGroup
+    !!currentUser && !!selectedGroup,
   );
 
   // Fetch Completed Surahs (for updates)
-  const { refresh: refreshCompletedSurahs } = useCompletedSurahs(selectedGroup, false);
+  const { refresh: refreshCompletedSurahs } = useCompletedSurahs(
+    selectedGroup,
+    false,
+  );
 
   // Combined Status Refetcher
   const refetchStats = async () => {
-    await Promise.all([
-      refetchAverages(),
-      refetchGroupStats()
-    ]);
+    await Promise.all([refetchAverages(), refetchGroupStats()]);
   };
 
   // ==========================================================================
@@ -242,12 +249,16 @@ const DailyMarksPage = () => {
     teacherGroups,
     selectedGroup,
     selectedMonth,
-    selectedYear
+    selectedYear,
   );
 
   const handleAddSectionClick = useCallback(() => {
     const today = new Date();
-    const localDate = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+    const localDate = new Date(
+      today.getTime() - today.getTimezoneOffset() * 60000,
+    )
+      .toISOString()
+      .split("T")[0];
     // ✅ FIX: Reset ALL fields to prevent stale data from previous section
     state.setNewSection({
       date: localDate,
@@ -255,7 +266,7 @@ const DailyMarksPage = () => {
       reviewSection: "",
       memorizationMeta: [],
       reviewMeta: [],
-      group: selectedGroup !== 'all' ? selectedGroup : undefined,
+      group: selectedGroup !== "all" ? selectedGroup : undefined,
     });
     state.setIsAddSectionModalOpen(true);
   }, [state, selectedGroup]);
@@ -264,8 +275,8 @@ const DailyMarksPage = () => {
   // ROLE & DEFAULT VALUES
   // ==========================================================================
 
-  const isStudent = currentUser?.role === 'student';
-  const isTeacherAssistant = currentUser?.role === 'teacherAssistant';
+  const isStudent = currentUser?.role === "student";
+  const isTeacherAssistant = currentUser?.role === "teacherAssistant";
   const isTeacher = !isStudent; // Includes teacher, admin, and teacherAssistant
 
   // Default month/year for student view
@@ -294,8 +305,8 @@ const DailyMarksPage = () => {
   // ==========================================================================
   if (isStudent) {
     return (
-      <NewStudentView
-        studentId={currentUser?._id || selectedStudentId || ''}
+      <SimpleStudentTableView
+        studentId={currentUser?._id || selectedStudentId || ""}
         groupId={selectedGroup || currentUser?.group || undefined}
       />
     );
@@ -307,8 +318,7 @@ const DailyMarksPage = () => {
   return (
     <div
       className="min-h-screen bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20"
-      dir="rtl"
-    >
+      dir="rtl">
       {/* Header - مثل باقي الصفحات */}
       <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white rounded-b-3xl shadow-xl p-6 pb-8 mb-6">
         <div className="max-w-[98%] mx-auto">
@@ -325,9 +335,8 @@ const DailyMarksPage = () => {
               </h1>
               <p className="text-white/80 text-sm md:text-base max-w-2xl mx-auto">
                 {currentUser
-                  ? `المعلم: ${currentUser.firstName} ${currentUser.lastName || ''}`
-                  : 'متابعة وتسجيل علامات الحفظ والمراجعة اليومية للطلاب'
-                }
+                  ? `المعلم: ${currentUser.firstName} ${currentUser.lastName || ""}`
+                  : "متابعة وتسجيل علامات الحفظ والمراجعة اليومية للطلاب"}
               </p>
             </div>
           </div>
@@ -336,7 +345,7 @@ const DailyMarksPage = () => {
 
       <div className="max-w-[98%] mx-auto px-4 md:px-6 lg:px-8 pb-12 space-y-5">
         {/* Groups Grid View - Teacher Only, shown when no group selected */}
-        {isTeacher && (!selectedGroup || selectedGroup === 'all') && (
+        {isTeacher && (!selectedGroup || selectedGroup === "all") && (
           <GroupsGridView
             groupsWithStats={groupsWithStats}
             onGroupSelect={(g) => setGroupWithUrl(g, false)}
@@ -359,53 +368,68 @@ const DailyMarksPage = () => {
         )}
 
         {/* Main Content Area - Teacher View */}
-        <Suspense fallback={<div className="h-40 animate-pulse bg-gray-100 rounded-xl"></div>}>
+        <Suspense
+          fallback={
+            <div className="h-40 animate-pulse bg-gray-100 rounded-xl"></div>
+          }>
           <TeacherView
-              students={students}
-              selectedGroup={selectedGroup}
-              teacherGroups={teacherGroups}
-              sections={sections}
-              marks={marks}
-              loadingMarks={loadingMarks || loading}
-              onBulkMarks={() => {}}
-              onGroupSelect={(g) => setGroupWithUrl(g, false)}
-              // مساعد المدرس لا يستطيع إضافة أو تعديل أو حذف المقاطع
-              onAddSection={isTeacherAssistant ? undefined : handleAddSectionClick}
-              onEditSection={isTeacherAssistant ? undefined : openEditSectionModal}
-              onDeleteSection={isTeacherAssistant ? undefined : handlers.handleDeleteSection}
-              onBulkDelete={isTeacherAssistant ? undefined : () => state.setIsBulkDeleteModalOpen(true)}
-              // مساعد المدرس يستطيع فقط إضافة علامات، ولا يستطيع تعديلها أو حذفها
-              onAddMark={openAddMarkModal}
-              onUpdateMark={isTeacherAssistant ? undefined : openUpdateMarkModal}
-              onDeleteMark={isTeacherAssistant ? undefined : handlers.handleDeleteMark}
-              onMarkChange={refetchMarksOnly}
-              onRefreshData={() => {
-                refetchSectionsOnly();
-                refetchStats();
-              }}
-              selectedMonth={selectedMonth}
-              selectedYear={selectedYear}
-              selectedDay={selectedDay}
-              onMonthChange={setSelectedMonth}
-              onYearChange={setSelectedYear}
-              onDayChange={setSelectedDay}
-              searchQuery={state.searchQuery}
-              onSearchChange={state.setSearchQuery}
-              startDate={startDate}
-              endDate={endDate}
-              onStartDateChange={setStartDate}
-              onEndDateChange={setEndDate}
-              selectedFilterMode={filterMode}
-              onFilterModeChange={setFilterMode}
-            />
-          </Suspense>
+            students={students}
+            selectedGroup={selectedGroup}
+            teacherGroups={teacherGroups}
+            sections={sections}
+            marks={marks}
+            loadingMarks={loadingMarks || loading}
+            onBulkMarks={() => {}}
+            onGroupSelect={(g) => setGroupWithUrl(g, false)}
+            // مساعد المدرس لا يستطيع إضافة أو تعديل أو حذف المقاطع
+            onAddSection={
+              isTeacherAssistant ? undefined : handleAddSectionClick
+            }
+            onEditSection={
+              isTeacherAssistant ? undefined : openEditSectionModal
+            }
+            onDeleteSection={
+              isTeacherAssistant ? undefined : handlers.handleDeleteSection
+            }
+            onBulkDelete={
+              isTeacherAssistant
+                ? undefined
+                : () => state.setIsBulkDeleteModalOpen(true)
+            }
+            // مساعد المدرس يستطيع فقط إضافة علامات، ولا يستطيع تعديلها أو حذفها
+            onAddMark={openAddMarkModal}
+            onUpdateMark={isTeacherAssistant ? undefined : openUpdateMarkModal}
+            onDeleteMark={
+              isTeacherAssistant ? undefined : handlers.handleDeleteMark
+            }
+            onMarkChange={refetchMarksOnly}
+            onRefreshData={() => {
+              refetchSectionsOnly();
+              refetchStats();
+            }}
+            selectedMonth={selectedMonth}
+            selectedYear={selectedYear}
+            selectedDay={selectedDay}
+            onMonthChange={setSelectedMonth}
+            onYearChange={setSelectedYear}
+            onDayChange={setSelectedDay}
+            searchQuery={state.searchQuery}
+            onSearchChange={state.setSearchQuery}
+            startDate={startDate}
+            endDate={endDate}
+            onStartDateChange={setStartDate}
+            onEndDateChange={setEndDate}
+            selectedFilterMode={filterMode}
+            onFilterModeChange={setFilterMode}
+          />
+        </Suspense>
       </div>
 
       {/* Modals - Teacher Only (Lazy Loaded) */}
       <Suspense fallback={null}>
         <ModalsContainer
-            currentUser={currentUser}
-            selectedStudentId={selectedStudentId}
+          currentUser={currentUser}
+          selectedStudentId={selectedStudentId}
           selectedGroup={selectedGroup}
           sections={sections}
           refetchMarks={refetchMarksOnly}
@@ -424,7 +448,7 @@ const DailyMarksPage = () => {
           openEditSectionModal={openEditSectionModal}
           toggleSectionSelection={toggleSectionSelection}
           getSelectedStudent={getSelectedStudent}
-          />
+        />
       </Suspense>
     </div>
   );

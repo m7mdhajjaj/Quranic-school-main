@@ -6,18 +6,20 @@ const { updateSectionMarksStatus } = require("./sectionMarksStatus");
 const sequenceService = require("../../../services/DailyMark/SectionSequenceService");
 const activeSurahService = require("../../../services/DailyMark/GroupActiveSurahService");
 const { createLogger } = require("../../../utils/logger");
-const { getSurahByNumber } = require("../../../utils/Quran/dailyMarkQuranMetadata");
+const {
+  getSurahByNumber,
+} = require("../../../utils/Quran/dailyMarkQuranMetadata");
 const {
   sendCreated,
   sendError,
   sendValidationError,
 } = require("../utils/responseHelpers");
 
-const logger = createLogger('SectionCreate');
+const logger = createLogger("SectionCreate");
 
 /**
  * Create a new section
- * 
+ *
  * Validation Rules:
  * - Date must be today or in the future (cannot create sections with past dates)
  * - Review section and memorization section are required
@@ -51,26 +53,26 @@ exports.createSection = async (req, res) => {
     // ✅ جلب teacherId من اسم المعلم (إذا لم يكن موجود)
     if (sectionData.teacher && !sectionData.teacherId) {
       // البحث عن المعلم بالاسم الكامل أو جزء منه
-      const nameParts = sectionData.teacher.trim().split(' ');
+      const nameParts = sectionData.teacher.trim().split(" ");
       let teacherDoc = null;
-      
+
       if (nameParts.length >= 2) {
         teacherDoc = await Teacher.findOne({
           firstName: nameParts[0],
-          lastName: nameParts.slice(1).join(' ')
+          lastName: nameParts.slice(1).join(" "),
         });
       }
-      
+
       if (!teacherDoc) {
         // محاولة البحث بالاسم الأول فقط
         teacherDoc = await Teacher.findOne({
           $or: [
             { firstName: sectionData.teacher.trim() },
-            { lastName: sectionData.teacher.trim() }
-          ]
+            { lastName: sectionData.teacher.trim() },
+          ],
         });
       }
-      
+
       if (teacherDoc) {
         sectionData.teacherId = teacherDoc._id;
         logger.debug(`تم ربط Section بـ Teacher: ${teacherDoc._id}`);
@@ -81,98 +83,100 @@ exports.createSection = async (req, res) => {
     // 🛡️ Advanced Conflict Check (Group Level) - V3: Date-Aware + Backfilling
     // ============================================
     if (sectionData.group) {
-        
-        // ✅ V7: Current Week Only Check (أول فحص)
-        const currentWeekCheck = sequenceService.checkCurrentWeekOnly(sectionData.date);
-        if (!currentWeekCheck.isValid) {
-             logger.warn("currentWeekCheck failed:", currentWeekCheck.message);
-             return sendError(res, currentWeekCheck.message, 400);
-        }
+      // ✅ V7: Current Week Only Check (أول فحص)
+      const currentWeekCheck = sequenceService.checkCurrentWeekOnly(
+        sectionData.date,
+      );
+      if (!currentWeekCheck.isValid) {
+        logger.warn("currentWeekCheck failed:", currentWeekCheck.message);
+        return sendError(res, currentWeekCheck.message, 400);
+      }
 
-        // 0. Daily Limit Check (One Section Per Day)
-        const dailyCheck = await sequenceService.checkDailyQuota(
-            sectionData.group,
-            sectionData.date
-        );
-        if (!dailyCheck.isValid && dailyCheck.isBlocked) {
-             logger.warn("dailyCheck failed:", dailyCheck.message);
-             return sendError(res, dailyCheck.message, 400); 
-        }
+      // 0. Daily Limit Check (One Section Per Day)
+      const dailyCheck = await sequenceService.checkDailyQuota(
+        sectionData.group,
+        sectionData.date,
+      );
+      if (!dailyCheck.isValid && dailyCheck.isBlocked) {
+        logger.warn("dailyCheck failed:", dailyCheck.message);
+        return sendError(res, dailyCheck.message, 400);
+      }
 
-        // 0.5 Weekly Limit Check (Max 3 sections per week)
-        const weeklyCheck = await sequenceService.checkWeeklyQuota(
-            sectionData.group,
-            sectionData.date
-        );
-        if (!weeklyCheck.isValid) {
-             logger.warn("weeklyCheck failed:", weeklyCheck.message);
-             return sendError(res, weeklyCheck.message, 400);
-        }
+      // 0.5 Weekly Limit Check (Max 3 sections per week)
+      const weeklyCheck = await sequenceService.checkWeeklyQuota(
+        sectionData.group,
+        sectionData.date,
+      );
+      if (!weeklyCheck.isValid) {
+        logger.warn("weeklyCheck failed:", weeklyCheck.message);
+        return sendError(res, weeklyCheck.message, 400);
+      }
 
-        // ============================================
-        // 🔒 ACTIVE SURAH VALIDATION - منع البدء بسورة جديدة قبل إكمال الحالية
-        // ============================================
-        if (sectionData.groupId) {
-          // التحقق من مقاطع الحفظ
-          if (sectionData.memorizationMeta && sectionData.memorizationMeta.length > 0) {
-            const memSurahNumber = sectionData.memorizationMeta[0].surahNumber;
-            const canAddMem = await Group.canAddSegment(sectionData.groupId, memSurahNumber, 'memorization');
-            
-            if (!canAddMem.allowed) {
-              logger.warn("Active Surah Check (Memorization) failed:", canAddMem.reason);
-              return sendError(res, canAddMem.reason, 400);
-            }
+      // ============================================
+      // 🔒 ACTIVE SURAH VALIDATION - منع البدء بسورة جديدة قبل إكمال الحالية
+      // ============================================
+      if (sectionData.groupId) {
+        // التحقق من مقاطع الحفظ
+        if (
+          sectionData.memorizationMeta &&
+          sectionData.memorizationMeta.length > 0
+        ) {
+          const memSurahNumber = sectionData.memorizationMeta[0].surahNumber;
+          const canAddMem = await Group.canAddSegment(
+            sectionData.groupId,
+            memSurahNumber,
+            "memorization",
+          );
+
+          if (!canAddMem.allowed) {
+            logger.warn(
+              "Active Surah Check (Memorization) failed:",
+              canAddMem.reason,
+            );
+            return sendError(res, canAddMem.reason, 400);
           }
-
-          // التحقق من مقاطع المراجعة
-          if (sectionData.reviewMeta && sectionData.reviewMeta.length > 0) {
-            const revSurahNumber = sectionData.reviewMeta[0].surahNumber;
-            const canAddRev = await Group.canAddSegment(sectionData.groupId, revSurahNumber, 'review');
-            
-            if (!canAddRev.allowed) {
-              logger.warn("Active Surah Check (Review) failed:", canAddRev.reason);
-              return sendError(res, canAddRev.reason, 400);
-            }
-          }
-        }
-        // ============================================
-
-        // 1. Check Memorization Sequence (Date-Aware with Neighbors)
-        const memValidation = await sequenceService.validateSequence(
-            sectionData.memorizationMeta,
-            sectionData.group,
-            'memorization',
-            sectionData.date // ✅ V3: Date for neighbor queries
-        );
-        
-        if (!memValidation.isValid) {
-            logger.warn("memValidation failed:", memValidation.message);
-            return sendValidationError(res, memValidation.message);
         }
 
-        // 2. Check Review (Exact Match + Same-Day Duplicates with dateKey)
-        const revValidation = await sequenceService.validateSequence(
-             sectionData.reviewMeta,
-             sectionData.group,
-             'review',
-             sectionData.date, // ✅ V3: Date for dateKey comparison
-             null, // No exclude (new section)
-             sectionData.memorizationMeta // Pass sibling memorization
-        );
+        // المراجعة: لا يوجد شرط إكمال السورة - المعلم يختار أي سورة يريدها
+      }
+      // ============================================
 
-        if (!revValidation.isValid) {
-             return sendValidationError(res, revValidation.message);
-        }
+      // 1. Check Memorization Sequence (Date-Aware with Neighbors)
+      const memValidation = await sequenceService.validateSequence(
+        sectionData.memorizationMeta,
+        sectionData.group,
+        "memorization",
+        sectionData.date, // ✅ V3: Date for neighbor queries
+      );
 
-        // 3. Check Consistency (Internal Consistency)
-        const consistencyValidation = sequenceService.validateConsistency(
-            sectionData.memorizationMeta,
-            sectionData.reviewMeta
-        );
+      if (!memValidation.isValid) {
+        logger.warn("memValidation failed:", memValidation.message);
+        return sendValidationError(res, memValidation.message);
+      }
 
-        if (!consistencyValidation.isValid) {
-            return sendValidationError(res, consistencyValidation.message);
-        }
+      // 2. Check Review (Exact Match + Same-Day Duplicates with dateKey)
+      const revValidation = await sequenceService.validateSequence(
+        sectionData.reviewMeta,
+        sectionData.group,
+        "review",
+        sectionData.date, // ✅ V3: Date for dateKey comparison
+        null, // No exclude (new section)
+        sectionData.memorizationMeta, // Pass sibling memorization
+      );
+
+      if (!revValidation.isValid) {
+        return sendValidationError(res, revValidation.message);
+      }
+
+      // 3. Check Consistency (Internal Consistency)
+      const consistencyValidation = sequenceService.validateConsistency(
+        sectionData.memorizationMeta,
+        sectionData.reviewMeta,
+      );
+
+      if (!consistencyValidation.isValid) {
+        return sendValidationError(res, consistencyValidation.message);
+      }
     }
 
     const section = new Section(sectionData);
@@ -180,49 +184,60 @@ exports.createSection = async (req, res) => {
     logger.debug("Section object created:", section);
     let newSection = await section.save();
     logger.success("Section saved successfully:", newSection);
-    
+
     // ✅ Populate timetableId for complete response
     newSection = await Section.findById(newSection._id)
-      .populate('timetableId', 'day startHour endHour sessionType')
+      .populate("timetableId", "day startHour endHour sessionType")
       .lean();
-    
+
     // ============================================
     // 🔄 V15: SYNC ACTIVE SURAH - مزامنة السورة الفعالة من جميع المقاطع
     // ✅ الآن يحسب lastAyahEnd من جميع مقاطع نفس السورة في DB
     // ============================================
     if (sectionData.groupId) {
       try {
-        await activeSurahService.syncActiveSurahsFromSections(sectionData.groupId);
-        logger.debug(`✅ تمت مزامنة السورة الفعالة للحلقة ${sectionData.group}`);
+        await activeSurahService.syncActiveSurahsFromSections(
+          sectionData.groupId,
+        );
+        logger.debug(
+          `✅ تمت مزامنة السورة الفعالة للحلقة ${sectionData.group}`,
+        );
       } catch (syncError) {
         logger.warn(`⚠️ خطأ في مزامنة السورة الفعالة:`, syncError);
       }
     }
     // ============================================
-    
+
     // Fire-and-forget: Status Update (Background)
     updateSectionMarksStatus(newSection._id.toString(), newSection.group)
       .then(() => logger.debug("Status updated in background"))
-      .catch(err => logger.warn("Async Status Update Error:", err));
+      .catch((err) => logger.warn("Async Status Update Error:", err));
 
     // Fire-and-forget: Notification (Background)
     const io = req.app.get("io");
     if (io && newSection.group) {
-      notifySectionAdded(newSection, io)
-        .catch(err => logger.warn("Async Notification Error:", err));
+      notifySectionAdded(newSection, io).catch((err) =>
+        logger.warn("Async Notification Error:", err),
+      );
     }
 
     // Check for completed Surahs
-    const completedMem = sequenceService.detectCompletedSurahs(sectionData.memorizationMeta, 'memorization');
-    const completedRev = sequenceService.detectCompletedSurahs(sectionData.reviewMeta, 'review');
+    const completedMem = sequenceService.detectCompletedSurahs(
+      sectionData.memorizationMeta,
+      "memorization",
+    );
+    const completedRev = sequenceService.detectCompletedSurahs(
+      sectionData.reviewMeta,
+      "review",
+    );
     const allCompleted = [...completedMem, ...completedRev];
 
     // ✅ تحديد نوع الجلسة تلقائياً بناءً على المحتوى
     const hasMem = sectionData.memorizationMeta?.length > 0;
     const hasRev = sectionData.reviewMeta?.length > 0;
-    let suggestedSessionType = 'both';
-    if (hasMem && !hasRev) suggestedSessionType = 'hifz';
-    else if (!hasMem && hasRev) suggestedSessionType = 'murajaah';
+    let suggestedSessionType = "both";
+    if (hasMem && !hasRev) suggestedSessionType = "hifz";
+    else if (!hasMem && hasRev) suggestedSessionType = "murajaah";
 
     res.status(201).json({
       success: true,
@@ -234,10 +249,9 @@ exports.createSection = async (req, res) => {
         groupId: newSection.groupId,
         teacherId: newSection.teacherId,
         suggestedSessionType, // ✅ نوع الجلسة المقترح
-        completedSurahs: allCompleted 
-      }
+        completedSurahs: allCompleted,
+      },
     });
-
   } catch (error) {
     logger.error("Error creating section:", error);
 
@@ -247,7 +261,10 @@ exports.createSection = async (req, res) => {
         .map((field) => `${field}: ${error.errors[field].message}`)
         .join(", ");
 
-      return sendValidationError(res, `خطأ في التحقق من البيانات: ${validationErrors}`);
+      return sendValidationError(
+        res,
+        `خطأ في التحقق من البيانات: ${validationErrors}`,
+      );
     }
 
     sendError(res, error.message, 400, error);
