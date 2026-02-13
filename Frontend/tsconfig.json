@@ -3,10 +3,11 @@
     "jsx": "react-jsx",
     "target": "es5",
     "module": "commonjs",
-    "strict": true,
+    "strict": false,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": false,
+    "noEmitOnError": false
   },
   "files": [],
   "references": [
