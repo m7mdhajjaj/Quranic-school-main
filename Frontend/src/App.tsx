@@ -9,7 +9,14 @@
 // ============================================================================
 // External Dependencies
 // ============================================================================
-import { createBrowserRouter, RouterProvider, Routes, Route, useLocation, Navigate } from "react-router-dom";
+import {
+  createBrowserRouter,
+  RouterProvider,
+  Routes,
+  Route,
+  useLocation,
+  Navigate,
+} from "react-router-dom";
 import React, { useEffect } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -44,13 +51,7 @@ import NotFound from "./pages/NotFound";
 // ============================================================================
 // Guest Pages - صفحات الضيوف
 // ============================================================================
-import { 
-  WelcomePage, 
-  About, 
-  Contact, 
-  Privacy, 
-  Terms 
-} from "./pages/Guest";
+import { WelcomePage, About, Contact, Privacy, Terms } from "./pages/Guest";
 
 // ============================================================================
 // Page Components - Academic
@@ -128,7 +129,7 @@ import Soon from "./pages/Soon";
  * Handles all routing for guest users (unauthenticated)
  * - Shows Layout with isGuest=true for allowed pages
  * - Provides access to public pages only
- * 
+ *
  * Guest Routes Structure:
  * 1. Welcome Page (no header)
  * 2. Login Page (no header)
@@ -147,44 +148,62 @@ const GuestRoutes: React.FC = () => {
       {/* ============================================
           الصفحة الرئيسية للضيوف - مع هيدر
           ============================================ */}
-      <Route path="/home" element={
-        <Layout isGuest={true}>
-          <Home />
-        </Layout>
-      } />
+      <Route
+        path="/home"
+        element={
+          <Layout isGuest={true}>
+            <Home />
+          </Layout>
+        }
+      />
 
       {/* ============================================
           صفحة الأهداف للضيوف
           ============================================ */}
-      <Route path="/goals" element={
-        <Layout isGuest={true}>
-          <Goals />
-        </Layout>
-      } />
+      <Route
+        path="/goals"
+        element={
+          <Layout isGuest={true}>
+            <Goals />
+          </Layout>
+        }
+      />
 
       {/* ============================================
           صفحات المعلومات - Information Pages
           ============================================ */}
-      <Route path="/privacy" element={
-        <Layout isGuest={true}>
-          <Privacy />
-        </Layout>
-      } />
-      <Route path="/terms" element={
-        <Layout isGuest={true}>
-          <Terms />
-        </Layout>
-      } />
-      <Route path="/contact" element={
-        <Layout isGuest={true}>
-          <Contact />
-        </Layout>
-      } />
-      <Route path="/about" element={
-        <Layout isGuest={true}>
-          <About />
-        </Layout>
-      } />
+      <Route
+        path="/privacy"
+        element={
+          <Layout isGuest={true}>
+            <Privacy />
+          </Layout>
+        }
+      />
+      <Route
+        path="/terms"
+        element={
+          <Layout isGuest={true}>
+            <Terms />
+          </Layout>
+        }
+      />
+      <Route
+        path="/contact"
+        element={
+          <Layout isGuest={true}>
+            <Contact />
+          </Layout>
+        }
+      />
+      <Route
+        path="/about"
+        element={
+          <Layout isGuest={true}>
+            <About />
+          </Layout>
+        }
+      />
 
       {/* ============================================
           Fallback - إعادة توجيه لصفحة الترحيب
@@ -202,7 +221,7 @@ const GuestRoutes: React.FC = () => {
  * - Shows AdminLayout with AdminHeader and AdminSidebar
  * - Provides access to admin dashboard and management pages
  * - Footer is NOT displayed for admin pages (only for teacher and student)
- * 
+ *
  * Admin Routes Structure:
  * 1. Dashboard & Management Pages (/admin/*)
  * 2. Academic Pages (shared with teachers)
@@ -219,7 +238,10 @@ const AdminRoutes: React.FC = () => {
             ============================================ */}
         <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
         <Route path="/welcome" element={<WelcomePage />} />
-        <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+        <Route
+          path="/admin"
+          element={<Navigate to="/admin/dashboard" replace />}
+        />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
 
         {/* ============================================
@@ -229,7 +251,10 @@ const AdminRoutes: React.FC = () => {
         <Route path="/admin/teachers" element={<TeachersManagement />} />
         <Route path="/admin/groups" element={<GroupManagement />} />
         <Route path="/admin/secretaries" element={<SecretaryManagement />} />
-        <Route path="/admin/assistants" element={<TeacherAssistantManagement />} />
+        <Route
+          path="/admin/assistants"
+          element={<TeacherAssistantManagement />}
+        />
         <Route path="/admin/settings" element={<NotFound />} />
 
         {/* ============================================
@@ -282,7 +307,7 @@ const AdminRoutes: React.FC = () => {
  * - Has access to management features and academic tools
  * - Can view and manage student data
  * - Restricted from admin-only pages
- * 
+ *
  * Teacher Routes Structure:
  * 1. Home & Authentication
  * 2. Academic Pages (Goals, Marks, Ranking, Tests, Reports, Timetable)
@@ -306,18 +331,8 @@ const TeacherRoutes: React.FC = () => {
         {/* ============================================
             الصفحات الأكاديمية - Academic Pages
             ============================================ */}
-        <Route 
-          path="/goals" 
-          element={
-            <Goals />
-          } 
-        />
-        <Route 
-          path="/daily-marks" 
-          element={
-            <DailyMarks />
-          } 
-        />
+        <Route path="/goals" element={<Goals />} />
+        <Route path="/daily-marks" element={<DailyMarks />} />
         <Route path="/ranking" element={<Ranking />} />
         <Route path="/test" element={<NotFound />} />
         <Route path="/exam-schedule" element={<ExamSchedule />} />
@@ -327,40 +342,28 @@ const TeacherRoutes: React.FC = () => {
         {/* ============================================
             التواصل والأنشطة - Communication & Activities
             ============================================ */}
-        <Route 
-          path="/news" 
-          element={
-            <News />
-          } 
-        />
+        <Route path="/news" element={<News />} />
         {/* <Route path="/chat" element={<NotFound />} /> */}
         <Route path="/chat" element={<StudentChatView />} />
 
         {/* ============================================
             الحضور والإدارة - Attendance & Management
             ============================================ */}
-        <Route 
-          path="/attendance" 
-          element={
-            <Absence />
-          } 
+        <Route path="/attendance" element={<Absence />} />
+        <Route
+          path="/absence"
+          element={<Navigate to="/attendance" replace />}
         />
-        <Route path="/absence" element={<Navigate to="/attendance" replace />} />
         <Route path="/warnings" element={<Warnings />} />
-        <Route 
-          path="/students-management" 
-          element={
-            <TeacherStudentManagement />
-          } 
+        <Route
+          path="/students-management"
+          element={<TeacherStudentManagement />}
         />
 
         {/* ============================================
             لعبة النقاط - Points Game
             ============================================ */}
-        <Route 
-          path="/points-game" 
-          element={<PointsGame />} 
-        />
+        <Route path="/points-game" element={<PointsGame />} />
 
         {/* ============================================
             الموارد الإسلامية - Islamic Resources
@@ -402,7 +405,7 @@ const TeacherRoutes: React.FC = () => {
  * - Limited access compared to teachers
  * - Can view their own data and resources
  * - Cannot access management or admin features
- * 
+ *
  * Student Routes Structure:
  * 1. Home & Authentication
  * 2. Academic Pages (Goals, Marks, Ranking, Tests, Reports, Timetable)
@@ -421,7 +424,7 @@ const TeacherRoutes: React.FC = () => {
  * - Simplified menu: Home, Goals, Profile only
  * - No management or admin features in header menu
  * - Can still access other pages via direct navigation
- * 
+ *
  * Secretary Routes Structure:
  * 1. Home & Goals (shown in profile menu)
  * 2. Profile
@@ -438,7 +441,10 @@ const SecretaryRoutes: React.FC = () => {
         <Route path="/home" element={<Home />} />
         <Route path="/welcome" element={<WelcomePage />} />
         <Route path="/secretary" element={<Navigate to="/" replace />} />
-        <Route path="/secretary/dashboard" element={<Navigate to="/" replace />} />
+        <Route
+          path="/secretary/dashboard"
+          element={<Navigate to="/" replace />}
+        />
 
         {/* ============================================
             الأهداف - Goals
@@ -509,7 +515,7 @@ const SecretaryRoutes: React.FC = () => {
  * - Simple menu: Home, Goals only
  * - No management or admin features
  * - Limited access compared to teachers
- * 
+ *
  * Teacher Assistant Routes Structure:
  * 1. Home (الصفحة الرئيسية)
  * 2. Goals (الأهداف)
@@ -604,59 +610,34 @@ const StudentRoutes: React.FC = () => {
         {/* ============================================
             الصفحات الأكاديمية - Academic Pages
             ============================================ */}
-        <Route 
-          path="/goals" 
-          element={
-            <Goals />
-          } 
-        />
-        <Route 
-          path="/daily-marks" 
-          element={
-            <DailyMarks />
-          } 
-        />
+        <Route path="/goals" element={<Goals />} />
+        <Route path="/daily-marks" element={<DailyMarks />} />
         <Route path="/ranking" element={<Ranking />} />
         <Route path="/exam-schedule" element={<ExamSchedule />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/timetable" element={<Timetable />} />
-        <Route 
-          path="/test" 
-          element={
-            <Test />
-          } 
-        />
+        <Route path="/test" element={<Test />} />
 
         {/* ============================================
             التواصل والأنشطة - Communication & Activities
             ============================================ */}
-        <Route 
-          path="/news" 
-          element={
-            <News />
-          } 
-        />
+        <Route path="/news" element={<News />} />
         <Route path="/chat" element={<StudentChatView />} />
 
         {/* ============================================
             الحضور والغياب - Attendance (View Only)
             ============================================ */}
-        <Route 
-          path="/attendance" 
-          element={
-            <Absence />
-          } 
+        <Route path="/attendance" element={<Absence />} />
+        <Route
+          path="/absence"
+          element={<Navigate to="/attendance" replace />}
         />
-        <Route path="/absence" element={<Navigate to="/attendance" replace />} />
         <Route path="/warnings" element={<Warnings />} />
 
         {/* ============================================
             لعبة النقاط - Points Game
             ============================================ */}
-        <Route 
-          path="/points-game" 
-          element={<PointsGame />} 
-        />
+        <Route path="/points-game" element={<PointsGame />} />
 
         {/* ============================================
             الموارد الإسلامية - Islamic Resources
@@ -702,14 +683,14 @@ const StudentRoutes: React.FC = () => {
 // Component to track last visited page
 const PageTracker: React.FC = () => {
   const location = useLocation();
-  
+
   useEffect(() => {
     // حفظ آخر صفحة تمت زيارتها (ماعدا صفحة Login)
-    if (location.pathname !== '/login' && location.pathname !== '/') {
-      sessionStorage.setItem('lastVisitedPage', location.pathname);
+    if (location.pathname !== "/login" && location.pathname !== "/") {
+      sessionStorage.setItem("lastVisitedPage", location.pathname);
     }
   }, [location]);
-  
+
   return null;
 };
 
