@@ -3,19 +3,26 @@
 // ============================================================================
 // المكون الرئيسي للإشعارات مع بنية محسنة وقابلة لإعادة الاستخدام
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useNotificationsSocket } from '../../Socket';
-import { useFirebaseMessaging } from '@/hooks/useFirebaseMessaging';
-import { useSound } from '@/components/Hooks/useSounds';
-import { useNotificationDataOptimized as useNotificationData, usePrayerAlerts } from './hooks';
-import type { Notification, NotificationHeaderProps, NotificationCategory } from './types';
-import { Bell, GraduationCap, Shield, Sparkles } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { useNotificationsSocket } from "../../Socket";
+import { useFirebaseMessaging } from "@/hooks/useFirebaseMessaging";
+import { useSound } from "@/components/Hooks/useSounds";
+import {
+  useNotificationDataOptimized as useNotificationData,
+  usePrayerAlerts,
+} from "./hooks";
+import type {
+  Notification,
+  NotificationHeaderProps,
+  NotificationCategory,
+} from "./types";
+import { Bell, GraduationCap, Shield, Sparkles } from "lucide-react";
 import {
   NotificationBell,
   NotificationDropdownHeader,
   NotificationList,
-} from './components';
+} from "./components";
 
 const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
   // ============================================================================
@@ -23,7 +30,10 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
   // ============================================================================
 
   // Socket & Firebase للإشعارات الفورية
-  const { lastNotification: socketNotification, notificationStats: socketStats } = useNotificationsSocket();
+  const {
+    lastNotification: socketNotification,
+    notificationStats: socketStats,
+  } = useNotificationsSocket();
 
   const { lastNotification: firebaseNotification } = useFirebaseMessaging();
 
@@ -59,7 +69,10 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
 
   const [showDropdown, setShowDropdown] = useState(false);
   const [refreshTime, setRefreshTime] = useState(Date.now());
-  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, right: 0 });
+  const [dropdownPosition, setDropdownPosition] = useState({
+    top: 0,
+    right: 0,
+  });
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -74,7 +87,7 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
 
   const handleDeleteNotification = async (
     notificationId: string,
-    event: React.MouseEvent
+    event: React.MouseEvent,
   ) => {
     event.stopPropagation();
     await deleteNotificationLocal(notificationId);
@@ -88,16 +101,19 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
     if (!notification.isRead) {
       markNotificationAsRead(notification._id);
     }
-    
+
     // 1. التحقق من وجود رابط مباشر في الإشعار
     if (notification.link) {
       // تصحيح ذكي للروابط
       // إذا كان الإشعار يخص الجدول ولكنه يوجه للخلاصة اليومية، نوجهه لصفحة الجدول
       if (
-        (notification.link === '/daily-marks' || notification.link === '/daily-marks/') && 
-        (notification.title.includes('تحديد موعد') || notification.title.includes('جدول') || notification.type === 'timetable')
+        (notification.link === "/daily-marks" ||
+          notification.link === "/daily-marks/") &&
+        (notification.title.includes("تحديد موعد") ||
+          notification.title.includes("جدول") ||
+          notification.type === "timetable")
       ) {
-        navigate('/timetable');
+        navigate("/timetable");
       } else {
         navigate(notification.link);
       }
@@ -106,70 +122,79 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
 
     // 2. التنقل حسب النوع (Fallback logic)
     switch (notification.type) {
-      case 'message':
-      case 'chat':
+      case "message":
+      case "chat":
         if (notification.data) {
-          localStorage.setItem('chatNotification', JSON.stringify(notification.data));
-          window.dispatchEvent(new Event('chat-notification-click'));
+          localStorage.setItem(
+            "chatNotification",
+            JSON.stringify(notification.data),
+          );
+          window.dispatchEvent(new Event("chat-notification-click"));
         }
-        navigate('/chat');
+        navigate("/chat");
         break;
 
-      case 'news':
-        navigate('/news');
+      case "news":
+        navigate("/news");
         break;
 
-      case 'timetable':
-      case 'reminder':
-        navigate('/timetable');
+      case "timetable":
+      case "reminder":
+        navigate("/timetable");
         break;
 
-      case 'daily_marks':
-      case 'grade':
-      case 'quran_progress':
-      case 'memorization':
-      case 'review':
-        navigate('/daily-marks');
+      case "daily_marks":
+      case "grade":
+      case "quran_progress":
+      case "memorization":
+      case "review":
+        navigate("/daily-marks");
         break;
 
-      case 'exam':
-      case 'test_result':
-      case 'exam_scheduled':
-      case 'mark_added':
-        navigate('/exam-schedule');
+      case "exam":
+      case "test_result":
+      case "exam_scheduled":
+      case "mark_added":
+        navigate("/exam-schedule");
         break;
 
-      case 'attendance':
-        navigate('/attendance');
-        break;
-        
-      case 'points':
-      case 'ranking':
-        navigate('/points-game');
+      case "attendance":
+        navigate("/attendance");
         break;
 
-      case 'warning':
-      case 'alert':
+      case "points":
+      case "ranking":
+        navigate("/points-game");
+        break;
+
+      case "warning":
+      case "alert":
         // تحديد الوجهة بناءً على المحتوى
-        if (notification.title.includes('غياب') || notification.title.includes('تأخر')) {
-          navigate('/attendance');
+        if (
+          notification.title.includes("غياب") ||
+          notification.title.includes("تأخر")
+        ) {
+          navigate("/attendance");
         } else {
-          navigate('/warnings');
+          navigate("/warnings");
         }
         break;
 
-      case 'system':
+      case "system":
         // معالجة خاصة لإشعارات النظام
-        if (notification.title.includes('جدول') || notification.title.includes('موعد')) {
-           navigate('/timetable');
+        if (
+          notification.title.includes("جدول") ||
+          notification.title.includes("موعد")
+        ) {
+          navigate("/timetable");
         } else {
-           navigate('/');
+          navigate("/");
         }
         break;
 
       default:
         // الافتراضي لنوع غير معروف
-        console.log('No specific route for notification:', notification);
+        console.log("No specific route for notification:", notification);
         break;
     }
   };
@@ -191,7 +216,13 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
   // نستخدمها فقط إذا كانت أكبر من القيمة الحالية (لتجنب التراجع عند القراءة)
   useEffect(() => {
     if (socketStats && socketStats.unreadCount > stats.unreadCount) {
-      console.log('🔄 Syncing socket stats with data hook:', socketStats, '(current:', stats.unreadCount, ')');
+      console.log(
+        "🔄 Syncing socket stats with data hook:",
+        socketStats,
+        "(current:",
+        stats.unreadCount,
+        ")",
+      );
       updateStats({ unreadCount: socketStats.unreadCount });
     }
   }, [socketStats, stats.unreadCount, updateStats]);
@@ -199,20 +230,23 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
   // معالجة الإشعار الجديد من Socket
   useEffect(() => {
     if (socketNotification) {
-      console.log('📬 New Socket notification received in NotificationHeader:', {
-        id: socketNotification._id,
-        type: socketNotification.type,
-        title: socketNotification.title,
-        isNew: socketNotification.isNew
-      });
-      
+      console.log(
+        "📬 New Socket notification received in NotificationHeader:",
+        {
+          id: socketNotification._id,
+          type: socketNotification.type,
+          title: socketNotification.title,
+          isNew: socketNotification.isNew,
+        },
+      );
+
       // التأكد من إضافة الإشعار فوراً
       addNotification(socketNotification as Notification);
-      
+
       // الصوت يتم تشغيله الآن مركزياً في useNotificationsSocket
-      // playSound(); 
-      
-      console.log('✅ Socket notification processed in NotificationHeader');
+      // playSound();
+
+      console.log("✅ Socket notification processed in NotificationHeader");
     }
   }, [socketNotification, addNotification, playSound]);
 
@@ -222,7 +256,7 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
   // معالجة الإشعار من Firebase (بدون fetch لتجنب التكرار)
   useEffect(() => {
     if (firebaseNotification?.notification && userId) {
-      console.log('🔥 Firebase notification received:', firebaseNotification);
+      console.log("🔥 Firebase notification received:", firebaseNotification);
       // لا نستدعي fetchNotifications هنا لأن Socket سيرسل الإشعار
       // فقط نشغل الصوت إذا لم يكن Socket قد شغله
       // playSound(); // معطل لأن Socket يشغل الصوت
@@ -234,29 +268,32 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
     if (showDropdown && buttonRef.current) {
       const updatePosition = () => {
         if (!buttonRef.current) return;
-        
+
         const buttonRect = buttonRef.current.getBoundingClientRect();
         const screenWidth = window.innerWidth;
         const screenHeight = window.innerHeight;
         const dropdownWidth = screenWidth >= 640 ? 380 : 320;
-        
+
         // تحديد المحاذاة بناءً على موقع الزر في الشاشة
-        // إذا كان الزر في النصف الأيسر (كما في RTL)، نحاذي الحافة اليسرى
-        // إذا كان في النصف الأيمن، نحاذي الحافة اليمنى
         let rightPosition;
-        
-        if (buttonRect.left < screenWidth / 2) {
-          // محاذاة الحافة اليسرى للقائمة مع الحافة اليسرى للزر
-          // right = screenWidth - (buttonRect.left + dropdownWidth)
-          rightPosition = screenWidth - (buttonRect.left + dropdownWidth);
+
+        // ✅ في الموبايل (< 640px)، دائماً محاذاة مع الحافة اليمنى = 0
+        if (screenWidth < 768) {
+          rightPosition = 0;
         } else {
-          // محاذاة الحافة اليمنى للقائمة مع الحافة اليمنى للزر
-          rightPosition = screenWidth - buttonRect.right;
+          // في الشاشات الكبيرة: محاذاة ذكية حسب موقع الزر
+          if (buttonRect.left < screenWidth / 2) {
+            // محاذاة الحافة اليسرى للقائمة مع الحافة اليسرى للزر
+            rightPosition = screenWidth - (buttonRect.left + dropdownWidth);
+          } else {
+            // محاذاة الحافة اليمنى للقائمة مع الحافة اليمنى للزر
+            rightPosition = screenWidth - buttonRect.right;
+          }
         }
-        
+
         // حساب الموضع العمودي - مباشرة تحت الزر مع مسافة صغيرة
         let topPosition = buttonRect.bottom + 6;
-        
+
         // إذا لم يكن هناك مساحة كافية في الأسفل، افتح القائمة للأعلى
         const estimatedHeight = Math.min(500, screenHeight * 0.7);
         if (topPosition + estimatedHeight > screenHeight - 16) {
@@ -265,23 +302,23 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
             topPosition = 16;
           }
         }
-        
+
         setDropdownPosition({
           top: Math.max(16, topPosition),
           right: rightPosition,
         });
       };
-      
+
       // حساب الموضع فوراً
       updatePosition();
-      
+
       // إعادة حساب الموضع عند تغيير حجم النافذة أو التمرير
-      window.addEventListener('resize', updatePosition);
-      window.addEventListener('scroll', updatePosition, true);
-      
+      window.addEventListener("resize", updatePosition);
+      window.addEventListener("scroll", updatePosition, true);
+
       return () => {
-        window.removeEventListener('resize', updatePosition);
-        window.removeEventListener('scroll', updatePosition, true);
+        window.removeEventListener("resize", updatePosition);
+        window.removeEventListener("scroll", updatePosition, true);
       };
     }
   }, [showDropdown]);
@@ -290,22 +327,32 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
   // ✅ حساب العداد الفعلي - أخذ القيمة الأعلى بين Socket و API
   // لأن الـ socket قد يستقبل إشعارات جديدة قبل الـ API
   // ============================================================================
-  const effectiveUnreadCount = Math.max(stats.unreadCount, socketStats?.unreadCount || 0);
+  const effectiveUnreadCount = Math.max(
+    stats.unreadCount,
+    socketStats?.unreadCount || 0,
+  );
 
   // ============================================================================
   // Category Filter Handler
   // ============================================================================
 
-  const handleCategoryChange = useCallback((category: NotificationCategory | null) => {
-    setCategory(category);
-  }, [setCategory]);
+  const handleCategoryChange = useCallback(
+    (category: NotificationCategory | null) => {
+      setCategory(category);
+    },
+    [setCategory],
+  );
 
   // أزرار التصفية
-  const categoryButtons: { key: NotificationCategory | null; label: string; Icon: React.ComponentType<{ className?: string }> }[] = [
-    { key: null, label: 'الكل', Icon: Sparkles },
-    { key: 'general', label: 'عام', Icon: Bell },
-    { key: 'academic', label: 'أكاديمي', Icon: GraduationCap },
-    { key: 'admin', label: 'إداري', Icon: Shield },
+  const categoryButtons: {
+    key: NotificationCategory | null;
+    label: string;
+    Icon: React.ComponentType<{ className?: string }>;
+  }[] = [
+    { key: null, label: "الكل", Icon: Sparkles },
+    { key: "general", label: "عام", Icon: Bell },
+    { key: "academic", label: "أكاديمي", Icon: GraduationCap },
+    { key: "admin", label: "إداري", Icon: Shield },
   ];
 
   // ============================================================================
@@ -332,14 +379,13 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
 
         {/* القائمة المنسدلة */}
         {showDropdown && (
-          <div 
+          <div
             className="fixed w-[320px] sm:w-[360px] bg-white rounded-2xl shadow-2xl shadow-gray-200/50 z-[150] animate-slideDown border border-gray-100 flex flex-col max-h-[60vh] sm:max-h-[450px] overflow-hidden"
             style={{
               top: `${dropdownPosition.top}px`,
               right: `${dropdownPosition.right}px`,
             }}
-            onClick={(e) => e.stopPropagation()}
-          >
+            onClick={(e) => e.stopPropagation()}>
             {/* رأس القائمة */}
             <div className="flex-shrink-0 overflow-hidden">
               <NotificationDropdownHeader
@@ -355,17 +401,17 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
               <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
                 {categoryButtons.map(({ key, label, Icon }) => (
                   <button
-                    key={key ?? 'all'}
+                    key={key ?? "all"}
                     onClick={() => handleCategoryChange(key)}
                     className={`
                       flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-semibold rounded-lg whitespace-nowrap
                       transition-all duration-300 ease-out
-                      ${categoryFilter === key 
-                        ? 'bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 text-white shadow-md shadow-emerald-200/50 scale-105' 
-                        : 'bg-white text-gray-600 border border-gray-200 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-600 hover:shadow-sm'
+                      ${
+                        categoryFilter === key
+                          ? "bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-700 text-white shadow-md shadow-emerald-200/50 scale-105"
+                          : "bg-white text-gray-600 border border-gray-200 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-600 hover:shadow-sm"
                       }
-                    `}
-                  >
+                    `}>
                     <Icon className="w-3 h-3" />
                     <span>{label}</span>
                   </button>
