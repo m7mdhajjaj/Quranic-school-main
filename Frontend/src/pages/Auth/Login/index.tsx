@@ -11,7 +11,6 @@ import {
   BrandingSection,
   VerticalDivider,
 } from "./components";
-import { Logo } from "@/components/UI";
 
 // ============================================================================
 // Login Form Section - قسم نموذج تسجيل الدخول
@@ -87,75 +86,31 @@ const Login = () => {
 
   return (
     <div
-      className="relative h-screen overflow-hidden flex items-center justify-center p-2"
+      className="relative min-h-screen overflow-hidden flex items-center justify-center p-2"
       dir="rtl"
       onClick={addRipple}>
       {/* Back to Welcome Button */}
       <motion.button
         onClick={() => navigate("/welcome")}
-        className="fixed top-3 right-3 z-50 flex items-center gap-1.5 px-3 py-1.5 bg-white/90 backdrop-blur-sm text-emerald-600 font-medium rounded-xl shadow-lg hover:shadow-xl hover:bg-white transition-all duration-300 text-sm lg:top-4 lg:right-4 lg:px-4 lg:py-2 lg:gap-2 lg:text-base"
+        className="fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-2 bg-white/90 backdrop-blur-sm text-emerald-600 font-medium rounded-xl shadow-lg hover:shadow-xl hover:bg-white transition-all duration-300"
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.5, delay: 0.3 }}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}>
-        <ArrowRight className="w-4 h-4 lg:w-5 lg:h-5" />
+        <ArrowRight className="w-5 h-5" />
         <span>الصفحة الرئيسية</span>
       </motion.button>
 
-      {/* Click Ripples Effect - Desktop only */}
-      <div className="hidden lg:block">
-        <ClickRipples ripples={ripples} />
-      </div>
+      {/* Click Ripples Effect */}
+      <ClickRipples ripples={ripples} />
 
-      {/* Mobile Background - simple static gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-white to-teal-50/80 lg:hidden" />
+      {/* Animated Background */}
+      <AnimatedBackground />
 
-      {/* Desktop Animated Background */}
-      <div className="hidden lg:block absolute inset-0">
-        <AnimatedBackground />
-      </div>
-
-      {/* ===== MOBILE LAYOUT ===== */}
-      <div className="relative z-10 w-full max-w-sm flex flex-col items-center justify-center lg:hidden px-2">
-        {/* Logo + Title */}
-        <div className="flex flex-col items-center mb-3">
-          <Logo
-            logoUrl={logoUrl}
-            logoLoading={logoLoading}
-            size="sm"
-            alt="مدرسة القرآن"
-            showGlow={false}
-          />
-          <p className="text-sm font-semibold text-emerald-700 mt-1">
-            مدرسة القرآن الكريم
-          </p>
-        </div>
-
-        {/* Login Card */}
-        <div className="w-full">
-          <LoginCard
-            error={error}
-            success={
-              !error && !isLoading && formData.userId && formData.password
-            }>
-            <LoginForm
-              formData={formData}
-              error={error}
-              isLoading={isLoading}
-              rememberMe={rememberMe}
-              onFormChange={handleChange}
-              onRememberMeChange={handleRememberMeChange}
-              onSubmit={handleSubmit}
-              onForgotPassword={() => setShowForgotPasswordModal(true)}
-            />
-          </LoginCard>
-        </div>
-      </div>
-
-      {/* ===== DESKTOP LAYOUT ===== */}
+      {/* Main Content */}
       <motion.div
-        className="hidden lg:flex relative z-10 w-full max-w-4xl flex-row items-stretch gap-0"
+        className="relative z-10 w-full max-w-4xl flex flex-col lg:flex-row items-center lg:items-stretch gap-2 lg:gap-0"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.6 }}>

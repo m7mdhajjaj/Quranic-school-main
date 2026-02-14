@@ -49,9 +49,9 @@ export const LoginCard: React.FC<LoginCardProps> = ({
 
   return (
     <div className={`relative w-full${shake ? " animate-shake" : ""}`}>
-      {/* Animated Glow Effect - Desktop only */}
+      {/* Animated Glow Effect */}
       <motion.div
-        className="absolute -inset-2 bg-gradient-to-r from-emerald-400/40 via-teal-400/40 to-cyan-400/40 rounded-3xl blur-2xl hidden lg:block"
+        className="absolute -inset-2 bg-gradient-to-r from-emerald-400/40 via-teal-400/40 to-cyan-400/40 rounded-3xl blur-2xl"
         animate={{
           opacity: [0.3, 0.5, 0.3],
           scale: [1, 1.02, 1],
@@ -63,9 +63,9 @@ export const LoginCard: React.FC<LoginCardProps> = ({
         }}
       />
 
-      {/* Rotating Border Effect - Desktop only */}
+      {/* Rotating Border Effect */}
       <motion.div
-        className="absolute -inset-[2px] rounded-3xl opacity-50 hidden lg:block"
+        className="absolute -inset-[2px] rounded-3xl opacity-50"
         style={{
           background:
             "conic-gradient(from 0deg, #10b981, #14b8a6, #06b6d4, #10b981)",
@@ -113,17 +113,15 @@ export const LoginCard: React.FC<LoginCardProps> = ({
           variant="elevated"
           padding="md"
           className="relative bg-white/95 backdrop-blur-xl border-emerald-200/50 overflow-hidden py-3">
-          {/* Glass Reflection Sweep - Desktop only */}
-          <div className="hidden lg:block">
-            <GlassReflection />
-          </div>
+          {/* Glass Reflection Sweep */}
+          <GlassReflection />
 
-          {/* Inner Glow - Desktop only */}
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/50 via-transparent to-teal-50/30 pointer-events-none hidden lg:block" />
+          {/* Inner Glow */}
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/50 via-transparent to-teal-50/30 pointer-events-none" />
 
-          {/* Animated Corner Accents - Desktop only */}
+          {/* Animated Corner Accents */}
           <motion.div
-            className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-emerald-400/10 to-transparent rounded-bl-full hidden lg:block"
+            className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-emerald-400/10 to-transparent rounded-bl-full"
             animate={{
               opacity: [0.5, 0.8, 0.5],
               scale: [1, 1.1, 1],
@@ -131,7 +129,7 @@ export const LoginCard: React.FC<LoginCardProps> = ({
             transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
           />
           <motion.div
-            className="absolute bottom-0 left-0 w-16 h-16 bg-gradient-to-tr from-teal-400/10 to-transparent rounded-tr-full hidden lg:block"
+            className="absolute bottom-0 left-0 w-16 h-16 bg-gradient-to-tr from-teal-400/10 to-transparent rounded-tr-full"
             animate={{
               opacity: [0.4, 0.7, 0.4],
               scale: [1, 1.15, 1],
