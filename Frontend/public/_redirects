@@ -1,0 +1,6 @@
+# Netlify Redirects Configuration
+# This file ensures all routes are handled by React Router (SPA routing)
+
+# Redirect all requests to index.html for client-side routing
+# The 200 status code ensures it's a rewrite, not a redirect
+/*    /index.html   200
