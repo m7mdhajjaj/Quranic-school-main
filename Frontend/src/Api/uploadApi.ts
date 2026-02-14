@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:5005/api/upload";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5005/api";
 
 export interface UploadResponse {
   success: boolean;
@@ -50,7 +50,7 @@ export const uploadNewsImage = async (file: File): Promise<UploadResponse> => {
  * رفع عدة صور للأخبار
  */
 export const uploadMultipleNewsImages = async (
-  files: File[]
+  files: File[],
 ): Promise<MultipleUploadResponse> => {
   const formData = new FormData();
   files.forEach((file) => {
@@ -125,8 +125,12 @@ export const getAllHeroImages = async (): Promise<AllHeroImagesResponse> => {
 /**
  * حذف صورة هيرو
  */
-export const deleteHeroImage = async (publicId: string): Promise<{ success: boolean; message: string }> => {
-  const response = await axios.delete(`${API_URL}/hero/${encodeURIComponent(publicId)}`);
+export const deleteHeroImage = async (
+  publicId: string,
+): Promise<{ success: boolean; message: string }> => {
+  const response = await axios.delete(
+    `${API_URL}/hero/${encodeURIComponent(publicId)}`,
+  );
   return response.data;
 };
 
@@ -151,7 +155,7 @@ export const uploadAvatar = async (file: File): Promise<UploadResponse> => {
  * @param publicId معرف الصورة في Cloudinary (يتم الحصول عليه من الرفع)
  */
 export const deleteImage = async (
-  publicId: string
+  publicId: string,
 ): Promise<{ success: boolean; message: string }> => {
   // استخراج الـ public_id الصحيح من الـ URL إذا لزم الأمر
   const cleanPublicId = publicId.includes("/")
@@ -163,7 +167,7 @@ export const deleteImage = async (
     : publicId;
 
   const response = await axios.delete(
-    `${API_URL}/${encodeURIComponent(cleanPublicId)}`
+    `${API_URL}/${encodeURIComponent(cleanPublicId)}`,
   );
   return response.data;
 };
