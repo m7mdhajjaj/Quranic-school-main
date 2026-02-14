@@ -3,7 +3,7 @@
 // ============================================================================
 
 const { MessageService } = require("../../services/Chat");
-const { editMessageSchema } = require("../../Validation/Chat/chatValidation");
+const { editMessageSchema } = require("../../Validation/Chat/ChatValidation");
 
 module.exports = (io, socket, userId, userRole) => {
   /**
@@ -53,11 +53,15 @@ module.exports = (io, socket, userId, userRole) => {
   socket.on("message:edit", async (data, ack) => {
     try {
       const { messageId, text } = data;
-      
+
       // Validate input
       const validated = editMessageSchema.parse({ text });
-      
-      const message = await MessageService.editMessage(userId, messageId, validated.text);
+
+      const message = await MessageService.editMessage(
+        userId,
+        messageId,
+        validated.text,
+      );
       if (ack) ack({ status: "ok", data: message });
     } catch (error) {
       console.error("Socket message:edit error:", error);

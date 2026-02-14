@@ -1,10 +1,10 @@
 const express = require("express");
 const router = express.Router();
-const { 
-  ContactsController, 
-  MessageController, 
-  ConversationController, 
-  GroupController 
+const {
+  ContactsController,
+  MessageController,
+  ConversationController,
+  GroupController,
 } = require("../../controllers/ChatController");
 const { protect } = require("../../middleware/auth/protect.middleware");
 const { validate } = require("../../middleware");
@@ -18,22 +18,22 @@ const {
   markSeenSchema,
   resetUnreadCountSchema,
   editMessageSchema,
-  deleteMessageSchema
-} = require("../../Validation/Chat/chatValidation");
+  deleteMessageSchema,
+} = require("../../Validation/Chat/ChatValidation");
 
 // Configure Cloudinary storage for chat attachments
 const chatStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-    folder: 'quranic-school/chat-attachments',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'mp3', 'mp4'],
-    resource_type: 'auto',
-  }
+    folder: "quranic-school/chat-attachments",
+    allowed_formats: ["jpg", "jpeg", "png", "pdf", "doc", "docx", "mp3", "mp4"],
+    resource_type: "auto",
+  },
 });
 
-const upload = multer({ 
+const upload = multer({
   storage: chatStorage,
-  limits: { fileSize: 10 * 1024 * 1024 } // 10MB max
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max
 });
 
 // All routes require authentication
@@ -50,23 +50,52 @@ router.post("/initialize-groups", GroupController.initializeGroupConversations);
 // Conversations Routes
 // ============================================================================
 router.get("/conversations", ConversationController.getConversations);
-router.post("/conversations/reset-unread", validate(resetUnreadCountSchema), ConversationController.resetUnreadCount);
+router.post(
+  "/conversations/reset-unread",
+  validate(resetUnreadCountSchema),
+  ConversationController.resetUnreadCount,
+);
 router.post("/conversations/mute", ConversationController.muteConversation);
 router.delete("/conversations/:id", ConversationController.deleteConversation);
 
 // ============================================================================
 // Messages Routes
 // ============================================================================
-router.get("/messages", validate(getMessagesSchema, 'query'), MessageController.getMessages);
+router.get(
+  "/messages",
+  validate(getMessagesSchema, "query"),
+  MessageController.getMessages,
+);
 router.get("/messages/:id/context", MessageController.getMessageContext);
-router.post("/messages", messageLimiter, validate(sendMessageSchema), MessageController.sendMessage);
-router.post("/messages/seen", validate(markSeenSchema), MessageController.markSeen);
-router.patch("/messages/:id", validate(editMessageSchema), MessageController.editMessage);
-router.delete("/messages/:id", validate(deleteMessageSchema), MessageController.deleteMessage);
+router.post(
+  "/messages",
+  messageLimiter,
+  validate(sendMessageSchema),
+  MessageController.sendMessage,
+);
+router.post(
+  "/messages/seen",
+  validate(markSeenSchema),
+  MessageController.markSeen,
+);
+router.patch(
+  "/messages/:id",
+  validate(editMessageSchema),
+  MessageController.editMessage,
+);
+router.delete(
+  "/messages/:id",
+  validate(deleteMessageSchema),
+  MessageController.deleteMessage,
+);
 
 // ============================================================================
 // Upload Routes
 // ============================================================================
-router.post("/upload", upload.single('file'), MessageController.uploadAttachment);
+router.post(
+  "/upload",
+  upload.single("file"),
+  MessageController.uploadAttachment,
+);
 
 module.exports = router;

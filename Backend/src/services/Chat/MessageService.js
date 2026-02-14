@@ -3,7 +3,7 @@
 // ============================================================================
 
 const Chat = require("../../schema/Chat/Chat");
-const { sendMessageSchema } = require("../../Validation/Chat/chatValidation");
+const { sendMessageSchema } = require("../../Validation/Chat/ChatValidation");
 const { sendPushNotification } = require("../../Notifications/Core/PushSender");
 const ContactsService = require("./ContactsService");
 const ConversationService = require("./ConversationService");
@@ -27,10 +27,14 @@ class MessageService {
   async sendMessage(senderId, senderRole, data) {
     // Normalize senderRole - handle camelCase like "teacherAssistant"
     let normalizedSenderRole;
-    if (senderRole === "teacherAssistant" || senderRole === "teacherassistant") {
+    if (
+      senderRole === "teacherAssistant" ||
+      senderRole === "teacherassistant"
+    ) {
       normalizedSenderRole = "TeacherAssistant";
     } else {
-      normalizedSenderRole = senderRole.charAt(0).toUpperCase() + senderRole.slice(1);
+      normalizedSenderRole =
+        senderRole.charAt(0).toUpperCase() + senderRole.slice(1);
     }
 
     // Validate input
@@ -51,7 +55,7 @@ class MessageService {
   async _sendDMMessage(senderId, senderRole, data) {
     // Get recipient role
     const recipientRole = await ContactsService.getRecipientRole(
-      data.recipientId
+      data.recipientId,
     );
     if (!recipientRole) {
       throw new Error("Recipient not found");
@@ -62,7 +66,7 @@ class MessageService {
       senderId,
       senderRole,
       data.recipientId,
-      recipientRole
+      recipientRole,
     );
     if (!allowed) {
       throw new Error("Not authorized to chat with this user");
@@ -73,7 +77,7 @@ class MessageService {
       senderId,
       senderRole,
       data.recipientId,
-      recipientRole
+      recipientRole,
     );
 
     // Create message
@@ -104,28 +108,28 @@ class MessageService {
       ConversationService.updateConversationAfterMessage(
         conversation._id,
         message._id,
-        data.recipientId
-      ).catch(e => console.error("Error updating conversation:", e)),
+        data.recipientId,
+      ).catch((e) => console.error("Error updating conversation:", e)),
 
       (async () => {
-         const senderName = `${message.sender.firstName} ${message.sender.lastName}`;
-         await notifyNewMessage(
-            data.recipientId,
-            recipientRole,
-            senderName,
-            data.text,
-            conversation._id,
-            "DM"
-         );
-      })().catch(e => console.error("Error sending notification:", e)),
+        const senderName = `${message.sender.firstName} ${message.sender.lastName}`;
+        await notifyNewMessage(
+          data.recipientId,
+          recipientRole,
+          senderName,
+          data.text,
+          conversation._id,
+          "DM",
+        );
+      })().catch((e) => console.error("Error sending notification:", e)),
 
       this._sendPushIfOffline(
         data.recipientId,
         senderId,
         senderRole,
         data.text,
-        conversation._id
-      ).catch(e => console.error("Error sending push:", e))
+        conversation._id,
+      ).catch((e) => console.error("Error sending push:", e)),
     ]);
 
     return message;
@@ -139,7 +143,7 @@ class MessageService {
     const allowed = await GroupService.canSendToGroup(
       senderId,
       senderRole,
-      data.groupId
+      data.groupId,
     );
     if (!allowed) {
       throw new Error("Not authorized to send to this group");
@@ -160,8 +164,10 @@ class MessageService {
           let userModel = "Student";
           if (await Teacher.exists({ _id: userId })) userModel = "Teacher";
           else if (await Admin.exists({ _id: userId })) userModel = "Admin";
-          else if (await Secretary.exists({ _id: userId })) userModel = "Secretary";
-          else if (await TeacherAssistant.exists({ _id: userId })) userModel = "TeacherAssistant";
+          else if (await Secretary.exists({ _id: userId }))
+            userModel = "Secretary";
+          else if (await TeacherAssistant.exists({ _id: userId }))
+            userModel = "TeacherAssistant";
 
           processedMentions.push({
             type: "user",
@@ -192,7 +198,7 @@ class MessageService {
       const group = await Group.findById(data.groupId);
       if (group) {
         const students = await Student.find({ group: group.name }).select(
-          "_id"
+          "_id",
         );
         const memberIds =
           students && Array.isArray(students)
@@ -232,43 +238,45 @@ class MessageService {
       ConversationService.updateGroupConversationAfterMessage(
         data.groupId,
         message._id,
-        senderId
-      ).catch(e => console.error("Error updating group conversation:", e)),
+        senderId,
+      ).catch((e) => console.error("Error updating group conversation:", e)),
 
       (async () => {
-         const senderName = `${message.sender.firstName} ${message.sender.lastName}`;
-         
-         // 1. Mentions (Parallel)
-         if (data.mentions && data.mentions.length > 0) {
-            const group = await Group.findById(data.groupId);
-            const groupName = group ? group.name : "المجموعة";
+        const senderName = `${message.sender.firstName} ${message.sender.lastName}`;
 
-            const mentionPromises = data.mentions
-                .filter(m => m.type === "user" && m.user)
-                .map(mention => 
-                   notifyMention(
-                      mention.user,
-                      "Student",
-                      senderName,
-                      data.text,
-                      data.groupId,
-                      "GROUP",
-                      groupName
-                   ).catch(e => console.error("Error sending mention notimication:", e))
-                );
-            await Promise.all(mentionPromises);
-         }
+        // 1. Mentions (Parallel)
+        if (data.mentions && data.mentions.length > 0) {
+          const group = await Group.findById(data.groupId);
+          const groupName = group ? group.name : "المجموعة";
 
-         // 2. Standard Group Notification
-         await this._notifyGroupMembers(
-            data.groupId,
-            senderId,
-            senderName,
-            data.text,
-            "GROUP",
-            data.mentions
-         );
-      })().catch(e => console.error("Error sending group notifications:", e))
+          const mentionPromises = data.mentions
+            .filter((m) => m.type === "user" && m.user)
+            .map((mention) =>
+              notifyMention(
+                mention.user,
+                "Student",
+                senderName,
+                data.text,
+                data.groupId,
+                "GROUP",
+                groupName,
+              ).catch((e) =>
+                console.error("Error sending mention notimication:", e),
+              ),
+            );
+          await Promise.all(mentionPromises);
+        }
+
+        // 2. Standard Group Notification
+        await this._notifyGroupMembers(
+          data.groupId,
+          senderId,
+          senderName,
+          data.text,
+          "GROUP",
+          data.mentions,
+        );
+      })().catch((e) => console.error("Error sending group notifications:", e)),
     ]);
 
     return message;
@@ -355,7 +363,7 @@ class MessageService {
 
         const userMap = new Map();
         [...students, ...teachers, ...admins, ...assistants].forEach((u) =>
-          userMap.set(u._id.toString(), u)
+          userMap.set(u._id.toString(), u),
         );
 
         messages.forEach((msg) => {
@@ -433,7 +441,7 @@ class MessageService {
       }
     } else if (message.chatType === "GROUP") {
       const alreadyDelivered = message.deliveredTo.find(
-        (d) => d.userId.toString() === userId.toString()
+        (d) => d.userId.toString() === userId.toString(),
       );
 
       if (!alreadyDelivered) {
@@ -481,7 +489,7 @@ class MessageService {
         await ConversationService.resetUnreadCount(
           userId,
           message.chatType,
-          message.sender
+          message.sender,
         );
 
         // Notify sender
@@ -494,7 +502,7 @@ class MessageService {
       }
     } else if (message.chatType === "GROUP") {
       const alreadySeen = message.seenBy.find(
-        (s) => s.userId.toString() === userId.toString()
+        (s) => s.userId.toString() === userId.toString(),
       );
 
       if (!alreadySeen) {
@@ -504,7 +512,7 @@ class MessageService {
         // Also mark as delivered if not already
         if (
           !message.deliveredTo.find(
-            (d) => d.userId.toString() === userId.toString()
+            (d) => d.userId.toString() === userId.toString(),
           )
         ) {
           message.deliveredTo.push({ userId, at: now });
@@ -516,7 +524,7 @@ class MessageService {
         await ConversationService.resetUnreadCount(
           userId,
           message.chatType,
-          message.groupId
+          message.groupId,
         );
 
         // ✅ Notify Group (Real-time read status)
@@ -634,7 +642,7 @@ class MessageService {
       // For DM: check readAt
       if (message.chatType === "DM" && message.readAt) {
         throw new Error(
-          "Cannot delete message for everyone after it has been read"
+          "Cannot delete message for everyone after it has been read",
         );
       }
       // For Group: check if anyone has seen it (optional strictness, usually just time limit is enough for groups but user asked for strict rules)
@@ -658,12 +666,18 @@ class MessageService {
       if (global.io) {
         // Prepare payload once
         const payload = { messageId, deletedForAll: true };
-        
+
         if (message.chatType === "DM") {
-          global.io.to(message.recipient.toString()).emit("message:deleted", payload);
-          global.io.to(message.sender.toString()).emit("message:deleted", payload);
+          global.io
+            .to(message.recipient.toString())
+            .emit("message:deleted", payload);
+          global.io
+            .to(message.sender.toString())
+            .emit("message:deleted", payload);
         } else {
-          global.io.to(`group:${message.groupId}`).emit("message:deleted", payload);
+          global.io
+            .to(`group:${message.groupId}`)
+            .emit("message:deleted", payload);
         }
       }
     } else {
@@ -863,7 +877,7 @@ class MessageService {
     senderId,
     senderRole,
     messageText,
-    conversationId
+    conversationId,
   ) {
     const isOnline = global.isUserOnline
       ? global.isUserOnline(recipientId)
@@ -875,28 +889,29 @@ class MessageService {
         if (conversationId) {
           const isMuted = await ConversationService.isMuted(
             recipientId,
-            conversationId
+            conversationId,
           );
           if (isMuted) return;
         }
 
         // Normalize senderRole to handle camelCase
-        const normalizedSenderRole = senderRole === "teacherAssistant" || senderRole === "TeacherAssistant" 
-          ? "TeacherAssistant" 
-          : senderRole.charAt(0).toUpperCase() + senderRole.slice(1);
-        
+        const normalizedSenderRole =
+          senderRole === "teacherAssistant" || senderRole === "TeacherAssistant"
+            ? "TeacherAssistant"
+            : senderRole.charAt(0).toUpperCase() + senderRole.slice(1);
+
         const senderModel =
           normalizedSenderRole === "Student"
             ? require("../../schema/Student/Student")
             : normalizedSenderRole === "Teacher"
-            ? require("../../schema/Teacher")
-            : normalizedSenderRole === "Admin"
-            ? require("../../schema/Admin")
-            : normalizedSenderRole === "Secretary"
-            ? require("../../schema/Secretary")
-            : normalizedSenderRole === "TeacherAssistant"
-            ? require("../../schema/TeacherAssistant")
-            : require("../../schema/Student/Student"); // Fallback
+              ? require("../../schema/Teacher")
+              : normalizedSenderRole === "Admin"
+                ? require("../../schema/Admin")
+                : normalizedSenderRole === "Secretary"
+                  ? require("../../schema/Secretary")
+                  : normalizedSenderRole === "TeacherAssistant"
+                    ? require("../../schema/TeacherAssistant")
+                    : require("../../schema/Student/Student"); // Fallback
 
         const sender = await senderModel
           .findById(senderId)
@@ -932,7 +947,7 @@ class MessageService {
     senderName,
     text,
     chatType,
-    mentions = []
+    mentions = [],
   ) {
     try {
       // Get Group
@@ -954,7 +969,7 @@ class MessageService {
             (m.type === "user" &&
               m.user &&
               m.user.toString() === userId.toString()) ||
-            m.type === "all"
+            m.type === "all",
         );
       };
 
@@ -971,7 +986,7 @@ class MessageService {
           text,
           conversationId,
           chatType,
-          group.name
+          group.name,
         );
       }
 
@@ -989,7 +1004,7 @@ class MessageService {
             text,
             conversationId,
             chatType,
-            group.name
+            group.name,
           );
         }
       }
