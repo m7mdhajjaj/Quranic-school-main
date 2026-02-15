@@ -86,6 +86,13 @@ const dailyPointsSchema = new mongoose.Schema(
       reviewedMinutes: { type: Number, min: 0, default: 0 },
     },
 
+    // أنشطة رمضان
+    ramadan: {
+      taraweehRakaat: { type: Number, min: 0, max: 20, default: 0 },
+      quranPages: { type: Number, min: 0, default: 0 },
+      fpiasting: { type: Boolean, default: false },
+    },
+
     // إجمالي النقاط المحسوبة
     totalPoints: {
       type: Number,
@@ -104,7 +111,7 @@ const dailyPointsSchema = new mongoose.Schema(
       required: true,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // فهرس مركب لضمان عدم تكرار السجل لنفس الطالب في نفس اليوم
@@ -154,6 +161,16 @@ dailyPointsSchema.pre("save", function (next) {
   // نقاط الحلقة (كل 10 دقائق = نقطة)
   total += Math.floor(this.halaqah.memorizedMinutes / 10) * 1;
   total += Math.floor(this.halaqah.reviewedMinutes / 10) * 1;
+
+  // نقاط رمضان
+  if (this.ramadan) {
+    // كل ركعة تراويح = نقطة
+    total += (this.ramadan.taraweehRakaat || 0) * 1;
+    // كل صفحة قرآن = نقطة
+    total += (this.ramadan.quranPages || 0) * 1;
+    // الصيام = 5 نقاط
+    if (this.ramadan.fpiasting) total += 5;
+  }
 
   this.totalPoints = total;
   next();

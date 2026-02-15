@@ -46,6 +46,15 @@ export interface Halaqah {
 }
 
 // ============================================
+// Ramadan Types
+// ============================================
+export interface Ramadan {
+  taraweehRakaat: number;
+  quranPages: number;
+  fpiasting: boolean;
+}
+
+// ============================================
 // Daily Points Data
 // ============================================
 export interface DailyPointsData {
@@ -66,6 +75,7 @@ export interface DailyPointsData {
     memorizedMinutes: number;
     reviewedMinutes: number;
   };
+  ramadan: Ramadan;
 }
 
 // ============================================
@@ -167,6 +177,12 @@ export interface DailyActivitiesSectionProps {
   onDailyStudyChange: (value: number) => void;
 }
 
+// RamadanSection Component
+export interface RamadanSectionProps {
+  ramadan: Ramadan;
+  onUpdate: (key: keyof Ramadan, value: number | boolean) => void;
+}
+
 // PointsSummaryCard Component
 export interface PointsSummaryCardProps {
   totalPoints: number;
@@ -232,6 +248,10 @@ export interface StudentViewProps {
   // Halaqah
   halaqah: Halaqah;
   onUpdateHalaqah: (key: keyof Halaqah, value: number) => void;
+
+  // Ramadan
+  ramadan: Ramadan;
+  onUpdateRamadan: (key: keyof Ramadan, value: number | boolean) => void;
 
   // Actions
   onShowRankings: () => void;

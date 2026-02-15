@@ -13,7 +13,7 @@ import {
   StudentView,
   TeacherRankingsView,
 } from "./components";
-import type { PrayerStatus, Prayers } from "./types/pointsGame.types";
+import type { PrayerStatus, Prayers, Ramadan } from "./types/pointsGame.types";
 
 const PointsGamePage = () => {
   const { user } = useAuth();
@@ -38,6 +38,8 @@ const PointsGamePage = () => {
     setAdhkar,
     halaqah,
     setHalaqah,
+    ramadan,
+    setRamadan,
     badgeProgress,
     earnedBadges,
     stats,
@@ -48,7 +50,7 @@ const PointsGamePage = () => {
 
   const { saving, saveDailyData } = usePointsGameActions(
     loadBadgesData,
-    loadStatsData
+    loadStatsData,
   );
 
   const {
@@ -75,7 +77,8 @@ const PointsGamePage = () => {
         schoolAttendance,
         dailyStudy,
         adhkar,
-        halaqah
+        halaqah,
+        ramadan,
       ),
     [
       prayers,
@@ -85,7 +88,8 @@ const PointsGamePage = () => {
       dailyStudy,
       adhkar,
       halaqah,
-    ]
+      ramadan,
+    ],
   );
 
   // دالة لتحديث حالة الصلاة
@@ -96,33 +100,40 @@ const PointsGamePage = () => {
         [prayerName]: { status },
       }));
     },
-    [setPrayers]
+    [setPrayers],
   );
 
   const handleToggleNawafel = useCallback(
     (key: keyof typeof nawafel) => {
       setNawafel((prev) => ({ ...prev, [key]: !prev[key] }));
     },
-    [setNawafel]
+    [setNawafel],
   );
 
   const handleToggleAdhkar = useCallback(
     (key: keyof typeof adhkar) => {
       setAdhkar((prev) => ({ ...prev, [key]: !prev[key] }));
     },
-    [setAdhkar]
+    [setAdhkar],
   );
 
   const handleUpdateHalaqah = useCallback(
     (key: keyof typeof halaqah, value: number) => {
       setHalaqah((prev) => ({ ...prev, [key]: value }));
     },
-    [setHalaqah]
+    [setHalaqah],
   );
 
   const handleSchoolAttendanceToggle = useCallback(() => {
     setSchoolAttendance((prev) => !prev);
   }, [setSchoolAttendance]);
+
+  const handleUpdateRamadan = useCallback(
+    (key: keyof Ramadan, value: number | boolean) => {
+      setRamadan((prev) => ({ ...prev, [key]: value }));
+    },
+    [setRamadan],
+  );
 
   // دالة لحفظ النقاط اليومية
   const handleSavePoints = useCallback(async () => {
@@ -144,6 +155,11 @@ const PointsGamePage = () => {
         memorizedMinutes: halaqah.memorizedMinutes,
         reviewedMinutes: halaqah.reviewedMinutes,
       },
+      ramadan: {
+        taraweehRakaat: ramadan.taraweehRakaat,
+        quranPages: ramadan.quranPages,
+        fpiasting: ramadan.fpiasting,
+      },
     };
 
     await saveDailyData(dailyData, totalPoints);
@@ -156,6 +172,7 @@ const PointsGamePage = () => {
     dailyStudy,
     adhkar,
     halaqah,
+    ramadan,
     saveDailyData,
     totalPoints,
   ]);
@@ -191,13 +208,14 @@ const PointsGamePage = () => {
               </div>
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold text-white">
-                  {user?.role === "teacher" ? "📊 ترتيب الطلاب" : "🎮 لعبة النقاط اليومية"}
+                  {user?.role === "teacher"
+                    ? "📊 ترتيب الطلاب"
+                    : "🎮 لعبة النقاط اليومية"}
                 </h1>
                 <p className="text-white/70 text-sm mt-1">
                   {user?.role === "teacher"
                     ? `المعلم: ${user?.firstName} ${user?.lastName} - تابع تقدم طلابك ومنافستهم! 🌟`
-                    : `الطالب: ${user?.firstName} ${user?.lastName} - تابع نشاطاتك اليومية واجمع النقاط! 🌟`
-                  }
+                    : `الطالب: ${user?.firstName} ${user?.lastName} - تابع نشاطاتك اليومية واجمع النقاط! 🌟`}
                 </p>
               </div>
             </div>
@@ -238,6 +256,8 @@ const PointsGamePage = () => {
               onToggleAdhkar={handleToggleAdhkar}
               halaqah={halaqah}
               onUpdateHalaqah={handleUpdateHalaqah}
+              ramadan={ramadan}
+              onUpdateRamadan={handleUpdateRamadan}
               onShowRankings={handleShowRankings}
               onShowBadges={() => setShowBadges(true)}
               onSavePoints={handleSavePoints}

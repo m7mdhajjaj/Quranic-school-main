@@ -4,8 +4,12 @@
 
 const DailyPoints = require("../../schema/DailyPoints");
 const Student = require("../../schema/Student");
-const { updateBadgeProgress } = require("../../services/PointsGameService/badgeService");
-const { updateMonthlyPoints } = require("../../services/PointsGameService/monthlyPointsService");
+const {
+  updateBadgeProgress,
+} = require("../../services/PointsGameService/badgeService");
+const {
+  updateMonthlyPoints,
+} = require("../../services/PointsGameService/monthlyPointsService");
 
 /**
  * @desc    حفظ النقاط اليومية للطالب
@@ -23,6 +27,7 @@ exports.saveDailyPoints = async (req, res) => {
       dailyStudy,
       adhkar,
       halaqah,
+      ramadan,
       date,
     } = req.body;
 
@@ -51,6 +56,11 @@ exports.saveDailyPoints = async (req, res) => {
       dailyPoints.dailyStudy = dailyStudy;
       dailyPoints.adhkar = adhkar;
       dailyPoints.halaqah = halaqah;
+      dailyPoints.ramadan = ramadan || {
+        taraweehRakaat: 0,
+        quranPages: 0,
+        fpiasting: false,
+      };
     } else {
       // إنشاء سجل جديد
       dailyPoints = new DailyPoints({
@@ -63,6 +73,11 @@ exports.saveDailyPoints = async (req, res) => {
         dailyStudy,
         adhkar,
         halaqah,
+        ramadan: ramadan || {
+          taraweehRakaat: 0,
+          quranPages: 0,
+          fpiasting: false,
+        },
         group: student.group,
         teacher: student.teacher,
       });

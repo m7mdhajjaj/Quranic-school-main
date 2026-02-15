@@ -5,6 +5,7 @@ export { NawafelSection } from "./NawafelSection";
 export { DailyActivitiesSection } from "./DailyActivitiesSection";
 export { AdhkarSection } from "./AdhkarSection";
 export { HalaqahSection } from "./HalaqahSection";
+export { RamadanSection } from "./RamadanSection";
 export { RankingsModal } from "./RankingsModal";
 export { BadgesModal } from "./BadgesModal";
 export { MotivationalMessage } from "./MotivationalMessage";

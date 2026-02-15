@@ -10,6 +10,7 @@ import type {
   Nawafel,
   Adhkar,
   Halaqah,
+  Ramadan,
   Badge,
   BadgeProgress,
   StudentStats,
@@ -51,6 +52,12 @@ export const usePointsGameData = (userRole: string | undefined) => {
     reviewedMinutes: 0,
   });
 
+  const [ramadan, setRamadan] = useState<Ramadan>({
+    taraweehRakaat: 0,
+    quranPages: 0,
+    fpiasting: false,
+  });
+
   const [badgeProgress, setBadgeProgress] = useState<BadgeProgress>({
     mosquePrayerStreak: 0,
     adhkarStreak: 0,
@@ -83,7 +90,7 @@ export const usePointsGameData = (userRole: string | undefined) => {
             qiyamAlayl: false,
             rawatib: false,
             witr: false,
-          }
+          },
         );
         setParentRespect(data.parentRespect || 5);
         setSchoolAttendance(data.schoolAttendance || false);
@@ -94,11 +101,16 @@ export const usePointsGameData = (userRole: string | undefined) => {
             evening: false,
             sleep: false,
             afterPrayer: false,
-          }
+          },
         );
         setHalaqah({
           memorizedMinutes: data.halaqah?.memorized || 0,
           reviewedMinutes: data.halaqah?.reviewed || 0,
+        });
+        setRamadan({
+          taraweehRakaat: data.ramadan?.taraweehRakaat || 0,
+          quranPages: data.ramadan?.quranPages || 0,
+          fpiasting: data.ramadan?.fpiasting || false,
         });
       }
     } finally {
@@ -120,7 +132,7 @@ export const usePointsGameData = (userRole: string | undefined) => {
             overallStreak: 0,
             sunanStreak: 0,
             mosqueTwoPrayersWeek: 0,
-          }
+          },
         );
         const convertedBadges: Badge[] = (data.earnedBadges || []).map(
           (badge: any) => ({
@@ -130,7 +142,7 @@ export const usePointsGameData = (userRole: string | undefined) => {
             description: badge.description,
             requirement: badge.requirement,
             count: badge.count,
-          })
+          }),
         );
         setEarnedBadges(convertedBadges);
       }
@@ -175,6 +187,8 @@ export const usePointsGameData = (userRole: string | undefined) => {
     setAdhkar,
     halaqah,
     setHalaqah,
+    ramadan,
+    setRamadan,
     badgeProgress,
     earnedBadges,
     stats,

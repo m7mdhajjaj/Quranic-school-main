@@ -5,6 +5,7 @@ import type {
   Nawafel,
   Adhkar,
   Halaqah,
+  Ramadan,
 } from "../types/pointsGame.types";
 
 export const getPrayerPoints = (status: PrayerStatus): number => {
@@ -29,7 +30,8 @@ export const calculateTotalPoints = (
   schoolAttendance: boolean,
   dailyStudy: number,
   adhkar: Adhkar,
-  halaqah: Halaqah
+  halaqah: Halaqah,
+  ramadan: Ramadan,
 ): number => {
   let total = 0;
 
@@ -60,6 +62,16 @@ export const calculateTotalPoints = (
   // نقاط الحلقة
   total += Math.floor(halaqah.memorizedMinutes / 10) * 5;
   total += Math.floor(halaqah.reviewedMinutes / 10) * 3;
+
+  // نقاط رمضان
+  if (ramadan) {
+    // كل ركعة تراويح = نقطة
+    total += (ramadan.taraweehRakaat || 0) * 1;
+    // كل صفحة قرآن = نقطة
+    total += (ramadan.quranPages || 0) * 1;
+    // الصيام = 5 نقاط
+    if (ramadan.fpiasting) total += 5;
+  }
 
   return total;
 };

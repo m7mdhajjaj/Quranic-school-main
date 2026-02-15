@@ -45,6 +45,12 @@ export interface Halaqah {
   reviewedMinutes: number;
 }
 
+export interface Ramadan {
+  taraweehRakaat: number;
+  quranPages: number;
+  fpiasting: boolean;
+}
+
 export interface DailyPointsData {
   prayers: Prayers;
   nawafel: Nawafel;
@@ -53,6 +59,7 @@ export interface DailyPointsData {
   dailyStudy: number;
   adhkar: Adhkar;
   halaqah: Halaqah;
+  ramadan: Ramadan;
   date?: string; // اختياري - بصيغة YYYY-MM-DD
 }
 
@@ -152,12 +159,12 @@ export const getStudentBadges = async (): Promise<StudentBadges> => {
  * جلب ترتيب الطلاب حسب النقاط (في نفس الحلقة فقط)
  */
 export const getPointsRankings = async (
-  groupId?: string
+  groupId?: string,
 ): Promise<RankingStudent[]> => {
   try {
     console.log(
       "📊 [API] Fetching points rankings...",
-      groupId ? `for group: ${groupId}` : ""
+      groupId ? `for group: ${groupId}` : "",
     );
     const url = groupId
       ? `${POINTS_GAME_URL}/rankings/points?groupId=${groupId}`
@@ -170,7 +177,7 @@ export const getPointsRankings = async (
   } catch (error: any) {
     console.error(
       "خطأ في جلب ترتيب النقاط:",
-      error.response?.data || error.message
+      error.response?.data || error.message,
     );
     throw error.response?.data || error;
   }
@@ -180,12 +187,12 @@ export const getPointsRankings = async (
  * جلب ترتيب الطلاب حسب الشارات (في نفس الحلقة فقط)
  */
 export const getBadgesRankings = async (
-  groupId?: string
+  groupId?: string,
 ): Promise<RankingStudent[]> => {
   try {
     console.log(
       "🏆 [API] Fetching badges rankings...",
-      groupId ? `for group: ${groupId}` : ""
+      groupId ? `for group: ${groupId}` : "",
     );
     const url = groupId
       ? `${POINTS_GAME_URL}/rankings/badges?groupId=${groupId}`
@@ -198,7 +205,7 @@ export const getBadgesRankings = async (
   } catch (error: any) {
     console.error(
       "خطأ في جلب ترتيب الشارات:",
-      error.response?.data || error.message
+      error.response?.data || error.message,
     );
     throw error.response?.data || error;
   }
@@ -216,7 +223,7 @@ export const getTeacherGroupsForPointsGame = async () => {
   } catch (error: any) {
     console.error(
       "خطأ في جلب حلقات المعلم:",
-      error.response?.data || error.message
+      error.response?.data || error.message,
     );
     throw error.response?.data || error;
   }
@@ -234,7 +241,7 @@ export const getStudentStats = async (): Promise<StudentStats> => {
   } catch (error: any) {
     console.error(
       "خطأ في جلب الإحصائيات:",
-      error.response?.data || error.message
+      error.response?.data || error.message,
     );
     throw error.response?.data || error;
   }
