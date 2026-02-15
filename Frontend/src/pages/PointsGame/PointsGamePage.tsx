@@ -6,12 +6,13 @@ import { usePointsGameActions } from "./hooks/usePointsGameActions";
 import { useRankings } from "./hooks/useRankings";
 import { useTeacherGroups } from "./hooks/useTeacherGroups";
 import { calculateTotalPoints } from "./utils/pointsCalculator";
-import { Gamepad2, BarChart3 } from "lucide-react";
+import { Gamepad2, BarChart3, Calendar } from "lucide-react";
 import {
   RankingsModal,
   BadgesModal,
   StudentView,
   TeacherRankingsView,
+  TeacherDailyView,
 } from "./components";
 import type { PrayerStatus, Prayers, Ramadan } from "./types/pointsGame.types";
 
@@ -20,6 +21,7 @@ const PointsGamePage = () => {
   const [showRankings, setShowRankings] = useState(false);
   const [showBadges, setShowBadges] = useState(false);
   const [rankingType, setRankingType] = useState<"points" | "badges">("points");
+  const [teacherTab, setTeacherTab] = useState<"daily" | "rankings">("daily");
 
   // استخدام الـ hooks
   const {
@@ -221,18 +223,53 @@ const PointsGamePage = () => {
             </div>
           </div>
 
-          {/* المعلم يرى لوحة الترتيب مباشرة */}
+          {/* المعلم يرى تبويبات - نقاط اليوم أو لوحة الترتيب */}
           {user?.role === "teacher" ? (
-            <TeacherRankingsView
-              loading={rankingsLoading || groupsLoading}
-              rankingType={rankingType}
-              realRankings={realRankings}
-              realBadgeRankings={realBadgeRankings}
-              onChangeType={setRankingType}
-              groups={groups}
-              selectedGroupId={selectedGroupId}
-              onGroupChange={setSelectedGroupId}
-            />
+            <div className="space-y-4">
+              {/* تبويبات المعلم */}
+              <div className="flex gap-2 bg-white rounded-xl border border-slate-200/60 shadow-sm p-2">
+                <button
+                  onClick={() => setTeacherTab("daily")}
+                  className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-bold text-sm transition-all ${
+                    teacherTab === "daily"
+                      ? "bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white shadow-lg"
+                      : "bg-gray-50 text-gray-600 hover:bg-gray-100"
+                  }`}>
+                  <Calendar className="w-4 h-4" />
+                  نقاط اليوم
+                </button>
+                <button
+                  onClick={() => setTeacherTab("rankings")}
+                  className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-bold text-sm transition-all ${
+                    teacherTab === "rankings"
+                      ? "bg-gradient-to-r from-emerald-600 via-teal-700 to-slate-700 text-white shadow-lg"
+                      : "bg-gray-50 text-gray-600 hover:bg-gray-100"
+                  }`}>
+                  <BarChart3 className="w-4 h-4" />
+                  لوحة الترتيب
+                </button>
+              </div>
+
+              {/* المحتوى حسب التبويب */}
+              {teacherTab === "daily" ? (
+                <TeacherDailyView
+                  groups={groups}
+                  selectedGroupId={selectedGroupId || ""}
+                  onGroupChange={setSelectedGroupId}
+                />
+              ) : (
+                <TeacherRankingsView
+                  loading={rankingsLoading || groupsLoading}
+                  rankingType={rankingType}
+                  realRankings={realRankings}
+                  realBadgeRankings={realBadgeRankings}
+                  onChangeType={setRankingType}
+                  groups={groups}
+                  selectedGroupId={selectedGroupId}
+                  onGroupChange={setSelectedGroupId}
+                />
+              )}
+            </div>
           ) : (
             <StudentView
               totalPoints={totalPoints}

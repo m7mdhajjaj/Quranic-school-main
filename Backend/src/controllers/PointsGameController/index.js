@@ -13,6 +13,8 @@ module.exports = {
   // Daily Points Controllers
   saveDailyPoints: dailyPointsController.saveDailyPoints,
   getDailyPoints: dailyPointsController.getDailyPoints,
+  getGroupDailyPoints: dailyPointsController.getGroupDailyPoints,
+  resetStudentDailyPoints: dailyPointsController.resetStudentDailyPoints,
 
   // Badges Controllers
   getStudentBadges: badgesController.getStudentBadges,
