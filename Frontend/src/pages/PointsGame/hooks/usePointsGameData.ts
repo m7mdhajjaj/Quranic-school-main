@@ -75,28 +75,29 @@ export const usePointsGameData = (userRole: string | undefined) => {
   const loadTodayData = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await getDailyPoints(currentDate);
-      if (data) {
+      const response = await getDailyPoints(currentDate);
+      const dailyData = response?.data;
+      if (dailyData) {
         setPrayers({
-          fajr: { status: data.prayers?.fajr || "missed" },
-          dhuhr: { status: data.prayers?.dhuhr || "missed" },
-          asr: { status: data.prayers?.asr || "missed" },
-          maghrib: { status: data.prayers?.maghrib || "missed" },
-          isha: { status: data.prayers?.isha || "missed" },
+          fajr: { status: dailyData.prayers?.fajr || "missed" },
+          dhuhr: { status: dailyData.prayers?.dhuhr || "missed" },
+          asr: { status: dailyData.prayers?.asr || "missed" },
+          maghrib: { status: dailyData.prayers?.maghrib || "missed" },
+          isha: { status: dailyData.prayers?.isha || "missed" },
         });
         setNawafel(
-          data.nawafel || {
+          dailyData.nawafel || {
             duha: false,
             qiyamAlayl: false,
             rawatib: false,
             witr: false,
           },
         );
-        setParentRespect(data.parentRespect || 5);
-        setSchoolAttendance(data.schoolAttendance || false);
-        setDailyStudy(data.dailyStudy || 0);
+        setParentRespect(dailyData.parentRespect ?? 5);
+        setSchoolAttendance(dailyData.schoolAttendance || false);
+        setDailyStudy(dailyData.dailyStudy || 0);
         setAdhkar(
-          data.adhkar || {
+          dailyData.adhkar || {
             morning: false,
             evening: false,
             sleep: false,
@@ -104,13 +105,13 @@ export const usePointsGameData = (userRole: string | undefined) => {
           },
         );
         setHalaqah({
-          memorizedMinutes: data.halaqah?.memorized || 0,
-          reviewedMinutes: data.halaqah?.reviewed || 0,
+          memorizedMinutes: dailyData.halaqah?.memorizedMinutes || 0,
+          reviewedMinutes: dailyData.halaqah?.reviewedMinutes || 0,
         });
         setRamadan({
-          taraweehRakaat: data.ramadan?.taraweehRakaat || 0,
-          quranPages: data.ramadan?.quranPages || 0,
-          fpiasting: data.ramadan?.fpiasting || false,
+          taraweehRakaat: dailyData.ramadan?.taraweehRakaat || 0,
+          quranPages: dailyData.ramadan?.quranPages || 0,
+          fpiasting: dailyData.ramadan?.fpiasting || false,
         });
       }
     } finally {

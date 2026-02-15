@@ -61,6 +61,12 @@ exports.saveDailyPoints = async (req, res) => {
         quranPages: 0,
         fpiasting: false,
       };
+      // إجبار Mongoose على اكتشاف التغييرات في الحقول المتداخلة
+      dailyPoints.markModified("prayers");
+      dailyPoints.markModified("nawafel");
+      dailyPoints.markModified("adhkar");
+      dailyPoints.markModified("halaqah");
+      dailyPoints.markModified("ramadan");
     } else {
       // إنشاء سجل جديد
       dailyPoints = new DailyPoints({
