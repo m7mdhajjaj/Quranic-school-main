@@ -274,24 +274,3 @@ export interface TeacherRankingsViewProps {
   selectedGroupId?: string;
   onGroupChange?: (groupId: string) => void;
 }
-
-// ============================================
-// Teacher Daily Points Types
-// ============================================
-export interface StudentDailyInfo {
-  studentId: string;
-  name: string;
-  totalPoints: number;
-  hasData: boolean;
-  date: string;
-}
-
-export interface TeacherDailyViewProps {
-  groups: Array<{
-    _id: string;
-    name: string;
-    totalStudents: number;
-  }>;
-  selectedGroupId: string;
-  onGroupChange: (groupId: string) => void;
-}

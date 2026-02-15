@@ -11,4 +11,3 @@ export { BadgesModal } from "./BadgesModal";
 export { MotivationalMessage } from "./MotivationalMessage";
 export { StudentView } from "./StudentView";
 export { TeacherRankingsView } from "./TeacherRankingsView";
-export { TeacherDailyView } from "./TeacherDailyView";

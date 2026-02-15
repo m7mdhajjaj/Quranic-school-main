@@ -247,54 +247,6 @@ export const getStudentStats = async (): Promise<StudentStats> => {
   }
 };
 
-/**
- * جلب نقاط طلاب الحلقة اليومية (للمعلم)
- */
-export const getGroupDailyPoints = async (
-  groupId: string,
-  date?: string,
-): Promise<any> => {
-  try {
-    const url = date
-      ? `${POINTS_GAME_URL}/daily/group/${groupId}?date=${date}`
-      : `${POINTS_GAME_URL}/daily/group/${groupId}`;
-    const response = await axios.get(url, {
-      headers: getHeaders(),
-    });
-    return response.data;
-  } catch (error: any) {
-    console.error(
-      "خطأ في جلب نقاط الحلقة:",
-      error.response?.data || error.message,
-    );
-    throw error.response?.data || error;
-  }
-};
-
-/**
- * تصفير نقاط طالب يومية (للمعلم)
- */
-export const resetStudentDailyPoints = async (
-  studentId: string,
-  date: string,
-): Promise<any> => {
-  try {
-    const response = await axios.delete(
-      `${POINTS_GAME_URL}/daily/${studentId}/${date}`,
-      {
-        headers: getHeaders(),
-      },
-    );
-    return response.data;
-  } catch (error: any) {
-    console.error(
-      "خطأ في تصفير النقاط:",
-      error.response?.data || error.message,
-    );
-    throw error.response?.data || error;
-  }
-};
-
 export default {
   saveDailyPoints,
   getDailyPoints,
@@ -302,6 +254,4 @@ export default {
   getPointsRankings,
   getBadgesRankings,
   getStudentStats,
-  getGroupDailyPoints,
-  resetStudentDailyPoints,
 };
