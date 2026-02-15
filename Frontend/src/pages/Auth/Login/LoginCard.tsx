@@ -8,12 +8,14 @@ interface LoginCardProps {
   children: React.ReactNode;
   error?: string;
   success?: boolean;
+  isMobile?: boolean;
 }
 
 export const LoginCard: React.FC<LoginCardProps> = ({
   children,
   error,
   success,
+  isMobile = false,
 }) => {
   const [shake, setShake] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -49,43 +51,54 @@ export const LoginCard: React.FC<LoginCardProps> = ({
 
   return (
     <div className={`relative w-full${shake ? " animate-shake" : ""}`}>
-      {/* Animated Glow Effect */}
-      <motion.div
-        className="absolute -inset-2 bg-gradient-to-r from-emerald-400/40 via-teal-400/40 to-cyan-400/40 rounded-3xl blur-2xl"
-        animate={{
-          opacity: [0.3, 0.5, 0.3],
-          scale: [1, 1.02, 1],
-        }}
-        transition={{
-          duration: 4,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-      />
+      {/* Animated Glow Effect — desktop only */}
+      {!isMobile && (
+        <motion.div
+          className="absolute -inset-2 bg-gradient-to-r from-emerald-400/40 via-teal-400/40 to-cyan-400/40 rounded-3xl blur-2xl"
+          animate={{
+            opacity: [0.3, 0.5, 0.3],
+            scale: [1, 1.02, 1],
+          }}
+          transition={{
+            duration: 4,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+      )}
 
-      {/* Rotating Border Effect */}
-      <motion.div
-        className="absolute -inset-[2px] rounded-3xl opacity-50"
-        style={{
-          background:
-            "conic-gradient(from 0deg, #10b981, #14b8a6, #06b6d4, #10b981)",
-        }}
-        animate={{
-          rotate: [0, 360],
-        }}
-        transition={{
-          duration: 8,
-          repeat: Infinity,
-          ease: "linear",
-        }}
-      />
+      {/* Rotating Border Effect — desktop only */}
+      {!isMobile && (
+        <motion.div
+          className="absolute -inset-[2px] rounded-3xl opacity-50"
+          style={{
+            background:
+              "conic-gradient(from 0deg, #10b981, #14b8a6, #06b6d4, #10b981)",
+          }}
+          animate={{
+            rotate: [0, 360],
+          }}
+          transition={{
+            duration: 8,
+            repeat: Infinity,
+            ease: "linear",
+          }}
+        />
+      )}
+      {/* Static border fallback on mobile */}
+      {isMobile && (
+        <div
+          className="absolute -inset-[2px] rounded-3xl opacity-30"
+          style={{
+            background:
+              "conic-gradient(from 0deg, #10b981, #14b8a6, #06b6d4, #10b981)",
+          }}
+        />
+      )}
 
       {/* Card Content */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.2 }}>
-        {/* Success Circle Animation */}
+      <div>
+        {/* Success Circle Animation — kept on all devices (brief feedback) */}
         {showSuccess && (
           <motion.div
             className="absolute left-1/2 top-1/2 z-30 -translate-x-1/2 -translate-y-1/2"
@@ -113,68 +126,64 @@ export const LoginCard: React.FC<LoginCardProps> = ({
           variant="elevated"
           padding="md"
           className="relative bg-white/95 backdrop-blur-xl border-emerald-200/50 overflow-hidden py-3">
-          {/* Glass Reflection Sweep */}
-          <GlassReflection />
+          {/* Glass Reflection Sweep — desktop only */}
+          {!isMobile && <GlassReflection />}
 
           {/* Inner Glow */}
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/50 via-transparent to-teal-50/30 pointer-events-none" />
 
-          {/* Animated Corner Accents */}
-          <motion.div
-            className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-emerald-400/10 to-transparent rounded-bl-full"
-            animate={{
-              opacity: [0.5, 0.8, 0.5],
-              scale: [1, 1.1, 1],
-            }}
-            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-          />
-          <motion.div
-            className="absolute bottom-0 left-0 w-16 h-16 bg-gradient-to-tr from-teal-400/10 to-transparent rounded-tr-full"
-            animate={{
-              opacity: [0.4, 0.7, 0.4],
-              scale: [1, 1.15, 1],
-            }}
-            transition={{
-              duration: 6,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: 1,
-            }}
-          />
+          {/* Animated Corner Accents — desktop only */}
+          {!isMobile && (
+            <>
+              <motion.div
+                className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-emerald-400/10 to-transparent rounded-bl-full"
+                animate={{
+                  opacity: [0.5, 0.8, 0.5],
+                  scale: [1, 1.1, 1],
+                }}
+                transition={{
+                  duration: 5,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+              />
+              <motion.div
+                className="absolute bottom-0 left-0 w-16 h-16 bg-gradient-to-tr from-teal-400/10 to-transparent rounded-tr-full"
+                animate={{
+                  opacity: [0.4, 0.7, 0.4],
+                  scale: [1, 1.15, 1],
+                }}
+                transition={{
+                  duration: 6,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 1,
+                }}
+              />
+            </>
+          )}
 
-          {/* Title with Animation */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}>
+          {/* Title */}
+          <div>
             <PageHeader
               title="تسجيل الدخول"
               subtitle="قم بإدخال معلومات الدخول الخاصة بك"
               showDivider={true}
             />
-          </motion.div>
+          </div>
 
           {/* Form Content */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.5 }}>
-            {children}
-          </motion.div>
+          <div>{children}</div>
 
           {/* Footer */}
-          <motion.div
-            className="text-center mt-2 pt-2 border-t border-emerald-100 relative z-10"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.7 }}>
+          <div className="text-center mt-2 pt-2 border-t border-emerald-100 relative z-10">
             <p className="text-gray-500 text-[10px]">
               جميع الحقوق محفوظة © {new Date().getFullYear()} | مدرسة القرآن
               الكريم ✨
             </p>
-          </motion.div>
+          </div>
         </Card>
-      </motion.div>
+      </div>
     </div>
   );
 };

@@ -7,6 +7,7 @@ import { Logo } from "@/components/UI";
 interface BrandingSectionProps {
   logoUrl: string;
   logoLoading: boolean;
+  isMobile?: boolean;
 }
 
 // ============================================================================
@@ -17,47 +18,62 @@ const FEATURE_TAGS = ["متابعة الحفظ", "التقارير", "الحضو
 // ============================================================================
 // Branding Section Component - قسم العلامة التجارية
 // ============================================================================
-export const BrandingSection = ({ logoUrl, logoLoading }: BrandingSectionProps) => (
-  <motion.div
-    className="flex-1 flex flex-col items-center justify-center lg:items-start lg:pr-8"
-    initial={{ opacity: 0, x: 50 }}
-    animate={{ opacity: 1, x: 0 }}
-    transition={{ duration: 0.7, delay: 0.1 }}
-  >
-    {/* Logo */}
-    <LogoSection logoUrl={logoUrl} logoLoading={logoLoading} />
-    
-    {/* Title & Content */}
-    <TitleSection />
-  </motion.div>
-);
+export const BrandingSection = ({
+  logoUrl,
+  logoLoading,
+  isMobile = false,
+}: BrandingSectionProps) => {
+  if (isMobile) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center lg:items-start lg:pr-8">
+        <LogoSectionStatic logoUrl={logoUrl} logoLoading={logoLoading} />
+        <TitleSectionStatic />
+      </div>
+    );
+  }
+  return (
+    <motion.div
+      className="flex-1 flex flex-col items-center justify-center lg:items-start lg:pr-8"
+      initial={{ opacity: 0, x: 50 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.7, delay: 0.1 }}>
+      <LogoSection logoUrl={logoUrl} logoLoading={logoLoading} />
+      <TitleSection />
+    </motion.div>
+  );
+};
 
 // ============================================================================
 // Logo Section - قسم الشعار
 // ============================================================================
-const LogoSection = ({ logoUrl, logoLoading }: BrandingSectionProps) => (
+const LogoSection = ({
+  logoUrl,
+  logoLoading,
+}: {
+  logoUrl: string;
+  logoLoading: boolean;
+}) => (
   <motion.div
     className="relative mb-4"
     initial={{ opacity: 0, scale: 0.8 }}
     animate={{ opacity: 1, scale: 1 }}
-    transition={{ duration: 0.7, delay: 0.1, type: "spring" }}
-  >
+    transition={{ duration: 0.7, delay: 0.1, type: "spring" }}>
     {/* Glow Effect */}
     <motion.div
       className="absolute inset-0 -m-6 rounded-full"
       style={{
-        background: "radial-gradient(circle, rgba(16, 185, 129, 0.35) 0%, rgba(20, 184, 166, 0.2) 50%, transparent 70%)",
+        background:
+          "radial-gradient(circle, rgba(16, 185, 129, 0.35) 0%, rgba(20, 184, 166, 0.2) 50%, transparent 70%)",
         filter: "blur(20px)",
       }}
       animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.9, 0.5] }}
       transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
     />
-    
+
     {/* Logo */}
     <motion.div
       animate={{ y: [-2, 2, -2] }}
-      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-    >
+      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}>
       <Logo
         logoUrl={logoUrl}
         logoLoading={logoLoading}
@@ -69,6 +85,25 @@ const LogoSection = ({ logoUrl, logoLoading }: BrandingSectionProps) => (
   </motion.div>
 );
 
+// Static Logo Section (mobile) — no animations
+const LogoSectionStatic = ({
+  logoUrl,
+  logoLoading,
+}: {
+  logoUrl: string;
+  logoLoading: boolean;
+}) => (
+  <div className="relative mb-4">
+    <Logo
+      logoUrl={logoUrl}
+      logoLoading={logoLoading}
+      size="lg"
+      alt="مدرسة القرآن"
+      showGlow={false}
+    />
+  </div>
+);
+
 // ============================================================================
 // Title Section - قسم العنوان
 // ============================================================================
@@ -77,23 +112,64 @@ const TitleSection = () => (
     className="text-center lg:text-right"
     initial={{ opacity: 0, y: -20 }}
     animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.6, delay: 0.3 }}
-  >
+    transition={{ duration: 0.6, delay: 0.3 }}>
     {/* 3D Title */}
     <Title3D />
-    
+
     {/* Subtitle */}
     <Subtitle />
-    
+
     {/* Decorative Line */}
     <DecorativeLine />
-    
+
     {/* Description */}
     <Description />
-    
+
     {/* Feature Tags */}
     <FeatureTags />
   </motion.div>
+);
+
+// Static TitleSection (mobile) — no animations
+const TitleSectionStatic = () => (
+  <div className="text-center lg:text-right">
+    <Title3DStatic />
+    <h2 className="text-base sm:text-xl lg:text-3xl font-bold text-emerald-700/80 mt-1">
+      الكريم
+    </h2>
+    <div className="flex items-center gap-1 mt-2 justify-center lg:justify-start">
+      <div className="w-8 h-[1.5px] rounded-full bg-gradient-to-r from-transparent to-emerald-400" />
+      <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+      <div className="w-8 h-[1.5px] rounded-full bg-gradient-to-l from-transparent to-teal-400" />
+    </div>
+    <p className="text-emerald-600/60 text-xs sm:text-sm mt-2 font-medium">
+      ✨ نظام إدارة الطلاب المتكامل ✨
+    </p>
+    <div className="flex flex-wrap gap-2 sm:gap-3 mt-3 justify-center lg:justify-start">
+      {FEATURE_TAGS.map((tag) => (
+        <span
+          key={tag}
+          className="text-xs sm:text-sm px-4 py-1.5 rounded-full bg-emerald-100/60 text-emerald-700/80 border border-emerald-300/40 font-medium shadow-sm">
+          {tag}
+        </span>
+      ))}
+    </div>
+  </div>
+);
+
+// Static 3D Title (mobile) — no animation, keep gradient style
+const Title3DStatic = () => (
+  <h1
+    className="text-xl sm:text-3xl lg:text-5xl font-black"
+    style={{
+      background:
+        "linear-gradient(135deg, #059669 0%, #10b981 30%, #0d9488 60%, #0891b2 100%)",
+      WebkitBackgroundClip: "text",
+      WebkitTextFillColor: "transparent",
+      backgroundClip: "text",
+    }}>
+    مدرسة القرآن
+  </h1>
 );
 
 // ============================================================================
@@ -116,17 +192,17 @@ const Title3D = () => {
           style={{
             color: `rgba(16, 185, 129, ${layer.opacity})`,
             transform: `translate(${layer.offset}, ${layer.offset})`,
-          }}
-        >
+          }}>
           مدرسة القرآن
         </motion.h1>
       ))}
-      
+
       {/* Main Text */}
       <motion.h1
         className="text-xl sm:text-3xl lg:text-5xl font-black relative"
         style={{
-          background: "linear-gradient(135deg, #059669 0%, #10b981 30%, #0d9488 60%, #0891b2 100%)",
+          background:
+            "linear-gradient(135deg, #059669 0%, #10b981 30%, #0d9488 60%, #0891b2 100%)",
           backgroundSize: "300% 300%",
           WebkitBackgroundClip: "text",
           WebkitTextFillColor: "transparent",
@@ -134,8 +210,7 @@ const Title3D = () => {
           textShadow: "0 0 30px rgba(16, 185, 129, 0.3)",
         }}
         animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
-        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-      >
+        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}>
         مدرسة القرآن
       </motion.h1>
     </div>
@@ -150,8 +225,7 @@ const Subtitle = () => (
     className="text-base sm:text-xl lg:text-3xl font-bold text-emerald-700/80 mt-1"
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
-    transition={{ delay: 0.5 }}
-  >
+    transition={{ delay: 0.5 }}>
     الكريم
   </motion.h2>
 );
@@ -164,8 +238,7 @@ const DecorativeLine = () => (
     className="flex items-center gap-1 mt-2 justify-center lg:justify-start"
     initial={{ opacity: 0, scaleX: 0 }}
     animate={{ opacity: 1, scaleX: 1 }}
-    transition={{ duration: 0.5, delay: 0.6 }}
-  >
+    transition={{ duration: 0.5, delay: 0.6 }}>
     <motion.div
       className="w-8 h-[1.5px] rounded-full bg-gradient-to-r from-transparent to-emerald-400"
       animate={{ opacity: [0.5, 1, 0.5] }}
@@ -192,8 +265,7 @@ const Description = () => (
     className="text-emerald-600/60 text-xs sm:text-sm mt-2 font-medium"
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
-    transition={{ delay: 0.7 }}
-  >
+    transition={{ delay: 0.7 }}>
     ✨ نظام إدارة الطلاب المتكامل ✨
   </motion.p>
 );
@@ -206,8 +278,7 @@ const FeatureTags = () => (
     className="flex flex-wrap gap-2 sm:gap-3 mt-3 justify-center lg:justify-start"
     initial={{ opacity: 0, y: 10 }}
     animate={{ opacity: 1, y: 0 }}
-    transition={{ delay: 0.8 }}
-  >
+    transition={{ delay: 0.8 }}>
     {FEATURE_TAGS.map((tag, i) => (
       <motion.span
         key={tag}
@@ -219,8 +290,7 @@ const FeatureTags = () => (
           scale: 1.08,
           backgroundColor: "rgba(16, 185, 129, 0.25)",
           boxShadow: "0 4px 15px rgba(16, 185, 129, 0.2)",
-        }}
-      >
+        }}>
         {tag}
       </motion.span>
     ))}
@@ -235,8 +305,7 @@ export const VerticalDivider = () => (
     className="hidden lg:flex items-center justify-center px-6"
     initial={{ opacity: 0, scaleY: 0 }}
     animate={{ opacity: 1, scaleY: 1 }}
-    transition={{ duration: 0.5, delay: 0.4 }}
-  >
+    transition={{ duration: 0.5, delay: 0.4 }}>
     <div className="relative h-80">
       <div className="absolute inset-0 w-[2px] bg-gradient-to-b from-transparent via-emerald-300/50 to-transparent" />
       <motion.div

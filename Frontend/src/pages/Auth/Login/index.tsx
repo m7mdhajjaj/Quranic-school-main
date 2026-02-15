@@ -1,10 +1,10 @@
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, MotionConfig } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import ForgotPasswordModal from "../ResetPassword/ForgotPasswordModal";
 import { LoginForm } from "./LoginForm";
 import { LoginCard } from "./LoginCard";
-import { useLoginLogic, useClickRipples } from "./hooks";
+import { useLoginLogic, useClickRipples, useIsMobile } from "./hooks";
 import {
   AnimatedBackground,
   ClickRipples,
@@ -20,6 +20,7 @@ interface LoginFormSectionProps {
   error: string;
   isLoading: boolean;
   rememberMe: boolean;
+  isMobile: boolean;
   onFormChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRememberMeChange: (checked: boolean) => void;
   onSubmit: (e: React.FormEvent) => void;
@@ -31,6 +32,7 @@ const LoginFormSection = ({
   error,
   isLoading,
   rememberMe,
+  isMobile,
   onFormChange,
   onRememberMeChange,
   onSubmit,
@@ -38,13 +40,18 @@ const LoginFormSection = ({
 }: LoginFormSectionProps) => (
   <motion.div
     className="flex-1 flex items-center justify-center lg:justify-start lg:pl-8 w-full max-w-sm lg:max-w-none"
-    initial={{ opacity: 0, x: -50 }}
-    animate={{ opacity: 1, x: 0 }}
-    transition={{ duration: 0.7, delay: 0.2 }}>
+    {...(!isMobile && {
+      initial: { opacity: 0, x: -50 },
+      animate: { opacity: 1, x: 0 },
+      transition: { duration: 0.7, delay: 0.2 },
+    })}>
     <div className="w-full max-w-sm">
       <LoginCard
         error={error}
-        success={!error && !isLoading && formData.userId && formData.password}>
+        success={
+          !!(!error && !isLoading && formData.userId && formData.password)
+        }
+        isMobile={isMobile}>
         <LoginForm
           formData={formData}
           error={error}
@@ -65,6 +72,7 @@ const LoginFormSection = ({
 // ============================================================================
 const Login = () => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   // Login logic hook
   const {
@@ -81,68 +89,70 @@ const Login = () => {
     logoLoading,
   } = useLoginLogic();
 
-  // Click ripple effect hook
+  // Click ripple effect hook (disabled on mobile)
   const { ripples, addRipple } = useClickRipples();
 
   return (
-    <div
-      className="relative min-h-screen overflow-hidden flex items-center justify-center p-2"
-      dir="rtl"
-      onClick={addRipple}>
-      {/* Back to Welcome Button */}
-      <motion.button
-        onClick={() => navigate("/welcome")}
-        className="fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-2 bg-white/90 backdrop-blur-sm text-emerald-600 font-medium rounded-xl shadow-lg hover:shadow-xl hover:bg-white transition-all duration-300"
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.5, delay: 0.3 }}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}>
-        <ArrowRight className="w-5 h-5" />
-        <span>الصفحة الرئيسية</span>
-      </motion.button>
+    <MotionConfig reducedMotion={isMobile ? "always" : "never"}>
+      <div
+        className="relative min-h-screen overflow-hidden flex items-center justify-center p-2"
+        dir="rtl"
+        onClick={!isMobile ? addRipple : undefined}>
+        {/* Back to Welcome Button */}
+        <button
+          onClick={() => navigate("/welcome")}
+          className="fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-2 bg-white/90 backdrop-blur-sm text-emerald-600 font-medium rounded-xl shadow-lg hover:shadow-xl hover:bg-white transition-all duration-300">
+          <ArrowRight className="w-5 h-5" />
+          <span>الصفحة الرئيسية</span>
+        </button>
 
-      {/* Click Ripples Effect */}
-      <ClickRipples ripples={ripples} />
+        {/* Click Ripples Effect — desktop only */}
+        {!isMobile && <ClickRipples ripples={ripples} />}
 
-      {/* Animated Background */}
-      <AnimatedBackground />
-
-      {/* Main Content */}
-      <motion.div
-        className="relative z-10 w-full max-w-4xl flex flex-col lg:flex-row items-center lg:items-stretch gap-2 lg:gap-0"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6 }}>
-        {/* Branding Section */}
-        <BrandingSection logoUrl={logoUrl} logoLoading={logoLoading} />
-
-        {/* Vertical Divider */}
-        <VerticalDivider />
-
-        {/* Login Form Section */}
-        <LoginFormSection
-          formData={formData}
-          error={error}
-          isLoading={isLoading}
-          rememberMe={rememberMe}
-          onFormChange={handleChange}
-          onRememberMeChange={handleRememberMeChange}
-          onSubmit={handleSubmit}
-          onForgotPassword={() => setShowForgotPasswordModal(true)}
-        />
-      </motion.div>
-
-      {/* Forgot Password Modal */}
-      <AnimatePresence>
-        {showForgotPasswordModal && (
-          <ForgotPasswordModal
-            isOpen={showForgotPasswordModal}
-            onClose={() => setShowForgotPasswordModal(false)}
-          />
+        {/* Background — animated on desktop, simple gradient on mobile */}
+        {isMobile ? (
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-white to-emerald-50/50" />
+        ) : (
+          <AnimatedBackground />
         )}
-      </AnimatePresence>
-    </div>
+
+        {/* Main Content */}
+        <div className="relative z-10 w-full max-w-4xl flex flex-col lg:flex-row items-center lg:items-stretch gap-2 lg:gap-0">
+          {/* Branding Section */}
+          <BrandingSection
+            logoUrl={logoUrl}
+            logoLoading={logoLoading}
+            isMobile={isMobile}
+          />
+
+          {/* Vertical Divider */}
+          <VerticalDivider />
+
+          {/* Login Form Section */}
+          <LoginFormSection
+            formData={formData}
+            error={error}
+            isLoading={isLoading}
+            rememberMe={rememberMe}
+            isMobile={isMobile}
+            onFormChange={handleChange}
+            onRememberMeChange={handleRememberMeChange}
+            onSubmit={handleSubmit}
+            onForgotPassword={() => setShowForgotPasswordModal(true)}
+          />
+        </div>
+
+        {/* Forgot Password Modal */}
+        <AnimatePresence>
+          {showForgotPasswordModal && (
+            <ForgotPasswordModal
+              isOpen={showForgotPasswordModal}
+              onClose={() => setShowForgotPasswordModal(false)}
+            />
+          )}
+        </AnimatePresence>
+      </div>
+    </MotionConfig>
   );
 };
 
