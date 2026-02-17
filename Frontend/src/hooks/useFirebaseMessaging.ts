@@ -5,15 +5,15 @@
 // Handles notification permissions, token registration, and message listening
 // ============================================================================
 
-import { useEffect, useCallback, useState } from 'react';
-import { 
-  onMessageListener, 
+import { useEffect, useCallback, useState } from "react";
+import {
+  onMessageListener,
   requestNotificationPermission,
   getExistingToken,
-  registerTokenWithBackend 
-} from '../config/firebase';
-import { useAuth } from './useAuth';
-import { SOUNDS } from '../utils/soundUrls';
+  registerTokenWithBackend,
+} from "../config/firebase";
+import { useAuth } from "./useAuth";
+import { SOUNDS } from "../utils/soundUrls";
 
 const notificationSoundUrl = SOUNDS.NOTIFICATION;
 
@@ -42,33 +42,39 @@ interface UseFirebaseMessagingReturn {
  */
 export const useFirebaseMessaging = (): UseFirebaseMessagingReturn => {
   const { user, token: authToken } = useAuth();
-  const [isPermissionGranted, setIsPermissionGranted] = useState<boolean>(false);
+  const [isPermissionGranted, setIsPermissionGranted] =
+    useState<boolean>(false);
   const [fcmToken, setFcmToken] = useState<string | null>(null);
-  const [lastNotification, setLastNotification] = useState<NotificationPayload | null>(null);
+  const [lastNotification, setLastNotification] =
+    useState<NotificationPayload | null>(null);
 
   // ====== طلب الصلاحيات وتسجيل Token ======
   const requestPermission = useCallback(async () => {
     try {
       const token = await requestNotificationPermission();
-      
+
       if (token) {
         setFcmToken(token);
         setIsPermissionGranted(true);
-        
+
         // تسجيل Token مع الباكيند (استخدام registerTokenWithBackend الذي يحتوي على منطق منع التكرار)
         if (authToken) {
-          const apiUrl = '/api/fcm/token';
-          const success = await registerTokenWithBackend(token, apiUrl, authToken);
+          const apiUrl = "/api/fcm/token";
+          const success = await registerTokenWithBackend(
+            token,
+            apiUrl,
+            authToken,
+          );
           if (success) {
-            console.log('✅ تم تسجيل FCM Token بنجاح');
+            console.log("✅ تم تسجيل FCM Token بنجاح");
           }
         }
       } else {
         setIsPermissionGranted(false);
-        console.warn('⚠️ لم يتم منح صلاحيات الإشعارات');
+        console.warn("⚠️ لم يتم منح صلاحيات الإشعارات");
       }
     } catch (error) {
-      console.error('❌ خطأ في طلب صلاحيات الإشعارات:', error);
+      console.error("❌ خطأ في طلب صلاحيات الإشعارات:", error);
       setIsPermissionGranted(false);
     }
   }, [authToken]);
@@ -77,28 +83,37 @@ export const useFirebaseMessaging = (): UseFirebaseMessagingReturn => {
   useEffect(() => {
     if (user && authToken) {
       // التحقق من الصلاحيات الحالية
-      if (Notification.permission === 'granted') {
+      if (typeof Notification === "undefined") {
+        console.warn("⚠️ Notification API is not supported in this browser");
+        setIsPermissionGranted(false);
+        return;
+      }
+      if (Notification.permission === "granted") {
         // إذا الصلاحيات موجودة مسبقاً، احصل على الـ Token بدون طلب الصلاحيات
         (async () => {
           const token = await getExistingToken();
           if (token) {
             setFcmToken(token);
             setIsPermissionGranted(true);
-            
+
             // تسجيل Token مع الباكيند (استخدام registerTokenWithBackend الذي يحتوي على منطق منع التكرار)
-            const apiUrl = '/api/fcm/token';
-            const success = await registerTokenWithBackend(token, apiUrl, authToken);
+            const apiUrl = "/api/fcm/token";
+            const success = await registerTokenWithBackend(
+              token,
+              apiUrl,
+              authToken,
+            );
             if (success) {
-              console.log('✅ تم تسجيل FCM Token بنجاح');
+              console.log("✅ تم تسجيل FCM Token بنجاح");
             }
           }
         })();
-      } else if (Notification.permission === 'default') {
+      } else if (Notification.permission === "default") {
         // لا تطلب الصلاحيات أوتوماتيكياً
-        console.log('💡 يمكن طلب صلاحيات الإشعارات من خلال الـ UI');
+        console.log("💡 يمكن طلب صلاحيات الإشعارات من خلال الـ UI");
         setIsPermissionGranted(false);
-      } else if (Notification.permission === 'denied') {
-        console.warn('⚠️ تم رفض صلاحيات الإشعارات مسبقاً');
+      } else if (Notification.permission === "denied") {
+        console.warn("⚠️ تم رفض صلاحيات الإشعارات مسبقاً");
         setIsPermissionGranted(false);
       }
     }
@@ -110,33 +125,40 @@ export const useFirebaseMessaging = (): UseFirebaseMessagingReturn => {
       // Optimize: Defer processing to next tick to avoid blocking the message channel (Violation prevention)
       setTimeout(() => {
         const typedPayload = payload as NotificationPayload;
-        console.log('📩 إشعار جديد:', typedPayload);
+        console.log("📩 إشعار جديد:", typedPayload);
 
         // Update state
         setLastNotification(typedPayload);
 
         if (typedPayload.notification) {
           const { title, body } = typedPayload.notification;
-          
+
           // Play notification sound
           try {
             const audio = new Audio(notificationSoundUrl);
-            audio.play().catch(err => console.warn('Could not play notification sound:', err));
+            audio
+              .play()
+              .catch((err) =>
+                console.warn("Could not play notification sound:", err),
+              );
           } catch (err) {
-            console.warn('Error initializing audio:', err);
+            console.warn("Error initializing audio:", err);
           }
 
-          if (Notification.permission === 'granted') {
+          if (
+            typeof Notification !== "undefined" &&
+            Notification.permission === "granted"
+          ) {
             try {
               new Notification(title, {
                 body: body,
-                icon: '/logo.png',
-                badge: '/badge.png',
-                tag: 'quranic-school-notification',
+                icon: "/logo.png",
+                badge: "/badge.png",
+                tag: "quranic-school-notification",
                 requireInteraction: false,
               });
             } catch (err) {
-              console.warn('Could not show notification:', err);
+              console.warn("Could not show notification:", err);
             }
           }
         }

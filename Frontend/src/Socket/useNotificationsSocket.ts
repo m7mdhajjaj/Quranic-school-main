@@ -6,16 +6,23 @@
 // يعمل مع Firebase Cloud Messaging للإشعارات Push
 // ============================================================================
 
-import { useEffect, useState, useCallback } from 'react';
-import { socketManager } from './SocketManager';
-import { useAuth } from '../hooks/useAuth';
-import { SOUNDS } from '../utils/soundUrls';
+import { useEffect, useState, useCallback } from "react";
+import { socketManager } from "./SocketManager";
+import { useAuth } from "../hooks/useAuth";
+import { SOUNDS } from "../utils/soundUrls";
 
 const notificationSound = SOUNDS.NOTIFICATION;
 
 // ================== Types ==================
 interface NotificationData {
-  action?: 'section_added' | 'section_updated' | 'section_deleted' | 'mark_added' | 'mark_updated' | 'mark_deleted' | 'exam_scheduled';
+  action?:
+    | "section_added"
+    | "section_updated"
+    | "section_deleted"
+    | "mark_added"
+    | "mark_updated"
+    | "mark_deleted"
+    | "exam_scheduled";
   sectionId?: string;
   examId?: string;
   examName?: string;
@@ -27,11 +34,33 @@ interface NotificationData {
 interface Notification {
   _id: string;
   id?: string;
-  type: 'grade' | 'message' | 'prayer_time' | 'attendance' | 'exam' | 'exam_scheduled' | 'mark_added' | 'assignment' | 'news' | 'general' | 'daily_marks' | 'warning' | 'system' | 'success' | 'alert' | 'timetable' | 'reminder' | 'chat' | 'quran_progress' | 'memorization' | 'review' | 'test_result';
+  type:
+    | "grade"
+    | "message"
+    | "prayer_time"
+    | "attendance"
+    | "exam"
+    | "exam_scheduled"
+    | "mark_added"
+    | "assignment"
+    | "news"
+    | "general"
+    | "daily_marks"
+    | "warning"
+    | "system"
+    | "success"
+    | "alert"
+    | "timetable"
+    | "reminder"
+    | "chat"
+    | "quran_progress"
+    | "memorization"
+    | "review"
+    | "test_result";
   title: string;
   message: string;
   messageSummary?: string;
-  category?: 'general' | 'academic' | 'admin' | 'other';
+  category?: "general" | "academic" | "admin" | "other";
   data?: NotificationData;
   createdAt: string;
   sentAt?: string;
@@ -57,32 +86,32 @@ interface UseNotificationsSocketReturn {
 // ================== Hook ==================
 /**
  * Hook للاستماع للإشعارات الجديدة عبر Socket.IO
- * 
+ *
  * الميزات:
  * - تحديثات فورية (real-time) للإشعارات الجديدة
  * - دعم جميع أنواع الإشعارات (حضور، علامات، رسائل، إلخ)
  * - Auto-refresh trigger عند وصول إشعار جديد
  * - إحصائيات الإشعارات (عدد غير المقروءة)
  * - مزامنة مع Firebase Cloud Messaging
- * 
+ *
  * @returns {UseNotificationsSocketReturn} معلومات الاتصال والإشعارات
- * 
+ *
  * @example
  * ```tsx
  * function NotificationBell() {
  *   const { lastNotification, notificationStats, refreshTrigger } = useNotificationsSocket();
- *   
+ *
  *   useEffect(() => {
  *     if (lastNotification) {
  *       showToast(lastNotification.title, lastNotification.message);
  *     }
  *   }, [lastNotification]);
- *   
+ *
  *   useEffect(() => {
  *     // Auto-refresh notifications list
  *     fetchNotifications();
  *   }, [refreshTrigger]);
- *   
+ *
  *   return <span>{notificationStats.unreadCount}</span>;
  * }
  * ```
@@ -91,12 +120,16 @@ export const useNotificationsSocket = (): UseNotificationsSocketReturn => {
   const { user } = useAuth();
   const [isConnected, setIsConnected] = useState(false);
   const [socketId, setSocketId] = useState<string | null>(null);
-  const [lastNotification, setLastNotification] = useState<Notification | null>(null);
-  const [notificationStats, setNotificationStats] = useState<NotificationStats>({
-    unreadCount: 0,
-    newCount: 0,
-    totalCount: 0,
-  });
+  const [lastNotification, setLastNotification] = useState<Notification | null>(
+    null,
+  );
+  const [notificationStats, setNotificationStats] = useState<NotificationStats>(
+    {
+      unreadCount: 0,
+      newCount: 0,
+      totalCount: 0,
+    },
+  );
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
 
   // ================== Connection Management ==================
@@ -104,13 +137,15 @@ export const useNotificationsSocket = (): UseNotificationsSocketReturn => {
     if (!user) return;
 
     // Subscribe to connection status
-    const unsubscribeConnection = socketManager.onConnectionChange((connected) => {
-      setIsConnected(connected);
-      if (connected) {
-        const id = socketManager.getSocketId();
-        setSocketId(id || null);
-      }
-    });
+    const unsubscribeConnection = socketManager.onConnectionChange(
+      (connected) => {
+        setIsConnected(connected);
+        if (connected) {
+          const id = socketManager.getSocketId();
+          setSocketId(id || null);
+        }
+      },
+    );
 
     // Connect if not already connected
     if (!socketManager.isConnected()) {
@@ -130,14 +165,14 @@ export const useNotificationsSocket = (): UseNotificationsSocketReturn => {
     if (!isConnected || !user) return;
 
     // Join the notifications room for this user
-    socketManager.emit('joinNotifications', {
+    socketManager.emit("joinNotifications", {
       userId: user._id,
       role: user.role,
     });
 
     // Cleanup: Leave room on unmount
     return () => {
-      socketManager.emit('leaveNotifications', {
+      socketManager.emit("leaveNotifications", {
         userId: user._id,
       });
     };
@@ -148,40 +183,61 @@ export const useNotificationsSocket = (): UseNotificationsSocketReturn => {
   // Handler for new notification
   const handleNewNotification = useCallback((data: unknown) => {
     if (import.meta.env.DEV) {
-      console.log('📬 [NotificationsSocket] New notification received', data);
-      console.log('🎵 Sound path:', notificationSound);
+      console.log("📬 [NotificationsSocket] New notification received", data);
+      console.log("🎵 Sound path:", notificationSound);
     }
 
     try {
       // Play notification sound
       const audio = new Audio(notificationSound);
       audio.volume = 1.0;
-      audio.play().catch(() => { /* Autoplay policy - silent */ });
+      audio.play().catch(() => {
+        /* Autoplay policy - silent */
+      });
 
       const notificationData = data as Record<string, unknown>;
-      const title = String(notificationData.title || 'إشعار جديد');
-      const message = String(notificationData.message || notificationData.messageSummary || '');
+      const title = String(notificationData.title || "إشعار جديد");
+      const message = String(
+        notificationData.message || notificationData.messageSummary || "",
+      );
 
       // Show system notification if document is hidden or permission granted
-      if (document.hidden && Notification.permission === 'granted') {
+      if (
+        document.hidden &&
+        typeof Notification !== "undefined" &&
+        Notification.permission === "granted"
+      ) {
         new Notification(title, {
           body: message,
-          icon: '/pwa-192x192.png', // Adjust path to your icon
-          tag: 'notification-sound', // Prevent duplicate notifications
+          icon: "/pwa-192x192.png", // Adjust path to your icon
+          tag: "notification-sound", // Prevent duplicate notifications
         });
       }
-      
+
       const notification: Notification = {
-        _id: String(notificationData.id || notificationData._id || ''),
-        type: (notificationData.type as Notification['type']) || 'general',
+        _id: String(notificationData.id || notificationData._id || ""),
+        type: (notificationData.type as Notification["type"]) || "general",
         title: title,
         message: message,
-        messageSummary: String(notificationData.messageSummary || message || ''),
-        category: (notificationData.category as 'general' | 'academic' | 'admin' | 'other') || undefined,
-        createdAt: String(notificationData.createdAt || new Date().toISOString()),
-        sentAt: String(notificationData.sentAt || notificationData.createdAt || new Date().toISOString()),
+        messageSummary: String(
+          notificationData.messageSummary || message || "",
+        ),
+        category:
+          (notificationData.category as
+            | "general"
+            | "academic"
+            | "admin"
+            | "other") || undefined,
+        createdAt: String(
+          notificationData.createdAt || new Date().toISOString(),
+        ),
+        sentAt: String(
+          notificationData.sentAt ||
+            notificationData.createdAt ||
+            new Date().toISOString(),
+        ),
         isRead: false,
-        priority: String(notificationData.priority || 'medium'),
+        priority: String(notificationData.priority || "medium"),
         isNew: true,
         data: notificationData.data as NotificationData,
       };
@@ -195,7 +251,7 @@ export const useNotificationsSocket = (): UseNotificationsSocketReturn => {
       }));
       setRefreshTrigger((prev) => prev + 1);
     } catch (error) {
-      console.error('❌ [NotificationsSocket] Error:', error);
+      console.error("❌ [NotificationsSocket] Error:", error);
     }
   }, []);
 
@@ -209,29 +265,37 @@ export const useNotificationsSocket = (): UseNotificationsSocketReturn => {
         totalCount: Number(statsData.totalCount) || 0,
       });
     } catch (error) {
-      console.error('❌ [NotificationsSocket] Stats error:', error);
+      console.error("❌ [NotificationsSocket] Stats error:", error);
     }
   }, []);
 
   // Handler for notification marked as read
-  const handleNotificationRead = useCallback((data: unknown) => {
-    try {
-      const readData = data as Record<string, unknown>;
-      if (String(readData.notificationId) === lastNotification?._id) {
-        setLastNotification((prev) => prev ? { ...prev, isRead: true } : null);
+  const handleNotificationRead = useCallback(
+    (data: unknown) => {
+      try {
+        const readData = data as Record<string, unknown>;
+        if (String(readData.notificationId) === lastNotification?._id) {
+          setLastNotification((prev) =>
+            prev ? { ...prev, isRead: true } : null,
+          );
+        }
+
+        setNotificationStats((prev) => ({
+          ...prev,
+          unreadCount: Math.max(0, prev.unreadCount - 1),
+        }));
+
+        // Trigger refresh
+        setRefreshTrigger((prev) => prev + 1);
+      } catch (error) {
+        console.error(
+          "❌ [NotificationsSocket] Error processing read notification:",
+          error,
+        );
       }
-
-      setNotificationStats((prev) => ({
-        ...prev,
-        unreadCount: Math.max(0, prev.unreadCount - 1),
-      }));
-
-      // Trigger refresh
-      setRefreshTrigger((prev) => prev + 1);
-    } catch (error) {
-      console.error('❌ [NotificationsSocket] Error processing read notification:', error);
-    }
-  }, [lastNotification]);
+    },
+    [lastNotification],
+  );
 
   // Handler for all notifications marked as read
   const handleAllNotificationsRead = useCallback(() => {
@@ -246,55 +310,63 @@ export const useNotificationsSocket = (): UseNotificationsSocketReturn => {
   }, []);
 
   // Handler for notification deleted
-  const handleNotificationDeleted = useCallback((data: unknown) => {
-    try {
-      const deleteData = data as Record<string, unknown>;
-      if (String(deleteData.notificationId) === lastNotification?._id) {
-        setLastNotification(null);
+  const handleNotificationDeleted = useCallback(
+    (data: unknown) => {
+      try {
+        const deleteData = data as Record<string, unknown>;
+        if (String(deleteData.notificationId) === lastNotification?._id) {
+          setLastNotification(null);
+        }
+
+        // Update stats
+        setNotificationStats((prev) => ({
+          unreadCount: deleteData.wasUnread
+            ? Math.max(0, prev.unreadCount - 1)
+            : prev.unreadCount,
+          newCount: Math.max(0, prev.newCount - 1),
+          totalCount: Math.max(0, prev.totalCount - 1),
+        }));
+
+        // Trigger refresh
+        setRefreshTrigger((prev) => prev + 1);
+      } catch (error) {
+        console.error(
+          "❌ [NotificationsSocket] Error processing deleted notification:",
+          error,
+        );
       }
-
-      // Update stats
-      setNotificationStats((prev) => ({
-        unreadCount: deleteData.wasUnread ? Math.max(0, prev.unreadCount - 1) : prev.unreadCount,
-        newCount: Math.max(0, prev.newCount - 1),
-        totalCount: Math.max(0, prev.totalCount - 1),
-      }));
-
-      // Trigger refresh
-      setRefreshTrigger((prev) => prev + 1);
-    } catch (error) {
-      console.error('❌ [NotificationsSocket] Error processing deleted notification:', error);
-    }
-  }, [lastNotification]);
+    },
+    [lastNotification],
+  );
 
   // ================== Register Event Listeners ==================
   useEffect(() => {
     if (!isConnected) return;
 
     // Register all event listeners
-    socketManager.on('newNotification', handleNewNotification);
-    socketManager.on('notificationStatsUpdate', handleStatsUpdate);
-    socketManager.on('notificationRead', handleNotificationRead);
-    socketManager.on('allNotificationsRead', handleAllNotificationsRead);
-    socketManager.on('notificationDeleted', handleNotificationDeleted);
+    socketManager.on("newNotification", handleNewNotification);
+    socketManager.on("notificationStatsUpdate", handleStatsUpdate);
+    socketManager.on("notificationRead", handleNotificationRead);
+    socketManager.on("allNotificationsRead", handleAllNotificationsRead);
+    socketManager.on("notificationDeleted", handleNotificationDeleted);
 
     // Prayer time notifications (special type)
-    socketManager.on('prayerNotification', (data: unknown) => {
+    socketManager.on("prayerNotification", (data: unknown) => {
       const prayerData = data as Record<string, unknown>;
       handleNewNotification({
         ...prayerData,
-        type: 'prayer_time',
+        type: "prayer_time",
       });
     });
 
     // Cleanup listeners on unmount
     return () => {
-      socketManager.off('newNotification', handleNewNotification);
-      socketManager.off('notificationStatsUpdate', handleStatsUpdate);
-      socketManager.off('notificationRead', handleNotificationRead);
-      socketManager.off('allNotificationsRead', handleAllNotificationsRead);
-      socketManager.off('notificationDeleted', handleNotificationDeleted);
-      socketManager.off('prayerNotification');
+      socketManager.off("newNotification", handleNewNotification);
+      socketManager.off("notificationStatsUpdate", handleStatsUpdate);
+      socketManager.off("notificationRead", handleNotificationRead);
+      socketManager.off("allNotificationsRead", handleAllNotificationsRead);
+      socketManager.off("notificationDeleted", handleNotificationDeleted);
+      socketManager.off("prayerNotification");
     };
   }, [
     isConnected,
