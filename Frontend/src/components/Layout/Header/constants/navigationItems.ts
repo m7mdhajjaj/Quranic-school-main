@@ -170,6 +170,12 @@ export const getPrimaryNavItems = (
         color: "from-green-500 to-emerald-500",
         subItems: [
           {
+            to: "/ranking",
+            label: "ترتيب العلامات",
+            icon: Medal,
+            color: "from-rose-500 to-pink-500",
+          },
+          {
             to: "/reports",
             label: "التقارير",
             icon: PieChart,
