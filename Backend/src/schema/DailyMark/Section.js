@@ -19,8 +19,16 @@ const quranRangeSchema = new mongoose.Schema(
     surahNameInput: { type: String, trim: true },
 
     // Range
-    ayahStart: { type: Number, required: true, min: [1, "Ayah start must be at least 1"] },
-    ayahEnd: { type: Number, required: true, min: [1, "Ayah end must be at least 1"] },
+    ayahStart: {
+      type: Number,
+      required: true,
+      min: [1, "Ayah start must be at least 1"],
+    },
+    ayahEnd: {
+      type: Number,
+      required: true,
+      min: [1, "Ayah end must be at least 1"],
+    },
 
     // Uniqueness Key
     canonicalKey: { type: String, trim: true, required: true, index: true },
@@ -39,7 +47,7 @@ const quranRangeSchema = new mongoose.Schema(
     completedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     completionNote: { type: String, trim: true },
   },
-  { _id: true, timestamps: false } // ✅ اختياري: خففنا حجم الدوك (بدون كسر أسماء)
+  { _id: true, timestamps: false }, // ✅ اختياري: خففنا حجم الدوك (بدون كسر أسماء)
 );
 
 // ✅ 1) canonicalKey backend-generated (ما بنغير الاسم، بس بنضمن صحته)
@@ -55,11 +63,8 @@ quranRangeSchema.path("ayahEnd").validate(function (value) {
   return this.ayahStart <= value;
 }, "Ayah End must be greater than or equal to Ayah Start");
 
-// ✅ 2) لو surahAyahCount موجود: امنع end يتجاوز عدد آيات السورة
-quranRangeSchema.path("ayahEnd").validate(function (value) {
-  if (!this.surahAyahCount) return true;
-  return value <= this.surahAyahCount;
-}, "Ayah End exceeds Surah Ayah Count");
+// ayahEnd vs surahAyahCount validation - DISABLED (constraints removed)
+// quranRangeSchema.path("ayahEnd").validate(...);
 
 quranRangeSchema.path("ayahStart").validate(function (value) {
   if (!this.surahAyahCount) return true;
@@ -85,16 +90,16 @@ const sectionSchema = new mongoose.Schema(
     dateKey: { type: String, index: true },
 
     group: { type: String, index: true, trim: true }, // اسم الحلقة (للتوافق مع الكود القديم)
-    
+
     // ✅ ربط مباشر بالحلقة عبر ObjectId
     groupId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Group",
       index: true,
     },
-    
+
     teacher: { type: String, trim: true }, // اسم المعلم (للتوافق مع الكود القديم)
-    
+
     // ✅ ربط مباشر بالمعلم عبر ObjectId
     teacherId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -134,10 +139,21 @@ const sectionSchema = new mongoose.Schema(
       unique: true, // ✅ كل مقطع له موعد واحد فقط
       sparse: true, // ✅ السماح بمقاطع بدون موعد
     },
-    
+
     // ✅ معلومات الموعد المنسوخة من TimeTable (للعرض السريع)
     scheduleInfo: {
-      day: { type: String, enum: ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"] },
+      day: {
+        type: String,
+        enum: [
+          "السبت",
+          "الأحد",
+          "الاثنين",
+          "الثلاثاء",
+          "الأربعاء",
+          "الخميس",
+          "الجمعة",
+        ],
+      },
       startHour: { type: String },
       endHour: { type: String },
     },
@@ -160,24 +176,40 @@ const sectionSchema = new mongoose.Schema(
 
     quranMetaVersion: { type: Number, default: 3, index: true }, // ✅ v3: Date-Aware Sequence + Backfilling
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // ============================================================================
 // Indexes (بنضيف بدون ما نشيل)
 // ============================================================================
 
-sectionSchema.index({ group: 1, teacher: 1, "memorizationMeta.canonicalKey": 1 });
+sectionSchema.index({
+  group: 1,
+  teacher: 1,
+  "memorizationMeta.canonicalKey": 1,
+});
 sectionSchema.index({ group: 1, teacher: 1, "reviewMeta.canonicalKey": 1 });
 
 sectionSchema.index({ group: 1, "memorizationMeta.surahNumber": 1, date: -1 });
 sectionSchema.index({ group: 1, "reviewMeta.surahNumber": 1, date: -1 });
 
-sectionSchema.index({ group: 1, "memorizationMeta.surahNumber": 1, "memorizationMeta.ayahStart": 1 });
-sectionSchema.index({ group: 1, "reviewMeta.surahNumber": 1, "reviewMeta.ayahStart": 1 });
+sectionSchema.index({
+  group: 1,
+  "memorizationMeta.surahNumber": 1,
+  "memorizationMeta.ayahStart": 1,
+});
+sectionSchema.index({
+  group: 1,
+  "reviewMeta.surahNumber": 1,
+  "reviewMeta.ayahStart": 1,
+});
 
 // ✅ index إضافي لـ same-day checks (اختياري ومفيد)
-sectionSchema.index({ group: 1, dateKey: 1, "memorizationMeta.canonicalKey": 1 });
+sectionSchema.index({
+  group: 1,
+  dateKey: 1,
+  "memorizationMeta.canonicalKey": 1,
+});
 sectionSchema.index({ group: 1, dateKey: 1, "reviewMeta.canonicalKey": 1 });
 
 // ============================================================================
@@ -199,8 +231,8 @@ sectionSchema.pre("validate", function (next) {
       if (memKeys.has(seg.canonicalKey)) {
         return next(
           new Error(
-            `Duplicate memorization segment found: ${seg.canonicalKey} (Cannot memorize the same part twice in one section)`
-          )
+            `Duplicate memorization segment found: ${seg.canonicalKey} (Cannot memorize the same part twice in one section)`,
+          ),
         );
       }
       memKeys.add(seg.canonicalKey);
@@ -211,7 +243,9 @@ sectionSchema.pre("validate", function (next) {
     const revKeys = new Set();
     for (const seg of this.reviewMeta) {
       if (revKeys.has(seg.canonicalKey)) {
-        return next(new Error(`Duplicate review segment found: ${seg.canonicalKey}`));
+        return next(
+          new Error(`Duplicate review segment found: ${seg.canonicalKey}`),
+        );
       }
       revKeys.add(seg.canonicalKey);
     }
@@ -219,10 +253,14 @@ sectionSchema.pre("validate", function (next) {
 
   // B. Update Progress Summary
   const memTotal = this.memorizationMeta?.length || 0;
-  const memDone = (this.memorizationMeta || []).filter((s) => s.status === "completed").length;
+  const memDone = (this.memorizationMeta || []).filter(
+    (s) => s.status === "completed",
+  ).length;
 
   const revTotal = this.reviewMeta?.length || 0;
-  const revDone = (this.reviewMeta || []).filter((s) => s.status === "completed").length;
+  const revDone = (this.reviewMeta || []).filter(
+    (s) => s.status === "completed",
+  ).length;
 
   this.progressSummary = {
     memorization: { totalSegments: memTotal, completedSegments: memDone },
@@ -260,33 +298,44 @@ sectionSchema.post("save", async function (doc) {
   if (doc.groupId) {
     try {
       const Group = mongoose.model("Group");
-      
+
       // تحديث سورة الحفظ الفعالة
       if (doc.memorizationMeta && doc.memorizationMeta.length > 0) {
-        const lastSegment = doc.memorizationMeta[doc.memorizationMeta.length - 1];
+        const lastSegment =
+          doc.memorizationMeta[doc.memorizationMeta.length - 1];
         const activeSurahs = await Group.getActiveSurahs(doc.groupId);
-        
+
         // إذا لا توجد سورة فعالة أو السورة مكتملة → تفعيل سورة جديدة
-        if (!activeSurahs?.memorization?.surahNumber || activeSurahs.memorization.isCompleted) {
+        if (
+          !activeSurahs?.memorization?.surahNumber ||
+          activeSurahs.memorization.isCompleted
+        ) {
           await Group.activateSurah(
             doc.groupId,
             lastSegment.surahNumber,
             lastSegment.surahNameCanonical || lastSegment.surahNameInput,
             lastSegment.ayahEnd,
-            'memorization'
+            "memorization",
           );
-        } else if (activeSurahs.memorization.surahNumber === lastSegment.surahNumber) {
+        } else if (
+          activeSurahs.memorization.surahNumber === lastSegment.surahNumber
+        ) {
           // تحديث آخر آية فقط إذا نفس السورة
-          const maxAyahEnd = Math.max(...doc.memorizationMeta.map(s => s.ayahEnd));
-          await Group.updateLastAyah(doc.groupId, maxAyahEnd, 'memorization');
-          
+          const maxAyahEnd = Math.max(
+            ...doc.memorizationMeta.map((s) => s.ayahEnd),
+          );
+          await Group.updateLastAyah(doc.groupId, maxAyahEnd, "memorization");
+
           // ✅ فحص إكمال السورة تلقائياً
-          if (lastSegment.surahAyahCount && maxAyahEnd >= lastSegment.surahAyahCount) {
+          if (
+            lastSegment.surahAyahCount &&
+            maxAyahEnd >= lastSegment.surahAyahCount
+          ) {
             await Group.checkAndCompleteSurah(
-              doc.groupId, 
-              maxAyahEnd, 
-              lastSegment.surahAyahCount, 
-              'memorization'
+              doc.groupId,
+              maxAyahEnd,
+              lastSegment.surahAyahCount,
+              "memorization",
             );
           }
         }
@@ -296,32 +345,42 @@ sectionSchema.post("save", async function (doc) {
       if (doc.reviewMeta && doc.reviewMeta.length > 0) {
         const lastSegment = doc.reviewMeta[doc.reviewMeta.length - 1];
         const activeSurahs = await Group.getActiveSurahs(doc.groupId);
-        
-        if (!activeSurahs?.review?.surahNumber || activeSurahs.review.isCompleted) {
+
+        if (
+          !activeSurahs?.review?.surahNumber ||
+          activeSurahs.review.isCompleted
+        ) {
           await Group.activateSurah(
             doc.groupId,
             lastSegment.surahNumber,
             lastSegment.surahNameCanonical || lastSegment.surahNameInput,
             lastSegment.ayahEnd,
-            'review'
+            "review",
           );
-        } else if (activeSurahs.review.surahNumber === lastSegment.surahNumber) {
-          const maxAyahEnd = Math.max(...doc.reviewMeta.map(s => s.ayahEnd));
-          await Group.updateLastAyah(doc.groupId, maxAyahEnd, 'review');
-          
+        } else if (
+          activeSurahs.review.surahNumber === lastSegment.surahNumber
+        ) {
+          const maxAyahEnd = Math.max(...doc.reviewMeta.map((s) => s.ayahEnd));
+          await Group.updateLastAyah(doc.groupId, maxAyahEnd, "review");
+
           // ✅ فحص إكمال السورة تلقائياً
-          if (lastSegment.surahAyahCount && maxAyahEnd >= lastSegment.surahAyahCount) {
+          if (
+            lastSegment.surahAyahCount &&
+            maxAyahEnd >= lastSegment.surahAyahCount
+          ) {
             await Group.checkAndCompleteSurah(
-              doc.groupId, 
-              maxAyahEnd, 
-              lastSegment.surahAyahCount, 
-              'review'
+              doc.groupId,
+              maxAyahEnd,
+              lastSegment.surahAyahCount,
+              "review",
             );
           }
         }
       }
-      
-      console.log(`📖 Section ${doc._id}: تم تحديث السور الفعالة للحلقة ${doc.groupId}`);
+
+      console.log(
+        `📖 Section ${doc._id}: تم تحديث السور الفعالة للحلقة ${doc.groupId}`,
+      );
     } catch (err) {
       console.error("❌ خطأ في تحديث السور الفعالة:", err);
     }
@@ -352,7 +411,7 @@ sectionSchema.pre("findOneAndDelete", async function (next) {
 /**
  * Post-delete: إعادة حساب السور الفعالة
  * V7: يعيد حساب Active Surah بعد حذف Section
- * 
+ *
  * ⚠️ ملاحظة: هذا middleware لن يعمل مع deleteMany()
  * لذلك يجب استخدام Controller logic في bulkDelete
  */
@@ -361,28 +420,34 @@ sectionSchema.post("findOneAndDelete", async function (doc) {
 
   try {
     const Group = mongoose.model("Group");
-    
+
     // إعادة حساب سورة الحفظ (إذا كان المقطع يحتوي على حفظ)
     if (doc.memorizationMeta && doc.memorizationMeta.length > 0) {
-      const activeSurah = await Group.findById(doc.groupId).select('activeMemorizationSurah');
+      const activeSurah = await Group.findById(doc.groupId).select(
+        "activeMemorizationSurah",
+      );
       if (activeSurah?.activeMemorizationSurah?.surahNumber) {
         const surahNumber = activeSurah.activeMemorizationSurah.surahNumber;
-        
+
         // البحث عن مقاطع متبقية لنفس السورة
-        const remainingSections = await this.model.find({
-          groupId: doc.groupId,
-          'memorizationMeta.surahNumber': surahNumber
-        }).select('memorizationMeta');
+        const remainingSections = await this.model
+          .find({
+            groupId: doc.groupId,
+            "memorizationMeta.surahNumber": surahNumber,
+          })
+          .select("memorizationMeta");
 
         if (remainingSections.length === 0) {
           // لا توجد مقاطع متبقية - مسح السورة الفعالة
           await Group.findByIdAndUpdate(doc.groupId, {
-            'activeMemorizationSurah.surahNumber': null,
-            'activeMemorizationSurah.surahName': null,
-            'activeMemorizationSurah.lastAyahEnd': 0,
-            'activeMemorizationSurah.isCompleted': false,
+            "activeMemorizationSurah.surahNumber": null,
+            "activeMemorizationSurah.surahName": null,
+            "activeMemorizationSurah.lastAyahEnd": 0,
+            "activeMemorizationSurah.isCompleted": false,
           });
-          console.log(`🧹 [Post-Delete] Cleared memorization surah ${surahNumber} for group ${doc.groupId}`);
+          console.log(
+            `🧹 [Post-Delete] Cleared memorization surah ${surahNumber} for group ${doc.groupId}`,
+          );
         } else {
           // إعادة حساب lastAyahEnd
           let maxAyahEnd = 0;
@@ -393,31 +458,39 @@ sectionSchema.post("findOneAndDelete", async function (doc) {
               }
             }
           }
-          await Group.updateLastAyah(doc.groupId, maxAyahEnd, 'memorization');
-          console.log(`📊 [Post-Delete] Updated memorization lastAyahEnd to ${maxAyahEnd}`);
+          await Group.updateLastAyah(doc.groupId, maxAyahEnd, "memorization");
+          console.log(
+            `📊 [Post-Delete] Updated memorization lastAyahEnd to ${maxAyahEnd}`,
+          );
         }
       }
     }
 
     // إعادة حساب سورة المراجعة (إذا كان المقطع يحتوي على مراجعة)
     if (doc.reviewMeta && doc.reviewMeta.length > 0) {
-      const activeSurah = await Group.findById(doc.groupId).select('activeReviewSurah');
+      const activeSurah = await Group.findById(doc.groupId).select(
+        "activeReviewSurah",
+      );
       if (activeSurah?.activeReviewSurah?.surahNumber) {
         const surahNumber = activeSurah.activeReviewSurah.surahNumber;
-        
-        const remainingSections = await this.model.find({
-          groupId: doc.groupId,
-          'reviewMeta.surahNumber': surahNumber
-        }).select('reviewMeta');
+
+        const remainingSections = await this.model
+          .find({
+            groupId: doc.groupId,
+            "reviewMeta.surahNumber": surahNumber,
+          })
+          .select("reviewMeta");
 
         if (remainingSections.length === 0) {
           await Group.findByIdAndUpdate(doc.groupId, {
-            'activeReviewSurah.surahNumber': null,
-            'activeReviewSurah.surahName': null,
-            'activeReviewSurah.lastAyahEnd': 0,
-            'activeReviewSurah.isCompleted': false,
+            "activeReviewSurah.surahNumber": null,
+            "activeReviewSurah.surahName": null,
+            "activeReviewSurah.lastAyahEnd": 0,
+            "activeReviewSurah.isCompleted": false,
           });
-          console.log(`🧹 [Post-Delete] Cleared review surah ${surahNumber} for group ${doc.groupId}`);
+          console.log(
+            `🧹 [Post-Delete] Cleared review surah ${surahNumber} for group ${doc.groupId}`,
+          );
         } else {
           let maxAyahEnd = 0;
           for (const section of remainingSections) {
@@ -427,8 +500,10 @@ sectionSchema.post("findOneAndDelete", async function (doc) {
               }
             }
           }
-          await Group.updateLastAyah(doc.groupId, maxAyahEnd, 'review');
-          console.log(`📊 [Post-Delete] Updated review lastAyahEnd to ${maxAyahEnd}`);
+          await Group.updateLastAyah(doc.groupId, maxAyahEnd, "review");
+          console.log(
+            `📊 [Post-Delete] Updated review lastAyahEnd to ${maxAyahEnd}`,
+          );
         }
       }
     }

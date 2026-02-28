@@ -40,88 +40,22 @@ const EditSectionModalComponent = ({
     isOpen,
   );
 
-  // Quota Validation State (includes week check from backend)
-  const [quotaError, setQuotaError] = useState<string | null>(null);
-  const [reviewValidationError, setReviewValidationError] = useState<
-    string | null
-  >(null);
-  // ✅ V13: Memorization validation error (Active Surah)
-  const [memorizationValidationError, setMemorizationValidationError] =
-    useState<string | null>(null);
-  const [isCheckingQuota, setIsCheckingQuota] = useState(false);
+  // Quota Validation State - DISABLED (constraints removed)
+  const [quotaError] = useState<string | null>(null);
+  const [reviewValidationError] = useState<string | null>(null);
+  // Memorization validation error - DISABLED
+  const [memorizationValidationError] = useState<string | null>(null);
+  const [isCheckingQuota] = useState(false);
 
-  // Check Quota on Date Change (Backend handles week check too)
-  useEffect(() => {
-    if (
-      !isOpen ||
-      !localSection?.date ||
-      !localSection?.group ||
-      !localSection?._id
-    )
-      return;
+  // Quota check - DISABLED (no restrictions)
 
-    const timer = setTimeout(async () => {
-      setIsCheckingQuota(true);
-      const result = await checkSectionQuota(
-        localSection.group,
-        localSection.date,
-        localSection._id,
-      );
-      setIsCheckingQuota(false);
+  // Frontend Validation - DISABLED (constraints removed)
+  const consistencyErrors: string[] = [];
 
-      if (!result.allowed) {
-        setQuotaError(result.message || "لا يمكن التعديل لهذا التاريخ");
-      } else {
-        setQuotaError(null);
-      }
-    }, 500);
+  // Auto-adjust review end - DISABLED (constraints removed)
 
-    return () => clearTimeout(timer);
-  }, [localSection?.date, localSection?.group, localSection?._id, isOpen]);
-
-  // Frontend Validation (Real-time)
-  const { consistencyErrors, hasConsistencyErrors } = useSectionValidation(
-    localMemorizationMeta,
-    localReviewMeta,
-  );
-
-  // ✅ V9: Auto-adjust review end when same surah memorization exists
-  // Rule: If memorization starts at X, review can only go up to X-1
-  useEffect(() => {
-    if (localReviewMeta.length === 0 || localMemorizationMeta.length === 0)
-      return;
-
-    const reviewSeg = localReviewMeta[0];
-    const memSeg = localMemorizationMeta[0];
-
-    // Check if same surah
-    if (
-      reviewSeg?.surahNumber &&
-      memSeg?.surahNumber &&
-      reviewSeg.surahNumber === memSeg.surahNumber
-    ) {
-      // If review end >= memorization start, adjust it
-      if (
-        reviewSeg.ayahEnd &&
-        memSeg.ayahStart &&
-        reviewSeg.ayahEnd >= memSeg.ayahStart
-      ) {
-        const adjustedEnd = memSeg.ayahStart - 1;
-        if (adjustedEnd >= 1) {
-          const adjustedReview = { ...reviewSeg, ayahEnd: adjustedEnd };
-          handleMetaChange("reviewMeta", [adjustedReview], onChange);
-        }
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [localMemorizationMeta]);
-
-  // ✅ V8: hasErrors checks quota (which includes week check from backend)
-  const hasErrors =
-    hasConsistencyErrors ||
-    !!quotaError ||
-    !!reviewValidationError ||
-    !!memorizationValidationError;
+  // All errors DISABLED - no blocking
+  const hasErrors = false;
   const allErrors = [...consistencyErrors];
 
   if (memorizationValidationError) {
@@ -251,7 +185,7 @@ const EditSectionModalComponent = ({
                 : undefined
             }
             groupId={localSection.group}
-            onValidationError={setMemorizationValidationError}
+            onValidationError={() => {}}
           />
 
           <QuranSegmentInput
@@ -272,7 +206,7 @@ const EditSectionModalComponent = ({
                 ? new Date(localSection.date).toISOString()
                 : undefined
             }
-            onValidationError={setReviewValidationError}
+            onValidationError={() => {}}
             groupId={localSection.group}
           />
         </div>

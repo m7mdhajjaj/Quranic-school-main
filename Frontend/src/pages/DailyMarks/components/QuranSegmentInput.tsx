@@ -77,14 +77,9 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
     groupId,
   });
 
-  // ✅ V13: التحقق من وجود سورة فعالة غير مكتملة (للحفظ فقط - المراجعة حرة)
-  const hasBlockingActiveSurah =
-    type !== "review" &&
-    activeSurahInfo?.isActive &&
-    !activeSurahInfo?.canStartNewSurah;
-  const blockingActiveSurahNumber = hasBlockingActiveSurah
-    ? activeSurahInfo?.surahNumber
-    : null;
+  // Active Surah blocking - DISABLED (all constraints removed)
+  const hasBlockingActiveSurah = false;
+  const blockingActiveSurahNumber = null;
 
   // ✅ V8: Notify parent of validation errors (combine both errors)
   React.useEffect(() => {
@@ -191,18 +186,11 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
                     </div>
                   )}
                   {suggestions.map((s) => {
-                    const isCompleted = completedSurahs.some(
-                      (c) => c.surahNumber === s.number,
-                    );
-                    // ✅ V13 FIX: للمراجعة يمكن تكرار السور المكتملة، للحفظ فقط ممنوع
-                    const isBlockedByCompletion =
-                      type === "memorization" && isCompleted;
-                    // ✅ V13: منع اختيار سورة غير السورة الفعالة
-                    const isBlockedByActiveSurah =
-                      hasBlockingActiveSurah &&
-                      s.number !== blockingActiveSurahNumber;
-                    const isBlockedForSelection =
-                      isBlockedByCompletion || isBlockedByActiveSurah;
+                    // Surah blocking DISABLED - all surahs selectable
+                    const isBlockedByCompletion = false;
+                    // Active surah blocking DISABLED
+                    const isBlockedByActiveSurah = false;
+                    const isBlockedForSelection = false;
                     // ✅ V13: السورة الفعالة تظهر بلون مميز
                     const isActiveSurah =
                       blockingActiveSurahNumber === s.number;
@@ -221,26 +209,6 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
                             `}
                         onMouseDown={(e) => {
                           e.preventDefault(); // Prevent blur before click
-                          if (isBlockedByCompletion) {
-                            import("@/utils/toastUtils").then(
-                              ({ showWarningToast }) => {
-                                showWarningToast(
-                                  `⚠️ سورة ${s.name} مكتملة بالفعل في الحفظ`,
-                                );
-                              },
-                            );
-                            return;
-                          }
-                          if (isBlockedByActiveSurah) {
-                            import("@/utils/toastUtils").then(
-                              ({ showWarningToast }) => {
-                                showWarningToast(
-                                  `🔒 يجب إكمال ${activeSurahInfo?.surahName} أولاً (${activeSurahInfo?.progressPercent}% مكتمل)`,
-                                );
-                              },
-                            );
-                            return;
-                          }
                           selectSurah(s);
                         }}>
                         <div className="flex items-center gap-3">
@@ -359,8 +327,8 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
           <input
             type="number"
             min={segment.ayahStart || 1}
-            // ✅ V9: Review end is capped at reviewLimit but user can edit
-            max={type === "review" && reviewLimit ? reviewLimit : maxAyah}
+            // Review end max removed - no restriction
+            max={maxAyah}
             disabled={!segment.surahNumber}
             className={`w-full rounded-lg border text-sm font-bold py-2 px-1 text-center transition-all outline-none 
                 disabled:bg-gray-50 disabled:border-gray-50 disabled:text-gray-400
