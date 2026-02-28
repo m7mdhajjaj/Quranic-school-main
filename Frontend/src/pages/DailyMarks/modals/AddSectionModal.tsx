@@ -53,7 +53,6 @@ const AddSectionModalComponent = ({
       // Reset first, then sync with new data
       resetLocalState();
       syncLocalState(newSection);
-      setQuotaError(null); // Reset error on open
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]); // Only depend on isOpen to trigger reset/sync on open
