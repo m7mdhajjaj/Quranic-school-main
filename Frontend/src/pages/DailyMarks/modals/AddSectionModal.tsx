@@ -213,62 +213,7 @@ const AddSectionModalComponent = ({
             </div>
           )}
 
-          {/* تحذير التعارض + التاريخ المقترح */}
-          {!isScheduleValid && scheduleErrors.length > 0 && (
-            <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg text-sm">
-              <div className="flex items-start gap-2 mb-2">
-                <span className="text-lg">🔒</span>
-                <div className="flex-1">
-                  <p className="font-bold text-orange-800 mb-1">
-                    تعارض في ترتيب التواريخ:
-                  </p>
-                  {scheduleErrors.map((err, i) => (
-                    <p
-                      key={i}
-                      className="text-orange-700 text-xs whitespace-pre-line">
-                      {err}
-                    </p>
-                  ))}
-                </div>
-              </div>
-
-              {/* التاريخ المقترح */}
-              {suggestedAlternatives && suggestedAlternatives.length > 0 && (
-                <div className="mt-3 pt-3 border-t border-orange-200">
-                  <p className="text-emerald-700 text-xs font-medium mb-2">
-                    💡 تواريخ مقترحة:
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onChange({
-                        target: {
-                          name: "date",
-                          value: suggestedAlternatives[0].dateKey,
-                        },
-                      } as React.ChangeEvent<HTMLInputElement>);
-                    }}
-                    className="w-full px-4 py-3 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-all shadow-sm">
-                    <span className="font-bold text-sm">
-                      {suggestedAlternatives[0].dateKey}
-                    </span>
-                    <span className="block text-xs mt-1 opacity-90">
-                      {suggestedAlternatives[0].dayName} - أسبوع{" "}
-                      {suggestedAlternatives[0].weekNumber}
-                    </span>
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Scheduler Validating Indicator */}
-          {isSchedulerValidating && (
-            <div className="mt-2 flex items-center gap-2 text-blue-600 text-xs">
-              <span className="inline-block animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></span>
-              جاري التحقق من صلاحية الترتيب...
-            </div>
-          )}
+          {/* تحذير التعارض + التاريخ المقترح - DISABLED (constraints removed) */}
         </div>
 
         {/* Input Sections */}
