@@ -37,25 +37,26 @@ export function useQuranSegmentInputLogic({
   const [suggestions, setSuggestions] = useState<typeof quranSurahs>([]);
   const [expectedStart, setExpectedStart] = useState<number | null>(null);
   const [reviewLimit, setReviewLimit] = useState<number | null>(null);
-  const [noMemorizationError] = useState<string | null>(null);
-  // No-op setter since constraints are removed
-  const setNoMemorizationError = (_v: string | null) => {};
-  // Active Surah validation - DISABLED (all constraints removed)
-  const [activeSurahError] = useState<string | null>(null);
-  // Info kept for display purposes only
+  const [noMemorizationError, setNoMemorizationError] = useState<string | null>(
+    null,
+  );
+  // ✅ V10: Active Surah validation error
+  const [activeSurahError, setActiveSurahError] = useState<string | null>(null);
+  // ✅ V13: معلومات السورة الفعالة للتحقق قبل الاختيار
   const [activeSurahInfo, setActiveSurahInfo] =
     useState<ActiveSurahProgress | null>(null);
   const isInternalUpdate = useRef(false);
 
-  const [isCheckingActiveSurah] = useState(false);
+  const [isCheckingActiveSurah, setIsCheckingActiveSurah] = useState(false);
 
-  // Active Surah fetch - kept for info display only, no blocking
+  // ✅ V13: جلب معلومات Active Surah عند تحميل المكون (للحفظ فقط)
   useEffect(() => {
     if (!groupId || !type || type === "review") {
       setActiveSurahInfo(null);
       return;
     }
 
+    setIsCheckingActiveSurah(true);
     getActiveSurahInfo(groupId)
       .then((response) => {
         if (!response.success || !response.data) {
@@ -67,6 +68,9 @@ export function useQuranSegmentInputLogic({
       })
       .catch(() => {
         setActiveSurahInfo(null);
+      })
+      .finally(() => {
+        setIsCheckingActiveSurah(false);
       });
   }, [groupId, type]);
 
@@ -80,7 +84,80 @@ export function useQuranSegmentInputLogic({
     if (isInternalUpdate.current) isInternalUpdate.current = false;
   }, [segment.surahNumber, isFocused]);
 
-  // Active Surah validation on surah selection - DISABLED (all constraints removed)
+  // ✅ V10: التحقق من Active Surah عند اختيار سورة جديدة (للحفظ فقط - المراجعة حرة)
+  useEffect(() => {
+    if (!groupId || !segment.surahNumber || !type || type === "review") {
+      setActiveSurahError(null);
+      return;
+    }
+
+    // 1️⃣ استخدام البيانات المحلية إذا كانت موجودة (تحقق فوري)
+    if (activeSurahInfo) {
+      if (
+        activeSurahInfo.isActive &&
+        !activeSurahInfo.canStartNewSurah &&
+        activeSurahInfo.surahNumber !== segment.surahNumber
+      ) {
+        const typeLabel = type === "memorization" ? "حفظ" : "مراجعة";
+        const progressText = activeSurahInfo.progressPercent
+          ? ` (${activeSurahInfo.progressPercent}% مكتمل)`
+          : "";
+        const remainingText = activeSurahInfo.remainingAyahs
+          ? `، متبقي ${activeSurahInfo.remainingAyahs} آية`
+          : "";
+
+        setActiveSurahError(
+          `❌ يجب إكمال ${typeLabel} سورة ${activeSurahInfo.surahName} أولاً${progressText}${remainingText}\n\n` +
+            `📊 التقدم: ${activeSurahInfo.lastAyahEnd || 0} من ${activeSurahInfo.totalAyahs} آية\n` +
+            `💡 الحل: أكمل الحفظ حتى الآية ${activeSurahInfo.totalAyahs} ثم يمكنك البدء بسورة جديدة.`,
+        );
+      } else {
+        setActiveSurahError(null);
+      }
+      return;
+    }
+
+    // 2️⃣ Fallback: جلب البيانات من السيرفر إذا لم تكن موجودة
+    getActiveSurahInfo(groupId)
+      .then((response) => {
+        if (!response.success || !response.data) {
+          setActiveSurahError(null);
+          return;
+        }
+
+        const typeData =
+          type === "memorization"
+            ? response.data.memorization
+            : response.data.review;
+
+        if (
+          typeData &&
+          typeData.isActive &&
+          !typeData.canStartNewSurah &&
+          typeData.surahNumber !== segment.surahNumber
+        ) {
+          const typeLabel = type === "memorization" ? "حفظ" : "مراجعة";
+          const progressText = typeData.progressPercent
+            ? ` (${typeData.progressPercent}% مكتمل)`
+            : "";
+          const remainingText = typeData.remainingAyahs
+            ? `، متبقي ${typeData.remainingAyahs} آية`
+            : "";
+
+          setActiveSurahError(
+            `❌ يجب إكمال ${typeLabel} سورة ${typeData.surahName} أولاً${progressText}${remainingText}\n\n` +
+              `📊 التقدم: ${typeData.lastAyahEnd || 0} من ${typeData.totalAyahs} آية\n` +
+              `💡 الحل: أكمل الحفظ حتى الآية ${typeData.totalAyahs} ثم يمكنك البدء بسورة جديدة.`,
+          );
+        } else {
+          setActiveSurahError(null);
+        }
+      })
+      .catch((err) => {
+        console.error("Error checking active surah:", err);
+        setActiveSurahError(null);
+      });
+  }, [groupId, segment.surahNumber, type, activeSurahInfo]);
 
   // دالة مساعدة للتحقق من الصلاحية (يمكن استخدامها مستقبلاً)
   // const checkActiveSurahConstraint = ... (Removed for cleaner code as we rely on useEffect)

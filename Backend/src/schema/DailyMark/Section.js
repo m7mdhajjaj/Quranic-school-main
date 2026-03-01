@@ -63,8 +63,11 @@ quranRangeSchema.path("ayahEnd").validate(function (value) {
   return this.ayahStart <= value;
 }, "Ayah End must be greater than or equal to Ayah Start");
 
-// ayahEnd vs surahAyahCount validation - DISABLED (constraints removed)
-// quranRangeSchema.path("ayahEnd").validate(...);
+// ✅ 2) لو surahAyahCount موجود: امنع end يتجاوز عدد آيات السورة
+quranRangeSchema.path("ayahEnd").validate(function (value) {
+  if (!this.surahAyahCount) return true;
+  return value <= this.surahAyahCount;
+}, "Ayah End exceeds Surah Ayah Count");
 
 quranRangeSchema.path("ayahStart").validate(function (value) {
   if (!this.surahAyahCount) return true;

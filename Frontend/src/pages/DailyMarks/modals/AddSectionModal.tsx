@@ -43,9 +43,9 @@ const AddSectionModalComponent = ({
   // Fetch Completed Surahs for Validation
   const { completedList } = useCompletedSurahs(selectedGroup, isOpen);
 
-  // New: Quota Validation State - DISABLED (constraints removed)
-  const [quotaError] = useState<string | null>(null);
-  const [isCheckingQuota] = useState(false);
+  // New: Quota Validation State (includes week check from backend)
+  const [quotaError, setQuotaError] = useState<string | null>(null);
+  const [isCheckingQuota, setIsCheckingQuota] = useState(false);
 
   // ✅ FIX: Reset local state when modal closes, sync when opens
   useEffect(() => {
@@ -53,6 +53,7 @@ const AddSectionModalComponent = ({
       // Reset first, then sync with new data
       resetLocalState();
       syncLocalState(newSection);
+      setQuotaError(null); // Reset error on open
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]); // Only depend on isOpen to trigger reset/sync on open
@@ -64,23 +65,100 @@ const AddSectionModalComponent = ({
     }
   }, [isOpen, newSection, syncLocalState]);
 
-  // Quota check DISABLED - no restrictions on date/quota
+  // New: Check Quota on Date Change (Backend handles week check too)
+  useEffect(() => {
+    if (!isOpen || !newSection.date) return;
 
-  // Validation errors - DISABLED (constraints removed)
-  const [reviewValidationError] = useState<string | null>(null);
-  const [memorizationValidationError] = useState<string | null>(null);
+    const grp = newSection.group || selectedGroup;
+    if (!grp) return;
 
-  // Auto-adjust review end - DISABLED (constraints removed)
+    const timer = setTimeout(async () => {
+      setIsCheckingQuota(true);
+      // excludeId is undefined for Add mode
+      const result = await checkSectionQuota(grp, newSection.date);
+      setIsCheckingQuota(false);
 
-  // All validation DISABLED - no constraints
-  const consistencyErrors: string[] = [];
-  const isSchedulerValidating = false;
-  const scheduleErrors: string[] = [];
-  const suggestedAlternatives:
-    | { dateKey: string; dayName: string; weekNumber: number }[]
-    | null = null;
+      if (!result.allowed) {
+        setQuotaError(result.message || "لا يمكن الإضافة في هذا التاريخ");
+      } else {
+        setQuotaError(null);
+      }
+    }, 500); // 500ms debounce
 
-  const hasErrors = false;
+    return () => clearTimeout(timer);
+  }, [newSection.date, selectedGroup, newSection.group, isOpen]);
+
+  // ✅ V8: Review validation error (no memorization)
+  const [reviewValidationError, setReviewValidationError] = useState<
+    string | null
+  >(null);
+  // ✅ V13: Memorization validation error (Active Surah)
+  const [memorizationValidationError, setMemorizationValidationError] =
+    useState<string | null>(null);
+
+  // ✅ V9: Auto-adjust review end when same surah memorization exists
+  // Rule: If memorization starts at X, review can only go up to X-1
+  useEffect(() => {
+    if (localReviewMeta.length === 0 || localMemorizationMeta.length === 0)
+      return;
+
+    const reviewSeg = localReviewMeta[0];
+    const memSeg = localMemorizationMeta[0];
+
+    // Check if same surah
+    if (
+      reviewSeg?.surahNumber &&
+      memSeg?.surahNumber &&
+      reviewSeg.surahNumber === memSeg.surahNumber
+    ) {
+      // If review end >= memorization start, adjust it
+      if (
+        reviewSeg.ayahEnd &&
+        memSeg.ayahStart &&
+        reviewSeg.ayahEnd >= memSeg.ayahStart
+      ) {
+        const adjustedEnd = memSeg.ayahStart - 1;
+        if (adjustedEnd >= 1) {
+          const adjustedReview = { ...reviewSeg, ayahEnd: adjustedEnd };
+          handleMetaChange("reviewMeta", [adjustedReview], onChange);
+        }
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localMemorizationMeta]);
+
+  // ✅ V8: Backend Real-time Validation
+  const {
+    consistencyErrors,
+    hasConsistencyErrors,
+    isValidating: isValidatingSegments,
+  } = useSectionValidation(localMemorizationMeta, localReviewMeta, {
+    groupName: newSection.group || selectedGroup,
+    date: newSection.date,
+  });
+
+  // 🆕 V8: Smart Scheduler Validation (Monotonic Order) with multiple alternatives
+  const {
+    isValidating: isSchedulerValidating,
+    allValid: isScheduleValid,
+    validationErrors: scheduleErrors,
+    suggestedAlternatives,
+    suggestedAlternative,
+  } = useAutoValidateSchedule(
+    newSection.group || selectedGroup,
+    localMemorizationMeta.filter(
+      (m) => m.surahNumber && m.ayahStart && m.ayahEnd,
+    ),
+    newSection.date,
+    600, // 600ms debounce
+  );
+
+  const hasErrors =
+    hasConsistencyErrors ||
+    !!quotaError ||
+    !isScheduleValid ||
+    !!reviewValidationError ||
+    !!memorizationValidationError;
   const allErrors = [
     ...consistencyErrors,
     ...scheduleErrors,
@@ -176,11 +254,11 @@ const AddSectionModalComponent = ({
               } as React.ChangeEvent<HTMLInputElement>)
             }
             required
-            // minDate removed - any date allowed
+            minDate={new Date().toISOString().split("T")[0]}
           />
           <div className="mt-2">
             <p className="text-xs text-slate-500 flex items-center gap-1">
-              📅 اختر التاريخ المناسب
+              📅 يمكنك اختيار التاريخ من اليوم وما بعده فقط
             </p>
           </div>
 
@@ -212,7 +290,62 @@ const AddSectionModalComponent = ({
             </div>
           )}
 
-          {/* تحذير التعارض + التاريخ المقترح - DISABLED (constraints removed) */}
+          {/* تحذير التعارض + التاريخ المقترح */}
+          {!isScheduleValid && scheduleErrors.length > 0 && (
+            <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg text-sm">
+              <div className="flex items-start gap-2 mb-2">
+                <span className="text-lg">🔒</span>
+                <div className="flex-1">
+                  <p className="font-bold text-orange-800 mb-1">
+                    تعارض في ترتيب التواريخ:
+                  </p>
+                  {scheduleErrors.map((err, i) => (
+                    <p
+                      key={i}
+                      className="text-orange-700 text-xs whitespace-pre-line">
+                      {err}
+                    </p>
+                  ))}
+                </div>
+              </div>
+
+              {/* التاريخ المقترح */}
+              {suggestedAlternatives && suggestedAlternatives.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-orange-200">
+                  <p className="text-emerald-700 text-xs font-medium mb-2">
+                    💡 تواريخ مقترحة:
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onChange({
+                        target: {
+                          name: "date",
+                          value: suggestedAlternatives[0].dateKey,
+                        },
+                      } as React.ChangeEvent<HTMLInputElement>);
+                    }}
+                    className="w-full px-4 py-3 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-all shadow-sm">
+                    <span className="font-bold text-sm">
+                      {suggestedAlternatives[0].dateKey}
+                    </span>
+                    <span className="block text-xs mt-1 opacity-90">
+                      {suggestedAlternatives[0].dayName} - أسبوع{" "}
+                      {suggestedAlternatives[0].weekNumber}
+                    </span>
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Scheduler Validating Indicator */}
+          {isSchedulerValidating && (
+            <div className="mt-2 flex items-center gap-2 text-blue-600 text-xs">
+              <span className="inline-block animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></span>
+              جاري التحقق من صلاحية الترتيب...
+            </div>
+          )}
         </div>
 
         {/* Input Sections */}
@@ -235,7 +368,7 @@ const AddSectionModalComponent = ({
                 : undefined
             }
             groupId={newSection.group || selectedGroup}
-            onValidationError={() => {}}
+            onValidationError={setMemorizationValidationError}
           />
 
           <QuranSegmentInput
@@ -255,7 +388,7 @@ const AddSectionModalComponent = ({
                 ? new Date(newSection.date).toISOString()
                 : undefined
             }
-            onValidationError={() => {}}
+            onValidationError={setReviewValidationError}
             groupId={newSection.group || selectedGroup}
           />
         </div>

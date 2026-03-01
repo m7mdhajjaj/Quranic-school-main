@@ -80,10 +80,104 @@ exports.createSection = async (req, res) => {
     }
 
     // ============================================
-    // 🛡️ Advanced Conflict Check - DISABLED (All constraints removed)
+    // 🛡️ Advanced Conflict Check (Group Level) - V3: Date-Aware + Backfilling
     // ============================================
-    // All validation (quota, sequence, active surah, consistency) has been
-    // intentionally removed to allow free addition of حفظ and مراجعة segments.
+    if (sectionData.group) {
+      // ✅ V7: Current Week Only Check (أول فحص)
+      const currentWeekCheck = sequenceService.checkCurrentWeekOnly(
+        sectionData.date,
+      );
+      if (!currentWeekCheck.isValid) {
+        logger.warn("currentWeekCheck failed:", currentWeekCheck.message);
+        return sendError(res, currentWeekCheck.message, 400);
+      }
+
+      // 0. Daily Limit Check (One Section Per Day)
+      const dailyCheck = await sequenceService.checkDailyQuota(
+        sectionData.group,
+        sectionData.date,
+      );
+      if (!dailyCheck.isValid && dailyCheck.isBlocked) {
+        logger.warn("dailyCheck failed:", dailyCheck.message);
+        return sendError(res, dailyCheck.message, 400);
+      }
+
+      // 0.5 Weekly Limit Check (Max 3 sections per week)
+      const weeklyCheck = await sequenceService.checkWeeklyQuota(
+        sectionData.group,
+        sectionData.date,
+      );
+      if (!weeklyCheck.isValid) {
+        logger.warn("weeklyCheck failed:", weeklyCheck.message);
+        return sendError(res, weeklyCheck.message, 400);
+      }
+
+      // ============================================
+      // 🔒 ACTIVE SURAH VALIDATION - منع البدء بسورة جديدة قبل إكمال الحالية
+      // ============================================
+      if (sectionData.groupId) {
+        // التحقق من مقاطع الحفظ
+        if (
+          sectionData.memorizationMeta &&
+          sectionData.memorizationMeta.length > 0
+        ) {
+          const memSurahNumber = sectionData.memorizationMeta[0].surahNumber;
+          const canAddMem = await Group.canAddSegment(
+            sectionData.groupId,
+            memSurahNumber,
+            "memorization",
+          );
+
+          if (!canAddMem.allowed) {
+            logger.warn(
+              "Active Surah Check (Memorization) failed:",
+              canAddMem.reason,
+            );
+            return sendError(res, canAddMem.reason, 400);
+          }
+        }
+
+        // المراجعة: لا يوجد شرط إكمال السورة - المعلم يختار أي سورة يريدها
+      }
+      // ============================================
+
+      // 1. Check Memorization Sequence (Date-Aware with Neighbors)
+      const memValidation = await sequenceService.validateSequence(
+        sectionData.memorizationMeta,
+        sectionData.group,
+        "memorization",
+        sectionData.date, // ✅ V3: Date for neighbor queries
+      );
+
+      if (!memValidation.isValid) {
+        logger.warn("memValidation failed:", memValidation.message);
+        return sendValidationError(res, memValidation.message);
+      }
+
+      // 2. Check Review (Exact Match + Same-Day Duplicates with dateKey)
+      const revValidation = await sequenceService.validateSequence(
+        sectionData.reviewMeta,
+        sectionData.group,
+        "review",
+        sectionData.date, // ✅ V3: Date for dateKey comparison
+        null, // No exclude (new section)
+        sectionData.memorizationMeta, // Pass sibling memorization
+      );
+
+      if (!revValidation.isValid) {
+        return sendValidationError(res, revValidation.message);
+      }
+
+      // 3. Check Consistency (Internal Consistency)
+      const consistencyValidation = sequenceService.validateConsistency(
+        sectionData.memorizationMeta,
+        sectionData.reviewMeta,
+      );
+
+      if (!consistencyValidation.isValid) {
+        return sendValidationError(res, consistencyValidation.message);
+      }
+    }
 
     const section = new Section(sectionData);
 
