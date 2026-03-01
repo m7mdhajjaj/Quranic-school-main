@@ -1,0 +1,16 @@
+# Netlify Configuration - Root Level
+# Points Netlify to the Frontend directory
+
+[build]
+  base = "Frontend"
+  command = "npm run build:force"
+  publish = "Frontend/dist"
+
+  [build.environment]
+    NODE_VERSION = "18"
+
+# SPA Routing - Redirect all routes to index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
