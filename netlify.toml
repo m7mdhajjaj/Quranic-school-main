@@ -4,10 +4,11 @@
 [build]
   base = "Frontend"
   command = "npm run build:force"
-  publish = "Frontend/dist"
+  publish = "dist"
 
   [build.environment]
     NODE_VERSION = "18"
+    VITE_API_URL = "https://quranic-school-main.onrender.com"
 
 # SPA Routing - Redirect all routes to index.html
 [[redirects]]

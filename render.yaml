@@ -23,9 +23,9 @@ services:
       - key: JWT_SECRET
         generateValue: true # سيتم توليده تلقائياً
       - key: CLIENT_URL
-        value: https://quranic-school-frontend.onrender.com
+        value: https://rad-nougat-6e6417.netlify.app
       - key: CORS_ORIGINS
-        value: https://quranic-school-frontend.onrender.com
+        value: https://rad-nougat-6e6417.netlify.app
       - key: REDIS_HOST
         value: localhost
       - key: REDIS_PORT
@@ -43,6 +43,6 @@ services:
     staticPublishPath: Frontend/dist
     envVars:
       - key: VITE_API_URL
-        value: https://quranic-school-backend.onrender.com
+        value: https://quranic-school-main.onrender.com
       - key: VITE_SOCKET_URL
-        value: https://quranic-school-backend.onrender.com
+        value: https://quranic-school-main.onrender.com

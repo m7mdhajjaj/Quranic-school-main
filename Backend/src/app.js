@@ -1,22 +1,22 @@
 // ⚠️ CRITICAL: Load environment variables FIRST before any other modules
-require('dotenv').config();
-require('dns').setServers(['8.8.8.8']); // تحسين حل أسماء النطاقات
-const express = require('express');
-const cors = require('cors');
-const path = require('path');
-const connectDB = require('./config/db');
-const http = require('http');
-const { Server } = require('socket.io');
-const Chat = require('./schema/Chat/Chat');
-const Student = require('./schema/Student');
-const { NotificationService, FCMService } = require('./Notifications');
-const MonthlyChampionService = require('./services/ChampionService');
-const DashboardAttendanceService = require('./services/DashboardService/GetStudentAbsence');
-const AttendanceService = require('./services/Attendance/AttendanceService');
-const WarningJob = require('./Notifications/Jobs/WarningJob');
-const TokenCleanupJob = require('./Notifications/Jobs/TokenCleanupJob');
-const PrayerJob = require('./Notifications/Jobs/PrayerJob');
-const ScheduleReminderJob = require('./Notifications/Jobs/ScheduleReminderJob');
+require("dotenv").config();
+require("dns").setServers(["8.8.8.8"]); // تحسين حل أسماء النطاقات
+const express = require("express");
+const cors = require("cors");
+const path = require("path");
+const connectDB = require("./config/db");
+const http = require("http");
+const { Server } = require("socket.io");
+const Chat = require("./schema/Chat/Chat");
+const Student = require("./schema/Student");
+const { NotificationService, FCMService } = require("./Notifications");
+const MonthlyChampionService = require("./services/ChampionService");
+const DashboardAttendanceService = require("./services/DashboardService/GetStudentAbsence");
+const AttendanceService = require("./services/Attendance/AttendanceService");
+const WarningJob = require("./Notifications/Jobs/WarningJob");
+const TokenCleanupJob = require("./Notifications/Jobs/TokenCleanupJob");
+const PrayerJob = require("./Notifications/Jobs/PrayerJob");
+const ScheduleReminderJob = require("./Notifications/Jobs/ScheduleReminderJob");
 
 // Connect to MongoDB
 connectDB();
@@ -25,8 +25,8 @@ const app = express();
 
 // Middleware to parse JSON and URL-encoded bodies.
 // This MUST come before any routes that need to access req.body.
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // CORS configuration
 const allowedOrigins = process.env.CORS_ORIGINS
@@ -34,82 +34,89 @@ const allowedOrigins = process.env.CORS_ORIGINS
   : [
       "http://localhost:5173",
       "http://localhost:5174",
-      "https://rad-nougat-6e6417.netlify.app/",
+      "https://rad-nougat-6e6417.netlify.app",
     ];
 app.use(
   cors({
-    origin: '*', // Allow all origins for development
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    origin: process.env.NODE_ENV === "production" ? allowedOrigins : "*",
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: [
-      'Content-Type',
-      'Authorization',
-      'Cache-Control',
-      'Accept',
-      'X-Requested-With',
+      "Content-Type",
+      "Authorization",
+      "Cache-Control",
+      "Accept",
+      "X-Requested-With",
     ],
     credentials: false,
-  })
+  }),
 );
 
 // ✅ Security Headers Middleware
 app.use((req, res, next) => {
   // Prevent XSS attacks
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  
+  res.setHeader("X-Content-Type-Options", "nosniff");
+
   // Prevent clickjacking
-  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
-  
+  res.setHeader("X-Frame-Options", "SAMEORIGIN");
+
   // Control referrer information
-  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-  
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+
   // Enable browser XSS protection
-  res.setHeader('X-XSS-Protection', '1; mode=block');
-  
+  res.setHeader("X-XSS-Protection", "1; mode=block");
+
   // Content Security Policy
   res.setHeader(
-    'Content-Security-Policy',
+    "Content-Security-Policy",
     "default-src 'self'; " +
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com; " +
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-    "font-src 'self' https://fonts.gstatic.com data:; " +
-    "img-src 'self' data: https: blob:; " +
-    "connect-src 'self' ws: wss: http://localhost:* https://cloudinary.com https://res.cloudinary.com; " +
-    "media-src 'self' blob: data:;"
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com; " +
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+      "font-src 'self' https://fonts.gstatic.com data:; " +
+      "img-src 'self' data: https: blob:; " +
+      "connect-src 'self' ws: wss: http://localhost:* https://cloudinary.com https://res.cloudinary.com; " +
+      "media-src 'self' blob: data:;",
   );
-  
+
   // Prevent DNS prefetching
-  res.setHeader('X-DNS-Prefetch-Control', 'off');
-  
+  res.setHeader("X-DNS-Prefetch-Control", "off");
+
   // Only HTTPS (in production)
-  if (process.env.NODE_ENV === 'production') {
-    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  if (process.env.NODE_ENV === "production") {
+    res.setHeader(
+      "Strict-Transport-Security",
+      "max-age=31536000; includeSubDomains; preload",
+    );
   }
-  
+
   next();
 });
 
 // Centralized request logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
-  res.on('finish', () => {
+  res.on("finish", () => {
     const duration = Date.now() - start;
     console.log(
       `[${new Date().toISOString()}] ${req.method} ${req.originalUrl} ${
         res.statusCode
-      } - ${duration}ms`
+      } - ${duration}ms`,
     );
   });
 
-  if (req.method === 'POST' || req.method === 'PUT') {
+  if (req.method === "POST" || req.method === "PUT") {
     // Check if this is a multipart/form-data request (file upload)
-    const isMultipart = req.headers['content-type']?.includes('multipart/form-data');
-    
+    const isMultipart = req.headers["content-type"]?.includes(
+      "multipart/form-data",
+    );
+
     if (isMultipart) {
-      console.log('Request Body: [Multipart Form Data - will be parsed by multer]');
+      console.log(
+        "Request Body: [Multipart Form Data - will be parsed by multer]",
+      );
     } else if (req.body && Object.keys(req.body).length > 0) {
-      console.log('Request Body:', JSON.stringify(req.body, null, 2));
+      console.log("Request Body:", JSON.stringify(req.body, null, 2));
     } else {
-      console.log('Request Body: [Empty or Not Parsed]');
+      console.log("Request Body: [Empty or Not Parsed]");
     }
   }
   next();
@@ -117,115 +124,121 @@ app.use((req, res, next) => {
 
 // Add request logging for uploaded files
 app.use((req, res, next) => {
-  if (req.url.includes('/uploads/')) {
-    console.log('Static file request:', req.url);
+  if (req.url.includes("/uploads/")) {
+    console.log("Static file request:", req.url);
   }
   next();
 });
 
 // Serve static files from public folder
-app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
+app.use("/uploads", express.static(path.join(__dirname, "../public/uploads")));
 console.log(
-  'Serving static files from:',
-  path.join(__dirname, '../public/uploads')
+  "Serving static files from:",
+  path.join(__dirname, "../public/uploads"),
 );
 
 // Serve test upload page
-app.get('/test-upload', (req, res) => {
-  res.sendFile(path.join(__dirname, 'test-upload.html'));
+app.get("/test-upload", (req, res) => {
+  res.sendFile(path.join(__dirname, "test-upload.html"));
 });
 
 // Routes
-app.use('/api', require('./routes/health')); // Health check endpoint
-app.use('/api/students', require('./routes/studentRoutes'));
-app.use('/api/teachers', require('./routes/teacherRoutes'));
-app.use('/api/admins', require('./routes/adminRoutes'));
-app.use('/api/secretaries', require('./routes/secretaryRoutes'));
-app.use('/api/teacher-assistants', require('./routes/teacherAssistantRoutes'));
-app.use('/api/auth', require('./routes/authRoutes'));
-app.use('/api/news', require('./routes/NewsRoutes/newsRoutes'));
-app.use('/api/rankings', require('./routes/rankingRoutes'));
+app.use("/api", require("./routes/health")); // Health check endpoint
+app.use("/api/students", require("./routes/studentRoutes"));
+app.use("/api/teachers", require("./routes/teacherRoutes"));
+app.use("/api/admins", require("./routes/adminRoutes"));
+app.use("/api/secretaries", require("./routes/secretaryRoutes"));
+app.use("/api/teacher-assistants", require("./routes/teacherAssistantRoutes"));
+app.use("/api/auth", require("./routes/authRoutes"));
+app.use("/api/news", require("./routes/NewsRoutes/newsRoutes"));
+app.use("/api/rankings", require("./routes/rankingRoutes"));
 // Sections now part of daily-marks: /api/daily-marks/sections
 app.use(
-  '/api/daily-marks',
-  require('./routes/DailyMarkRoutes/DailyMarkRoutes')
+  "/api/daily-marks",
+  require("./routes/DailyMarkRoutes/DailyMarkRoutes"),
 );
-app.use('/api/attendance', require('./routes/attendanceRoutes'));
-app.use('/api/chat', require('./routes/ChatRoutes/chatRoutes'));
-app.use('/api/mentions', require('./routes/ChatRoutes/mentionRoutes'));
-app.use('/api/fcm', require('./routes/NotificationRoutes/fcmRoutes'));
+app.use("/api/attendance", require("./routes/attendanceRoutes"));
+app.use("/api/chat", require("./routes/ChatRoutes/chatRoutes"));
+app.use("/api/mentions", require("./routes/ChatRoutes/mentionRoutes"));
+app.use("/api/fcm", require("./routes/NotificationRoutes/fcmRoutes"));
 app.use(
-  '/api/notifications',
-  require('./routes/NotificationRoutes/notificationRoutes')
+  "/api/notifications",
+  require("./routes/NotificationRoutes/notificationRoutes"),
 );
 // Exam marks routes must come BEFORE exam-schedule routes (more specific first)
-app.use('/api/exam-schedule/marks', require('./routes/ExamScheduleRoutes/ExamMarkRoutes/examMarkRoutes'));
-app.use('/api/exam-schedule', require('./routes/ExamScheduleRoutes/examRoutes'));
-app.use('/api/sessions', require('./routes/timetableRoutes/TimeTableRoutes'));
-app.use('/api/timetable', require('./routes/timetableRoutes/TimeTableRoutes')); // New timetable API
-app.use('/api/groups', require('./routes/groupRoutes'));
-app.use('/api/dashboard', require('./routes/dashboardRoutes'));
-app.use('/api/points-game', require('./routes/pointsGameRoutes')); // لعبة النقاط والشارات
-app.use('/api/reports', require('./routes/ReportRoutes'));
-app.use('/api/goals', require('./routes/Goals/goalRoutes'));
-app.use('/api', require('./routes/profileRoutes'));
-app.use('/api/upload', require('./routes/UploadRoutes/uploadRoutes'));
-app.use('/api/warnings', require('./routes/WarningRoutes/WarningRoutes'));
-app.use('/api/ai-chat', require('./routes/AiChatRoutes/aiChatRoutes'));
-app.use('/api/quran', require('./routes/AiChatRoutes/QuranRoutes/quranRoutes'));
-app.use('/api/test', require('./routes/TestRoutes/testRoutes'));
-app.use('/api/users', require('./routes/ChatRoutes/userRoutes'));
+app.use(
+  "/api/exam-schedule/marks",
+  require("./routes/ExamScheduleRoutes/ExamMarkRoutes/examMarkRoutes"),
+);
+app.use(
+  "/api/exam-schedule",
+  require("./routes/ExamScheduleRoutes/examRoutes"),
+);
+app.use("/api/sessions", require("./routes/timetableRoutes/TimeTableRoutes"));
+app.use("/api/timetable", require("./routes/timetableRoutes/TimeTableRoutes")); // New timetable API
+app.use("/api/groups", require("./routes/groupRoutes"));
+app.use("/api/dashboard", require("./routes/dashboardRoutes"));
+app.use("/api/points-game", require("./routes/pointsGameRoutes")); // لعبة النقاط والشارات
+app.use("/api/reports", require("./routes/ReportRoutes"));
+app.use("/api/goals", require("./routes/Goals/goalRoutes"));
+app.use("/api", require("./routes/profileRoutes"));
+app.use("/api/upload", require("./routes/UploadRoutes/uploadRoutes"));
+app.use("/api/warnings", require("./routes/WarningRoutes/WarningRoutes"));
+app.use("/api/ai-chat", require("./routes/AiChatRoutes/aiChatRoutes"));
+app.use("/api/quran", require("./routes/AiChatRoutes/QuranRoutes/quranRoutes"));
+app.use("/api/test", require("./routes/TestRoutes/testRoutes"));
+app.use("/api/users", require("./routes/ChatRoutes/userRoutes"));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error('Global error handler caught:', err);
-  
+  console.error("Global error handler caught:", err);
+
   // Handle Multer errors
-  if (err.name === 'MulterError') {
-    if (err.code === 'LIMIT_FILE_SIZE') {
+  if (err.name === "MulterError") {
+    if (err.code === "LIMIT_FILE_SIZE") {
       return res.status(400).json({
         success: false,
-        message: 'حجم الملف كبير جداً. الحد الأقصى المسموح 2 ميجابايت',
+        message: "حجم الملف كبير جداً. الحد الأقصى المسموح 2 ميجابايت",
       });
     }
-    if (err.code === 'LIMIT_FILE_COUNT') {
+    if (err.code === "LIMIT_FILE_COUNT") {
       return res.status(400).json({
         success: false,
-        message: 'عدد الملفات كبير جداً',
+        message: "عدد الملفات كبير جداً",
       });
     }
-    if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+    if (err.code === "LIMIT_UNEXPECTED_FILE") {
       return res.status(400).json({
         success: false,
-        message: 'حقل الملف غير متوقع',
+        message: "حقل الملف غير متوقع",
       });
     }
     return res.status(400).json({
       success: false,
-      message: 'خطأ في رفع الملف',
+      message: "خطأ في رفع الملف",
     });
   }
-  
+
   // Handle file type errors from fileFilter
-  if (err.message && err.message.includes('يُسمح فقط بملفات الصور')) {
+  if (err.message && err.message.includes("يُسمح فقط بملفات الصور")) {
     return res.status(400).json({
       success: false,
       message: err.message,
     });
   }
-  
+
   // Handle other errors
   res.status(err.statusCode || 500).json({
     success: false,
-    message: err.message || 'خطأ في الخادم',
-    error: process.env.NODE_ENV === 'production' ? undefined : err.message,
-    stack: process.env.NODE_ENV === 'production' ? '🥞' : err.stack,
+    message: err.message || "خطأ في الخادم",
+    error: process.env.NODE_ENV === "production" ? undefined : err.message,
+    stack: process.env.NODE_ENV === "production" ? "🥞" : err.stack,
   });
 });
 
 // Handle 404s
 app.use((req, res) => {
-  res.status(404).json({ message: 'الصفحة غير موجودة' });
+  res.status(404).json({ message: "الصفحة غير موجودة" });
 });
 
 // Start server
@@ -237,126 +250,132 @@ const server = app.listen(PORT, () => {
 // Initialize Socket.IO with simple settings
 const io = new Server(server, {
   cors: {
-    origin: '*', // Allow all origins in development
-    methods: ['GET', 'POST'],
+    origin: "*", // Allow all origins in development
+    methods: ["GET", "POST"],
     credentials: false,
   },
-  transports: ['polling', 'websocket'], // Start with polling first
+  transports: ["polling", "websocket"], // Start with polling first
   allowEIO3: true,
 });
 
 // Make io available to routes
-app.set('io', io);
+app.set("io", io);
 
 // ✅ Initialize Presence Service - المصدر الوحيد للحقيقة
-const { onlineUsersManager, isUserOnline } = require('./services/PresenceService');
+const {
+  onlineUsersManager,
+  isUserOnline,
+} = require("./services/PresenceService");
 
 // Initialize Notification Service immediately after Socket.IO is ready
 const notificationService = new NotificationService(io);
 global.notificationService = notificationService; // Make it globally accessible
-app.set('notificationService', notificationService); // ✅ لاستخدامه في الـ routes
+app.set("notificationService", notificationService); // ✅ لاستخدامه في الـ routes
 global.onlineUsersManager = onlineUsersManager; // ✅ Presence Service عام
 global.isUserOnline = isUserOnline; // ✅ دالة مساعدة عامة
 global.io = io; // Make io globally accessible for chat controllers
 
 // ✅ Periodic LastSeen Update (Heartbeat) - Every 5 minutes
-setInterval(async () => {
-  const onlineUsers = onlineUsersManager.getAllOnlineUsers();
-  const now = new Date();
-  
-  for (const userId of onlineUsers) {
-    const userData = onlineUsersManager.getUserData(userId);
-    if (!userData) continue;
-    
-    const role = userData.role?.toLowerCase();
-    try {
-      if (role === 'student') {
-        await Student.findByIdAndUpdate(userId, { lastSeen: now });
-      } else if (role === 'teacher') {
-        const Teacher = require('./schema/Teacher');
-        await Teacher.findByIdAndUpdate(userId, { lastSeen: now });
-      } else if (role === 'admin') {
-        const Admin = require('./schema/Admin');
-        await Admin.findByIdAndUpdate(userId, { lastSeen: now });
-      } else if (role === 'secretary') {
-        const Secretary = require('./schema/Secretary');
-        await Secretary.findByIdAndUpdate(userId, { lastSeen: now });
-      } else if (role === 'teacherassistant' || role === 'teacherAssistant') {
-        const TeacherAssistant = require('./schema/TeacherAssistant');
-        await TeacherAssistant.findByIdAndUpdate(userId, { lastSeen: now });
+setInterval(
+  async () => {
+    const onlineUsers = onlineUsersManager.getAllOnlineUsers();
+    const now = new Date();
+
+    for (const userId of onlineUsers) {
+      const userData = onlineUsersManager.getUserData(userId);
+      if (!userData) continue;
+
+      const role = userData.role?.toLowerCase();
+      try {
+        if (role === "student") {
+          await Student.findByIdAndUpdate(userId, { lastSeen: now });
+        } else if (role === "teacher") {
+          const Teacher = require("./schema/Teacher");
+          await Teacher.findByIdAndUpdate(userId, { lastSeen: now });
+        } else if (role === "admin") {
+          const Admin = require("./schema/Admin");
+          await Admin.findByIdAndUpdate(userId, { lastSeen: now });
+        } else if (role === "secretary") {
+          const Secretary = require("./schema/Secretary");
+          await Secretary.findByIdAndUpdate(userId, { lastSeen: now });
+        } else if (role === "teacherassistant" || role === "teacherAssistant") {
+          const TeacherAssistant = require("./schema/TeacherAssistant");
+          await TeacherAssistant.findByIdAndUpdate(userId, { lastSeen: now });
+        }
+      } catch (err) {
+        console.error(`Error updating heartbeat lastSeen for ${userId}:`, err);
       }
-    } catch (err) {
-      console.error(`Error updating heartbeat lastSeen for ${userId}:`, err);
     }
-  }
-}, 5 * 60 * 1000);
+  },
+  5 * 60 * 1000,
+);
 
 global.fcmService = FCMService;
 
 // تشغيل Cron Job لتتويج أبطال الشهر
 MonthlyChampionService.start();
-console.log('🏆 خدمة تتويج الأبطال الشهرية تم تفعيلها');
+console.log("🏆 خدمة تتويج الأبطال الشهرية تم تفعيلها");
 
 // تشغيل Cron Job لتحديث قائمة الطلاب الغائبين عند منتصف الليل (Dashboard)
 DashboardAttendanceService.setIO(io);
 DashboardAttendanceService.start();
-console.log('📊 خدمة Dashboard للطلاب الغائبين تم تفعيلها');
+console.log("📊 خدمة Dashboard للطلاب الغائبين تم تفعيلها");
 
 // تشغيل Cron Job للحضور التلقائي (Auto Attendance at 23:59)
 AttendanceService.setIO(io);
 AttendanceService.start();
-console.log('✅ خدمة الحضور التلقائي تم تفعيلها (23:59 يومياً)');
+console.log("✅ خدمة الحضور التلقائي تم تفعيلها (23:59 يومياً)");
 
 // تشغيل Cron Job لإنفاذ قرارات الفصل
 WarningJob.setupWarningJobs();
-console.log('⚠️ خدمة إنفاذ قرارات الفصل تم تفعيلها');
+console.log("⚠️ خدمة إنفاذ قرارات الفصل تم تفعيلها");
 
 // تشغيل Cron Job لتنظيف FCM tokens القديمة
 TokenCleanupJob.start();
-console.log('🧹 خدمة تنظيف FCM tokens القديمة تم تفعيلها');
+console.log("🧹 خدمة تنظيف FCM tokens القديمة تم تفعيلها");
 
 // تشغيل Cron Job لإشعارات الصلاة
 const prayerJob = new PrayerJob(io);
 prayerJob.setupPrayerNotifications();
-console.log('🕌 خدمة إشعارات الصلاة تم تفعيلها');
+console.log("🕌 خدمة إشعارات الصلاة تم تفعيلها");
 
 // تشغيل Cron Job لتذكير بالمواعيد
 const scheduleReminderJob = new ScheduleReminderJob(global.notificationService);
 scheduleReminderJob.setupScheduleReminders();
-console.log('🔔 خدمة تذكير بالمواعيد تم تفعيلها');
+console.log("🔔 خدمة تذكير بالمواعيد تم تفعيلها");
 
 // Socket.IO error handling
-io.engine.on('connection_error', (err) => {
-  console.log('Socket.IO connection error:', err.message);
+io.engine.on("connection_error", (err) => {
+  console.log("Socket.IO connection error:", err.message);
 });
 
 // Socket.IO connection
-io.on('connection', (socket) => {
+io.on("connection", (socket) => {
   console.log(`User connected: ${socket.id}`);
 
   // ✅ Auto-join room if auth data is present (Handles reconnection/initial connect)
   const authUserId = socket.handshake.auth?.userId;
   const authUserRole = socket.handshake.auth?.userRole;
-  
+
   if (authUserId) {
     console.log(`🔄 Auto-joining rooms for authenticated user: ${authUserId}`);
     socket.join(authUserId);
-    socket.join('notifications');
-    
-    if (authUserRole === 'admin') {
-      socket.join('admin-room');
+    socket.join("notifications");
+
+    if (authUserRole === "admin") {
+      socket.join("admin-room");
     }
-    
+
     // ✅ استخدام PresenceService بدلاً من onlineUsers Map
     onlineUsersManager.setUserOnline(
       authUserId,
       socket.id,
-      authUserRole || 'unknown',
-      'User' // Will be updated on 'login' event
+      authUserRole || "unknown",
+      "User", // Will be updated on 'login' event
     );
 
     // ✅ بث حالة Online فوراً
-    io.emit('user-status', {
+    io.emit("user-status", {
       userId: authUserId,
       isActive: true,
       timestamp: new Date().toISOString(),
@@ -367,25 +386,25 @@ io.on('connection', (socket) => {
     onlineUsersManager.onlineUsers.forEach((data, userId) => {
       onlineUsers[userId] = {
         isActive: true,
-        timestamp: data.connectedAt
+        timestamp: data.connectedAt,
       };
     });
-    socket.emit('initial-online-users', onlineUsers);
+    socket.emit("initial-online-users", onlineUsers);
   }
 
   // Handle socket errors
-  socket.on('error', (error) => {
+  socket.on("error", (error) => {
     console.error(`Socket ${socket.id} error:`, error);
   });
 
-  socket.on('disconnect', (reason) => {
+  socket.on("disconnect", (reason) => {
     // This handler is removed in favor of the comprehensive one at the end of the file
     // to avoid duplicate handling and race conditions.
   });
 
   // User login - store their user ID and socket ID with improved handling
-  socket.on('login', async (userData) => {
-    console.log('📥 [Backend] Login event received:', userData);
+  socket.on("login", async (userData) => {
+    console.log("📥 [Backend] Login event received:", userData);
     const { userId, role, firstName } = userData;
 
     // ✅ تسجيل المستخدم كـ Online في PresenceService
@@ -393,62 +412,64 @@ io.on('connection', (socket) => {
       userId,
       socket.id,
       role,
-      firstName || 'مستخدم'
+      firstName || "مستخدم",
     );
 
     // ✅ انضمام المستخدم لغرفة خاصة به لاستقبال الإشعارات
     socket.join(userId);
-    socket.join('notifications'); // انضمام للغرفة العامة أيضاً
-    
+    socket.join("notifications"); // انضمام للغرفة العامة أيضاً
+
     // ✅ انضمام للغرف حسب الدور للتحديثات الفورية
-    if (role === 'admin') {
-      socket.join('admin-room'); // Admins يستقبلون كل التحديثات
+    if (role === "admin") {
+      socket.join("admin-room"); // Admins يستقبلون كل التحديثات
     }
-    
-    console.log(`🔔 User ${userId} (${firstName}) joined rooms [${userId}, notifications${role === 'admin' ? ', admin-room' : ''}]`);
+
+    console.log(
+      `🔔 User ${userId} (${firstName}) joined rooms [${userId}, notifications${role === "admin" ? ", admin-room" : ""}]`,
+    );
 
     // ✅ تحديث lastSeen فقط في DB (بدون isActive)
     try {
       let updateResult;
-      if (role === 'student') {
+      if (role === "student") {
         updateResult = await Student.findByIdAndUpdate(
           userId,
           { lastSeen: new Date() },
-          { new: true, upsert: false }
+          { new: true, upsert: false },
         );
-      } else if (role === 'admin') {
-        const Admin = require('./schema/Admin');
+      } else if (role === "admin") {
+        const Admin = require("./schema/Admin");
         updateResult = await Admin.findByIdAndUpdate(
           userId,
           { lastSeen: new Date() },
-          { new: true, upsert: false }
+          { new: true, upsert: false },
         );
-      } else if (role === 'secretary') {
-        const Secretary = require('./schema/Secretary');
+      } else if (role === "secretary") {
+        const Secretary = require("./schema/Secretary");
         updateResult = await Secretary.findByIdAndUpdate(
           userId,
           { lastSeen: new Date() },
-          { new: true, upsert: false }
+          { new: true, upsert: false },
         );
-      } else if (role === 'teacher') {
-        const Teacher = require('./schema/Teacher');
+      } else if (role === "teacher") {
+        const Teacher = require("./schema/Teacher");
         updateResult = await Teacher.findByIdAndUpdate(
           userId,
           { lastSeen: new Date() },
-          { new: true, upsert: false }
+          { new: true, upsert: false },
         );
-      } else if (role === 'teacherAssistant' || role === 'teacherassistant') {
-        const TeacherAssistant = require('./schema/TeacherAssistant');
+      } else if (role === "teacherAssistant" || role === "teacherassistant") {
+        const TeacherAssistant = require("./schema/TeacherAssistant");
         updateResult = await TeacherAssistant.findByIdAndUpdate(
           userId,
           { lastSeen: new Date() },
-          { new: true, upsert: false }
+          { new: true, upsert: false },
         );
       }
 
       if (updateResult) {
         console.log(
-          `✅ User ${firstName} (${userId}) logged in successfully as ${role}`
+          `✅ User ${firstName} (${userId}) logged in successfully as ${role}`,
         );
 
         // ✅ بث حالة Online للجميع
@@ -457,15 +478,15 @@ io.on('connection', (socket) => {
           isActive: true,
           timestamp: new Date().toISOString(),
         };
-        console.log('📡 [Backend] Emitting user-status event:', statusEvent);
-        io.emit('user-status', statusEvent);
+        console.log("📡 [Backend] Emitting user-status event:", statusEvent);
+        io.emit("user-status", statusEvent);
       } else {
         console.warn(`⚠️  User ${userId} not found in ${role} collection`);
       }
     } catch (error) {
       console.error(
         `❌ Error updating lastSeen for user ${userId}:`,
-        error.message
+        error.message,
       );
     }
 
@@ -473,10 +494,10 @@ io.on('connection', (socket) => {
   });
 
   // Heartbeat System - استقبال ping من Client
-  socket.on('ping', (data) => {
+  socket.on("ping", (data) => {
     console.log(`💓 Heartbeat received from ${socket.id}:`, data);
     // إرسال pong للتأكيد
-    socket.emit('pong', {
+    socket.emit("pong", {
       timestamp: Date.now(),
       serverId: socket.id,
       clientTimestamp: data?.timestamp,
@@ -484,154 +505,156 @@ io.on('connection', (socket) => {
   });
 
   // Teachers Socket Events
-  socket.on('joinTeachers', (data) => {
-    socket.join('teachers');
+  socket.on("joinTeachers", (data) => {
+    socket.join("teachers");
     console.log(`👨‍🏫 User ${socket.id} joined teachers room`, data);
   });
 
-  socket.on('leaveTeachers', (data) => {
-    socket.leave('teachers');
+  socket.on("leaveTeachers", (data) => {
+    socket.leave("teachers");
     console.log(`👨‍🏫 User ${socket.id} left teachers room`, data);
   });
 
   // Students Socket Events
-  socket.on('joinStudents', (data) => {
-    socket.join('students');
+  socket.on("joinStudents", (data) => {
+    socket.join("students");
     console.log(`👨‍🎓 User ${socket.id} joined students room`, data);
   });
 
-  socket.on('leaveStudents', (data) => {
-    socket.leave('students');
+  socket.on("leaveStudents", (data) => {
+    socket.leave("students");
     console.log(`👨‍🎓 User ${socket.id} left students room`, data);
   });
 
   // Groups Socket Events
-  socket.on('joinGroups', (data) => {
-    socket.join('groups');
+  socket.on("joinGroups", (data) => {
+    socket.join("groups");
     console.log(`👥 User ${socket.id} joined groups room`, data);
   });
 
-  socket.on('leaveGroups', (data) => {
-    socket.leave('groups');
+  socket.on("leaveGroups", (data) => {
+    socket.leave("groups");
     console.log(`👥 User ${socket.id} left groups room`, data);
   });
 
   // Marks Socket Events (for Rankings/Arrangement)
-  socket.on('joinMarks', (data) => {
-    socket.join('marks');
+  socket.on("joinMarks", (data) => {
+    socket.join("marks");
     console.log(`📝 User ${socket.id} joined marks room`, data);
   });
 
-  socket.on('leaveMarks', (data) => {
-    socket.leave('marks');
+  socket.on("leaveMarks", (data) => {
+    socket.leave("marks");
     console.log(`📝 User ${socket.id} left marks room`, data);
   });
 
   // Attendance Socket Events (for Absence)
-  socket.on('joinAttendance', (data) => {
-    socket.join('attendance');
+  socket.on("joinAttendance", (data) => {
+    socket.join("attendance");
     console.log(`📋 User ${socket.id} joined attendance room`, data);
   });
 
-  socket.on('leaveAttendance', (data) => {
-    socket.leave('attendance');
+  socket.on("leaveAttendance", (data) => {
+    socket.leave("attendance");
     console.log(`📋 User ${socket.id} left attendance room`, data);
   });
 
   // Activities Socket Events
-  socket.on('joinActivities', (data) => {
-    socket.join('activities');
+  socket.on("joinActivities", (data) => {
+    socket.join("activities");
     console.log(`🎯 User ${socket.id} joined activities room`, data);
   });
 
-  socket.on('leaveActivities', (data) => {
-    socket.leave('activities');
+  socket.on("leaveActivities", (data) => {
+    socket.leave("activities");
     console.log(`🎯 User ${socket.id} left activities room`, data);
   });
 
   // News Socket Events
-  socket.on('joinNews', (data) => {
-    socket.join('news');
+  socket.on("joinNews", (data) => {
+    socket.join("news");
     console.log(`📰 User ${socket.id} joined news room`, data);
   });
 
-  socket.on('leaveNews', (data) => {
-    socket.leave('news');
+  socket.on("leaveNews", (data) => {
+    socket.leave("news");
     console.log(`📰 User ${socket.id} left news room`, data);
   });
 
   // Exams Socket Events
-  socket.on('joinExams', (data) => {
-    socket.join('exams');
+  socket.on("joinExams", (data) => {
+    socket.join("exams");
     console.log(`📝 User ${socket.id} joined exams room`, data);
   });
 
-  socket.on('leaveExams', (data) => {
-    socket.leave('exams');
+  socket.on("leaveExams", (data) => {
+    socket.leave("exams");
     console.log(`📝 User ${socket.id} left exams room`, data);
   });
 
   // Sessions Socket Events
-  socket.on('joinSessions', (data) => {
-    socket.join('sessions');
+  socket.on("joinSessions", (data) => {
+    socket.join("sessions");
     console.log(`📅 User ${socket.id} joined sessions room`, data);
   });
 
-  socket.on('leaveSessions', (data) => {
-    socket.leave('sessions');
+  socket.on("leaveSessions", (data) => {
+    socket.leave("sessions");
     console.log(`📅 User ${socket.id} left sessions room`, data);
   });
 
-  socket.on('joinProfile', (data) => {
-    socket.join('profile');
+  socket.on("joinProfile", (data) => {
+    socket.join("profile");
     console.log(`👤 User ${socket.id} joined profile room`, data);
   });
 
-  socket.on('leaveProfile', (data) => {
-    socket.leave('profile');
+  socket.on("leaveProfile", (data) => {
+    socket.leave("profile");
     console.log(`👤 User ${socket.id} left profile room`, data);
   });
 
   // Warnings Socket Events
-  socket.on('joinWarnings', (data) => {
-    socket.join('warnings');
+  socket.on("joinWarnings", (data) => {
+    socket.join("warnings");
     console.log(`⚠️ User ${socket.id} joined warnings room`, data);
   });
 
-  socket.on('leaveWarnings', (data) => {
-    socket.leave('warnings');
+  socket.on("leaveWarnings", (data) => {
+    socket.leave("warnings");
     console.log(`⚠️ User ${socket.id} left warnings room`, data);
   });
 
   // ✅ Notifications Socket Events
-  socket.on('joinNotifications', (data) => {
+  socket.on("joinNotifications", (data) => {
     const { userId, role } = data;
 
     // انضمام للـ room الخاص بالإشعارات العامة
-    socket.join('notifications');
+    socket.join("notifications");
 
     // انضمام للـ room الخاص بالمستخدم (باستخدام userId)
     if (userId) {
       socket.join(userId);
       console.log(
-        `🔔 [JOIN] Socket ${socket.id} (${role}) ✅ joined notification rooms: [${userId}, notifications]`
+        `🔔 [JOIN] Socket ${socket.id} (${role}) ✅ joined notification rooms: [${userId}, notifications]`,
       );
-      console.log(`📊 Socket rooms for ${socket.id}:`, Array.from(socket.rooms));
+      console.log(
+        `📊 Socket rooms for ${socket.id}:`,
+        Array.from(socket.rooms),
+      );
     }
   });
 
-  socket.on('leaveNotifications', (data) => {
+  socket.on("leaveNotifications", (data) => {
     const { userId } = data;
-    socket.leave('notifications');
+    socket.leave("notifications");
     if (userId) {
       socket.leave(userId);
     }
     console.log(`🔔 User ${socket.id} left notifications room`, data);
   });
 
-
   // Handle logout
-  socket.on('logout', async (userData) => {
+  socket.on("logout", async (userData) => {
     console.log(`User logging out: ${userData.userId}`);
 
     // ✅ تحديث lastSeen فقط في DB
@@ -640,55 +663,71 @@ io.on('connection', (socket) => {
       const now = new Date();
       const role = userData.role?.toLowerCase();
 
-      if (role === 'student') {
+      if (role === "student") {
         updateResult = await Student.findByIdAndUpdate(
           userData.userId,
           { lastSeen: now },
-          { new: true }
+          { new: true },
         );
-      } else if (role === 'admin') {
-        updateResult = await require('./schema/Admin').findByIdAndUpdate(
+      } else if (role === "admin") {
+        updateResult = await require("./schema/Admin").findByIdAndUpdate(
           userData.userId,
           { lastSeen: now },
-          { new: true }
+          { new: true },
         );
-      } else if (role === 'teacher') {
-        updateResult = await require('./schema/Teacher').findByIdAndUpdate(
+      } else if (role === "teacher") {
+        updateResult = await require("./schema/Teacher").findByIdAndUpdate(
           userData.userId,
           { lastSeen: now },
-          { new: true }
+          { new: true },
         );
       }
 
       // Fallback: If role didn't match or update failed, try all collections
       if (!updateResult) {
-        console.log(`⚠️ Role '${role}' not matched or update failed during logout. Trying all collections for user ${userData.userId}...`);
-        updateResult = await Student.findByIdAndUpdate(userData.userId, { lastSeen: now }, { new: true });
-        
+        console.log(
+          `⚠️ Role '${role}' not matched or update failed during logout. Trying all collections for user ${userData.userId}...`,
+        );
+        updateResult = await Student.findByIdAndUpdate(
+          userData.userId,
+          { lastSeen: now },
+          { new: true },
+        );
+
         if (!updateResult) {
-          const Teacher = require('./schema/Teacher');
-          updateResult = await Teacher.findByIdAndUpdate(userData.userId, { lastSeen: now }, { new: true });
+          const Teacher = require("./schema/Teacher");
+          updateResult = await Teacher.findByIdAndUpdate(
+            userData.userId,
+            { lastSeen: now },
+            { new: true },
+          );
         }
-        
+
         if (!updateResult) {
-          const Admin = require('./schema/Admin');
-          updateResult = await Admin.findByIdAndUpdate(userData.userId, { lastSeen: now }, { new: true });
+          const Admin = require("./schema/Admin");
+          updateResult = await Admin.findByIdAndUpdate(
+            userData.userId,
+            { lastSeen: now },
+            { new: true },
+          );
         }
       }
 
       if (updateResult) {
         console.log(`✅ Updated lastSeen for user ${userData.userId}`);
       } else {
-        console.warn(`⚠️ Failed to update lastSeen for user ${userData.userId} on logout`);
+        console.warn(
+          `⚠️ Failed to update lastSeen for user ${userData.userId} on logout`,
+        );
       }
     } catch (error) {
-      console.error('Error updating lastSeen on logout:', error);
+      console.error("Error updating lastSeen on logout:", error);
     }
 
     // ✅ تسجيل المستخدم كـ Offline في PresenceService
     onlineUsersManager.setUserOffline(userData.userId, socket.id, (userId) => {
       // ✅ بث حالة Offline بعد grace period
-      io.emit('user-status', {
+      io.emit("user-status", {
         userId: userId,
         isActive: false,
         timestamp: new Date().toISOString(),
@@ -699,7 +738,7 @@ io.on('connection', (socket) => {
   });
 
   // Handle private messages
-  socket.on('sendMessage', async (messageData) => {
+  socket.on("sendMessage", async (messageData) => {
     try {
       const {
         sender,
@@ -711,9 +750,9 @@ io.on('connection', (socket) => {
         replyTo,
       } = messageData;
 
-      console.log('sendMessage received with data:', messageData);
+      console.log("sendMessage received with data:", messageData);
       console.log(
-        'Saving message to database:',
+        "Saving message to database:",
         JSON.stringify(
           {
             sender,
@@ -725,10 +764,10 @@ io.on('connection', (socket) => {
             replyTo,
           },
           null,
-          2
-        )
+          2,
+        ),
       );
-      console.log('Recipient online status:', onlineUsers.has(recipient));
+      console.log("Recipient online status:", onlineUsers.has(recipient));
 
       // Create and save the message
       const newMessage = new Chat({
@@ -746,19 +785,19 @@ io.on('connection', (socket) => {
       // Populate the saved message with reply information
       const populatedMessage = await Chat.findById(savedMessage._id)
         .populate({
-          path: 'sender',
-          select: 'firstName lastName',
+          path: "sender",
+          select: "firstName lastName",
         })
         .populate({
-          path: 'recipient',
-          select: 'firstName lastName',
+          path: "recipient",
+          select: "firstName lastName",
         })
         .populate({
-          path: 'replyTo',
-          select: 'text sender createdAt',
+          path: "replyTo",
+          select: "text sender createdAt",
           populate: {
-            path: 'sender',
-            select: 'firstName lastName',
+            path: "sender",
+            select: "firstName lastName",
           },
         });
 
@@ -768,59 +807,59 @@ io.on('connection', (socket) => {
           recipient,
           recipientModel,
           senderName,
-          text
+          text,
         );
       }
 
       // ✅ التحقق من حالة المستلم من PresenceService
       const recipientOnline = onlineUsersManager.isUserOnline(recipient);
       const recipientData = onlineUsersManager.getUserData(recipient);
-      
-      console.log('Looking for recipient:', recipient, 'in online users');
-      console.log('Recipient online:', recipientOnline);
-      console.log('Recipient data found:', recipientData);
+
+      console.log("Looking for recipient:", recipient, "in online users");
+      console.log("Recipient online:", recipientOnline);
+      console.log("Recipient data found:", recipientData);
 
       if (recipientOnline && recipientData) {
         console.log(
-          'Sending message to recipient socket:',
-          recipientData.socketId
+          "Sending message to recipient socket:",
+          recipientData.socketId,
         );
         // Send the message to the recipient with populated data
-        io.to(recipientData.socketId).emit('receiveMessage', {
+        io.to(recipientData.socketId).emit("receiveMessage", {
           ...populatedMessage._doc,
           senderName,
         });
 
         // إرسال حدث التوصيل للمرسل
-        socket.emit('messageDelivered', {
+        socket.emit("messageDelivered", {
           messageId: savedMessage._id,
           recipientOnline: true,
         });
       } else {
         console.log(
-          'Recipient is not online, message not delivered in real-time'
+          "Recipient is not online, message not delivered in real-time",
         );
         // إرسال حدث التوصيل للمرسل (غير متصل)
-        socket.emit('messageDelivered', {
+        socket.emit("messageDelivered", {
           messageId: savedMessage._id,
           recipientOnline: false,
         });
       }
 
       // Send confirmation back to sender with delivery status and populated data
-      socket.emit('messageSent', {
+      socket.emit("messageSent", {
         ...populatedMessage._doc,
         delivered: true,
         recipientOnline,
       });
     } catch (error) {
-      console.error('Error sending message:', error);
-      socket.emit('error', { message: 'Error sending message' });
+      console.error("Error sending message:", error);
+      socket.emit("error", { message: "Error sending message" });
     }
   });
 
   // Handle group messages (for teachers sending to students)
-  socket.on('sendGroupMessage', async (messageData) => {
+  socket.on("sendGroupMessage", async (messageData) => {
     try {
       const { sender, senderModel, group, text, senderName, replyTo } =
         messageData;
@@ -840,27 +879,27 @@ io.on('connection', (socket) => {
       // Populate the saved message with reply information
       const populatedMessage = await Chat.findById(savedMessage._id)
         .populate({
-          path: 'sender',
-          select: 'firstName lastName',
+          path: "sender",
+          select: "firstName lastName",
         })
         .populate({
-          path: 'replyTo',
-          select: 'text sender createdAt',
+          path: "replyTo",
+          select: "text sender createdAt",
           populate: {
-            path: 'sender',
-            select: 'firstName lastName',
+            path: "sender",
+            select: "firstName lastName",
           },
         });
 
       // ✅ Emit to all students in the group who are online
-      const onlineStudents = onlineUsersManager.getUsersByRole('student');
+      const onlineStudents = onlineUsersManager.getUsersByRole("student");
       for (const userId of onlineStudents) {
         // Check if student belongs to this group
         const student = await Student.findById(userId);
         if (student && student.group === group) {
           const userData = onlineUsersManager.getUserData(userId);
           if (userData) {
-            io.to(userData.socketId).emit('receiveMessage', {
+            io.to(userData.socketId).emit("receiveMessage", {
               ...populatedMessage._doc,
               senderName,
             });
@@ -869,28 +908,28 @@ io.on('connection', (socket) => {
       }
 
       // Send confirmation back to teacher with populated data
-      socket.emit('messageSent', populatedMessage);
+      socket.emit("messageSent", populatedMessage);
     } catch (error) {
-      console.error('Error sending group message:', error);
-      socket.emit('error', { message: 'Error sending group message' });
+      console.error("Error sending group message:", error);
+      socket.emit("error", { message: "Error sending group message" });
     }
   });
 
   // Handle message editing
-  socket.on('editMessage', async (data) => {
+  socket.on("editMessage", async (data) => {
     try {
       const { messageId, text } = data;
 
-      if (!messageId || !text || text.trim() === '') {
-        socket.emit('messageEditError', {
-          error: 'Message ID and text are required',
+      if (!messageId || !text || text.trim() === "") {
+        socket.emit("messageEditError", {
+          error: "Message ID and text are required",
         });
         return;
       }
 
       const message = await Chat.findById(messageId);
       if (!message) {
-        socket.emit('messageEditError', { error: 'Message not found' });
+        socket.emit("messageEditError", { error: "Message not found" });
         return;
       }
 
@@ -901,36 +940,36 @@ io.on('connection', (socket) => {
 
       // Get populated message
       const updatedMessage = await Chat.findById(messageId)
-        .populate('sender', 'firstName lastName')
-        .populate('recipient', 'firstName lastName');
+        .populate("sender", "firstName lastName")
+        .populate("recipient", "firstName lastName");
 
-      socket.emit('messageEdited', updatedMessage);
+      socket.emit("messageEdited", updatedMessage);
 
       // ✅ Find recipient's socket and emit to them
       const recipientId = message.recipient.toString();
       const recipientData = onlineUsersManager.getUserData(recipientId);
       if (recipientData) {
-        io.to(recipientData.socketId).emit('messageEdited', updatedMessage);
+        io.to(recipientData.socketId).emit("messageEdited", updatedMessage);
       }
     } catch (error) {
-      console.error('Error editing message:', error);
-      socket.emit('messageEditError', { error: 'Failed to edit message' });
+      console.error("Error editing message:", error);
+      socket.emit("messageEditError", { error: "Failed to edit message" });
     }
   });
 
   // Handle message deletion
-  socket.on('deleteMessage', async (data) => {
+  socket.on("deleteMessage", async (data) => {
     try {
       const { messageId } = data;
 
       if (!messageId) {
-        socket.emit('messageDeleteError', { error: 'Message ID is required' });
+        socket.emit("messageDeleteError", { error: "Message ID is required" });
         return;
       }
 
       const message = await Chat.findById(messageId);
       if (!message) {
-        socket.emit('messageDeleteError', { error: 'Message not found' });
+        socket.emit("messageDeleteError", { error: "Message not found" });
         return;
       }
 
@@ -941,25 +980,25 @@ io.on('connection', (socket) => {
       await Chat.findByIdAndDelete(messageId);
 
       // Emit to both sender and recipient
-      socket.emit('messageDeleted', { messageId });
+      socket.emit("messageDeleted", { messageId });
 
       // ✅ Find recipient's socket and emit to them
       const recipientData = onlineUsersManager.getUserData(recipientId);
       if (recipientData) {
-        io.to(recipientData.socketId).emit('messageDeleted', { messageId });
+        io.to(recipientData.socketId).emit("messageDeleted", { messageId });
       }
     } catch (error) {
-      console.error('Error deleting message:', error);
-      socket.emit('messageDeleteError', { error: 'Failed to delete message' });
+      console.error("Error deleting message:", error);
+      socket.emit("messageDeleteError", { error: "Failed to delete message" });
     }
   });
 
   // Handle user typing
-  socket.on('typing', (data) => {
+  socket.on("typing", (data) => {
     // ✅ استخدام PresenceService
     const recipientData = onlineUsersManager.getUserData(data.recipient);
     if (recipientData) {
-      io.to(recipientData.socketId).emit('userTyping', {
+      io.to(recipientData.socketId).emit("userTyping", {
         sender: data.sender,
         isTyping: data.isTyping,
       });
@@ -967,14 +1006,14 @@ io.on('connection', (socket) => {
   });
 
   // Handle chat opened event
-  socket.on('chatOpened', async (data) => {
+  socket.on("chatOpened", async (data) => {
     const { userId, chatWith } = data;
     console.log(`📖 User ${userId} opened chat with ${chatWith}`);
 
     // ✅ إشعار الطرف الآخر بفتح المحادثة
     const otherUserData = onlineUsersManager.getUserData(chatWith);
     if (otherUserData) {
-      io.to(otherUserData.socketId).emit('chatOpened', {
+      io.to(otherUserData.socketId).emit("chatOpened", {
         userId: userId,
         chatWith: chatWith,
       });
@@ -991,15 +1030,15 @@ io.on('connection', (socket) => {
         {
           delivered: true,
           deliveredAt: new Date(),
-        }
+        },
       );
     } catch (error) {
-      console.error('Error updating message delivery status:', error);
+      console.error("Error updating message delivery status:", error);
     }
   });
 
   // Handle message delivered confirmation
-  socket.on('messageDeliveredConfirm', async (data) => {
+  socket.on("messageDeliveredConfirm", async (data) => {
     const { messageId, recipientId, deliveredAt } = data;
     console.log(`✅ Message ${messageId} delivered to ${recipientId}`);
 
@@ -1011,12 +1050,12 @@ io.on('connection', (socket) => {
       });
 
       // ✅ إشعار المرسل بالتوصيل
-      const message = await Chat.findById(messageId).populate('sender');
+      const message = await Chat.findById(messageId).populate("sender");
       if (message) {
         const senderId = message.sender._id.toString();
         const senderData = onlineUsersManager.getUserData(senderId);
         if (senderData) {
-          io.to(senderData.socketId).emit('messageDelivered', {
+          io.to(senderData.socketId).emit("messageDelivered", {
             messageId: messageId,
             recipientOnline: true,
             deliveredAt: deliveredAt,
@@ -1024,12 +1063,12 @@ io.on('connection', (socket) => {
         }
       }
     } catch (error) {
-      console.error('Error confirming message delivery:', error);
+      console.error("Error confirming message delivery:", error);
     }
   });
 
   // Handle message read confirmation
-  socket.on('messageReadConfirm', async (data) => {
+  socket.on("messageReadConfirm", async (data) => {
     const { messageId, recipientId, readAt } = data;
     console.log(`👁️ Message ${messageId} read by ${recipientId}`);
 
@@ -1041,112 +1080,152 @@ io.on('connection', (socket) => {
       });
 
       // ✅ إشعار المرسل بالقراءة
-      const message = await Chat.findById(messageId).populate('sender');
+      const message = await Chat.findById(messageId).populate("sender");
       if (message) {
         const senderId = message.sender._id.toString();
         const senderData = onlineUsersManager.getUserData(senderId);
         if (senderData) {
-          io.to(senderData.socketId).emit('messageRead', {
+          io.to(senderData.socketId).emit("messageRead", {
             messageId: messageId,
             readAt: readAt,
           });
         }
       }
     } catch (error) {
-      console.error('Error confirming message read:', error);
+      console.error("Error confirming message read:", error);
     }
   });
 
   // Handle disconnect with improved cleanup
-  socket.on('disconnect', async (reason) => {
+  socket.on("disconnect", async (reason) => {
     console.log(`🔌 Socket disconnected: ${socket.id} (reason: ${reason})`);
 
     // ✅ الحصول على userId من PresenceService
     const disconnectedUserId = onlineUsersManager.getUserIdBySocket(socket.id);
 
     if (disconnectedUserId) {
-      const disconnectedUserData = onlineUsersManager.getUserData(disconnectedUserId);
-      
+      const disconnectedUserData =
+        onlineUsersManager.getUserData(disconnectedUserId);
+
       if (disconnectedUserData) {
         const { role, firstName } = disconnectedUserData;
 
         // ✅ تسجيل المستخدم كـ Offline مع grace period
-        onlineUsersManager.setUserOffline(disconnectedUserId, socket.id, async (userId) => {
-          // ✅ تحديث lastSeen فقط بعد grace period
-          try {
-            const normalizedRole = role?.toLowerCase();
-            let updateResult;
-            const now = new Date();
+        onlineUsersManager.setUserOffline(
+          disconnectedUserId,
+          socket.id,
+          async (userId) => {
+            // ✅ تحديث lastSeen فقط بعد grace period
+            try {
+              const normalizedRole = role?.toLowerCase();
+              let updateResult;
+              const now = new Date();
 
-            if (normalizedRole === 'student') {
-              updateResult = await Student.findByIdAndUpdate(
-                userId,
-                { lastSeen: now },
-                { new: true }
-              );
-            } else if (normalizedRole === 'admin') {
-              const Admin = require('./schema/Admin');
-              updateResult = await Admin.findByIdAndUpdate(
-                userId,
-                { lastSeen: now },
-                { new: true }
-              );
-            } else if (normalizedRole === 'teacher') {
-              const Teacher = require('./schema/Teacher');
-              updateResult = await Teacher.findByIdAndUpdate(
-                userId,
-                { lastSeen: now },
-                { new: true }
-              );
-            } else if (normalizedRole === 'secretary') {
-              const Secretary = require('./routes/secretaryRoutes/schema/Secretary') || require('./schema/Secretary');
-              // Note: Adjust path if necessary based on your structure. Assuming ./schema/Secretary exists standardly
-              // Let's rely on standard path try first, or check where it is imported usually.
-              // Waiting... looking at imports in MessageService above: const Secretary = require("../../schema/Secretary");
-              // So it should be require('./schema/Secretary');
-              try {
-                  const Secretary = require('./schema/Secretary');
-                  updateResult = await Secretary.findByIdAndUpdate(userId, { lastSeen: now }, { new: true });
-              } catch (e) { console.warn("Secretary schema not found"); }
-            } else if (normalizedRole === 'teacherassistant' || normalizedRole === 'teacher assistant') {
-              try {
-                  const TeacherAssistant = require('./schema/TeacherAssistant');
-                  updateResult = await TeacherAssistant.findByIdAndUpdate(userId, { lastSeen: now }, { new: true });
-              } catch (e) { console.warn("TeacherAssistant schema not found"); }
-            }
-
-            // Fallback: If role didn't match or update failed, try all collections
-            if (!updateResult) {
-              console.log(`⚠️ Role '${role}' not matched or update failed. Trying all collections for user ${userId}...`);
-              updateResult = await Student.findByIdAndUpdate(userId, { lastSeen: now }, { new: true });
-              
-              if (!updateResult) {
-                const Teacher = require('./schema/Teacher');
-                updateResult = await Teacher.findByIdAndUpdate(userId, { lastSeen: now }, { new: true });
+              if (normalizedRole === "student") {
+                updateResult = await Student.findByIdAndUpdate(
+                  userId,
+                  { lastSeen: now },
+                  { new: true },
+                );
+              } else if (normalizedRole === "admin") {
+                const Admin = require("./schema/Admin");
+                updateResult = await Admin.findByIdAndUpdate(
+                  userId,
+                  { lastSeen: now },
+                  { new: true },
+                );
+              } else if (normalizedRole === "teacher") {
+                const Teacher = require("./schema/Teacher");
+                updateResult = await Teacher.findByIdAndUpdate(
+                  userId,
+                  { lastSeen: now },
+                  { new: true },
+                );
+              } else if (normalizedRole === "secretary") {
+                const Secretary =
+                  require("./routes/secretaryRoutes/schema/Secretary") ||
+                  require("./schema/Secretary");
+                // Note: Adjust path if necessary based on your structure. Assuming ./schema/Secretary exists standardly
+                // Let's rely on standard path try first, or check where it is imported usually.
+                // Waiting... looking at imports in MessageService above: const Secretary = require("../../schema/Secretary");
+                // So it should be require('./schema/Secretary');
+                try {
+                  const Secretary = require("./schema/Secretary");
+                  updateResult = await Secretary.findByIdAndUpdate(
+                    userId,
+                    { lastSeen: now },
+                    { new: true },
+                  );
+                } catch (e) {
+                  console.warn("Secretary schema not found");
+                }
+              } else if (
+                normalizedRole === "teacherassistant" ||
+                normalizedRole === "teacher assistant"
+              ) {
+                try {
+                  const TeacherAssistant = require("./schema/TeacherAssistant");
+                  updateResult = await TeacherAssistant.findByIdAndUpdate(
+                    userId,
+                    { lastSeen: now },
+                    { new: true },
+                  );
+                } catch (e) {
+                  console.warn("TeacherAssistant schema not found");
+                }
               }
-              
+
+              // Fallback: If role didn't match or update failed, try all collections
               if (!updateResult) {
-                const Admin = require('./schema/Admin');
-                updateResult = await Admin.findByIdAndUpdate(userId, { lastSeen: now }, { new: true });
+                console.log(
+                  `⚠️ Role '${role}' not matched or update failed. Trying all collections for user ${userId}...`,
+                );
+                updateResult = await Student.findByIdAndUpdate(
+                  userId,
+                  { lastSeen: now },
+                  { new: true },
+                );
+
+                if (!updateResult) {
+                  const Teacher = require("./schema/Teacher");
+                  updateResult = await Teacher.findByIdAndUpdate(
+                    userId,
+                    { lastSeen: now },
+                    { new: true },
+                  );
+                }
+
+                if (!updateResult) {
+                  const Admin = require("./schema/Admin");
+                  updateResult = await Admin.findByIdAndUpdate(
+                    userId,
+                    { lastSeen: now },
+                    { new: true },
+                  );
+                }
               }
-            }
 
-            if (updateResult) {
-              console.log(`✅ User ${firstName} (${userId}) lastSeen updated to ${now.toISOString()}`);
+              if (updateResult) {
+                console.log(
+                  `✅ User ${firstName} (${userId}) lastSeen updated to ${now.toISOString()}`,
+                );
 
-              // ✅ بث حالة Offline للجميع
-              io.emit('user-status', {
-                userId: userId,
-                isActive: false,
-                timestamp: now.toISOString(),
-              });
-            } else {
-              console.warn(`⚠️ Failed to update lastSeen for user ${userId} (Role: ${role})`);
+                // ✅ بث حالة Offline للجميع
+                io.emit("user-status", {
+                  userId: userId,
+                  isActive: false,
+                  timestamp: now.toISOString(),
+                });
+              } else {
+                console.warn(
+                  `⚠️ Failed to update lastSeen for user ${userId} (Role: ${role})`,
+                );
+              }
+            } catch (error) {
+              console.error("Error updating lastSeen on disconnect:", error);
             }
-          } catch (error) {
-            console.error('Error updating lastSeen on disconnect:', error);
-          }
-        });
+          },
+        );
       }
     }
 
@@ -1154,14 +1233,14 @@ io.on('connection', (socket) => {
   });
 
   // ✅ Chat Socket Events (New Modular Structure)
-  const chatSocketHandler = require('./sockets/Chat');
+  const chatSocketHandler = require("./sockets/Chat");
   chatSocketHandler(io, socket);
 });
 
 // Handle server errors
-server.on('error', (error) => {
-  console.error('Server error:', error);
-  if (error.code === 'EADDRINUSE') {
+server.on("error", (error) => {
+  console.error("Server error:", error);
+  if (error.code === "EADDRINUSE") {
     console.error(`Port ${PORT} is already in use. Try a different port.`);
     process.exit(1);
   }
