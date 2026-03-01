@@ -31,14 +31,10 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 // CORS configuration
 const allowedOrigins = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(",")
-  : [
-      "http://localhost:5173",
-      "http://localhost:5174",
-      "https://rad-nougat-6e6417.netlify.app",
-    ];
+  : ["http://localhost:5173", "http://localhost:5174"];
 app.use(
   cors({
-    origin: process.env.NODE_ENV === "production" ? allowedOrigins : "*",
+    origin: "*", // Allow all origins for development
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: [
       "Content-Type",
