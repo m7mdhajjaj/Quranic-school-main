@@ -3,21 +3,21 @@
 const mongoose = require("mongoose");
 const { parseSegment } = require("../../utils/Quran/dailyMarkSegmentParser");
 const { createLogger } = require("../../utils/logger");
-const logger = createLogger('SectionValidation');
+const logger = createLogger("SectionValidation");
 
 /**
  * ============================================================================
  * Daily Marks Section Validation Middleware (V7)
  * ============================================================================
- * 
+ *
  * Validates section data for daily marks (date, reviewSection, memorizationSection)
  * Updated to support Structured Quran Segments (Meta)
- * 
+ *
  * V7 Edition - Validation Rules:
  * ─────────────────────────────────────────────────────────────────────────────
  * ✅ Data format/structure validation only (this file)
  * ✅ Deep sequence validation delegated to SectionSequenceService
- * 
+ *
  * V7 Rules (enforced in SectionSequenceService):
  * - Current week only (Sat-Fri) - no future/past weeks
  * - Flexible review ranges (1-50 ayahs at once)
@@ -116,7 +116,7 @@ const validateTeacher = (teacher) => {
 };
 
 /**
- * Process a list of segments (or single legacy string) 
+ * Process a list of segments (or single legacy string)
  * and return validated Meta array.
  */
 const processSegments = (metaInput, legacyString, type = "segment") => {
@@ -133,23 +133,22 @@ const processSegments = (metaInput, legacyString, type = "segment") => {
         errors.push(`خطأ في المقطع ${index + 1}: ${result.error}`);
       }
     });
-  } 
+  }
   // 2. Fallback: Parse Legacy String if Meta is empty
   else if (isRequired(legacyString)) {
-     // Optional: Try to parse legacy string? 
-     // For now, we mainly rely on explicit data, but we can try parsing.
-     // If legacy string is simple "Al-Baqara 1-5", we parse it.
-     const result = parseSegment(legacyString, type);
-     if (result.isValid) {
-       segments.push(result.data);
-     }
-     // If processing legacy string fails (e.g. "Review Part 1"), we verify it's valid text later 
-     // but don't force it into the Meta array to avoid bad data.
+    // Optional: Try to parse legacy string?
+    // For now, we mainly rely on explicit data, but we can try parsing.
+    // If legacy string is simple "Al-Baqara 1-5", we parse it.
+    const result = parseSegment(legacyString, type);
+    if (result.isValid) {
+      segments.push(result.data);
+    }
+    // If processing legacy string fails (e.g. "Review Part 1"), we verify it's valid text later
+    // but don't force it into the Meta array to avoid bad data.
   }
 
   return { segments, errors };
 };
-
 
 /**
  * Sanitize section data
@@ -197,60 +196,68 @@ const validateDailyMarksSectionData = async (req, res, next) => {
       }
     }
 
-    // --- Validate Legacy Fields + Structured Meta ---
-    
-    // 1. Memorization
+    // --- Validate Legacy Fields + Structured Meta (Lenient) ---
+
+    // 1. Memorization - Try to parse meta, but don't block on errors
     const hasMemorizationString = isRequired(data.memorizationSection);
-    const memorizationMetaProcess = processSegments(data.memorizationMeta, data.memorizationSection, "memorization");
-    
-    if (memorizationMetaProcess.errors.length > 0) {
-      errors.push(...memorizationMetaProcess.errors);
-    }
+    const memorizationMetaProcess = processSegments(
+      data.memorizationMeta,
+      data.memorizationSection,
+      "memorization",
+    );
+
+    // Don't push meta parsing errors - accept free text
     validatedData.memorizationMeta = memorizationMetaProcess.segments;
 
     if (hasMemorizationString) {
-      const memVal = validateSectionName(data.memorizationSection, "مقطع الحفظ");
-      if (!memVal.isValid) errors.push(memVal.message);
-      else validatedData.memorizationSection = memVal.value;
+      validatedData.memorizationSection = data.memorizationSection
+        .toString()
+        .trim()
+        .slice(0, 200);
     } else {
-      // Auto-fill legacy string from Meta if string is missing?
+      // Auto-fill legacy string from Meta if string is missing
       if (validatedData.memorizationMeta.length > 0) {
-        // Generate a string like "Surah 1-5, Surah2 10-20"
         validatedData.memorizationSection = validatedData.memorizationMeta
-          .map(s => `${s.surahNameCanonical} ${s.ayahStart}-${s.ayahEnd}`)
+          .map((s) => `${s.surahNameCanonical} ${s.ayahStart}-${s.ayahEnd}`)
           .join("، ");
       } else {
         validatedData.memorizationSection = "";
       }
     }
 
-    // 2. Review
+    // 2. Review - Try to parse meta, but don't block on errors
     const hasReviewString = isRequired(data.reviewSection);
-    const reviewMetaProcess = processSegments(data.reviewMeta, data.reviewSection, "review");
+    const reviewMetaProcess = processSegments(
+      data.reviewMeta,
+      data.reviewSection,
+      "review",
+    );
 
-    if (reviewMetaProcess.errors.length > 0) {
-      errors.push(...reviewMetaProcess.errors);
-    }
+    // Don't push review parsing errors - accept free text
     validatedData.reviewMeta = reviewMetaProcess.segments;
 
     if (hasReviewString) {
-      const revVal = validateSectionName(data.reviewSection, "مقطع المراجعة");
-      if (!revVal.isValid) errors.push(revVal.message);
-      else validatedData.reviewSection = revVal.value;
+      validatedData.reviewSection = data.reviewSection
+        .toString()
+        .trim()
+        .slice(0, 200);
     } else {
-       // Auto-fill legacy string if missing
-       if (validatedData.reviewMeta.length > 0) {
-         validatedData.reviewSection = validatedData.reviewMeta
-           .map(s => `${s.surahNameCanonical} ${s.ayahStart}-${s.ayahEnd}`)
-           .join("، ");
-       } else {
-         validatedData.reviewSection = "";
-       }
+      // Auto-fill legacy string if missing
+      if (validatedData.reviewMeta.length > 0) {
+        validatedData.reviewSection = validatedData.reviewMeta
+          .map((s) => `${s.surahNameCanonical} ${s.ayahStart}-${s.ayahEnd}`)
+          .join("، ");
+      } else {
+        validatedData.reviewSection = "";
+      }
     }
 
-    // Ensure at least one section exists
-    const hasMem = (validatedData.memorizationSection || validatedData.memorizationMeta.length > 0);
-    const hasRev = (validatedData.reviewSection || validatedData.reviewMeta.length > 0);
+    // At least one section should exist (non-blocking for updates)
+    const hasMem =
+      validatedData.memorizationSection ||
+      validatedData.memorizationMeta.length > 0;
+    const hasRev =
+      validatedData.reviewSection || validatedData.reviewMeta.length > 0;
 
     if (!isUpdate && !hasMem && !hasRev) {
       errors.push("يجب إدخال مقطع الحفظ أو مقطع المراجعة على الأقل");
@@ -276,7 +283,7 @@ const validateDailyMarksSectionData = async (req, res, next) => {
 
     // Validate teacher (optional)
     if (data.teacher !== undefined) {
-       const teacherValidation = validateTeacher(data.teacher);
+      const teacherValidation = validateTeacher(data.teacher);
       if (!teacherValidation.isValid) {
         errors.push(teacherValidation.message);
       } else {
@@ -287,7 +294,8 @@ const validateDailyMarksSectionData = async (req, res, next) => {
     // Validate Status & Schedule info (for updates or full creates)
     if (data.timetableId) validatedData.timetableId = data.timetableId;
     if (data.scheduleStatus) validatedData.scheduleStatus = data.scheduleStatus;
-    if (data.hasSchedule !== undefined) validatedData.hasSchedule = data.hasSchedule;
+    if (data.hasSchedule !== undefined)
+      validatedData.hasSchedule = data.hasSchedule;
 
     // Check for validation errors
     if (errors.length > 0) {
@@ -301,7 +309,7 @@ const validateDailyMarksSectionData = async (req, res, next) => {
 
     // Add validated data to request
     req.validatedData = validatedData;
-    
+
     next();
   } catch (error) {
     logger.error("خطأ في التحقق من بيانات المقطع:", error);
@@ -318,18 +326,18 @@ const validateDailyMarksSectionData = async (req, res, next) => {
  */
 const validateSectionId = (req, res, next) => {
   const { id } = req.params;
-  
+
   if (!isRequired(id)) {
     return res.status(400).json({
       success: false,
-      message: "معرّف المقطع مطلوب"
+      message: "معرّف المقطع مطلوب",
     });
   }
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return res.status(400).json({
       success: false,
-      message: "معرّف المقطع غير صالح"
+      message: "معرّف المقطع غير صالح",
     });
   }
 
@@ -353,7 +361,7 @@ const validateActiveSurahData = (req, res, next) => {
 
     if (!isRequired(type)) {
       errors.push("نوع السورة (type) مطلوب");
-    } else if (!['memorization', 'review'].includes(type)) {
+    } else if (!["memorization", "review"].includes(type)) {
       errors.push("نوع السورة يجب أن يكون 'memorization' أو 'review'");
     }
 
@@ -368,7 +376,9 @@ const validateActiveSurahData = (req, res, next) => {
     next();
   } catch (error) {
     console.error("❌ Validating Active Surah Data Error:", error);
-    res.status(500).json({ success: false, message: "Server Validation Error" });
+    res
+      .status(500)
+      .json({ success: false, message: "Server Validation Error" });
   }
 };
 
@@ -377,11 +387,11 @@ const validateActiveSurahData = (req, res, next) => {
  */
 const validateGroupIdParam = (req, res, next) => {
   const { groupId } = req.params;
-  
+
   if (!isRequired(groupId)) {
     return res.status(400).json({
       success: false,
-      message: "معرّف الحلقة مطلوب"
+      message: "معرّف الحلقة مطلوب",
     });
   }
 

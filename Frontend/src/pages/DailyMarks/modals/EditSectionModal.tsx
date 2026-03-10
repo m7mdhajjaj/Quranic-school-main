@@ -1,21 +1,11 @@
 import { Modal, Button, DatePicker } from "@/components/UI";
-import { memo, useState, useEffect } from "react";
+import { memo, useEffect, useState } from "react";
 import type { EditSectionModalProps } from "../types/types";
-import { useEditSectionModal } from "../hooks/modals";
-import { useSectionValidation } from "../hooks/teacher";
-import { useCompletedSurahs } from "../hooks/data";
-import QuranSegmentInput from "../components/QuranSegmentInput";
-import ErrorMessageList from "../components/ErrorMessageList";
-import { checkSectionQuota } from "@/Api/DailyMark/sectionApi";
+import { BookOpen, X } from "lucide-react";
 
 /**
  * Modal for editing an existing section
- *
- * ✅ V7 Compatible:
- * - Date can be changed (with backend validation)
- * - Backend handles date-aware neighbor validation
- * - UI provides quick consistency feedback
- * - Real-time review validation in QuranSegmentInput
+ * Simple: just free text inputs for memorization and review
  */
 const EditSectionModalComponent = ({
   isOpen,
@@ -25,136 +15,36 @@ const EditSectionModalComponent = ({
   onSubmit,
   onChange,
 }: EditSectionModalProps) => {
-  const {
-    localSection,
-    localReviewMeta,
-    localMemorizationMeta,
-    handleDateChange,
-    handleMetaChange,
-    syncWithParent,
-  } = useEditSectionModal(editingSection);
+  const [localDate, setLocalDate] = useState("");
+  const [memorizationText, setMemorizationText] = useState("");
+  const [reviewText, setReviewText] = useState("");
 
-  // Fetch Completed Surahs for Validation
-  const { completedList } = useCompletedSurahs(
-    localSection?.group || "",
-    isOpen,
-  );
-
-  // Quota Validation State (includes week check from backend)
-  const [quotaError, setQuotaError] = useState<string | null>(null);
-  const [reviewValidationError, setReviewValidationError] = useState<
-    string | null
-  >(null);
-  // ✅ V13: Memorization validation error (Active Surah)
-  const [memorizationValidationError, setMemorizationValidationError] =
-    useState<string | null>(null);
-  const [isCheckingQuota, setIsCheckingQuota] = useState(false);
-
-  // Check Quota on Date Change (Backend handles week check too)
+  // Sync local state from editingSection
   useEffect(() => {
-    if (
-      !isOpen ||
-      !localSection?.date ||
-      !localSection?.group ||
-      !localSection?._id
-    )
-      return;
-
-    const timer = setTimeout(async () => {
-      setIsCheckingQuota(true);
-      const result = await checkSectionQuota(
-        localSection.group,
-        localSection.date,
-        localSection._id,
-      );
-      setIsCheckingQuota(false);
-
-      if (!result.allowed) {
-        setQuotaError(result.message || "لا يمكن التعديل لهذا التاريخ");
-      } else {
-        setQuotaError(null);
-      }
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [localSection?.date, localSection?.group, localSection?._id, isOpen]);
-
-  // Frontend Validation (Real-time)
-  const { consistencyErrors, hasConsistencyErrors } = useSectionValidation(
-    localMemorizationMeta,
-    localReviewMeta,
-  );
-
-  // ✅ V9: Auto-adjust review end when same surah memorization exists
-  // Rule: If memorization starts at X, review can only go up to X-1
-  useEffect(() => {
-    if (localReviewMeta.length === 0 || localMemorizationMeta.length === 0)
-      return;
-
-    const reviewSeg = localReviewMeta[0];
-    const memSeg = localMemorizationMeta[0];
-
-    // Check if same surah
-    if (
-      reviewSeg?.surahNumber &&
-      memSeg?.surahNumber &&
-      reviewSeg.surahNumber === memSeg.surahNumber
-    ) {
-      // If review end >= memorization start, adjust it
-      if (
-        reviewSeg.ayahEnd &&
-        memSeg.ayahStart &&
-        reviewSeg.ayahEnd >= memSeg.ayahStart
-      ) {
-        const adjustedEnd = memSeg.ayahStart - 1;
-        if (adjustedEnd >= 1) {
-          const adjustedReview = { ...reviewSeg, ayahEnd: adjustedEnd };
-          handleMetaChange("reviewMeta", [adjustedReview], onChange);
-        }
-      }
+    if (isOpen && editingSection) {
+      setLocalDate(editingSection.date || "");
+      setMemorizationText(editingSection.memorizationSection || "");
+      setReviewText(editingSection.reviewSection || "");
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [localMemorizationMeta]);
-
-  // ✅ V8: hasErrors checks quota (which includes week check from backend)
-  const hasErrors =
-    hasConsistencyErrors ||
-    !!quotaError ||
-    !!reviewValidationError ||
-    !!memorizationValidationError;
-  const allErrors = [...consistencyErrors];
-
-  if (memorizationValidationError) {
-    allErrors.push(memorizationValidationError);
-  }
-  if (reviewValidationError) {
-    allErrors.push(reviewValidationError);
-  }
+  }, [isOpen, editingSection]);
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!localSection) return;
+    if (!editingSection) return;
 
-    // Safety check just in case
-    if (hasErrors) return;
-
-    // Construct the payload with the latest local state
     const payload = {
-      ...localSection,
-      memorizationMeta: localMemorizationMeta,
-      reviewMeta: localReviewMeta,
-      // Ensure legacy fields if needed, or null them if using meta
-      // For now we keep legacy fields as is or empty if not used
+      ...editingSection,
+      date: localDate,
+      memorizationSection: memorizationText.trim(),
+      reviewSection: reviewText.trim(),
+      memorizationMeta: [],
+      reviewMeta: [],
     };
 
-    // Sync with parent before submit (optional if we pass payload)
-    syncWithParent(onChange);
-
-    // Pass event AND payload
     onSubmit(e, payload);
   };
 
-  if (!isOpen || !editingSection || !localSection) return null;
+  if (!isOpen || !editingSection) return null;
 
   const footerButtons = (
     <div className="flex gap-3 w-full">
@@ -170,19 +60,13 @@ const EditSectionModalComponent = ({
         type="submit"
         form="edit-section-form"
         variant="primary"
-        onMouseDown={(e) => e.preventDefault()} // Prevent blur to avoid layout shift from dropdown closing
-        className={`flex-[2] py-3 px-8 rounded-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 min-h-[52px] transition-all font-bold text-lg
-          ${
-            hasErrors
-              ? "bg-gray-400 cursor-not-allowed hover:bg-gray-400 hover:shadow-none hover:translate-y-0"
-              : "bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
-          }`}
-        disabled={isLoading || hasErrors || isCheckingQuota}
-        title={hasErrors ? "يرجى تصحيح الأخطاء أولاً" : "حفظ التغييرات"}>
-        {isLoading || isCheckingQuota ? (
+        onMouseDown={(e) => e.preventDefault()}
+        className="flex-[2] py-3 px-8 rounded-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 min-h-[52px] transition-all font-bold text-lg bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
+        disabled={isLoading}>
+        {isLoading ? (
           <span className="flex items-center justify-center gap-2">
             <span className="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-white"></span>
-            {isCheckingQuota ? "جاري التحقق من الحصة..." : "جاري التحديث..."}
+            جاري التحديث...
           </span>
         ) : (
           "حفظ التغييرات"
@@ -199,87 +83,79 @@ const EditSectionModalComponent = ({
       size="2xl"
       footer={footerButtons}>
       <form id="edit-section-form" onSubmit={handleFormSubmit}>
-        {/* Date Field Container */}
+        {/* Date Field */}
         <div className="mb-6 p-4 bg-gray-50 rounded-xl border border-gray-100">
           <DatePicker
             label="تاريخ التسميع"
-            value={localSection.date}
-            onChange={handleDateChange}
+            value={localDate}
+            onChange={(date) => setLocalDate(date)}
             required
           />
-
-          {/* ✅ V10: Quota Error Display - Enhanced styling */}
-          {quotaError && (
-            <div className="mt-4 p-4 bg-red-50 border-2 border-red-300 rounded-xl shadow-lg">
-              <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                  <span className="text-xl">❌</span>
-                </div>
-                <div className="flex-1 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-red-700 bg-yellow-100 px-2 py-0.5 rounded">
-                      ⚠️ تنبيه:
-                    </span>
-                  </div>
-                  <p className="text-sm font-bold text-red-800 whitespace-pre-line leading-relaxed">
-                    {quotaError}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
-        {/* Updated Input Structure */}
+        {/* Input Sections */}
         <div className="space-y-6">
-          <QuranSegmentInput
-            label="معلومات الحفظ"
-            colorClass="amber"
-            segments={localMemorizationMeta}
-            onChange={(segments) =>
-              handleMetaChange("memorizationMeta", segments, onChange)
-            }
-            groupName={localSection.group}
-            type="memorization"
-            excludeId={localSection._id}
-            completedSurahs={completedList.filter(
-              (s) => (s.type || "memorization") === "memorization",
-            )}
-            date={
-              localSection.date
-                ? new Date(localSection.date).toISOString()
-                : undefined
-            }
-            groupId={localSection.group}
-            onValidationError={setMemorizationValidationError}
-          />
+          {/* Memorization */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-amber-50 transition-colors">
+                  <BookOpen className="h-4 w-4 text-amber-700" />
+                </div>
+                <h4 className="text-base font-bold text-gray-800">الحفظ</h4>
+              </div>
+              {memorizationText && (
+                <button
+                  type="button"
+                  onClick={() => setMemorizationText("")}
+                  className="group p-1.5 rounded-full hover:bg-red-50 transition-all duration-200"
+                  title="مسح">
+                  <X className="h-4 w-4 text-gray-400 group-hover:text-red-500 transition-colors" />
+                </button>
+              )}
+            </div>
+            <div className="p-4 rounded-xl border bg-gray-50/50 border-gray-100">
+              <input
+                type="text"
+                autoComplete="off"
+                className="w-full rounded-xl border text-sm py-2.5 px-3 transition-all duration-200 outline-none border-gray-100 bg-white hover:border-gray-200 focus:border-amber-500 focus:ring-amber-500"
+                placeholder="اكتب الحفظ هنا... مثال: البقرة من آية 1 إلى 5"
+                value={memorizationText}
+                onChange={(e) => setMemorizationText(e.target.value)}
+              />
+            </div>
+          </div>
 
-          <QuranSegmentInput
-            label="معلومات المراجعة"
-            colorClass="emerald"
-            segments={localReviewMeta}
-            onChange={(segments) =>
-              handleMetaChange("reviewMeta", segments, onChange)
-            }
-            groupName={localSection.group}
-            type="review"
-            excludeId={localSection._id}
-            completedSurahs={completedList.filter(
-              (s) => (s.type || "memorization") === "review",
-            )}
-            date={
-              localSection.date
-                ? new Date(localSection.date).toISOString()
-                : undefined
-            }
-            onValidationError={setReviewValidationError}
-            groupId={localSection.group}
-          />
-        </div>
-
-        {/* Validation Errors */}
-        <div className="mt-6">
-          <ErrorMessageList errors={allErrors} />
+          {/* Review */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-emerald-50 transition-colors">
+                  <BookOpen className="h-4 w-4 text-emerald-700" />
+                </div>
+                <h4 className="text-base font-bold text-gray-800">المراجعة</h4>
+              </div>
+              {reviewText && (
+                <button
+                  type="button"
+                  onClick={() => setReviewText("")}
+                  className="group p-1.5 rounded-full hover:bg-red-50 transition-all duration-200"
+                  title="مسح">
+                  <X className="h-4 w-4 text-gray-400 group-hover:text-red-500 transition-colors" />
+                </button>
+              )}
+            </div>
+            <div className="p-4 rounded-xl border bg-gray-50/50 border-gray-100">
+              <input
+                type="text"
+                autoComplete="off"
+                className="w-full rounded-xl border text-sm py-2.5 px-3 transition-all duration-200 outline-none border-gray-100 bg-white hover:border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
+                placeholder="اكتب المراجعة هنا... مثال: آل عمران من آية 10 إلى 20"
+                value={reviewText}
+                onChange={(e) => setReviewText(e.target.value)}
+              />
+            </div>
+          </div>
         </div>
       </form>
     </Modal>
