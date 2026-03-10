@@ -113,7 +113,9 @@ export const uploadHeroImage = async (file: File): Promise<UploadResponse> => {
  * جلب صورة الهيرو الحالية
  */
 export const getHeroImage = async (): Promise<UploadResponse> => {
-  const response = await axios.get(`${API_URL}/upload/hero`);
+  const response = await axios.get(`${API_URL}/upload/hero`, {
+    params: { _t: Date.now() },
+  });
   return response.data;
 };
 

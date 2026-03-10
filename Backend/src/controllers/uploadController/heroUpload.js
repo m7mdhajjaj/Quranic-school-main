@@ -1,9 +1,11 @@
 /**
  * Hero Image Upload Controller
  * Handles hero image upload and retrieval
+ * Uses MongoDB Settings for instant availability (no Cloudinary search delay)
  */
 
 const { cloudinary } = require("../../config/cloudinary");
+const Settings = require("../../schema/Settings");
 
 /**
  * @desc    Upload hero image
@@ -19,11 +21,26 @@ const uploadHeroImage = async (req, res) => {
       });
     }
 
+    const url = req.file.path;
+    const publicId = req.file.filename;
+
+    // Save to MongoDB Settings for instant availability to all users
+    const saved = await Settings.setValue(
+      "heroImage",
+      { url, publicId },
+      "صورة الهيرو الرئيسية",
+    );
+    console.log("🖼️ Hero image saved to Settings:", {
+      url,
+      publicId,
+      savedId: saved?._id,
+    });
+
     res.json({
       success: true,
       message: "تم رفع صورة الهيرو بنجاح",
-      url: req.file.path,
-      publicId: req.file.filename,
+      url,
+      publicId,
     });
   } catch (error) {
     console.error("Upload hero error:", error);
@@ -42,7 +59,28 @@ const uploadHeroImage = async (req, res) => {
  */
 const getHeroImage = async (req, res) => {
   try {
-    // Get the list of resources in the Hero folder, sorted by uploaded_at desc
+    // Disable caching so every refresh gets latest data
+    res.set(
+      "Cache-Control",
+      "no-store, no-cache, must-revalidate, proxy-revalidate",
+    );
+    res.set("Pragma", "no-cache");
+    res.set("Expires", "0");
+    res.set("ETag", `"hero-${Date.now()}"`);
+
+    // Read from MongoDB Settings (instant, no Cloudinary search delay)
+    const heroData = await Settings.getValue("heroImage");
+    console.log("🖼️ Hero image from Settings:", heroData);
+
+    if (heroData && heroData.url) {
+      return res.json({
+        success: true,
+        url: heroData.url,
+        publicId: heroData.publicId || "",
+      });
+    }
+
+    // Fallback: try Cloudinary search if nothing in Settings yet
     const result = await cloudinary.search
       .expression("folder:quranic-school/Hero")
       .sort_by("uploaded_at", "desc")
@@ -50,18 +88,24 @@ const getHeroImage = async (req, res) => {
       .execute();
 
     if (result.resources && result.resources.length > 0) {
-      res.json({
-        success: true,
-        url: result.resources[0].secure_url,
-        publicId: result.resources[0].public_id,
-      });
-    } else {
-      res.json({
-        success: true,
-        url: null,
-        message: "لم يتم رفع صورة هيرو بعد",
-      });
+      const url = result.resources[0].secure_url;
+      const publicId = result.resources[0].public_id;
+
+      // Save to Settings for future instant reads
+      await Settings.setValue(
+        "heroImage",
+        { url, publicId },
+        "صورة الهيرو الرئيسية",
+      );
+
+      return res.json({ success: true, url, publicId });
     }
+
+    res.json({
+      success: true,
+      url: null,
+      message: "لم يتم رفع صورة هيرو بعد",
+    });
   } catch (error) {
     console.error("Get hero image error:", error);
     res.status(500).json({
@@ -126,7 +170,7 @@ const getAllHeroImages = async (req, res) => {
 const deleteHeroImage = async (req, res) => {
   try {
     const { publicId } = req.params;
-    
+
     if (!publicId) {
       return res.status(400).json({
         success: false,
@@ -140,6 +184,9 @@ const deleteHeroImage = async (req, res) => {
     const result = await cloudinary.uploader.destroy(decodedPublicId);
 
     if (result.result === "ok") {
+      // Clear from Settings too
+      await Settings.deleteValue("heroImage");
+
       res.json({
         success: true,
         message: "تم حذف الصورة بنجاح",
