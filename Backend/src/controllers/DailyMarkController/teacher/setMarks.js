@@ -7,7 +7,7 @@ const Section = require("../../../schema/DailyMark/Section");
 const { notifyMarksAdded } = require("../../../Notifications");
 const { createLogger } = require("../../../utils/logger");
 
-const logger = createLogger('SetMarks');
+const logger = createLogger("SetMarks");
 
 // استيراد الدوال المساعدة
 const {
@@ -24,7 +24,10 @@ const {
   sendCreated,
 } = require("../utils/responseHelpers");
 
-const { checkMarkEditWindow, validateMarksArray } = require("../utils/validationHelpers");
+const {
+  checkMarkEditWindow,
+  validateMarksArray,
+} = require("../utils/validationHelpers");
 
 /**
  * Add or update marks for many students in one section
@@ -46,16 +49,20 @@ exports.setMarks = async (req, res) => {
     }
 
     // ⏰ التحقق من نافذة التعديل الزمنية لكل الـ sections المتأثرة
-    const uniqueSectionIds = [...new Set(marks.map(m => m.sectionId?.toString()).filter(Boolean))];
+    const uniqueSectionIds = [
+      ...new Set(marks.map((m) => m.sectionId?.toString()).filter(Boolean)),
+    ];
     if (uniqueSectionIds.length > 0) {
-      const sections = await Section.find({ _id: { $in: uniqueSectionIds } }).select('date');
-      const sectionsMap = new Map(sections.map(s => [s._id.toString(), s]));
-      
+      const sections = await Section.find({
+        _id: { $in: uniqueSectionIds },
+      }).select("date");
+      const sectionsMap = new Map(sections.map((s) => [s._id.toString(), s]));
+
       // التحقق من كل section
       for (const sectionId of uniqueSectionIds) {
         const section = sectionsMap.get(sectionId);
         if (section) {
-          const windowCheck = checkMarkEditWindow(section.date, 'add');
+          const windowCheck = checkMarkEditWindow(section.date, "add");
           if (!windowCheck.isAllowed) {
             return sendValidationError(res, windowCheck.reason);
           }
@@ -67,7 +74,10 @@ exports.setMarks = async (req, res) => {
     const validatedMarks = [];
     for (const mark of marks) {
       if (!mark.studentId || !mark.sectionId) {
-        return sendValidationError(res, "studentId و sectionId مطلوبة لكل علامة");
+        return sendValidationError(
+          res,
+          "studentId و sectionId مطلوبة لكل علامة",
+        );
       }
       validatedMarks.push(mark);
     }
@@ -92,7 +102,7 @@ exports.setMarks = async (req, res) => {
 
     // Collect IDs using helper
     const { studentIds, sectionIds } = collectMarkIds(validatedMarks);
-    
+
     // Fetch updated marks - FILTER BY BOTH sectionIds AND studentIds
     // This prevents returning marks for all students in the section
     const updatedMarks = await Mark.find({
@@ -102,26 +112,27 @@ exports.setMarks = async (req, res) => {
       .populate("studentId", "firstName fatherName lastName group")
       .populate("sectionId");
 
-    // Update monthly averages for all affected students
-    await updateMultipleStudentsMonthlyAverage(Array.from(studentIds));
-
-    // Update marks status for all affected sections
-    await updateMultipleSectionsStatus(Array.from(sectionIds));
-
-    // 🔔 Send notifications to students
-    logger.debug("🔔 إرسال الإشعارات...");
+    // Send response IMMEDIATELY - don't block on background tasks
     const io = req.app.get("io");
-    // Use updatedMarks because it has populated sectionId and studentId
-    await notifyMarksAdded(updatedMarks, io);
-    logger.debug("✅ تم إرسال الإشعارات");
-
-    // 🔌 Emit Socket.IO event
     emitSocketEvent(io, "markCreated", {
       marks: updatedMarks,
       count: updatedMarks.length,
     });
 
-    sendCreated(res, updatedMarks, `تم إضافة/تحديث ${updatedMarks.length} علامة بنجاح`);
+    sendCreated(
+      res,
+      updatedMarks,
+      `تم إضافة/تحديث ${updatedMarks.length} علامة بنجاح`,
+    );
+
+    // Fire background tasks WITHOUT awaiting (non-blocking)
+    Promise.all([
+      updateMultipleStudentsMonthlyAverage(Array.from(studentIds)),
+      updateMultipleSectionsStatus(Array.from(sectionIds)),
+      notifyMarksAdded(updatedMarks, io).catch((e) =>
+        logger.error("Notification error:", e),
+      ),
+    ]).catch((err) => logger.error("Background task error:", err));
   } catch (error) {
     logger.error("❌ Error in setMarks:", error);
 
@@ -129,7 +140,10 @@ exports.setMarks = async (req, res) => {
       const validationErrors = Object.keys(error.errors)
         .map((field) => `${field}: ${error.errors[field].message}`)
         .join(", ");
-      return sendValidationError(res, `خطأ في التحقق من البيانات: ${validationErrors}`);
+      return sendValidationError(
+        res,
+        `خطأ في التحقق من البيانات: ${validationErrors}`,
+      );
     }
 
     sendError(res, error.message, 500, error);
@@ -170,7 +184,7 @@ exports.setMarksForSection = async (req, res) => {
           get: (key) => (key === "io" ? req.app.get("io") : null),
         },
       },
-      res
+      res,
     );
   } catch (error) {
     logger.error("Error in setMarksForSection:", error);

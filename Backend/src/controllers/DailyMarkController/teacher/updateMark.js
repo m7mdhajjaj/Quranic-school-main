@@ -7,7 +7,7 @@ const Section = require("../../../schema/DailyMark/Section");
 const { notifyMarkUpdated } = require("../../../Notifications");
 const { createLogger } = require("../../../utils/logger");
 
-const logger = createLogger('UpdateMark');
+const logger = createLogger("UpdateMark");
 
 // استيراد الدوال المساعدة
 const {
@@ -27,7 +27,10 @@ const {
   sendCreated,
 } = require("../utils/responseHelpers");
 
-const { validateMarkEditWindow, validateMarksArray } = require("../utils/validationHelpers");
+const {
+  validateMarkEditWindow,
+  validateMarksArray,
+} = require("../utils/validationHelpers");
 
 /**
  * Update or create a mark for a single student
@@ -47,13 +50,13 @@ exports.createOrUpdateMark = async (req, res) => {
     }
 
     // ⏰ التحقق من نافذة التعديل الزمنية
-    const section = await Section.findById(sectionId).select('date');
+    const section = await Section.findById(sectionId).select("date");
     if (!section) {
       return sendNotFound(res, "المقطع");
     }
-    
+
     try {
-      validateMarkEditWindow(section.date, 'add');
+      validateMarkEditWindow(section.date, "add");
     } catch (windowError) {
       return sendValidationError(res, windowError.message);
     }
@@ -94,31 +97,35 @@ exports.createOrUpdateMark = async (req, res) => {
 
     logger.debug("✅ تم حفظ العلامة بنجاح");
 
-    const statusCode = isNewMark ? 201 : 200;
-    const message = isNewMark ? "تم إضافة العلامة بنجاح" : "تم تحديث العلامة بنجاح";
+    const message = isNewMark
+      ? "تم إضافة العلامة بنجاح"
+      : "تم تحديث العلامة بنجاح";
 
-    // Perform background tasks (Awaiting them to ensure UI gets fresh data immediately)
-    // This fixes the "lagging progress bar" issue
-    try {
-        await Promise.all([
-            updateStudentMonthlyAverage(mark.studentId._id, mark.sectionId),
-            mark.sectionId && mark.sectionId._id ? updateSingleSectionStatus(mark.sectionId._id.toString()) : Promise.resolve(),
-            notifyMarkUpdated(mark, req.app.get("io"), isNewMark, oldTotalMark, (mark.reviewMark || 0) + (mark.memorizationMark || 0)).catch(e => logger.error('Notification error:', e))
-        ]);
-        
-        const io = req.app.get("io");
-        const eventName = isNewMark ? "markCreated" : "markUpdated";
-        emitSocketEvent(io, eventName, { mark, isNew: isNewMark });
-    } catch (err) {
-        logger.error("Background task error:", err);
-        // Continue even if background tasks fail, main mark is saved
-    }
-
+    // Send response IMMEDIATELY - don't block on background tasks
     if (isNewMark) {
       sendCreated(res, mark, message);
     } else {
       sendSuccess(res, mark, message);
     }
+
+    // Fire background tasks WITHOUT awaiting (non-blocking)
+    const io = req.app.get("io");
+    const eventName = isNewMark ? "markCreated" : "markUpdated";
+    emitSocketEvent(io, eventName, { mark, isNew: isNewMark });
+
+    Promise.all([
+      updateStudentMonthlyAverage(mark.studentId._id, mark.sectionId),
+      mark.sectionId && mark.sectionId._id
+        ? updateSingleSectionStatus(mark.sectionId._id.toString())
+        : Promise.resolve(),
+      notifyMarkUpdated(
+        mark,
+        io,
+        isNewMark,
+        oldTotalMark,
+        (mark.reviewMark || 0) + (mark.memorizationMark || 0),
+      ).catch((e) => logger.error("Notification error:", e)),
+    ]).catch((err) => logger.error("Background task error:", err));
   } catch (error) {
     logger.error("❌ Error in createOrUpdateMark:", error);
 
@@ -126,7 +133,10 @@ exports.createOrUpdateMark = async (req, res) => {
       const validationErrors = Object.keys(error.errors)
         .map((field) => `${field}: ${error.errors[field].message}`)
         .join(", ");
-      return sendValidationError(res, `خطأ في التحقق من البيانات: ${validationErrors}`);
+      return sendValidationError(
+        res,
+        `خطأ في التحقق من البيانات: ${validationErrors}`,
+      );
     }
 
     sendError(res, error.message, 500, error);
@@ -155,7 +165,7 @@ exports.updateMarkById = async (req, res) => {
     // ⏰ التحقق من نافذة التعديل الزمنية
     if (mark.sectionId && mark.sectionId.date) {
       try {
-        validateMarkEditWindow(mark.sectionId.date, 'update');
+        validateMarkEditWindow(mark.sectionId.date, "update");
       } catch (windowError) {
         return sendValidationError(res, windowError.message);
       }
@@ -176,18 +186,8 @@ exports.updateMarkById = async (req, res) => {
       .populate("studentId", "firstName fatherName lastName group")
       .populate("sectionId");
 
-    // Update monthly average & section status
-    await updateStudentMonthlyAverage(mark.studentId._id, mark.sectionId);
-    if (mark.sectionId && mark.sectionId._id) {
-      await updateSingleSectionStatus(mark.sectionId._id.toString());
-    }
-
-    // Send notification and Socket event
-    const newTotalMark = (mark.reviewMark || 0) + (mark.memorizationMark || 0);
-    logger.debug("🔔 إرسال الإشعار...");
+    // Send response IMMEDIATELY
     const io = req.app.get("io");
-    await notifyMarkUpdated(mark, io, false, oldTotalMark, newTotalMark);
-    
     emitSocketEvent(io, "markUpdated", { mark });
 
     res.json({
@@ -195,6 +195,18 @@ exports.updateMarkById = async (req, res) => {
       data: mark,
       message: "تم تحديث العلامة بنجاح",
     });
+
+    // Fire background tasks WITHOUT awaiting (non-blocking)
+    const newTotalMark = (mark.reviewMark || 0) + (mark.memorizationMark || 0);
+    Promise.all([
+      updateStudentMonthlyAverage(mark.studentId._id, mark.sectionId),
+      mark.sectionId && mark.sectionId._id
+        ? updateSingleSectionStatus(mark.sectionId._id.toString())
+        : Promise.resolve(),
+      notifyMarkUpdated(mark, io, false, oldTotalMark, newTotalMark).catch(
+        (e) => logger.error("Notification error:", e),
+      ),
+    ]).catch((err) => logger.error("Background task error:", err));
   } catch (error) {
     logger.error("❌ Error in updateMarkById:", error);
     res.status(500).json({
@@ -256,24 +268,34 @@ exports.updateMultipleMarks = async (req, res) => {
     // Collect IDs using helper
     const { studentIds, sectionIds } = collectMarkIds(updatedMarks);
 
-    // Batch update: Monthly averages for all affected students
-    if (studentIds.size > 0) {
-      await updateMultipleStudentsMonthlyAverage(Array.from(studentIds));
-    }
-
-    // Batch update: Section marks status
-    if (sectionIds.size > 0) {
-      await updateMultipleSectionsStatus(Array.from(sectionIds));
-    }
-
-    // Emit Socket.IO event using helper
+    // Send response IMMEDIATELY
     const io = req.app.get("io");
     emitSocketEvent(io, "marksUpdated", {
       marks: updatedMarks,
       count: updatedMarks.length,
     });
 
-    sendSuccess(res, updatedMarks, `تم تحديث ${updatedMarks.length} علامة بنجاح`);
+    sendSuccess(
+      res,
+      updatedMarks,
+      `تم تحديث ${updatedMarks.length} علامة بنجاح`,
+    );
+
+    // Fire background tasks WITHOUT awaiting (non-blocking)
+    const bgTasks = [];
+    if (studentIds.size > 0) {
+      bgTasks.push(
+        updateMultipleStudentsMonthlyAverage(Array.from(studentIds)),
+      );
+    }
+    if (sectionIds.size > 0) {
+      bgTasks.push(updateMultipleSectionsStatus(Array.from(sectionIds)));
+    }
+    if (bgTasks.length > 0) {
+      Promise.all(bgTasks).catch((err) =>
+        logger.error("Background task error:", err),
+      );
+    }
   } catch (error) {
     logger.error("Error in updateMultipleMarks:", error);
     sendError(res, "حدث خطأ أثناء تحديث العلامات", 500, error);
