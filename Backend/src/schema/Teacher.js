@@ -20,7 +20,7 @@ const groupSubSchema = new mongoose.Schema(
       min: [1, "رقم الحلقة يجب أن يكون أكبر من 0"],
     },
   },
-  { _id: false }
+  { _id: false },
 ); // منع إنشاء _id تلقائي للعناصر الفرعية
 
 const teacherSchema = new mongoose.Schema(
@@ -68,9 +68,13 @@ const teacherSchema = new mongoose.Schema(
     },
     phoneNumber: {
       type: String,
-      required: [true, "رقم الهاتف مطلوب"],
+      required: false,
       match: [/^05\d{8}$/, "الرقم يجب أن يبدأ بـ 05 ويتكوّن من 10 أرقام"],
       unique: true,
+      sparse: true,
+      trim: true,
+      set: (value) =>
+        typeof value === "string" && value.trim() === "" ? undefined : value,
     },
 
     // 👇 kept as String, but with regex check to ensure format (YYYY-MM-DD for example)
@@ -82,8 +86,13 @@ const teacherSchema = new mongoose.Schema(
 
     email: {
       type: String,
-      required: [true, "البريد الإلكتروني مطلوب"],
+      required: false,
       unique: true,
+      sparse: true,
+      lowercase: true,
+      trim: true,
+      set: (value) =>
+        typeof value === "string" && value.trim() === "" ? undefined : value,
       match: [
         /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
         "صيغة البريد الإلكتروني غير صحيحة",
@@ -150,11 +159,11 @@ const teacherSchema = new mongoose.Schema(
       },
     ],
   },
-  { 
+  {
     timestamps: true,
     toJSON: { virtuals: true },
-    toObject: { virtuals: true }
-  }
+    toObject: { virtuals: true },
+  },
 );
 
 // ====================================
@@ -198,7 +207,7 @@ teacherSchema.index(
       "groups.name": 8,
     },
     name: "teacher_text_search",
-  }
+  },
 );
 
 // ============================================================================
@@ -206,32 +215,32 @@ teacherSchema.index(
 // ============================================================================
 
 // حساب العمر تلقائياً من تاريخ الميلاد
-teacherSchema.pre('save', function (next) {
-  if (this.birthDate && this.isModified('birthDate')) {
+teacherSchema.pre("save", function (next) {
+  if (this.birthDate && this.isModified("birthDate")) {
     try {
       const birthYear = new Date(this.birthDate).getFullYear();
       const currentYear = new Date().getFullYear();
       this.age = currentYear - birthYear;
     } catch (error) {
-      console.error('Error calculating age:', error);
+      console.error("Error calculating age:", error);
     }
   }
   next();
 });
 
 // حساب العمر عند التحديث باستخدام findOneAndUpdate
-teacherSchema.pre('findOneAndUpdate', function (next) {
+teacherSchema.pre("findOneAndUpdate", function (next) {
   const update = this.getUpdate();
-  
+
   // Check for birthDate in both direct update and $set operator
   const birthDate = update?.birthDate || update?.$set?.birthDate;
-  
+
   if (birthDate) {
     try {
       const birthYear = new Date(birthDate).getFullYear();
       const currentYear = new Date().getFullYear();
       const calculatedAge = currentYear - birthYear;
-      
+
       // Set age in the appropriate location
       if (update.$set) {
         update.$set.age = calculatedAge;
@@ -239,10 +248,10 @@ teacherSchema.pre('findOneAndUpdate', function (next) {
         update.age = calculatedAge;
       }
     } catch (error) {
-      console.error('Error calculating age:', error);
+      console.error("Error calculating age:", error);
     }
   }
-  
+
   next();
 });
 
@@ -272,7 +281,10 @@ teacherSchema.post("findOneAndDelete", async function (doc) {
  */
 teacherSchema.pre("deleteMany", async function (next) {
   try {
-    const docs = await this.model.find(this.getQuery()).select("teacherId").lean();
+    const docs = await this.model
+      .find(this.getQuery())
+      .select("teacherId")
+      .lean();
     this._deletedDocs = docs;
     next();
   } catch (error) {
@@ -298,7 +310,9 @@ teacherSchema.post("deleteMany", async function () {
       await Counter.recycleMultipleIds("teacher", idsToRecycle);
     }
 
-    console.log(`♻️ [Teacher deleteMany hook] Recycled ${idsToRecycle.length} IDs`);
+    console.log(
+      `♻️ [Teacher deleteMany hook] Recycled ${idsToRecycle.length} IDs`,
+    );
   } catch (error) {
     console.error("❌ [Teacher post-deleteMany hook] Error:", error);
   }

@@ -1,13 +1,14 @@
 // Teacher Validation - متطابق مع Frontend validation
 // التحقق من صحة بيانات المعلمين - نفس المنطق المستخدم في الفرونت إند
-const { checkDuplicateFields } = require('../validators/duplicateChecker');
+const { checkDuplicateFields } = require("../validators/duplicateChecker");
 
 // تطبيع الجنس - نفس المنطق في Frontend
 const normalizeGender = (value) => {
   if (!value) return null;
   const normalized = value.toString().toLowerCase().trim();
-  if (normalized === 'male' || normalized === 'ذكر') return 'ذكر';
-  if (normalized === 'female' || normalized === 'أنثى' || normalized === 'انثى') return 'أنثى';
+  if (normalized === "male" || normalized === "ذكر") return "ذكر";
+  if (normalized === "female" || normalized === "أنثى" || normalized === "انثى")
+    return "أنثى";
   return value;
 };
 
@@ -28,11 +29,11 @@ const calculateAge = (birthDate) => {
 const validateTeacherData = async (req, res, next) => {
   try {
     const errors = {};
-    const { 
-      firstName, 
-      lastName, 
-      email, 
-      phoneNumber, 
+    const {
+      firstName,
+      lastName,
+      email,
+      phoneNumber,
       idNumber,
       birthDate,
       fatherName,
@@ -40,95 +41,118 @@ const validateTeacherData = async (req, res, next) => {
       motherName,
       residence,
       gender,
-      age
+      age,
     } = req.body;
 
-    const isNewTeacher = req.method === 'POST';
+    const isNewTeacher = req.method === "POST";
 
     // التحقق من الاسم الأول - مطلوب فقط للمعلمين الجدد
-    if (isNewTeacher && (!firstName || typeof firstName !== 'string' || firstName.trim().length === 0)) {
-      errors.firstName = 'الاسم الأول مطلوب';
-    } else if (firstName !== undefined && (typeof firstName !== 'string' || firstName.trim().length === 0)) {
-      errors.firstName = 'الاسم الأول يجب أن يكون نصاً غير فارغ';
+    if (
+      isNewTeacher &&
+      (!firstName ||
+        typeof firstName !== "string" ||
+        firstName.trim().length === 0)
+    ) {
+      errors.firstName = "الاسم الأول مطلوب";
+    } else if (
+      firstName !== undefined &&
+      (typeof firstName !== "string" || firstName.trim().length === 0)
+    ) {
+      errors.firstName = "الاسم الأول يجب أن يكون نصاً غير فارغ";
     }
 
     // التحقق من اسم العائلة - مطلوب فقط للمعلمين الجدد
-    if (isNewTeacher && (!lastName || typeof lastName !== 'string' || lastName.trim().length === 0)) {
-      errors.lastName = 'اسم العائلة مطلوب';
-    } else if (lastName !== undefined && (typeof lastName !== 'string' || lastName.trim().length === 0)) {
-      errors.lastName = 'اسم العائلة يجب أن يكون نصاً غير فارغ';
+    if (
+      isNewTeacher &&
+      (!lastName ||
+        typeof lastName !== "string" ||
+        lastName.trim().length === 0)
+    ) {
+      errors.lastName = "اسم العائلة مطلوب";
+    } else if (
+      lastName !== undefined &&
+      (typeof lastName !== "string" || lastName.trim().length === 0)
+    ) {
+      errors.lastName = "اسم العائلة يجب أن يكون نصاً غير فارغ";
     }
 
     // التحقق من رقم الهوية - مطلوب فقط للمعلمين الجدد
-    if (isNewTeacher && (!idNumber || typeof idNumber !== 'string')) {
-      errors.idNumber = 'رقم الهوية مطلوب';
+    if (isNewTeacher && (!idNumber || typeof idNumber !== "string")) {
+      errors.idNumber = "رقم الهوية مطلوب";
     } else if (idNumber !== undefined) {
-      if (typeof idNumber !== 'string') {
-        errors.idNumber = 'رقم الهوية يجب أن يكون نصاً';
+      if (typeof idNumber !== "string") {
+        errors.idNumber = "رقم الهوية يجب أن يكون نصاً";
       } else {
-        const cleanIdNumber = idNumber.replace(/\s+/g, '');
+        const cleanIdNumber = idNumber.replace(/\s+/g, "");
         if (!/^\d{9}$/.test(cleanIdNumber)) {
-          errors.idNumber = 'رقم الهوية يجب أن يتكون من 9 أرقام فقط';
+          errors.idNumber = "رقم الهوية يجب أن يتكون من 9 أرقام فقط";
         }
       }
     }
 
-    // التحقق من رقم الهاتف - مطلوب فقط للمعلمين الجدد
-    if (isNewTeacher && (!phoneNumber || typeof phoneNumber !== 'string')) {
-      errors.phoneNumber = 'رقم الهاتف مطلوب';
-    } else if (phoneNumber !== undefined) {
-      if (typeof phoneNumber !== 'string') {
-        errors.phoneNumber = 'رقم الهاتف يجب أن يكون نصاً';
+    // التحقق من رقم الهاتف - اختياري
+    if (
+      phoneNumber !== undefined &&
+      phoneNumber !== null &&
+      String(phoneNumber).trim() !== ""
+    ) {
+      if (typeof phoneNumber !== "string") {
+        errors.phoneNumber = "رقم الهاتف يجب أن يكون نصاً";
       } else {
-        const cleanPhone = phoneNumber.replace(/\s+/g, '');
+        const cleanPhone = phoneNumber.replace(/\s+/g, "");
         if (!/^05\d{8}$/.test(cleanPhone)) {
-          errors.phoneNumber = 'الرقم يجب أن يبدأ بـ 05 ويتكوّن من 10 أرقام';
+          errors.phoneNumber = "الرقم يجب أن يبدأ بـ 05 ويتكوّن من 10 أرقام";
         }
       }
     }
 
     // التحقق من تاريخ الميلاد - مطلوب فقط للمعلمين الجدد
-    if (isNewTeacher && (!birthDate || typeof birthDate !== 'string')) {
-      errors.birthDate = 'تاريخ الميلاد مطلوب';
+    if (isNewTeacher && (!birthDate || typeof birthDate !== "string")) {
+      errors.birthDate = "تاريخ الميلاد مطلوب";
     } else if (birthDate !== undefined) {
-      if (typeof birthDate !== 'string') {
-        errors.birthDate = 'تاريخ الميلاد يجب أن يكون نصاً';
+      if (typeof birthDate !== "string") {
+        errors.birthDate = "تاريخ الميلاد يجب أن يكون نصاً";
       } else if (!/^\d{4}-\d{2}-\d{2}/.test(birthDate)) {
-        errors.birthDate = 'صيغة التاريخ يجب أن تكون YYYY-MM-DD';
+        errors.birthDate = "صيغة التاريخ يجب أن تكون YYYY-MM-DD";
       } else {
         const birthDateObj = new Date(birthDate);
         if (birthDateObj > new Date()) {
-          errors.birthDate = 'تاريخ الميلاد لا يمكن أن يكون في المستقبل';
+          errors.birthDate = "تاريخ الميلاد لا يمكن أن يكون في المستقبل";
         }
       }
     }
 
-    // التحقق من البريد الإلكتروني - مطلوب فقط للمعلمين الجدد
-    if (isNewTeacher && (!email || typeof email !== 'string')) {
-      errors.email = 'البريد الإلكتروني مطلوب';
-    } else if (email !== undefined) {
-      if (typeof email !== 'string') {
-        errors.email = 'البريد الإلكتروني يجب أن يكون نصاً';
+    // التحقق من البريد الإلكتروني - اختياري
+    if (email !== undefined && email !== null && String(email).trim() !== "") {
+      if (typeof email !== "string") {
+        errors.email = "البريد الإلكتروني يجب أن يكون نصاً";
       } else {
         const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
         if (!emailRegex.test(email.trim())) {
-          errors.email = 'صيغة البريد الإلكتروني غير صحيحة';
+          errors.email = "صيغة البريد الإلكتروني غير صحيحة";
         }
       }
     }
 
     // التحقق من العمر إذا تم تمريره
     if (age !== undefined && age !== null) {
-      if (typeof age !== 'number' || age < 0) {
-        errors.age = 'العمر يجب أن يكون رقماً موجباً';
+      if (typeof age !== "number" || age < 0) {
+        errors.age = "العمر يجب أن يكون رقماً موجباً";
       }
     }
 
     // التحقق من الجنس إذا تم تمريره
     if (gender !== undefined && gender !== null) {
-      const allowedGenders = ['ذكر', 'أنثى', 'male', 'female', 'Male', 'Female'];
+      const allowedGenders = [
+        "ذكر",
+        "أنثى",
+        "male",
+        "female",
+        "Male",
+        "Female",
+      ];
       if (!allowedGenders.includes(gender)) {
-        errors.gender = 'الجنس يجب أن يكون ذكر أو أنثى';
+        errors.gender = "الجنس يجب أن يكون ذكر أو أنثى";
       }
     }
 
@@ -136,37 +160,40 @@ const validateTeacherData = async (req, res, next) => {
     if (Object.keys(errors).length > 0) {
       return res.status(400).json({
         success: false,
-        message: 'بيانات غير صحيحة',
-        errors
+        message: "بيانات غير صحيحة",
+        errors,
       });
     }
 
     // التحقق من التكرار باستخدام duplicateChecker
     // استخدام req.user.id عند التحديث من صفحة البروفايل (/api/me)
     // أو req.params.id عند التحديث من صفحة الإدارة (/api/teachers/:id)
-    const currentTeacherId = req.method === 'PUT' ? (req.params.id || req.user?.id || req.user?._id) : null;
+    const currentTeacherId =
+      req.method === "PUT"
+        ? req.params.id || req.user?.id || req.user?._id
+        : null;
     const duplicateError = await checkDuplicateFields(
       {
         email: email,
         phoneNumber: phoneNumber,
-        idNumber: idNumber
+        idNumber: idNumber,
       },
       currentTeacherId,
-      'teacher'
+      "teacher",
     );
-    
+
     if (duplicateError) {
-      console.log('❌ تكرار في البيانات:', duplicateError.message);
+      console.log("❌ تكرار في البيانات:", duplicateError.message);
       return res.status(400).json(duplicateError);
     }
 
     next();
   } catch (error) {
-    console.error('خطأ في validateTeacherData:', error);
+    console.error("خطأ في validateTeacherData:", error);
     res.status(500).json({
       success: false,
-      message: 'خطأ في التحقق من بيانات المعلم',
-      error: error.message
+      message: "خطأ في التحقق من بيانات المعلم",
+      error: error.message,
     });
   }
 };
@@ -175,93 +202,99 @@ const validateTeacherData = async (req, res, next) => {
 const validateTeacherGroups = (req, res, next) => {
   try {
     const { groups } = req.body;
-    
+
     // إذا لم يتم تمرير حلقات، استمر
     if (!groups) {
       req.body.groups = [];
       return next();
     }
-    
+
     // التأكد من أن groups مصفوفة
     if (!Array.isArray(groups)) {
       return res.status(400).json({
         success: false,
-        message: 'الحلقات يجب أن تكون مصفوفة',
-        field: 'groups'
+        message: "الحلقات يجب أن تكون مصفوفة",
+        field: "groups",
       });
     }
-    
+
     // التحقق من كل حلقة
     const validatedGroups = [];
-    
+
     for (let i = 0; i < groups.length; i++) {
       const group = groups[i];
-      
+
       // دعم البيانات القديمة (strings)
-      if (typeof group === 'string') {
+      if (typeof group === "string") {
         if (group.trim().length === 0) {
           return res.status(400).json({
             success: false,
             message: `الحلقة رقم ${i + 1} لا يمكن أن تكون فارغة`,
-            field: 'groups'
+            field: "groups",
           });
         }
-        
+
         // تحويل البيانات القديمة للبنية الجديدة
         validatedGroups.push({
           id: null,
           name: group.trim(),
-          number: i + 1
+          number: i + 1,
         });
         continue;
       }
-      
+
       // التحقق من البنية الجديدة
-      if (typeof group !== 'object' || group === null) {
+      if (typeof group !== "object" || group === null) {
         return res.status(400).json({
           success: false,
           message: `الحلقة رقم ${i + 1} يجب أن تكون كائناً صالحاً`,
-          field: 'groups'
+          field: "groups",
         });
       }
-      
+
       // التحقق من وجود الحقول المطلوبة
-      if (!group.name || typeof group.name !== 'string' || group.name.trim().length === 0) {
+      if (
+        !group.name ||
+        typeof group.name !== "string" ||
+        group.name.trim().length === 0
+      ) {
         return res.status(400).json({
           success: false,
           message: `اسم الحلقة رقم ${i + 1} مطلوب ويجب أن يكون نصاً غير فارغ`,
-          field: 'groups'
+          field: "groups",
         });
       }
-      
-      if (group.number !== undefined && (typeof group.number !== 'number' || group.number < 1)) {
+
+      if (
+        group.number !== undefined &&
+        (typeof group.number !== "number" || group.number < 1)
+      ) {
         return res.status(400).json({
           success: false,
           message: `رقم الحلقة ${i + 1} يجب أن يكون رقماً موجباً`,
-          field: 'groups'
+          field: "groups",
         });
       }
-      
+
       // إضافة الحلقة المتحقق منها
       validatedGroups.push({
         id: group.id || null,
         name: group.name.trim(),
-        number: group.number || i + 1
+        number: group.number || i + 1,
       });
     }
-    
+
     // تحديث البيانات المنظفة
     req.body.groups = validatedGroups;
-    
+
     console.log(`✅ تم التحقق من ${validatedGroups.length} حلقة للمعلم`);
     next();
-    
   } catch (error) {
-    console.error('خطأ في middleware validateTeacherGroups:', error);
+    console.error("خطأ في middleware validateTeacherGroups:", error);
     res.status(500).json({
       success: false,
-      message: 'خطأ في التحقق من بيانات الحلقات',
-      error: error.message
+      message: "خطأ في التحقق من بيانات الحلقات",
+      error: error.message,
     });
   }
 };
@@ -269,11 +302,11 @@ const validateTeacherGroups = (req, res, next) => {
 // تنظيف وتطبيع البيانات - متوافق مع Frontend
 const sanitizeTeacherData = (req, res, next) => {
   try {
-    const { 
-      firstName, 
-      lastName, 
-      email, 
-      phoneNumber, 
+    const {
+      firstName,
+      lastName,
+      email,
+      phoneNumber,
       idNumber,
       fatherName,
       grandFatherName,
@@ -281,47 +314,57 @@ const sanitizeTeacherData = (req, res, next) => {
       residence,
       gender,
       birthDate,
-      age
+      age,
     } = req.body;
-    
+
     // تنظيف النصوص
     const textFields = {
       firstName,
-      lastName, 
+      lastName,
       fatherName,
       grandFatherName,
       motherName,
-      residence
+      residence,
     };
-    
+
     for (const [field, value] of Object.entries(textFields)) {
-      if (value && typeof value === 'string') {
+      if (value && typeof value === "string") {
         req.body[field] = value.trim();
         // إزالة القيم الفارغة
-        if (req.body[field] === '') {
+        if (req.body[field] === "") {
           req.body[field] = null;
         }
-      } else if (value === '') {
+      } else if (value === "") {
         req.body[field] = null;
       }
     }
-    
+
     // تنظيف البريد الإلكتروني
-    if (email && typeof email === 'string') {
+    if (email && typeof email === "string") {
       req.body.email = email.trim().toLowerCase();
+      if (req.body.email === "") {
+        req.body.email = undefined;
+      }
+    } else if (email === "") {
+      req.body.email = undefined;
     }
-    
+
     // تنظيف أرقام الهاتف والهوية
-    if (phoneNumber && typeof phoneNumber === 'string') {
-      req.body.phoneNumber = phoneNumber.replace(/\s+/g, '');
+    if (phoneNumber && typeof phoneNumber === "string") {
+      req.body.phoneNumber = phoneNumber.replace(/\s+/g, "");
+      if (req.body.phoneNumber === "") {
+        req.body.phoneNumber = undefined;
+      }
+    } else if (phoneNumber === "") {
+      req.body.phoneNumber = undefined;
     }
-    
-    if (idNumber && typeof idNumber === 'string') {
-      req.body.idNumber = idNumber.replace(/\s+/g, '');
+
+    if (idNumber && typeof idNumber === "string") {
+      req.body.idNumber = idNumber.replace(/\s+/g, "");
     }
 
     // تطبيع الجنس
-    if (gender && typeof gender === 'string') {
+    if (gender && typeof gender === "string") {
       req.body.gender = normalizeGender(gender);
     }
 
@@ -332,7 +375,7 @@ const sanitizeTeacherData = (req, res, next) => {
 
     // ضمان القيم الافتراضية
     if (req.body.role === undefined) {
-      req.body.role = 'teacher';
+      req.body.role = "teacher";
     }
 
     if (req.body.isActive === undefined) {
@@ -347,16 +390,15 @@ const sanitizeTeacherData = (req, res, next) => {
     if (!req.body.groups) {
       req.body.groups = [];
     }
-    
-    console.log('✅ تم تنظيف وتطبيع بيانات المعلم');
+
+    console.log("✅ تم تنظيف وتطبيع بيانات المعلم");
     next();
-    
   } catch (error) {
-    console.error('خطأ في middleware sanitizeTeacherData:', error);
+    console.error("خطأ في middleware sanitizeTeacherData:", error);
     res.status(500).json({
       success: false,
-      message: 'خطأ في تنظيف بيانات المعلم',
-      error: error.message
+      message: "خطأ في تنظيف بيانات المعلم",
+      error: error.message,
     });
   }
 };

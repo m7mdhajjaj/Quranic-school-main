@@ -15,9 +15,30 @@ const Group = require("../../schema/Group");
  * @param {string} excludeType - نوع المستخدم المراد استثناؤه ('student', 'teacher', 'admin', 'secretary')
  * @returns {Object|null} - كائن الخطأ إذا وجد تكرار، null إذا لم يوجد
  */
-async function checkDuplicateFields(data, excludeId = null, excludeType = null) {
-  const { email, phoneNumber, idNumber } = data;
-  
+async function checkDuplicateFields(
+  data,
+  excludeId = null,
+  excludeType = null,
+) {
+  const normalizeText = (
+    value,
+    { lowercase = false, stripSpaces = false } = {},
+  ) => {
+    if (value === undefined || value === null) return null;
+    let normalized = String(value).trim();
+    if (stripSpaces) {
+      normalized = normalized.replace(/\s+/g, "");
+    }
+    if (lowercase) {
+      normalized = normalized.toLowerCase();
+    }
+    return normalized === "" ? null : normalized;
+  };
+
+  const email = normalizeText(data.email, { lowercase: true });
+  const phoneNumber = normalizeText(data.phoneNumber, { stripSpaces: true });
+  const idNumber = normalizeText(data.idNumber, { stripSpaces: true });
+
   // إعداد شروط الاستثناء
   const getExcludeQuery = (type) => {
     if (excludeId && excludeType === type) {
@@ -29,12 +50,21 @@ async function checkDuplicateFields(data, excludeId = null, excludeType = null) 
   try {
     // فحص رقم الهوية
     if (idNumber) {
-      const [existingStudent, existingTeacher, existingAdmin, existingSecretary, existingAssistant] = await Promise.all([
-        Student.findOne({ idNumber, ...getExcludeQuery('student') }),
-        Teacher.findOne({ idNumber, ...getExcludeQuery('teacher') }),
-        Admin.findOne({ idNumber, ...getExcludeQuery('admin') }),
-        Secretary.findOne({ idNumber, ...getExcludeQuery('secretary') }),
-        TeacherAssistant.findOne({ idNumber, ...getExcludeQuery('teacherAssistant') })
+      const [
+        existingStudent,
+        existingTeacher,
+        existingAdmin,
+        existingSecretary,
+        existingAssistant,
+      ] = await Promise.all([
+        Student.findOne({ idNumber, ...getExcludeQuery("student") }),
+        Teacher.findOne({ idNumber, ...getExcludeQuery("teacher") }),
+        Admin.findOne({ idNumber, ...getExcludeQuery("admin") }),
+        Secretary.findOne({ idNumber, ...getExcludeQuery("secretary") }),
+        TeacherAssistant.findOne({
+          idNumber,
+          ...getExcludeQuery("teacherAssistant"),
+        }),
       ]);
 
       if (existingStudent) {
@@ -44,7 +74,7 @@ async function checkDuplicateFields(data, excludeId = null, excludeType = null) 
           field: "idNumber",
           duplicateValue: idNumber,
           existingUserType: "طالب",
-          existingUserName: `${existingStudent.firstName} ${existingStudent.lastName}`
+          existingUserName: `${existingStudent.firstName} ${existingStudent.lastName}`,
         };
       }
 
@@ -55,7 +85,7 @@ async function checkDuplicateFields(data, excludeId = null, excludeType = null) 
           field: "idNumber",
           duplicateValue: idNumber,
           existingUserType: "معلم",
-          existingUserName: `${existingTeacher.firstName} ${existingTeacher.lastName}`
+          existingUserName: `${existingTeacher.firstName} ${existingTeacher.lastName}`,
         };
       }
 
@@ -66,7 +96,7 @@ async function checkDuplicateFields(data, excludeId = null, excludeType = null) 
           field: "idNumber",
           duplicateValue: idNumber,
           existingUserType: "مدير",
-          existingUserName: `${existingAdmin.firstName} ${existingAdmin.lastName}`
+          existingUserName: `${existingAdmin.firstName} ${existingAdmin.lastName}`,
         };
       }
 
@@ -77,7 +107,7 @@ async function checkDuplicateFields(data, excludeId = null, excludeType = null) 
           field: "idNumber",
           duplicateValue: idNumber,
           existingUserType: "سكرتير",
-          existingUserName: `${existingSecretary.firstName} ${existingSecretary.lastName}`
+          existingUserName: `${existingSecretary.firstName} ${existingSecretary.lastName}`,
         };
       }
 
@@ -88,19 +118,28 @@ async function checkDuplicateFields(data, excludeId = null, excludeType = null) 
           field: "idNumber",
           duplicateValue: idNumber,
           existingUserType: "مساعد مدرس",
-          existingUserName: `${existingAssistant.firstName} ${existingAssistant.lastName}`
+          existingUserName: `${existingAssistant.firstName} ${existingAssistant.lastName}`,
         };
       }
     }
 
     // فحص البريد الإلكتروني
     if (email) {
-      const [existingStudent, existingTeacher, existingAdmin, existingSecretary, existingAssistant] = await Promise.all([
-        Student.findOne({ email, ...getExcludeQuery('student') }),
-        Teacher.findOne({ email, ...getExcludeQuery('teacher') }),
-        Admin.findOne({ email, ...getExcludeQuery('admin') }),
-        Secretary.findOne({ email, ...getExcludeQuery('secretary') }),
-        TeacherAssistant.findOne({ email, ...getExcludeQuery('teacherAssistant') })
+      const [
+        existingStudent,
+        existingTeacher,
+        existingAdmin,
+        existingSecretary,
+        existingAssistant,
+      ] = await Promise.all([
+        Student.findOne({ email, ...getExcludeQuery("student") }),
+        Teacher.findOne({ email, ...getExcludeQuery("teacher") }),
+        Admin.findOne({ email, ...getExcludeQuery("admin") }),
+        Secretary.findOne({ email, ...getExcludeQuery("secretary") }),
+        TeacherAssistant.findOne({
+          email,
+          ...getExcludeQuery("teacherAssistant"),
+        }),
       ]);
 
       if (existingStudent) {
@@ -110,7 +149,7 @@ async function checkDuplicateFields(data, excludeId = null, excludeType = null) 
           field: "email",
           duplicateValue: email,
           existingUserType: "طالب",
-          existingUserName: `${existingStudent.firstName} ${existingStudent.lastName}`
+          existingUserName: `${existingStudent.firstName} ${existingStudent.lastName}`,
         };
       }
 
@@ -121,7 +160,7 @@ async function checkDuplicateFields(data, excludeId = null, excludeType = null) 
           field: "email",
           duplicateValue: email,
           existingUserType: "معلم",
-          existingUserName: `${existingTeacher.firstName} ${existingTeacher.lastName}`
+          existingUserName: `${existingTeacher.firstName} ${existingTeacher.lastName}`,
         };
       }
 
@@ -132,7 +171,7 @@ async function checkDuplicateFields(data, excludeId = null, excludeType = null) 
           field: "email",
           duplicateValue: email,
           existingUserType: "مدير",
-          existingUserName: `${existingAdmin.firstName} ${existingAdmin.lastName}`
+          existingUserName: `${existingAdmin.firstName} ${existingAdmin.lastName}`,
         };
       }
 
@@ -143,7 +182,7 @@ async function checkDuplicateFields(data, excludeId = null, excludeType = null) 
           field: "email",
           duplicateValue: email,
           existingUserType: "سكرتير",
-          existingUserName: `${existingSecretary.firstName} ${existingSecretary.lastName}`
+          existingUserName: `${existingSecretary.firstName} ${existingSecretary.lastName}`,
         };
       }
 
@@ -154,19 +193,28 @@ async function checkDuplicateFields(data, excludeId = null, excludeType = null) 
           field: "email",
           duplicateValue: email,
           existingUserType: "مساعد مدرس",
-          existingUserName: `${existingAssistant.firstName} ${existingAssistant.lastName}`
+          existingUserName: `${existingAssistant.firstName} ${existingAssistant.lastName}`,
         };
       }
     }
 
     // فحص رقم الهاتف
     if (phoneNumber) {
-      const [existingStudent, existingTeacher, existingAdmin, existingSecretary, existingAssistant] = await Promise.all([
-        Student.findOne({ phoneNumber, ...getExcludeQuery('student') }),
-        Teacher.findOne({ phoneNumber, ...getExcludeQuery('teacher') }),
-        Admin.findOne({ phoneNumber, ...getExcludeQuery('admin') }),
-        Secretary.findOne({ phoneNumber, ...getExcludeQuery('secretary') }),
-        TeacherAssistant.findOne({ phoneNumber, ...getExcludeQuery('teacherAssistant') })
+      const [
+        existingStudent,
+        existingTeacher,
+        existingAdmin,
+        existingSecretary,
+        existingAssistant,
+      ] = await Promise.all([
+        Student.findOne({ phoneNumber, ...getExcludeQuery("student") }),
+        Teacher.findOne({ phoneNumber, ...getExcludeQuery("teacher") }),
+        Admin.findOne({ phoneNumber, ...getExcludeQuery("admin") }),
+        Secretary.findOne({ phoneNumber, ...getExcludeQuery("secretary") }),
+        TeacherAssistant.findOne({
+          phoneNumber,
+          ...getExcludeQuery("teacherAssistant"),
+        }),
       ]);
 
       if (existingStudent) {
@@ -176,7 +224,7 @@ async function checkDuplicateFields(data, excludeId = null, excludeType = null) 
           field: "phoneNumber",
           duplicateValue: phoneNumber,
           existingUserType: "طالب",
-          existingUserName: `${existingStudent.firstName} ${existingStudent.lastName}`
+          existingUserName: `${existingStudent.firstName} ${existingStudent.lastName}`,
         };
       }
 
@@ -187,7 +235,7 @@ async function checkDuplicateFields(data, excludeId = null, excludeType = null) 
           field: "phoneNumber",
           duplicateValue: phoneNumber,
           existingUserType: "معلم",
-          existingUserName: `${existingTeacher.firstName} ${existingTeacher.lastName}`
+          existingUserName: `${existingTeacher.firstName} ${existingTeacher.lastName}`,
         };
       }
 
@@ -198,7 +246,7 @@ async function checkDuplicateFields(data, excludeId = null, excludeType = null) 
           field: "phoneNumber",
           duplicateValue: phoneNumber,
           existingUserType: "مدير",
-          existingUserName: `${existingAdmin.firstName} ${existingAdmin.lastName}`
+          existingUserName: `${existingAdmin.firstName} ${existingAdmin.lastName}`,
         };
       }
 
@@ -209,7 +257,7 @@ async function checkDuplicateFields(data, excludeId = null, excludeType = null) 
           field: "phoneNumber",
           duplicateValue: phoneNumber,
           existingUserType: "سكرتير",
-          existingUserName: `${existingSecretary.firstName} ${existingSecretary.lastName}`
+          existingUserName: `${existingSecretary.firstName} ${existingSecretary.lastName}`,
         };
       }
 
@@ -220,14 +268,13 @@ async function checkDuplicateFields(data, excludeId = null, excludeType = null) 
           field: "phoneNumber",
           duplicateValue: phoneNumber,
           existingUserType: "مساعد مدرس",
-          existingUserName: `${existingAssistant.firstName} ${existingAssistant.lastName}`
+          existingUserName: `${existingAssistant.firstName} ${existingAssistant.lastName}`,
         };
       }
     }
 
     // لا يوجد تكرار
     return null;
-
   } catch (error) {
     console.error("خطأ في التحقق من تكرار البيانات:", error);
     throw new Error("حدث خطأ أثناء التحقق من البيانات في قاعدة البيانات");
@@ -243,20 +290,30 @@ async function checkDuplicateFields(data, excludeId = null, excludeType = null) 
  * @param {string} excludeType - نوع المستخدم المراد استثناؤه
  * @returns {boolean} - true إذا وجد تكرار (تم إرسال استجابة خطأ), false إذا لم يوجد تكرار
  */
-async function validateAndCheckDuplicates(req, res, data, excludeId = null, excludeType = null) {
+async function validateAndCheckDuplicates(
+  req,
+  res,
+  data,
+  excludeId = null,
+  excludeType = null,
+) {
   try {
-    const duplicateError = await checkDuplicateFields(data, excludeId, excludeType);
-    
+    const duplicateError = await checkDuplicateFields(
+      data,
+      excludeId,
+      excludeType,
+    );
+
     if (duplicateError) {
       return res.status(400).json(duplicateError);
     }
-    
+
     return false; // لا يوجد تكرار
   } catch (error) {
     console.error("خطأ في التحقق من التكرار:", error);
     return res.status(500).json({
       success: false,
-      message: "حدث خطأ أثناء التحقق من البيانات"
+      message: "حدث خطأ أثناء التحقق من البيانات",
     });
   }
 }
@@ -273,7 +330,7 @@ async function checkDuplicateGroupName(groupName, excludeId = null) {
 
     // إعداد الاستعلام
     const query = { name: groupName.trim() };
-    
+
     // استثناء الحلقة الحالية عند التعديل
     if (excludeId) {
       query._id = { $ne: excludeId };
@@ -297,7 +354,6 @@ async function checkDuplicateGroupName(groupName, excludeId = null) {
 
     console.log(`✅ اسم الحلقة "${groupName}" متاح`);
     return null;
-
   } catch (error) {
     console.error("❌ خطأ في فحص تكرار اسم الحلقة:", error);
     throw new Error("حدث خطأ أثناء التحقق من اسم الحلقة في قاعدة البيانات");
@@ -312,10 +368,15 @@ async function checkDuplicateGroupName(groupName, excludeId = null) {
  * @param {string} excludeId - معرف الحلقة المراد استثناؤها
  * @returns {boolean} - true إذا وجد تكرار (تم إرسال استجابة خطأ), false إذا لم يوجد تكرار
  */
-async function validateAndCheckGroupName(req, res, groupName, excludeId = null) {
+async function validateAndCheckGroupName(
+  req,
+  res,
+  groupName,
+  excludeId = null,
+) {
   try {
     const duplicateError = await checkDuplicateGroupName(groupName, excludeId);
-    
+
     if (duplicateError) {
       return res.json({
         success: true,
@@ -325,7 +386,7 @@ async function validateAndCheckGroupName(req, res, groupName, excludeId = null) 
         existingGroupName: duplicateError.existingGroupName,
       });
     }
-    
+
     return res.json({
       success: true,
       isDuplicate: false,
@@ -335,7 +396,7 @@ async function validateAndCheckGroupName(req, res, groupName, excludeId = null) 
     console.error("خطأ في التحقق من تكرار اسم الحلقة:", error);
     return res.status(500).json({
       success: false,
-      message: "حدث خطأ أثناء التحقق من اسم الحلقة"
+      message: "حدث خطأ أثناء التحقق من اسم الحلقة",
     });
   }
 }
