@@ -1,6 +1,4 @@
 import { motion, AnimatePresence, MotionConfig } from "framer-motion";
-import { useNavigate } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
 import ForgotPasswordModal from "../ResetPassword/ForgotPasswordModal";
 import { LoginForm } from "./LoginForm";
 import { LoginCard } from "./LoginCard";
@@ -71,7 +69,6 @@ const LoginFormSection = ({
 // Main Login Component - مكون تسجيل الدخول الرئيسي
 // ============================================================================
 const Login = () => {
-  const navigate = useNavigate();
   const isMobile = useIsMobile();
 
   // Login logic hook
@@ -98,14 +95,6 @@ const Login = () => {
         className="relative min-h-screen overflow-hidden flex items-center justify-center p-2"
         dir="rtl"
         onClick={!isMobile ? addRipple : undefined}>
-        {/* Back to Welcome Button */}
-        <button
-          onClick={() => navigate("/welcome")}
-          className="fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-2 bg-white/90 backdrop-blur-sm text-emerald-600 font-medium rounded-xl shadow-lg hover:shadow-xl hover:bg-white transition-all duration-300">
-          <ArrowRight className="w-5 h-5" />
-          <span>الصفحة الرئيسية</span>
-        </button>
-
         {/* Click Ripples Effect — desktop only */}
         {!isMobile && <ClickRipples ripples={ripples} />}
 

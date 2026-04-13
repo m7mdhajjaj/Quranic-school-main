@@ -51,7 +51,7 @@ import NotFound from "./pages/NotFound";
 // ============================================================================
 // Guest Pages - صفحات الضيوف
 // ============================================================================
-import { WelcomePage, About, Contact, Privacy, Terms } from "./pages/Guest";
+import { About, Contact, Privacy, Terms } from "./pages/Guest";
 
 // ============================================================================
 // Page Components - Academic
@@ -141,8 +141,8 @@ const GuestRoutes: React.FC = () => {
       {/* ============================================
           صفحات بدون هيدر - No Header Pages
           ============================================ */}
-      <Route path="/" element={<WelcomePage />} />
-      <Route path="/welcome" element={<WelcomePage />} />
+      <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route path="/welcome" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<Login />} />
 
       {/* ============================================
@@ -206,9 +206,9 @@ const GuestRoutes: React.FC = () => {
       />
 
       {/* ============================================
-          Fallback - إعادة توجيه لصفحة الترحيب
+          Fallback - إعادة توجيه لصفحة تسجيل الدخول
           ============================================ */}
-      <Route path="*" element={<WelcomePage />} />
+      <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
 };
@@ -237,7 +237,7 @@ const AdminRoutes: React.FC = () => {
             الصفحة الرئيسية - Dashboard
             ============================================ */}
         <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
-        <Route path="/welcome" element={<WelcomePage />} />
+        <Route path="/welcome" element={<Navigate to="/login" replace />} />
         <Route
           path="/admin"
           element={<Navigate to="/admin/dashboard" replace />}
@@ -325,7 +325,7 @@ const TeacherRoutes: React.FC = () => {
             الصفحة الرئيسية وتسجيل الدخول
             ============================================ */}
         <Route path="/" element={<Home />} />
-        <Route path="/welcome" element={<WelcomePage />} />
+        <Route path="/welcome" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<Login />} />
 
         {/* ============================================
@@ -439,7 +439,7 @@ const SecretaryRoutes: React.FC = () => {
             ============================================ */}
         <Route path="/" element={<Home />} />
         <Route path="/home" element={<Home />} />
-        <Route path="/welcome" element={<WelcomePage />} />
+        <Route path="/welcome" element={<Navigate to="/login" replace />} />
         <Route path="/secretary" element={<Navigate to="/" replace />} />
         <Route
           path="/secretary/dashboard"
@@ -530,7 +530,7 @@ const TeacherAssistantRoutes: React.FC = () => {
             ============================================ */}
         <Route path="/" element={<Home />} />
         <Route path="/home" element={<Home />} />
-        <Route path="/welcome" element={<WelcomePage />} />
+        <Route path="/welcome" element={<Navigate to="/login" replace />} />
 
         {/* ============================================
             الأهداف - Goals
@@ -604,7 +604,7 @@ const StudentRoutes: React.FC = () => {
             الصفحة الرئيسية وتسجيل الدخول
             ============================================ */}
         <Route path="/" element={<Home />} />
-        <Route path="/welcome" element={<WelcomePage />} />
+        <Route path="/welcome" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<Login />} />
 
         {/* ============================================
