@@ -15,7 +15,6 @@ const DashboardAttendanceService = require("./services/DashboardService/GetStude
 const AttendanceService = require("./services/Attendance/AttendanceService");
 const WarningJob = require("./Notifications/Jobs/WarningJob");
 const TokenCleanupJob = require("./Notifications/Jobs/TokenCleanupJob");
-const PrayerJob = require("./Notifications/Jobs/PrayerJob");
 const ScheduleReminderJob = require("./Notifications/Jobs/ScheduleReminderJob");
 
 // Connect to MongoDB
@@ -329,11 +328,6 @@ console.log("⚠️ خدمة إنفاذ قرارات الفصل تم تفعيل�
 // تشغيل Cron Job لتنظيف FCM tokens القديمة
 TokenCleanupJob.start();
 console.log("🧹 خدمة تنظيف FCM tokens القديمة تم تفعيلها");
-
-// تشغيل Cron Job لإشعارات الصلاة
-const prayerJob = new PrayerJob(io);
-prayerJob.setupPrayerNotifications();
-console.log("🕌 خدمة إشعارات الصلاة تم تفعيلها");
 
 // تشغيل Cron Job لتذكير بالمواعيد
 const scheduleReminderJob = new ScheduleReminderJob(global.notificationService);

@@ -8,10 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { useNotificationsSocket } from "../../Socket";
 import { useFirebaseMessaging } from "@/hooks/useFirebaseMessaging";
 import { useSound } from "@/components/Hooks/useSounds";
-import {
-  useNotificationDataOptimized as useNotificationData,
-  usePrayerAlerts,
-} from "./hooks";
+import { useNotificationDataOptimized as useNotificationData } from "./hooks";
 import type {
   Notification,
   NotificationHeaderProps,
@@ -56,9 +53,6 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
 
   // إدارة الأصوات
   const { playSound } = useSound();
-
-  // تنبيهات الصلاة
-  usePrayerAlerts();
 
   // Navigation
   const navigate = useNavigate();
