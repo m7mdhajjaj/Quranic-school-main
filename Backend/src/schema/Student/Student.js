@@ -31,11 +31,31 @@ const studentSchema = new mongoose.Schema(
     // لا تخزن كلمة المرور نصًا عاديًا
     password: { type: String, required: [true, "كلمة المرور مطلوبة"] },
 
-    firstName: { type: String, required: [true, "الاسم الأول مطلوب"], default: "" },
-    fatherName: { type: String, required: [true, "اسم الأب مطلوب"], default: "" },
-    grandFatherName: { type: String, required: [true, "اسم الجد مطلوب"], default: "" },
-    motherName: { type: String, required: [true, "اسم الأم مطلوب"], default: "" },
-    lastName: { type: String, required: [true, "اسم العائلة مطلوب"], default: "" },
+    firstName: {
+      type: String,
+      required: [true, "الاسم الأول مطلوب"],
+      default: "",
+    },
+    fatherName: {
+      type: String,
+      required: [true, "اسم الأب مطلوب"],
+      default: "",
+    },
+    grandFatherName: {
+      type: String,
+      required: [true, "اسم الجد مطلوب"],
+      default: "",
+    },
+    motherName: {
+      type: String,
+      required: [true, "اسم الأم مطلوب"],
+      default: "",
+    },
+    lastName: {
+      type: String,
+      required: [true, "اسم العائلة مطلوب"],
+      default: "",
+    },
 
     birthDate: { type: Date, required: [true, "تاريخ الميلاد مطلوب"] },
 
@@ -71,7 +91,11 @@ const studentSchema = new mongoose.Schema(
       },
     },
 
-    residence: { type: String, required: [true, "مكان السكن مطلوب"], default: "" },
+    residence: {
+      type: String,
+      required: [true, "مكان السكن مطلوب"],
+      default: "",
+    },
     teacher: {
       type: String,
       required: false, // اختياري - يُحدد تلقائياً من الحلقة
@@ -90,9 +114,13 @@ const studentSchema = new mongoose.Schema(
     },
     phoneNumber: {
       type: String,
-      required: [true, "رقم الهاتف مطلوب"],
+      required: false,
       match: [/^05\d{8}$/, "الرقم يجب أن يبدأ بـ 05 ويتكوّن من 10 أرقام"],
       unique: true,
+      sparse: true,
+      trim: true,
+      set: (value) =>
+        typeof value === "string" && value.trim() === "" ? undefined : value,
     },
     avatar: {
       url: { type: String },
@@ -122,11 +150,11 @@ const studentSchema = new mongoose.Schema(
     ],
   },
 
-  { 
+  {
     timestamps: true,
     toJSON: { virtuals: true },
-    toObject: { virtuals: true }
-  }
+    toObject: { virtuals: true },
+  },
 );
 
 // إضافة فهارس مركبة لتحسين أداء البحث
@@ -156,7 +184,9 @@ studentSchema.post("save", async function (doc) {
 studentSchema.pre("findOneAndUpdate", async function (next) {
   try {
     // حفظ الحلقة القديمة قبل التحديث
-    const docToUpdate = await this.model.findOne(this.getQuery()).select("group");
+    const docToUpdate = await this.model
+      .findOne(this.getQuery())
+      .select("group");
     this._oldGroup = docToUpdate?.group;
     next();
   } catch (error) {
@@ -173,17 +203,20 @@ studentSchema.post("findOneAndUpdate", async function (doc) {
     if (!doc) return;
 
     const Group = mongoose.model("Group");
-    
+
     // الحصول على التحديث المطبق
     const update = this.getUpdate() || {};
-    const newGroup = update.group || (update.$set && update.$set.group) || doc.group;
-    
+    const newGroup =
+      update.group || (update.$set && update.$set.group) || doc.group;
+
     // استخدام الحلقة القديمة المحفوظة من pre hook
     const oldGroup = this._oldGroup;
 
     // تحديث الحلقات المتأثرة فقط إذا تغيرت الحلقة
     if (oldGroup !== newGroup) {
-      console.log(`🔄 [Student update hook] Updating groups: "${oldGroup}" → "${newGroup}"`);
+      console.log(
+        `🔄 [Student update hook] Updating groups: "${oldGroup}" → "${newGroup}"`,
+      );
       await Group.recalculateActiveStatusOnStudentMove(oldGroup, newGroup);
     }
   } catch (error) {
@@ -197,7 +230,7 @@ studentSchema.post("findOneAndUpdate", async function (doc) {
 studentSchema.post("findOneAndDelete", async function (doc) {
   try {
     if (!doc) return;
-    
+
     if (doc.group && doc.group !== "غير محدد") {
       const Group = mongoose.model("Group");
       await Group.recalculateActiveStatusByName(doc.group);
@@ -219,7 +252,10 @@ studentSchema.post("findOneAndDelete", async function (doc) {
 studentSchema.pre("deleteMany", async function (next) {
   try {
     // حفظ الـ IDs قبل الحذف
-    const docs = await this.model.find(this.getQuery()).select("studentId group").lean();
+    const docs = await this.model
+      .find(this.getQuery())
+      .select("studentId group")
+      .lean();
     this._deletedDocs = docs;
     next();
   } catch (error) {
@@ -247,22 +283,26 @@ studentSchema.post("deleteMany", async function () {
     }
 
     // تحديث الحلقات المتأثرة
-    const affectedGroups = [...new Set(
-      deletedDocs
-        .map((doc) => doc.group)
-        .filter((g) => g && g !== "غير محدد")
-    )];
+    const affectedGroups = [
+      ...new Set(
+        deletedDocs
+          .map((doc) => doc.group)
+          .filter((g) => g && g !== "غير محدد"),
+      ),
+    ];
 
     if (affectedGroups.length > 0) {
       const Group = mongoose.model("Group");
       await Promise.all(
         affectedGroups.map((groupName) =>
-          Group.recalculateActiveStatusByName(groupName)
-        )
+          Group.recalculateActiveStatusByName(groupName),
+        ),
       );
     }
 
-    console.log(`♻️ [Student deleteMany hook] Recycled ${idsToRecycle.length} IDs`);
+    console.log(
+      `♻️ [Student deleteMany hook] Recycled ${idsToRecycle.length} IDs`,
+    );
   } catch (error) {
     console.error("❌ [Student post-deleteMany hook] Error:", error);
   }
@@ -283,8 +323,8 @@ studentSchema.virtual("computedAge").get(function () {
 // ============================================================================
 
 // حساب العمر تلقائياً من تاريخ الميلاد
-studentSchema.pre('save', function (next) {
-  if (this.birthDate && this.isModified('birthDate')) {
+studentSchema.pre("save", function (next) {
+  if (this.birthDate && this.isModified("birthDate")) {
     try {
       const today = new Date();
       let age = today.getFullYear() - this.birthDate.getFullYear();
@@ -294,19 +334,19 @@ studentSchema.pre('save', function (next) {
       }
       this.age = age;
     } catch (error) {
-      console.error('Error calculating age:', error);
+      console.error("Error calculating age:", error);
     }
   }
   next();
 });
 
 // حساب العمر عند التحديث باستخدام findOneAndUpdate
-studentSchema.pre('findOneAndUpdate', function (next) {
+studentSchema.pre("findOneAndUpdate", function (next) {
   const update = this.getUpdate();
-  
+
   // Check for birthDate in both direct update and $set operator
   const birthDate = update?.birthDate || update?.$set?.birthDate;
-  
+
   if (birthDate) {
     try {
       const today = new Date();
@@ -316,7 +356,7 @@ studentSchema.pre('findOneAndUpdate', function (next) {
       if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
         age--;
       }
-      
+
       // Set age in the appropriate location
       if (update.$set) {
         update.$set.age = age;
@@ -324,10 +364,10 @@ studentSchema.pre('findOneAndUpdate', function (next) {
         update.age = age;
       }
     } catch (error) {
-      console.error('Error calculating age:', error);
+      console.error("Error calculating age:", error);
     }
   }
-  
+
   next();
 });
 

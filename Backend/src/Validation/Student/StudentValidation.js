@@ -1,23 +1,24 @@
 // Student Validation - متطابق مع Frontend validation
 // التحقق من صحة بيانات الطلاب - نفس المنطق المستخدم في الفرونت إند
-const { checkDuplicateFields } = require('../validators/duplicateChecker');
+const { checkDuplicateFields } = require("../validators/duplicateChecker");
 
 // تطبيع الجنس - نفس المنطق في Frontend
 const normalizeGender = (value) => {
   if (!value) return null;
   const normalized = value.toString().toLowerCase().trim();
-  if (normalized === 'male' || normalized === 'ذكر') return 'ذكر';
-  if (normalized === 'female' || normalized === 'أنثى' || normalized === 'انثى') return 'أنثى';
+  if (normalized === "male" || normalized === "ذكر") return "ذكر";
+  if (normalized === "female" || normalized === "أنثى" || normalized === "انثى")
+    return "أنثى";
   return value;
 };
 
 // تطبيع الأسماء المركبة - إزالة الفراغ بعد "عبد"
 // مثال: "عبد الرحمن" → "عبدالرحمن"، "عبد الله" → "عبدالله"
 const normalizeCompoundNames = (value) => {
-  if (!value || typeof value !== 'string') return value;
-  
+  if (!value || typeof value !== "string") return value;
+
   // إزالة الفراغ بين "عبد" و (ا، أ، إ)
-  return value.replace(/عبد\s+([اأإ])/gi, 'عبد$1');
+  return value.replace(/عبد\s+([اأإ])/gi, "عبد$1");
 };
 
 // حساب العمر من تاريخ الميلاد
@@ -37,181 +38,225 @@ const calculateAge = (birthDate) => {
 const validateStudentData = async (req, res, next) => {
   try {
     const errors = {};
-    const { 
-      firstName, 
+    const {
+      firstName,
       fatherName,
       grandFatherName,
       motherName,
-      lastName, 
-      email, 
-      phoneNumber, 
+      lastName,
+      email,
+      phoneNumber,
       idNumber,
       birthDate,
       gender,
       residence,
       teacher,
       group,
-      age
+      age,
     } = req.body;
 
-    const isNewStudent = req.method === 'POST';
-    const isUpdate = req.method === 'PUT';
+    const isNewStudent = req.method === "POST";
+    const isUpdate = req.method === "PUT";
 
     // التحقق من الاسم الأول - مطلوب دائماً
-    if (!firstName || typeof firstName !== 'string' || firstName.trim().length === 0) {
-      errors.firstName = 'الاسم الأول مطلوب';
+    if (
+      !firstName ||
+      typeof firstName !== "string" ||
+      firstName.trim().length === 0
+    ) {
+      errors.firstName = "الاسم الأول مطلوب";
     }
 
     // التحقق من اسم الأب - مطلوب للطلاب الجدد فقط
-    if (isNewStudent && (!fatherName || typeof fatherName !== 'string' || fatherName.trim().length === 0)) {
-      errors.fatherName = 'اسم الأب مطلوب';
+    if (
+      isNewStudent &&
+      (!fatherName ||
+        typeof fatherName !== "string" ||
+        fatherName.trim().length === 0)
+    ) {
+      errors.fatherName = "اسم الأب مطلوب";
     }
 
     // التحقق من اسم الجد - مطلوب للطلاب الجدد فقط
-    if (isNewStudent && (!grandFatherName || typeof grandFatherName !== 'string' || grandFatherName.trim().length === 0)) {
-      errors.grandFatherName = 'اسم الجد مطلوب';
+    if (
+      isNewStudent &&
+      (!grandFatherName ||
+        typeof grandFatherName !== "string" ||
+        grandFatherName.trim().length === 0)
+    ) {
+      errors.grandFatherName = "اسم الجد مطلوب";
     }
 
     // التحقق من اسم الأم - مطلوب للطلاب الجدد فقط
-    if (isNewStudent && (!motherName || typeof motherName !== 'string' || motherName.trim().length === 0)) {
-      errors.motherName = 'اسم الأم مطلوب';
+    if (
+      isNewStudent &&
+      (!motherName ||
+        typeof motherName !== "string" ||
+        motherName.trim().length === 0)
+    ) {
+      errors.motherName = "اسم الأم مطلوب";
     }
 
     // التحقق من اسم العائلة - مطلوب للطلاب الجدد فقط
-    if (isNewStudent && (!lastName || typeof lastName !== 'string' || lastName.trim().length === 0)) {
-      errors.lastName = 'اسم العائلة مطلوب';
+    if (
+      isNewStudent &&
+      (!lastName ||
+        typeof lastName !== "string" ||
+        lastName.trim().length === 0)
+    ) {
+      errors.lastName = "اسم العائلة مطلوب";
     }
 
     // التحقق من رقم الهوية - مطلوب للطلاب الجدد، اختياري للتحديث
-    if (idNumber !== undefined && idNumber !== null && idNumber !== '') {
-      if (typeof idNumber !== 'string') {
-        errors.idNumber = 'رقم الهوية يجب أن يكون نصاً';
+    if (idNumber !== undefined && idNumber !== null && idNumber !== "") {
+      if (typeof idNumber !== "string") {
+        errors.idNumber = "رقم الهوية يجب أن يكون نصاً";
       } else {
-        const cleanIdNumber = idNumber.replace(/\s+/g, '');
+        const cleanIdNumber = idNumber.replace(/\s+/g, "");
         if (!/^\d{9}$/.test(cleanIdNumber)) {
-          errors.idNumber = 'رقم الهوية يجب أن يتكون من 9 أرقام فقط';
+          errors.idNumber = "رقم الهوية يجب أن يتكون من 9 أرقام فقط";
         }
       }
     } else if (isNewStudent) {
-      errors.idNumber = 'رقم الهوية مطلوب';
+      errors.idNumber = "رقم الهوية مطلوب";
     }
 
     // التحقق من تاريخ الميلاد - مطلوب للطلاب الجدد
-    if (isNewStudent && (!birthDate || birthDate === '')) {
-      errors.birthDate = 'تاريخ الميلاد مطلوب';
-    } else if (birthDate !== undefined && birthDate !== null && birthDate !== '') {
-      if (typeof birthDate !== 'string') {
-        errors.birthDate = 'تاريخ الميلاد يجب أن يكون نصاً';
+    if (isNewStudent && (!birthDate || birthDate === "")) {
+      errors.birthDate = "تاريخ الميلاد مطلوب";
+    } else if (
+      birthDate !== undefined &&
+      birthDate !== null &&
+      birthDate !== ""
+    ) {
+      if (typeof birthDate !== "string") {
+        errors.birthDate = "تاريخ الميلاد يجب أن يكون نصاً";
       } else {
         // التحقق من صيغة YYYY-MM-DD
         if (!/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) {
-          errors.birthDate = 'صيغة تاريخ الميلاد يجب أن تكون YYYY-MM-DD';
+          errors.birthDate = "صيغة تاريخ الميلاد يجب أن تكون YYYY-MM-DD";
         } else {
           const birthDateObj = new Date(birthDate);
           if (isNaN(birthDateObj.getTime())) {
-            errors.birthDate = 'تاريخ الميلاد غير صحيح';
+            errors.birthDate = "تاريخ الميلاد غير صحيح";
           } else if (birthDateObj > new Date()) {
-            errors.birthDate = 'تاريخ الميلاد لا يمكن أن يكون في المستقبل';
+            errors.birthDate = "تاريخ الميلاد لا يمكن أن يكون في المستقبل";
           }
         }
       }
     }
 
     // التحقق من الجنس - اختياري ولكن إذا تم إدخاله يجب أن يكون صحيحاً
-    if (gender !== undefined && gender !== null && gender !== '') {
-      if (typeof gender !== 'string') {
-        errors.gender = 'الجنس يجب أن يكون نصاً';
+    if (gender !== undefined && gender !== null && gender !== "") {
+      if (typeof gender !== "string") {
+        errors.gender = "الجنس يجب أن يكون نصاً";
       } else {
-        const allowedGenders = ['ذكر', 'أنثى', 'male', 'female', 'Male', 'Female'];
+        const allowedGenders = [
+          "ذكر",
+          "أنثى",
+          "male",
+          "female",
+          "Male",
+          "Female",
+        ];
         if (!allowedGenders.includes(gender)) {
-          errors.gender = 'الجنس يجب أن يكون ذكر أو أنثى';
+          errors.gender = "الجنس يجب أن يكون ذكر أو أنثى";
         }
       }
     }
 
     // التحقق من مكان السكن - اختياري
-    if (residence !== undefined && residence !== null && residence !== '') {
-      if (typeof residence !== 'string' || residence.trim().length === 0) {
-        errors.residence = 'مكان السكن غير صحيح';
+    if (residence !== undefined && residence !== null && residence !== "") {
+      if (typeof residence !== "string" || residence.trim().length === 0) {
+        errors.residence = "مكان السكن غير صحيح";
       }
     }
 
     // التحقق من المعلم - اختياري (يتم الحصول عليه من الحلقة)
-    if (teacher !== undefined && teacher !== null && teacher !== '') {
-      if (typeof teacher !== 'string' || teacher.trim().length === 0) {
-        errors.teacher = 'اسم المعلم غير صحيح';
+    if (teacher !== undefined && teacher !== null && teacher !== "") {
+      if (typeof teacher !== "string" || teacher.trim().length === 0) {
+        errors.teacher = "اسم المعلم غير صحيح";
       }
     }
 
     // التحقق من الحلقة - مطلوب للطلاب الجدد فقط
-    if (isNewStudent && (!group || typeof group !== 'string' || group.trim().length === 0)) {
-      errors.group = 'اسم الحلقة مطلوب';
+    if (
+      isNewStudent &&
+      (!group || typeof group !== "string" || group.trim().length === 0)
+    ) {
+      errors.group = "اسم الحلقة مطلوب";
     }
 
-    // التحقق من رقم الهاتف - اختياري ولكن إذا تم إدخاله يجب أن يكون صحيحاً
-    if (phoneNumber !== undefined && phoneNumber !== null && phoneNumber !== '') {
-      if (typeof phoneNumber !== 'string') {
-        errors.phoneNumber = 'رقم الهاتف يجب أن يكون نصاً';
+    // التحقق من رقم الهاتف - اختياري
+    if (
+      phoneNumber !== undefined &&
+      phoneNumber !== null &&
+      String(phoneNumber).trim() !== ""
+    ) {
+      if (typeof phoneNumber !== "string") {
+        errors.phoneNumber = "رقم الهاتف يجب أن يكون نصاً";
       } else {
-        const cleanPhone = phoneNumber.replace(/\s+/g, '');
+        const cleanPhone = phoneNumber.replace(/\s+/g, "");
         if (!/^05\d{8}$/.test(cleanPhone)) {
-          errors.phoneNumber = 'الرقم يجب أن يبدأ بـ 05 ويتكوّن من 10 أرقام';
+          errors.phoneNumber = "الرقم يجب أن يبدأ بـ 05 ويتكوّن من 10 أرقام";
         }
       }
     }
 
     // التحقق من البريد الإلكتروني - اختياري
-    if (email && typeof email === 'string' && email.trim() !== '') {
+    if (email && typeof email === "string" && email.trim() !== "") {
       const emailRegex = /\S+@\S+\.\S+/;
       if (!emailRegex.test(email.trim())) {
-        errors.email = 'البريد الإلكتروني غير صالح';
+        errors.email = "البريد الإلكتروني غير صالح";
       }
     }
 
     // التحقق من العمر إذا تم تمريره
     if (age !== undefined && age !== null) {
-      if (typeof age !== 'number' || age < 0) {
-        errors.age = 'العمر يجب أن يكون رقماً موجباً';
+      if (typeof age !== "number" || age < 0) {
+        errors.age = "العمر يجب أن يكون رقماً موجباً";
       }
     }
 
     // إذا وجدت أخطاء، إرجاعها
     if (Object.keys(errors).length > 0) {
-      console.log('❌ أخطاء في التحقق من البيانات:', errors);
+      console.log("❌ أخطاء في التحقق من البيانات:", errors);
       return res.status(400).json({
         success: false,
-        message: 'بيانات غير صحيحة',
-        errors
+        message: "بيانات غير صحيحة",
+        errors,
       });
     }
 
     // التحقق من التكرار باستخدام duplicateChecker
     // استخدام req.user.id عند التحديث من صفحة البروفايل (/api/me)
     // أو req.params.id عند التحديث من صفحة الإدارة (/api/students/:id)
-    const currentStudentId = isUpdate ? (req.params.id || req.user?.id || req.user?._id) : null;
+    const currentStudentId = isUpdate
+      ? req.params.id || req.user?.id || req.user?._id
+      : null;
     const duplicateError = await checkDuplicateFields(
       {
         email: email,
         phoneNumber: phoneNumber,
-        idNumber: idNumber
+        idNumber: idNumber,
       },
       currentStudentId,
-      'student'
+      "student",
     );
-    
+
     if (duplicateError) {
-      console.log('❌ تكرار في البيانات:', duplicateError.message);
+      console.log("❌ تكرار في البيانات:", duplicateError.message);
       return res.status(400).json(duplicateError);
     }
 
-    console.log('✅ تم التحقق من البيانات بنجاح');
+    console.log("✅ تم التحقق من البيانات بنجاح");
     next();
   } catch (error) {
-    console.error('خطأ في validateStudentData:', error);
+    console.error("خطأ في validateStudentData:", error);
     res.status(500).json({
       success: false,
-      message: 'خطأ في التحقق من بيانات الطالب',
-      error: error.message
+      message: "خطأ في التحقق من بيانات الطالب",
+      error: error.message,
     });
   }
 };
@@ -219,68 +264,82 @@ const validateStudentData = async (req, res, next) => {
 // تنظيف وتطبيع البيانات - متوافق مع Frontend
 const sanitizeStudentData = (req, res, next) => {
   try {
-    const { 
-      firstName, 
+    const {
+      firstName,
       fatherName,
       grandFatherName,
       motherName,
-      lastName, 
-      email, 
-      phoneNumber, 
+      lastName,
+      email,
+      phoneNumber,
       idNumber,
       residence,
       teacher,
       group,
       gender,
       birthDate,
-      age
+      age,
     } = req.body;
-    
+
     // تنظيف النصوص
     const textFields = {
       firstName,
       fatherName,
       grandFatherName,
       motherName,
-      lastName, 
+      lastName,
       residence,
       teacher,
-      group
+      group,
     };
-    
+
     for (const [field, value] of Object.entries(textFields)) {
-      if (value && typeof value === 'string') {
+      if (value && typeof value === "string") {
         // تنظيف المسافات الزائدة
         let cleanValue = value.trim();
-        
+
         // تطبيع الأسماء المركبة (عبد الرحمن → عبدالرحمن)
-        if (['firstName', 'fatherName', 'grandFatherName', 'motherName', 'lastName', 'teacher'].includes(field)) {
+        if (
+          [
+            "firstName",
+            "fatherName",
+            "grandFatherName",
+            "motherName",
+            "lastName",
+            "teacher",
+          ].includes(field)
+        ) {
           cleanValue = normalizeCompoundNames(cleanValue);
         }
-        
+
         req.body[field] = cleanValue;
       }
     }
-    
+
     // تنظيف البريد الإلكتروني
-    if (email && typeof email === 'string') {
+    if (email && typeof email === "string") {
       const cleanEmail = email.trim().toLowerCase();
-      req.body.email = cleanEmail === '' ? null : cleanEmail;
-    } else if (email === '') {
+      req.body.email = cleanEmail === "" ? null : cleanEmail;
+    } else if (email === "") {
       req.body.email = null;
     }
-    
+
     // تنظيف أرقام الهاتف والهوية
-    if (phoneNumber && typeof phoneNumber === 'string') {
-      req.body.phoneNumber = phoneNumber.replace(/\s+/g, '');
+    if (phoneNumber && typeof phoneNumber === "string") {
+      req.body.phoneNumber = phoneNumber.replace(/\s+/g, "");
+      if (req.body.phoneNumber === "") {
+        req.body.phoneNumber = undefined;
+      }
+    } else if (phoneNumber === "") {
+      req.body.phoneNumber = undefined;
     }
-    
-    if (idNumber && typeof idNumber === 'string') {
-      req.body.idNumber = idNumber.replace(/\s+/g, '');
+
+    if (idNumber && typeof idNumber === "string") {
+      req.body.idNumber = idNumber.replace(/\s+/g, "");
     }
 
     // تطبيع الجنس
-    if (gender && typeof gender === 'string') {
+    if (gender && typeof gender === "string") {
       req.body.gender = normalizeGender(gender);
     }
 
@@ -297,44 +356,43 @@ const sanitizeStudentData = (req, res, next) => {
     if (!req.body.lastSeen) {
       req.body.lastSeen = new Date();
     }
-    
-    console.log('✅ تم تنظيف وتطبيع بيانات الطالب');
+
+    console.log("✅ تم تنظيف وتطبيع بيانات الطالب");
     next();
-    
   } catch (error) {
-    console.error('خطأ في middleware sanitizeStudentData:', error);
+    console.error("خطأ في middleware sanitizeStudentData:", error);
     res.status(500).json({
       success: false,
-      message: 'خطأ في تنظيف بيانات الطالب',
-      error: error.message
+      message: "خطأ في تنظيف بيانات الطالب",
+      error: error.message,
     });
   }
 };
 
 // دالة مساعدة لتحويل تاريخ الميلاد إلى صيغة YYYY-MM-DD
 const formatBirthDateForBackend = (dateInput) => {
-  const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
-  
+  const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
+
   if (isNaN(date.getTime())) {
-    throw new Error('تاريخ غير صالح');
+    throw new Error("تاريخ غير صالح");
   }
-  
+
   const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
   return `${year}-${month}-${day}`;
 };
 
 // الأخطاء الشائعة - متطابقة مع Frontend
 const commonStudentValidationErrors = {
-  phoneFormat: 'الرقم يجب أن يبدأ بـ 05 ويتكوّن من 10 أرقام',
-  emailFormat: 'البريد الإلكتروني غير صالح',
-  birthDateFormat: 'تاريخ الميلاد لا يمكن أن يكون في المستقبل',
-  idNumberFormat: 'رقم الهوية يجب أن يتكون من 9 أرقام فقط',
+  phoneFormat: "الرقم يجب أن يبدأ بـ 05 ويتكوّن من 10 أرقام",
+  emailFormat: "البريد الإلكتروني غير صالح",
+  birthDateFormat: "تاريخ الميلاد لا يمكن أن يكون في المستقبل",
+  idNumberFormat: "رقم الهوية يجب أن يتكون من 9 أرقام فقط",
   uniqueConstraints: {
-    phone: 'رقم الهاتف موجود بالفعل',
-    idNumber: 'رقم الهوية موجود بالفعل'
+    phone: "رقم الهاتف موجود بالفعل",
+    idNumber: "رقم الهوية موجود بالفعل",
   },
 };
 
@@ -345,5 +403,5 @@ module.exports = {
   normalizeCompoundNames,
   calculateAge,
   formatBirthDateForBackend,
-  commonStudentValidationErrors
+  commonStudentValidationErrors,
 };
