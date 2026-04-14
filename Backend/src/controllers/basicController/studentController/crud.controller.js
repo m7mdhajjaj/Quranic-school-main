@@ -5,7 +5,7 @@ const {
   checkDuplicateFields,
 } = require("../../../Validation/validators/duplicateChecker");
 const { invalidateCache } = require("../../../middleware");
-const { TIMEZONE } = require('../../../config/timezone');
+const { TIMEZONE } = require("../../../config/timezone");
 const {
   notifyStudentAddedToGroup,
   notifyStudentRemovedFromGroup,
@@ -81,10 +81,10 @@ exports.restoreStudentToGroup = async (req, res) => {
       },
       {
         $set: { status: "inactive" }, // استخدام inactive بدلاً من student_removed
-      }
+      },
     );
     console.log(
-      `✅ تم إلغاء ${warningUpdate.modifiedCount} إنذارات للطالب ${studentId}`
+      `✅ تم إلغاء ${warningUpdate.modifiedCount} إنذارات للطالب ${studentId}`,
     );
 
     // تسجيل حدث RESTORATION في التاريخ
@@ -97,7 +97,7 @@ exports.restoreStudentToGroup = async (req, res) => {
         teacherName: group.teacherName || "غير محدد",
       },
       reason || "إرجاع الطالب للحلقة من قبل الأدمن",
-      req.user
+      req.user,
     );
 
     // مسح الكاش
@@ -209,7 +209,7 @@ exports.getStudents = async (req, res) => {
     const userRole = req.user?.role;
     studentsWithTeacherName = removeStudentIdForRestrictedRoles(
       studentsWithTeacherName,
-      userRole
+      userRole,
     );
 
     const endTime = Date.now();
@@ -277,7 +277,7 @@ exports.createStudent = async (req, res) => {
   try {
     console.log(
       "Received request to create student:",
-      JSON.stringify(req.body, null, 2)
+      JSON.stringify(req.body, null, 2),
     );
 
     // توليد رقم طالب متسلسل
@@ -313,7 +313,7 @@ exports.createStudent = async (req, res) => {
     const { teacher, group } = req.body;
     const teacherGroupValidation = await validateTeacherGroupMatch(
       teacher,
-      group
+      group,
     );
     if (!teacherGroupValidation.valid) {
       return res.status(400).json({
@@ -326,7 +326,7 @@ exports.createStudent = async (req, res) => {
     const capacityValidation = await validateGroupCapacity(
       group,
       null,
-      teacherGroupValidation.groupData
+      teacherGroupValidation.groupData,
     );
     if (!capacityValidation.valid) {
       return res.status(400).json({
@@ -369,7 +369,7 @@ exports.createStudent = async (req, res) => {
     // تحديث activeStatus للحلقة
     if (group && group !== "غير محدد") {
       await updateGroupActiveStatus(group).catch((err) =>
-        console.error("⚠️ Error updating group activeStatus:", err)
+        console.error("⚠️ Error updating group activeStatus:", err),
       );
     }
 
@@ -395,7 +395,7 @@ exports.updateStudent = async (req, res) => {
     // Check if birthDate is being changed - apply edit limits
     if (updatedData.birthDate) {
       const currentStudent = await Student.findById(req.params.id).select(
-        "birthDate birthDateEditHistory"
+        "birthDate birthDateEditHistory",
       );
 
       if (currentStudent) {
@@ -418,7 +418,7 @@ exports.updateStudent = async (req, res) => {
           // Count recent edits (within last month)
           const recentEdits =
             currentStudent.birthDateEditHistory?.filter(
-              (edit) => new Date(edit.editDate) >= oneMonthAgo
+              (edit) => new Date(edit.editDate) >= oneMonthAgo,
             ) || [];
 
           const editCount = recentEdits.length;
@@ -487,7 +487,7 @@ exports.updateStudent = async (req, res) => {
         const capacityValidation = await validateGroupCapacity(
           group,
           req.params.id,
-          groupData
+          groupData,
         );
         if (!capacityValidation.valid) {
           return res.status(400).json({
@@ -505,7 +505,7 @@ exports.updateStudent = async (req, res) => {
         new: true,
         runValidators: true,
         context: "query",
-      }
+      },
     );
 
     if (!updatedStudent) {
@@ -524,7 +524,7 @@ exports.updateStudent = async (req, res) => {
       twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
 
       const cleanedHistory = updatedStudent.birthDateEditHistory.filter(
-        (edit) => new Date(edit.editDate) >= twoMonthsAgo
+        (edit) => new Date(edit.editDate) >= twoMonthsAgo,
       );
 
       // Only update if we removed old entries
@@ -555,9 +555,11 @@ exports.updateStudent = async (req, res) => {
       const ExamSchedule = require("../../../schema/ExamShedule/ExamSchedule");
       const examCleanup = await ExamSchedule.updateMany(
         { group: oldGroup, "marks.student": req.params.id },
-        { $pull: { marks: { student: req.params.id } } }
+        { $pull: { marks: { student: req.params.id } } },
       );
-      console.log(`🧹 تم حذف علامات الطالب من ${examCleanup.modifiedCount} امتحان في الحلقة القديمة`);
+      console.log(
+        `🧹 تم حذف علامات الطالب من ${examCleanup.modifiedCount} امتحان في الحلقة القديمة`,
+      );
     }
 
     if (!wasInGroup && isInGroup) {
@@ -596,26 +598,34 @@ exports.deleteStudent = async (req, res) => {
     const Warning = require("../../../schema/Warning");
     const DailyPoints = require("../../../schema/DailyPoints");
     const Ranking = require("../../../schema/Ranking");
-    
+
     // إزالة علامات الطالب من جميع الامتحانات
     const examCleanup = await ExamSchedule.updateMany(
       { "marks.student": req.params.id },
-      { $pull: { marks: { student: req.params.id } } }
+      { $pull: { marks: { student: req.params.id } } },
     );
-    console.log(`🧹 تم حذف علامات الطالب من ${examCleanup.modifiedCount} امتحان`);
-    
+    console.log(
+      `🧹 تم حذف علامات الطالب من ${examCleanup.modifiedCount} امتحان`,
+    );
+
     // حذف إنذارات الطالب
-    const warningCleanup = await Warning.deleteMany({ studentId: req.params.id });
+    const warningCleanup = await Warning.deleteMany({
+      studentId: req.params.id,
+    });
     console.log(`🧹 تم حذف ${warningCleanup.deletedCount} إنذار للطالب`);
-    
+
     // حذف نقاط الطالب اليومية
-    const pointsCleanup = await DailyPoints.deleteMany({ studentId: req.params.id });
+    const pointsCleanup = await DailyPoints.deleteMany({
+      studentId: req.params.id,
+    });
     console.log(`🧹 تم حذف ${pointsCleanup.deletedCount} نقطة يومية للطالب`);
-    
+
     // حذف تصنيفات الطالب
-    const rankingCleanup = await Ranking.deleteMany({ studentId: req.params.id });
+    const rankingCleanup = await Ranking.deleteMany({
+      studentId: req.params.id,
+    });
     console.log(`🧹 تم حذف ${rankingCleanup.deletedCount} تصنيف للطالب`);
-    
+
     const deletedStudent = await Student.findByIdAndDelete(req.params.id);
     if (!deletedStudent) {
       return res.status(404).json({
@@ -677,20 +687,20 @@ exports.bulkDeleteStudents = async (req, res) => {
     const Warning = require("../../../schema/Warning");
     const DailyPoints = require("../../../schema/DailyPoints");
     const Ranking = require("../../../schema/Ranking");
-    
+
     // إزالة علامات الطلاب من الامتحانات
     const examCleanup = await ExamSchedule.updateMany(
       { "marks.student": { $in: studentIds } },
-      { $pull: { marks: { student: { $in: studentIds } } } }
+      { $pull: { marks: { student: { $in: studentIds } } } },
     );
     console.log(`🧹 تم حذف علامات من ${examCleanup.modifiedCount} امتحان`);
-    
+
     // حذف إنذارات الطلاب
     await Warning.deleteMany({ studentId: { $in: studentIds } });
-    
+
     // حذف نقاط الطلاب اليومية
     await DailyPoints.deleteMany({ studentId: { $in: studentIds } });
-    
+
     // حذف تصنيفات الطلاب
     await Ranking.deleteMany({ studentId: { $in: studentIds } });
 
@@ -702,7 +712,7 @@ exports.bulkDeleteStudents = async (req, res) => {
       ...new Set(
         studentsToDelete
           .map((s) => s.group)
-          .filter((g) => g && g !== "غير محدد")
+          .filter((g) => g && g !== "غير محدد"),
       ),
     ];
 
@@ -711,7 +721,7 @@ exports.bulkDeleteStudents = async (req, res) => {
     });
 
     console.log(
-      `✅ تم حذف ${result.deletedCount} طالب من أصل ${studentIds.length}`
+      `✅ تم حذف ${result.deletedCount} طالب من أصل ${studentIds.length}`,
     );
 
     // Invalidate caches and emit events using helpers
@@ -720,10 +730,10 @@ exports.bulkDeleteStudents = async (req, res) => {
     // تحديث activeStatus للحلقات المتأثرة
     if (affectedGroups.length > 0) {
       console.log(
-        `🔄 تحديث activeStatus لـ ${affectedGroups.length} حلقة متأثرة...`
+        `🔄 تحديث activeStatus لـ ${affectedGroups.length} حلقة متأثرة...`,
       );
       await Group.recalculateMultipleActiveStatus(affectedGroups).catch((err) =>
-        console.error("⚠️ خطأ في تحديث activeStatus:", err)
+        console.error("⚠️ خطأ في تحديث activeStatus:", err),
       );
     }
 
@@ -846,7 +856,7 @@ exports.checkDuplicate = async (req, res) => {
     const duplicateError = await checkDuplicateFields(
       data,
       excludeId,
-      "student"
+      "student",
     );
 
     if (duplicateError) {

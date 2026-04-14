@@ -4,13 +4,15 @@ const { sendSuccess, sendError } = require("../utils/responseHelpers");
 const mongoose = require("mongoose");
 const { toDateKey, getWeekKey, addDays } = require("../../../config/timezone");
 const { createLogger } = require("../../../utils/logger");
-const { getSurahByNumber } = require("../../../utils/Quran/dailyMarkQuranMetadata");
+const {
+  getSurahByNumber,
+} = require("../../../utils/Quran/dailyMarkQuranMetadata");
 
-const logger = createLogger('BulkCreate');
+const logger = createLogger("BulkCreate");
 
 /**
  * 🚀 SMART BULK CREATE - مع احترام الترتيب الزمني
- * 
+ *
  * القواعد:
  * 1. الحصة اليومية: 1 مقطع/يوم
  * 2. الحصة الأسبوعية: 3 مقاطع/أسبوع
@@ -22,7 +24,10 @@ exports.bulkCreateSections = async (req, res) => {
     const { sections, groupId } = req.body;
 
     logger.info("BULK CREATE REQUEST");
-    logger.debug(`Received:`, JSON.stringify({ sectionsCount: sections?.length, groupId }, null, 2));
+    logger.debug(
+      `Received:`,
+      JSON.stringify({ sectionsCount: sections?.length, groupId }, null, 2),
+    );
 
     if (!sections || !Array.isArray(sections) || sections.length === 0) {
       logger.warn("No sections provided");
@@ -62,7 +67,11 @@ exports.bulkCreateSections = async (req, res) => {
     // ============================================
     // 🔒 ACTIVE SURAH VALIDATION - التحقق من السورة الفعالة
     // ============================================
-    const canAdd = await Group.canAddSegment(group._id, surahNumber, 'memorization');
+    const canAdd = await Group.canAddSegment(
+      group._id,
+      surahNumber,
+      "memorization",
+    );
     if (!canAdd.allowed) {
       logger.warn("Active Surah Check failed:", canAdd.reason);
       return sendError(res, canAdd.reason, 400);
@@ -74,31 +83,39 @@ exports.bulkCreateSections = async (req, res) => {
     // ======================================================
     const existingSurahSections = await Section.find({
       group: group._id,
-      'memorizationMeta.surahNumber': surahNumber
-    }).sort({ 'memorizationMeta.ayahStart': 1 }).lean();
+      "memorizationMeta.surahNumber": surahNumber,
+    })
+      .sort({ "memorizationMeta.ayahStart": 1 })
+      .lean();
 
-    const existingRanges = existingSurahSections.map(s => {
-      const meta = s.memorizationMeta.find(m => m.surahNumber === surahNumber);
-      return {
-        ayahStart: meta.ayahStart,
-        ayahEnd: meta.ayahEnd,
-        date: new Date(s.date),
-        dateKey: s.dateKey,
-        isExisting: true
-      };
-    }).sort((a, b) => a.ayahStart - b.ayahStart);
+    const existingRanges = existingSurahSections
+      .map((s) => {
+        const meta = s.memorizationMeta.find(
+          (m) => m.surahNumber === surahNumber,
+        );
+        return {
+          ayahStart: meta.ayahStart,
+          ayahEnd: meta.ayahEnd,
+          date: new Date(s.date),
+          dateKey: s.dateKey,
+          isExisting: true,
+        };
+      })
+      .sort((a, b) => a.ayahStart - b.ayahStart);
 
     logger.debug(`Existing surah sections: ${existingRanges.length}`);
-    existingRanges.forEach(r => logger.trace(`   (٠${r.ayahStart}-${r.ayahEnd}) → ${r.dateKey}`));
+    existingRanges.forEach((r) =>
+      logger.trace(`   (٠${r.ayahStart}-${r.ayahEnd}) → ${r.dateKey}`),
+    );
 
     // ======================================================
     // الخطوة 2: جلب كل التواريخ المحجوزة للحلقة
     // ======================================================
     const allGroupSections = await Section.find({ group: group._id })
-      .select('dateKey date')
+      .select("dateKey date")
       .lean();
 
-    const occupiedDateKeys = new Set(allGroupSections.map(s => s.dateKey));
+    const occupiedDateKeys = new Set(allGroupSections.map((s) => s.dateKey));
 
     // حساب استخدام كل أسبوع
     const weeklyUsage = {};
@@ -110,10 +127,10 @@ exports.bulkCreateSections = async (req, res) => {
     // ======================================================
     // الخطوة 3: تصفية وترتيب المقاطع الجديدة
     // ======================================================
-    const validSections = sections.filter(s => {
+    const validSections = sections.filter((s) => {
       const meta = s.memorizationMeta[0];
-      const hasOverlap = existingRanges.some(ex => 
-        ex.ayahStart <= meta.ayahEnd && ex.ayahEnd >= meta.ayahStart
+      const hasOverlap = existingRanges.some(
+        (ex) => ex.ayahStart <= meta.ayahEnd && ex.ayahEnd >= meta.ayahStart,
       );
       if (hasOverlap) {
         logger.debug(`Skipping overlap: ${meta.ayahStart}-${meta.ayahEnd}`);
@@ -124,18 +141,23 @@ exports.bulkCreateSections = async (req, res) => {
     if (validSections.length === 0) {
       // جميع المقاطع موجودة أصلاً - هذا نجاح وليس خطأ!
       logger.info("All sections already exist - nothing to create");
-      return sendSuccess(res, {
-        created: 0,
-        total: sections.length,
-        skipped: sections.length,
-        sections: [],
-        message: 'جميع المقاطع موجودة مسبقاً'
-      }, 'جميع المقاطع المطلوبة موجودة مسبقاً - لا حاجة للإنشاء');
+      return sendSuccess(
+        res,
+        {
+          created: 0,
+          total: sections.length,
+          skipped: sections.length,
+          sections: [],
+          message: "جميع المقاطع موجودة مسبقاً",
+        },
+        "جميع المقاطع المطلوبة موجودة مسبقاً - لا حاجة للإنشاء",
+      );
     }
 
     // ترتيب حسب الآية
-    validSections.sort((a, b) => 
-      a.memorizationMeta[0].ayahStart - b.memorizationMeta[0].ayahStart
+    validSections.sort(
+      (a, b) =>
+        a.memorizationMeta[0].ayahStart - b.memorizationMeta[0].ayahStart,
     );
 
     logger.debug(`Valid new sections: ${validSections.length}`);
@@ -145,19 +167,21 @@ exports.bulkCreateSections = async (req, res) => {
     // ======================================================
     const allRanges = [
       ...existingRanges,
-      ...validSections.map(s => ({
+      ...validSections.map((s) => ({
         ayahStart: s.memorizationMeta[0].ayahStart,
         ayahEnd: s.memorizationMeta[0].ayahEnd,
         surahName: s.memorizationMeta[0].surahName,
         isExisting: false,
         date: null,
-        dateKey: null
-      }))
+        dateKey: null,
+      })),
     ].sort((a, b) => a.ayahStart - b.ayahStart);
 
     logger.trace(`Merged ranges (sorted by ayah):`);
     allRanges.forEach((r, i) => {
-      logger.trace(`   ${i+1}. (${r.ayahStart}-${r.ayahEnd}) ${r.isExisting ? '✓ ' + r.dateKey : '○ NEW'}`);
+      logger.trace(
+        `   ${i + 1}. (${r.ayahStart}-${r.ayahEnd}) ${r.isExisting ? "✓ " + r.dateKey : "○ NEW"}`,
+      );
     });
 
     // ======================================================
@@ -178,7 +202,7 @@ exports.bulkCreateSections = async (req, res) => {
 
     for (let i = 0; i < allRanges.length; i++) {
       const range = allRanges[i];
-      
+
       if (range.isExisting) continue; // تخطي الموجود
 
       // تحديد الحدود الزمنية
@@ -202,7 +226,9 @@ exports.bulkCreateSections = async (req, res) => {
       }
 
       logger.trace(`   (${range.ayahStart}-${range.ayahEnd})`);
-      logger.trace(`      Range: ${toDateKey(minDate)} → ${toDateKey(maxDate)}`);
+      logger.trace(
+        `      Range: ${toDateKey(minDate)} → ${toDateKey(maxDate)}`,
+      );
 
       // البحث عن تاريخ متاح ضمن النطاق
       let foundDate = null;
@@ -221,18 +247,20 @@ exports.bulkCreateSections = async (req, res) => {
           foundDate = {
             date: new Date(candidateDate),
             dateKey: candidateDateKey,
-            weekKey: weekKey
+            weekKey: weekKey,
           };
-          
+
           // تحديث التتبع
           tempOccupied.add(candidateDateKey);
           tempWeeklyUsage[weekKey] = currentWeekUsage + 1;
-          
+
           // تحديث range للمقاطع التالية
           range.date = foundDate.date;
           range.dateKey = foundDate.dateKey;
-          
-          logger.debug(`      Found: ${candidateDateKey} (Week ${weekKey}: ${currentWeekUsage + 1}/${WEEKLY_LIMIT})`);
+
+          logger.debug(
+            `      Found: ${candidateDateKey} (Week ${weekKey}: ${currentWeekUsage + 1}/${WEEKLY_LIMIT})`,
+          );
           break;
         }
 
@@ -244,7 +272,7 @@ exports.bulkCreateSections = async (req, res) => {
         logger.warn(`      No date available in range!`);
         errors.push({
           section: `${range.surahName} (${range.ayahStart}-${range.ayahEnd})`,
-          error: `لا يوجد تاريخ متاح بين ${toDateKey(minDate)} و ${toDateKey(maxDate)}`
+          error: `لا يوجد تاريخ متاح بين ${toDateKey(minDate)} و ${toDateKey(maxDate)}`,
         });
         continue;
       }
@@ -255,27 +283,28 @@ exports.bulkCreateSections = async (req, res) => {
           date: foundDate.date,
           dateKey: foundDate.dateKey,
           group: group._id,
-          memorizationMeta: [{
-            surahNumber: surahNumber,
-            surahNameCanonical: range.surahName,
-            ayahStart: range.ayahStart,
-            ayahEnd: range.ayahEnd,
-            canonicalKey: `${surahNumber}:${range.ayahStart}-${range.ayahEnd}`,
-            status: 'not_started'
-          }],
+          memorizationMeta: [
+            {
+              surahNumber: surahNumber,
+              surahNameCanonical: range.surahName,
+              ayahStart: range.ayahStart,
+              ayahEnd: range.ayahEnd,
+              canonicalKey: `${surahNumber}:${range.ayahStart}-${range.ayahEnd}`,
+              status: "not_started",
+            },
+          ],
           memorizationSection: `${range.surahName} (${range.ayahStart}-${range.ayahEnd})`,
           reviewMeta: [],
-          reviewSection: ''
+          reviewSection: "",
         };
 
         const newSection = await Section.create(sectionDoc);
         createdSections.push(newSection);
-
       } catch (err) {
         logger.error(`      Error:`, err.message);
         errors.push({
           section: `${range.surahName} (${range.ayahStart}-${range.ayahEnd})`,
-          error: err.message
+          error: err.message,
         });
       }
     }
@@ -289,7 +318,7 @@ exports.bulkCreateSections = async (req, res) => {
     if (createdSections.length > 0) {
       const surahInfo = getSurahByNumber(surahNumber);
       const totalAyahs = surahInfo?.ayahCount || 0;
-      
+
       // حساب آخر آية تم الوصول إليها (من جميع المقاطع المنشأة + الموجودة)
       let maxAyahEnd = 0;
       for (const range of allRanges) {
@@ -297,28 +326,38 @@ exports.bulkCreateSections = async (req, res) => {
           maxAyahEnd = range.ayahEnd;
         }
       }
-      
+
       // التحقق من السورة الفعالة
       const activeSurahs = await Group.getActiveSurahs(group._id);
-      
-      if (!activeSurahs?.memorization?.surahNumber || activeSurahs.memorization.isCompleted) {
+
+      if (
+        !activeSurahs?.memorization?.surahNumber ||
+        activeSurahs.memorization.isCompleted
+      ) {
         // تفعيل سورة جديدة
         await Group.activateSurah(
           group._id,
           surahNumber,
           surahInfo?.name || `سورة ${surahNumber}`,
           maxAyahEnd,
-          'memorization'
+          "memorization",
         );
       } else {
         // تحديث آخر آية
-        await Group.updateLastAyah(group._id, maxAyahEnd, 'memorization');
+        await Group.updateLastAyah(group._id, maxAyahEnd, "memorization");
       }
-      
+
       // ✅ التحقق من إكمال السورة تلقائياً
       if (totalAyahs > 0 && maxAyahEnd >= totalAyahs) {
-        await Group.checkAndCompleteSurah(group._id, maxAyahEnd, totalAyahs, 'memorization');
-        logger.info(`🎉 سورة ${surahInfo?.name} مكتملة الحفظ! (${maxAyahEnd}/${totalAyahs})`);
+        await Group.checkAndCompleteSurah(
+          group._id,
+          maxAyahEnd,
+          totalAyahs,
+          "memorization",
+        );
+        logger.info(
+          `🎉 سورة ${surahInfo?.name} مكتملة الحفظ! (${maxAyahEnd}/${totalAyahs})`,
+        );
       }
     }
     // ============================================
@@ -329,17 +368,24 @@ exports.bulkCreateSections = async (req, res) => {
     if (errors.length > 0) logger.warn(`Errors: ${errors.length}`);
 
     if (createdSections.length === 0 && errors.length > 0) {
-      return sendError(res, `فشل إنشاء جميع المقاطع: ${errors.map(e => e.error).join(', ')}`, 400);
+      return sendError(
+        res,
+        `فشل إنشاء جميع المقاطع: ${errors.map((e) => e.error).join(", ")}`,
+        400,
+      );
     }
 
-    return sendSuccess(res, {
-      created: createdSections.length,
-      skipped: skippedCount,
-      total: sections.length,
-      sections: createdSections,
-      errors: errors.length > 0 ? errors : undefined
-    }, `تم إنشاء ${createdSections.length} من ${sections.length} مقطع بنجاح${skippedCount > 0 ? ` (تم تخطي ${skippedCount} مقطع موجود)` : ''}`);
-
+    return sendSuccess(
+      res,
+      {
+        created: createdSections.length,
+        skipped: skippedCount,
+        total: sections.length,
+        sections: createdSections,
+        errors: errors.length > 0 ? errors : undefined,
+      },
+      `تم إنشاء ${createdSections.length} من ${sections.length} مقطع بنجاح${skippedCount > 0 ? ` (تم تخطي ${skippedCount} مقطع موجود)` : ""}`,
+    );
   } catch (err) {
     logger.error("Bulk create error:", err);
     return sendError(res, err.message, 500);

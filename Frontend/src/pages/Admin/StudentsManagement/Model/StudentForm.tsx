@@ -71,10 +71,10 @@ const AddStudentForm: React.FC<Props> = ({
   useEffect(() => {
     // حفظ الـ overflow الأصلي
     const originalOverflow = document.body.style.overflow;
-    
+
     // منع scroll الصفحة
-    document.body.style.overflow = 'hidden';
-    
+    document.body.style.overflow = "hidden";
+
     // إرجاع الـ overflow عند إغلاق المودل
     return () => {
       document.body.style.overflow = originalOverflow;
@@ -96,7 +96,7 @@ const AddStudentForm: React.FC<Props> = ({
           {/* Decorative circles */}
           <div className="absolute -top-10 -left-10 w-40 h-40 bg-white/10 rounded-full pointer-events-none" />
           <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-white/10 rounded-full pointer-events-none" />
-          
+
           <div className="relative z-10">
             <div className="flex justify-between items-start mb-4">
               <div className="flex items-center gap-3">
@@ -108,7 +108,9 @@ const AddStudentForm: React.FC<Props> = ({
                     {student ? "تعديل بيانات الطالب" : "إضافة طالب جديد"}
                   </h2>
                   <p className="text-white/80 text-sm">
-                    {student ? "قم بتحديث معلومات الطالب" : "أدخل بيانات الطالب الكاملة"}
+                    {student
+                      ? "قم بتحديث معلومات الطالب"
+                      : "أدخل بيانات الطالب الكاملة"}
                   </p>
                 </div>
               </div>
@@ -128,7 +130,8 @@ const AddStudentForm: React.FC<Props> = ({
                     type="button"
                     onClick={() => {
                       if (step.number < currentStep) handlePrevStep();
-                      else if (step.number > currentStep && isStep1Valid) handleNextStep();
+                      else if (step.number > currentStep && isStep1Valid)
+                        handleNextStep();
                     }}
                     className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all shadow-sm ${
                       currentStep === step.number
@@ -137,13 +140,14 @@ const AddStudentForm: React.FC<Props> = ({
                           ? "bg-white/30 text-white hover:bg-white/40"
                           : "bg-white/15 text-white/80 hover:bg-white/25"
                     }`}>
-                    <div className={`flex items-center justify-center w-7 h-7 rounded-full font-bold ${
-                      currentStep === step.number
-                        ? "bg-emerald-600 text-white"
-                        : currentStep > step.number
-                          ? "bg-white/40 text-white"
-                          : "bg-white/25 text-white/80"
-                    }`}>
+                    <div
+                      className={`flex items-center justify-center w-7 h-7 rounded-full font-bold ${
+                        currentStep === step.number
+                          ? "bg-emerald-600 text-white"
+                          : currentStep > step.number
+                            ? "bg-white/40 text-white"
+                            : "bg-white/25 text-white/80"
+                      }`}>
                       {currentStep > step.number ? (
                         <Check size={16} />
                       ) : (
@@ -170,10 +174,11 @@ const AddStudentForm: React.FC<Props> = ({
 
         {Object.keys(errors).length > 0 && !showSuccess && (
           <div
-            className={`mx-6 mt-4 px-4 py-3 rounded-lg animate-fadeIn ${hasRetryableError
+            className={`mx-6 mt-4 px-4 py-3 rounded-lg animate-fadeIn ${
+              hasRetryableError
                 ? "bg-orange-50 border border-orange-200 text-orange-700"
                 : "bg-red-50 border border-red-200 text-red-700"
-              }`}>
+            }`}>
             <div className="flex items-center gap-2 mb-2">
               <AlertCircle size={20} />
               <span className="font-semibold">
@@ -236,7 +241,6 @@ const AddStudentForm: React.FC<Props> = ({
                   الاسم الكامل
                 </h3>
 
-                
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {/* الاسم الأول */}
                   <div className="space-y-1">
@@ -251,11 +255,12 @@ const AddStudentForm: React.FC<Props> = ({
                       onChange={handleChange}
                       onBlur={() => handleBlur("firstName")}
                       placeholder="أدخل الاسم الأول"
-                      className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 text-right transition-colors ${getFieldError("firstName")
+                      className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 text-right transition-colors ${
+                        getFieldError("firstName")
                           ? "border-red-300 focus:ring-red-500 bg-red-50"
                           : "border-gray-300 focus:ring-emerald-500 focus:border-emerald-500"
-                        }`}
-                      style={{ minHeight: '42px' }}
+                      }`}
+                      style={{ minHeight: "42px" }}
                     />
                     {getFieldError("firstName") && (
                       <div className="flex items-center gap-1 text-red-600 text-xs min-h-[20px]">
@@ -278,10 +283,11 @@ const AddStudentForm: React.FC<Props> = ({
                       onChange={handleChange}
                       onBlur={() => handleBlur("fatherName")}
                       placeholder="أدخل اسم الأب"
-                      className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 text-right ${getFieldError("fatherName")
+                      className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 text-right ${
+                        getFieldError("fatherName")
                           ? "border-red-300 focus:ring-red-500 bg-red-50"
                           : "border-gray-300 focus:ring-emerald-500 focus:border-emerald-500"
-                        }`}
+                      }`}
                     />
                     <div className="min-h-[20px]">
                       {getFieldError("fatherName") && (
@@ -340,10 +346,11 @@ const AddStudentForm: React.FC<Props> = ({
                       onChange={handleChange}
                       onBlur={() => handleBlur("lastName")}
                       placeholder="أدخل الكنية"
-                      className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 text-right ${getFieldError("lastName")
+                      className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 text-right ${
+                        getFieldError("lastName")
                           ? "border-red-300 focus:ring-red-500 bg-red-50"
                           : "border-gray-300 focus:ring-emerald-500 focus:border-emerald-500"
-                        }`}
+                      }`}
                     />
                     {getFieldError("lastName") && (
                       <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
@@ -431,9 +438,10 @@ const AddStudentForm: React.FC<Props> = ({
                         }`}
                         onClick={(e) => {
                           e.preventDefault();
-                          handleChange({ target: { name: 'gender', value: 'ذكر' } } as any);
-                        }}
-                      >
+                          handleChange({
+                            target: { name: "gender", value: "ذكر" },
+                          } as any);
+                        }}>
                         <input
                           type="radio"
                           name="gender"
@@ -455,9 +463,10 @@ const AddStudentForm: React.FC<Props> = ({
                         }`}
                         onClick={(e) => {
                           e.preventDefault();
-                          handleChange({ target: { name: 'gender', value: 'أنثى' } } as any);
-                        }}
-                      >
+                          handleChange({
+                            target: { name: "gender", value: "أنثى" },
+                          } as any);
+                        }}>
                         <input
                           type="radio"
                           name="gender"
@@ -519,10 +528,11 @@ const AddStudentForm: React.FC<Props> = ({
                       onChange={handleChange}
                       onBlur={() => handleBlur("residence")}
                       placeholder="أدخل مكان السكن"
-                      className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 text-right ${getFieldError("residence")
+                      className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 text-right ${
+                        getFieldError("residence")
                           ? "border-red-300 focus:ring-red-500 bg-red-50"
                           : "border-gray-300 focus:ring-emerald-500 focus:border-emerald-500"
-                        }`}
+                      }`}
                     />
                     {getFieldError("residence") && (
                       <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
@@ -557,27 +567,35 @@ const AddStudentForm: React.FC<Props> = ({
                       onChange={handleChange}
                       onBlur={() => handleBlur("phoneNumber")}
                       placeholder="0512345678 (10 أرقام)"
-                      className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 text-right ${getFieldError("phoneNumber")
+                      className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 text-right ${
+                        getFieldError("phoneNumber")
                           ? isDuplicateError("phoneNumber")
                             ? "border-orange-300 focus:ring-orange-500 bg-orange-50"
                             : "border-red-300 focus:ring-red-500 bg-red-50"
                           : "border-gray-300 focus:ring-emerald-500 focus:border-emerald-500"
-                        }`}
+                      }`}
                     />
                     <p className="text-xs text-gray-500 flex items-center gap-1">
                       {formData.phoneNumber && (
-                        <span className={formData.phoneNumber.length === 10 ? "text-green-600" : "text-orange-600"}>
+                        <span
+                          className={
+                            formData.phoneNumber.length === 10
+                              ? "text-green-600"
+                              : "text-orange-600"
+                          }>
                           {formData.phoneNumber.length}/10 أرقام
                         </span>
                       )}
-                      {!formData.phoneNumber && "يجب أن يبدأ بـ 05 ويتكون من 10 أرقام"}
+                      {!formData.phoneNumber &&
+                        "يجب أن يبدأ بـ 05 ويتكون من 10 أرقام"}
                     </p>
                     {getFieldError("phoneNumber") && (
                       <div
-                        className={`flex items-center gap-1 text-xs animate-fadeIn ${isDuplicateError("phoneNumber")
+                        className={`flex items-center gap-1 text-xs animate-fadeIn ${
+                          isDuplicateError("phoneNumber")
                             ? "text-orange-600"
                             : "text-red-600"
-                          }`}>
+                        }`}>
                         <AlertCircle size={12} />
                         <span>{getFieldError("phoneNumber")}</span>
                       </div>
@@ -597,19 +615,21 @@ const AddStudentForm: React.FC<Props> = ({
                       onChange={handleChange}
                       onBlur={() => handleBlur("email")}
                       placeholder="example@email.com"
-                      className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 text-right ${getFieldError("email")
+                      className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 text-right ${
+                        getFieldError("email")
                           ? isDuplicateError("email")
                             ? "border-orange-300 focus:ring-orange-500 bg-orange-50"
                             : "border-red-300 focus:ring-red-500 bg-red-50"
                           : "border-gray-300 focus:ring-emerald-500 focus:border-emerald-500"
-                        }`}
+                      }`}
                     />
                     {getFieldError("email") && (
                       <div
-                        className={`flex items-center gap-1 text-xs animate-fadeIn ${isDuplicateError("email")
+                        className={`flex items-center gap-1 text-xs animate-fadeIn ${
+                          isDuplicateError("email")
                             ? "text-orange-600"
                             : "text-red-600"
-                          }`}>
+                        }`}>
                         <AlertCircle size={12} />
                         <span>{getFieldError("email")}</span>
                       </div>
@@ -631,7 +651,8 @@ const AddStudentForm: React.FC<Props> = ({
                 </h3>
                 <div className="bg-gradient-to-r from-blue-100 to-emerald-100 border-2 border-blue-300 rounded-xl p-4 mb-6 shadow-sm">
                   <p className="text-sm text-blue-800 text-center font-medium">
-                    <strong>📋 تعليمات:</strong> اختر الحلقة أولاً، وسيظهر المعلم المسؤول تلقائياً
+                    <strong>📋 تعليمات:</strong> اختر الحلقة أولاً، وسيظهر
+                    المعلم المسؤول تلقائياً
                   </p>
                 </div>
 
@@ -669,7 +690,8 @@ const AddStudentForm: React.FC<Props> = ({
                             value={group.name}
                             disabled={group.isFull}>
                             {group.name}
-                            {group.capacityStatus && ` (${group.capacityStatus})`}
+                            {group.capacityStatus &&
+                              ` (${group.capacityStatus})`}
                             {group.isFull && " - ممتلئة!"}
                           </option>
                         ))}
@@ -679,7 +701,9 @@ const AddStudentForm: React.FC<Props> = ({
                         <Users
                           size={18}
                           className={`${
-                            formData.group ? "text-emerald-500" : "text-gray-400"
+                            formData.group
+                              ? "text-emerald-500"
+                              : "text-gray-400"
                           } transition-colors duration-200`}
                         />
                       </div>
@@ -701,16 +725,18 @@ const AddStudentForm: React.FC<Props> = ({
                           <User size={20} className="text-white" />
                         </div>
                         <div>
-                          <p className="text-xs text-emerald-600 font-medium">المعلم المسؤول</p>
-                          <p className="text-base font-bold text-slate-900">{selectedGroupTeacher}</p>
+                          <p className="text-xs text-emerald-600 font-medium">
+                            المعلم المسؤول
+                          </p>
+                          <p className="text-base font-bold text-slate-900">
+                            {selectedGroupTeacher}
+                          </p>
                         </div>
                       </div>
                     </div>
                   )}
                 </div>
               </div>
-
-
             </div>
           )}
         </div>

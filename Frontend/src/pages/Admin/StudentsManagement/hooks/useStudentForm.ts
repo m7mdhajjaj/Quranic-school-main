@@ -15,7 +15,6 @@ import { showSuccessToast, showInfoToast } from "@/utils/toastUtils";
 import { showErrorMessage } from "@/utils/sweetalertUtils";
 import { isEqual } from "@/utils/objectUtils";
 
-
 // دالة لتحويل التاريخ من الخادم إلى تنسيق input[type="date"]
 const formatDateForInput = (dateValue?: string | Date): string => {
   if (!dateValue) return "";
@@ -136,7 +135,7 @@ export const useStudentForm = ({
   // تحميل المعلمين - مع تحسين الأداء
   useEffect(() => {
     let isMounted = true;
-    
+
     const fetchTeachers = async () => {
       setLoadingTeachers(true);
       try {
@@ -152,9 +151,9 @@ export const useStudentForm = ({
         }
       }
     };
-    
+
     fetchTeachers();
-    
+
     return () => {
       isMounted = false;
     };
@@ -168,12 +167,12 @@ export const useStudentForm = ({
     }
 
     let isMounted = true;
-    
+
     const fetchGroups = async () => {
       setLoadingGroups(true);
       try {
         const response = await getAllGroups();
-        
+
         if (isMounted) {
           if (response.success && response.data) {
             setGroups(response.data);
@@ -192,9 +191,9 @@ export const useStudentForm = ({
         }
       }
     };
-    
+
     fetchGroups();
-    
+
     return () => {
       isMounted = false;
     };
@@ -205,10 +204,17 @@ export const useStudentForm = ({
     if (!formData.group) return null;
     const selectedGroup = groups.find((group) => group.name === formData.group);
     if (!selectedGroup) return null;
-    
-    const teacher = selectedGroup.teacher as string | { firstName?: string; lastName?: string };
+
+    const teacher = selectedGroup.teacher as
+      | string
+      | { firstName?: string; lastName?: string };
     if (typeof teacher === "string") return teacher;
-    if (teacher && typeof teacher === "object" && teacher.firstName && teacher.lastName) {
+    if (
+      teacher &&
+      typeof teacher === "object" &&
+      teacher.firstName &&
+      teacher.lastName
+    ) {
       return `${teacher.firstName} ${teacher.lastName}`;
     }
     return null;
@@ -216,7 +222,11 @@ export const useStudentForm = ({
 
   // تحديث المعلم تلقائياً عند تحميل الحلقات أو تغيير الحلقة
   useEffect(() => {
-    if (formData.group && selectedGroupTeacher && formData.teacher !== selectedGroupTeacher) {
+    if (
+      formData.group &&
+      selectedGroupTeacher &&
+      formData.teacher !== selectedGroupTeacher
+    ) {
       setFormData((prev) => ({
         ...prev,
         teacher: selectedGroupTeacher,
@@ -228,7 +238,9 @@ export const useStudentForm = ({
   // تنظيف timers عند إغلاق الفورم
   useEffect(() => {
     return () => {
-      Object.values(debounceTimers.current).forEach(timer => clearTimeout(timer));
+      Object.values(debounceTimers.current).forEach((timer) =>
+        clearTimeout(timer),
+      );
     };
   }, []);
 
@@ -241,7 +253,7 @@ export const useStudentForm = ({
       formData.idNumber?.trim() &&
       formData.birthDate &&
       formData.gender &&
-      formData.residence?.trim()
+      formData.residence?.trim(),
     );
   }, [
     formData.firstName,
@@ -273,16 +285,23 @@ export const useStudentForm = ({
       if (name === "group") {
         const selectedGroup = groups.find((g) => g.name === value);
         let teacherName = "";
-        
+
         if (selectedGroup) {
-          const teacher = selectedGroup.teacher as string | { firstName?: string; lastName?: string };
+          const teacher = selectedGroup.teacher as
+            | string
+            | { firstName?: string; lastName?: string };
           if (typeof teacher === "string") {
             teacherName = teacher;
-          } else if (teacher && typeof teacher === "object" && teacher.firstName && teacher.lastName) {
+          } else if (
+            teacher &&
+            typeof teacher === "object" &&
+            teacher.firstName &&
+            teacher.lastName
+          ) {
             teacherName = `${teacher.firstName} ${teacher.lastName}`;
           }
         }
-        
+
         setFormData((prev) => ({
           ...prev,
           group: value,
@@ -303,67 +322,70 @@ export const useStudentForm = ({
         });
       }
     },
-    [groups, errors]
+    [groups, errors],
   );
 
-  const handleBlur = useCallback(async (fieldName: string) => {
-    setTouchedFields((prev) => new Set(prev).add(fieldName));
-    
-    // التحقق من التكرار للحقول الحساسة فقط
-    if (['idNumber', 'phoneNumber', 'email'].includes(fieldName)) {
-      const value = formData[fieldName as keyof typeof formData];
-      
-      // تخطي التحقق إذا كان الحقل فارغاً أو لم يتغير
-      if (!value || value === '') return;
-      
-      // تخطي إذا كانت القيمة نفسها للطالب الحالي
-      if (student && student[fieldName as keyof Student] === value) return;
-      
-      // إلغاء أي طلب سابق
-      if (debounceTimers.current[fieldName]) {
-        clearTimeout(debounceTimers.current[fieldName]);
-      }
-      
-      // استخدام debounce للتحقق من التكرار (تأخير 500ms)
-      debounceTimers.current[fieldName] = setTimeout(async () => {
-        try {
-          const result = await checkDuplicateField(
-            fieldName as 'idNumber' | 'phoneNumber' | 'email',
-            value as string,
-            student?._id
-          );
-          
-          if (result.isDuplicate) {
-            setErrors((prev) => ({
-              ...prev,
-              [fieldName]: result.message || `${fieldName} موجود بالفعل`,
-            }));
-            setDuplicateFieldInfo({
-              field: fieldName,
-              userType: result.existingUserType || 'مستخدم',
-            });
-          } else {
-            setErrors((prev) => {
-              const { [fieldName]: _, ...rest } = prev;
-              return rest;
-            });
-            if (duplicateFieldInfo?.field === fieldName) {
-              setDuplicateFieldInfo(null);
-            }
-          }
-        } catch (error) {
-          console.error('خطأ في التحقق من التكرار:', error);
+  const handleBlur = useCallback(
+    async (fieldName: string) => {
+      setTouchedFields((prev) => new Set(prev).add(fieldName));
+
+      // التحقق من التكرار للحقول الحساسة فقط
+      if (["idNumber", "phoneNumber", "email"].includes(fieldName)) {
+        const value = formData[fieldName as keyof typeof formData];
+
+        // تخطي التحقق إذا كان الحقل فارغاً أو لم يتغير
+        if (!value || value === "") return;
+
+        // تخطي إذا كانت القيمة نفسها للطالب الحالي
+        if (student && student[fieldName as keyof Student] === value) return;
+
+        // إلغاء أي طلب سابق
+        if (debounceTimers.current[fieldName]) {
+          clearTimeout(debounceTimers.current[fieldName]);
         }
-      }, 500);
-    }
-  }, [formData, student, duplicateFieldInfo]);
+
+        // استخدام debounce للتحقق من التكرار (تأخير 500ms)
+        debounceTimers.current[fieldName] = setTimeout(async () => {
+          try {
+            const result = await checkDuplicateField(
+              fieldName as "idNumber" | "phoneNumber" | "email",
+              value as string,
+              student?._id,
+            );
+
+            if (result.isDuplicate) {
+              setErrors((prev) => ({
+                ...prev,
+                [fieldName]: result.message || `${fieldName} موجود بالفعل`,
+              }));
+              setDuplicateFieldInfo({
+                field: fieldName,
+                userType: result.existingUserType || "مستخدم",
+              });
+            } else {
+              setErrors((prev) => {
+                const { [fieldName]: _, ...rest } = prev;
+                return rest;
+              });
+              if (duplicateFieldInfo?.field === fieldName) {
+                setDuplicateFieldInfo(null);
+              }
+            }
+          } catch (error) {
+            console.error("خطأ في التحقق من التكرار:", error);
+          }
+        }, 500);
+      }
+    },
+    [formData, student, duplicateFieldInfo],
+  );
 
   const getFieldError = useCallback(
     (fieldName: string): string => {
       if (!touchedFields.has(fieldName)) return "";
       return errors[fieldName] || "";
     },
-    [errors, touchedFields]
+    [errors, touchedFields],
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -398,9 +420,9 @@ export const useStudentForm = ({
 
       // الحصول على اسم المعلم من الحلقة
       const teacherFromGroup = selectedGroupTeacher || formData.teacher;
-      
+
       // توليد كلمة مرور تلقائية للطالب الجديد (رقم الهوية)
-      const password = student?._id ? undefined : (formData.idNumber || '1234');
+      const password = student?._id ? undefined : formData.idNumber || "1234";
 
       const studentData = {
         ...formData,
@@ -410,7 +432,7 @@ export const useStudentForm = ({
         ...(password && { password }), // إضافة كلمة المرور للطلاب الجدد فقط
       } as StudentFormData;
 
-      console.log('📤 البيانات المرسلة:', studentData);
+      console.log("📤 البيانات المرسلة:", studentData);
 
       let response;
       if (student?._id) {
@@ -422,11 +444,15 @@ export const useStudentForm = ({
       // عرض Toast للنجاح فقط إذا كانت العملية ناجحة
       if (response.success) {
         if (student?._id) {
-          showSuccessToast(`✅ تم تحديث بيانات الطالب ${formData.firstName} ${formData.lastName} بنجاح!`);
+          showSuccessToast(
+            `✅ تم تحديث بيانات الطالب ${formData.firstName} ${formData.lastName} بنجاح!`,
+          );
         } else {
-          showSuccessToast(`✅ تم إضافة الطالب ${formData.firstName} ${formData.lastName} بنجاح!`);
+          showSuccessToast(
+            `✅ تم إضافة الطالب ${formData.firstName} ${formData.lastName} بنجاح!`,
+          );
         }
-        
+
         setShowSuccess(true);
         setTimeout(() => {
           onSuccess(response.data!);
@@ -436,12 +462,12 @@ export const useStudentForm = ({
         // في حالة فشل العملية
         setIsSubmitting(false);
         const errorMessage = response.message || "حدث خطأ أثناء حفظ البيانات";
-        
+
         console.error("❌ فشل في حفظ الطالب:", errorMessage);
-        
+
         // التحقق من أخطاء التكرار
         const duplicateMatch = errorMessage.match(
-          /(رقم الهوية|رقم الهاتف|البريد الإلكتروني) موجود بالفعل لدى (طالب|معلم)/
+          /(رقم الهوية|رقم الهاتف|البريد الإلكتروني) موجود بالفعل لدى (طالب|معلم)/,
         );
 
         if (duplicateMatch) {
@@ -461,7 +487,7 @@ export const useStudentForm = ({
         } else {
           setErrors({ submit: errorMessage });
         }
-        
+
         showErrorMessage("خطأ في العملية", errorMessage);
       }
     } catch (error: any) {
@@ -475,16 +501,16 @@ export const useStudentForm = ({
           }
         });
         setErrors(validationErrors);
-        
+
         // عرض SweetAlert للأخطاء في التحقق
         showErrorMessage(
           "خطأ في البيانات",
-          "يرجى التحقق من جميع الحقول المطلوبة وإصلاح الأخطاء"
+          "يرجى التحقق من جميع الحقول المطلوبة وإصلاح الأخطاء",
         );
       } else if (error.response?.data?.message) {
         const errorMessage = error.response.data.message;
         const duplicateMatch = errorMessage.match(
-          /(رقم الهوية|رقم الهاتف|البريد الإلكتروني) موجود بالفعل لدى (طالب|معلم)/
+          /(رقم الهوية|رقم الهاتف|البريد الإلكتروني) موجود بالفعل لدى (طالب|معلم)/,
         );
 
         if (duplicateMatch) {
@@ -500,31 +526,22 @@ export const useStudentForm = ({
           if (field) {
             setDuplicateFieldInfo({ field, userType });
             setErrors({ [field]: errorMessage });
-            
+
             // عرض SweetAlert للتكرار
-            showErrorMessage(
-              "بيانات مكررة",
-              errorMessage
-            );
+            showErrorMessage("بيانات مكررة", errorMessage);
           }
         } else {
           setErrors({ submit: errorMessage });
-          
+
           // عرض SweetAlert للأخطاء العامة
-          showErrorMessage(
-            "خطأ في العملية",
-            errorMessage
-          );
+          showErrorMessage("خطأ في العملية", errorMessage);
         }
       } else {
         const errorMsg = "حدث خطأ أثناء حفظ البيانات";
         setErrors({ submit: errorMsg });
-        
+
         // عرض SweetAlert للأخطاء غير المتوقعة
-        showErrorMessage(
-          "خطأ غير متوقع",
-          errorMsg
-        );
+        showErrorMessage("خطأ غير متوقع", errorMsg);
       }
     }
   };
@@ -547,7 +564,9 @@ export const useStudentForm = ({
   };
 
   const hasRetryableError = useMemo(() => {
-    return Object.values(errors).some((error) => error.includes("موجود بالفعل"));
+    return Object.values(errors).some((error) =>
+      error.includes("موجود بالفعل"),
+    );
   }, [errors]);
 
   return {

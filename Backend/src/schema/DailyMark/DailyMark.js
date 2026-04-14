@@ -24,8 +24,15 @@ const markSchema = new mongoose.Schema(
       max: [100, "علامة الحفظ يجب أن تكون على الأكثر 100"],
       default: null,
     },
+
+    // توقيع/مشاهدة الأهل للعلامة (على حساب الطالب)
+    seenAt: {
+      type: Date,
+      default: null,
+      index: true,
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // Ensure each student has only one mark per section (unique index)
@@ -34,6 +41,7 @@ markSchema.index({ studentId: 1, sectionId: 1 }, { unique: true });
 // ⚡ Performance indexes for optimized queries
 markSchema.index({ studentId: 1, createdAt: -1 }); // للبحث حسب الطالب مع الترتيب
 markSchema.index({ sectionId: 1 }); // للبحث حسب Section
+markSchema.index({ studentId: 1, seenAt: 1 }); // لتتبع المشاهدة حسب الطالب
 
 const Mark = mongoose.model("Mark", markSchema);
 

@@ -25,6 +25,7 @@
 const getStudentMarksController = require("./getStudentMarks");
 const getStudentAveragesController = require("./getStudentAverages");
 const getStudentSectionsGroupedController = require("./getStudentSectionsGrouped");
+const markSeenController = require("./markSeen");
 
 // ============================================================================
 // SECTION CONTROLLERS (for surah history)
@@ -41,7 +42,11 @@ module.exports = {
 
   // ========== MY PROGRESS (من ملفات محلية) ==========
   getStudentAverages: getStudentAveragesController.getStudentAverages,
-  getStudentSectionsGrouped: getStudentSectionsGroupedController.getStudentSectionsGrouped,
+  getStudentSectionsGrouped:
+    getStudentSectionsGroupedController.getStudentSectionsGrouped,
+
+  // ========== SIGNATURE / SEEN ===========
+  markSeen: markSeenController.markSeen,
 
   // ========== SURAH HISTORY ==========
   getCompletedSurahs: sectionGetController.getCompletedSurahs,

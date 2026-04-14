@@ -136,15 +136,27 @@ const processSegments = (metaInput, legacyString, type = "segment") => {
   }
   // 2. Fallback: Parse Legacy String if Meta is empty
   else if (isRequired(legacyString)) {
-    // Optional: Try to parse legacy string?
-    // For now, we mainly rely on explicit data, but we can try parsing.
-    // If legacy string is simple "Al-Baqara 1-5", we parse it.
-    const result = parseSegment(legacyString, type);
-    if (result.isValid) {
-      segments.push(result.data);
-    }
-    // If processing legacy string fails (e.g. "Review Part 1"), we verify it's valid text later
-    // but don't force it into the Meta array to avoid bad data.
+    // Try to parse legacy string(s). Support multiple segments separated by common delimiters.
+    // Example: "البقرة 1-5 | آل عمران 1-10" or multi-line inputs.
+    const raw = legacyString.toString().trim();
+
+    const parts = raw
+      .split(/\s*(?:\||\n|،|,)\s*/)
+      .map((p) => p.trim())
+      .filter(Boolean);
+
+    // If splitting yields nothing, fall back to single parse.
+    const effectiveParts = parts.length > 0 ? parts : [raw];
+
+    effectiveParts.forEach((part, index) => {
+      const result = parseSegment(part, type);
+      if (result.isValid) {
+        segments.push(result.data);
+      } else {
+        // Free-text mode: don't block, but keep errors for debugging
+        errors.push(`تعذر تحليل ${type} (${index + 1}): ${result.error}`);
+      }
+    });
   }
 
   return { segments, errors };
@@ -155,18 +167,21 @@ const processSegments = (metaInput, legacyString, type = "segment") => {
  */
 const sanitizeSectionData = (data) => {
   const sanitized = {};
+  const safeData = data && typeof data === "object" ? data : {};
 
-  // Remove potential XSS and clean up data
-  Object.keys(data).forEach((key) => {
-    if (typeof data[key] === "string") {
-      sanitized[key] = data[key]
+  Object.keys(safeData).forEach((key) => {
+    const value = safeData[key];
+
+    if (typeof value === "string") {
+      sanitized[key] = value
         .trim()
         .replace(/[<>]/g, "") // Remove potential HTML tags
         .replace(/javascript:/gi, "") // Remove javascript: protocols
         .replace(/on\w+=/gi, ""); // Remove event handlers
-    } else {
-      sanitized[key] = data[key];
+      return;
     }
+
+    sanitized[key] = value;
   });
 
   return sanitized;

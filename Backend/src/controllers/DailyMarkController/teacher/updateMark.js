@@ -77,6 +77,7 @@ exports.createOrUpdateMark = async (req, res) => {
       logger.debug("🔄 Updating existing mark");
       mark.reviewMark = reviewMark || null;
       mark.memorizationMark = memorizationMark || null;
+      mark.seenAt = null;
       await mark.save();
     } else {
       // Create new mark
@@ -86,6 +87,7 @@ exports.createOrUpdateMark = async (req, res) => {
         sectionId,
         reviewMark: reviewMark || null,
         memorizationMark: memorizationMark || null,
+        seenAt: null,
       });
       await mark.save();
     }
@@ -178,6 +180,11 @@ exports.updateMarkById = async (req, res) => {
     if (memorizationMark !== undefined)
       mark.memorizationMark = memorizationMark || null;
 
+    // reset signature when teacher changes marks
+    if (reviewMark !== undefined || memorizationMark !== undefined) {
+      mark.seenAt = null;
+    }
+
     await mark.save();
     logger.debug("✅ تم تحديث العلامة بنجاح");
 
@@ -255,6 +262,13 @@ exports.updateMultipleMarks = async (req, res) => {
           mark.reviewMark = markData.reviewMark || null;
         if (markData.memorizationMark !== undefined)
           mark.memorizationMark = markData.memorizationMark || null;
+
+        if (
+          markData.reviewMark !== undefined ||
+          markData.memorizationMark !== undefined
+        ) {
+          mark.seenAt = null;
+        }
 
         await mark.save();
         updatedMarks.push(mark);

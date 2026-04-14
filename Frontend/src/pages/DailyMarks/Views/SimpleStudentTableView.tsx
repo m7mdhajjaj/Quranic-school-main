@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useStudentGroupedSections } from "../hooks/data/useStudentGroupedSections";
 import type { SurahSegment } from "@/Api/DailyMark/studentGroupedSectionsApi";
+import { markDailyMarkAsSeen } from "@/Api/DailyMark/dailyMarksApi";
 
 interface SimpleStudentTableViewProps {
   studentId: string;
@@ -68,6 +69,8 @@ const getMonthYear = (dateStr: string): { month: number; year: number } => {
 interface TableRow {
   date: string;
   dayName: string;
+  markId: string | null;
+  seenAt: string | null;
   memorization: {
     segment: string;
     mark: number | null;
@@ -90,6 +93,10 @@ export const SimpleStudentTableView = memo<SimpleStudentTableViewProps>(
     );
     const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
     const [selectedMonth, setSelectedMonth] = useState<string>("all");
+    const [signingMarkId, setSigningMarkId] = useState<string | null>(null);
+    const [localSeenAtByMarkId, setLocalSeenAtByMarkId] = useState<
+      Record<string, string>
+    >({});
 
     // تحويل البيانات لصيغة الجدول
     const { tableData, availableMonths, stats } = useMemo(() => {
@@ -131,12 +138,25 @@ export const SimpleStudentTableView = memo<SimpleStudentTableViewProps>(
           groupedByDate[dateKey] = {
             date: dateKey,
             dayName: getDayName(dateKey),
+            markId: null,
+            seenAt: null,
             memorization: null,
             review: null,
           };
         }
 
-        const segmentText = `${seg.surahName} (${seg.ayahStart}-${seg.ayahEnd})`;
+        // Capture Mark ID + seenAt (signature) once per date
+        if (seg.mark?._id && !groupedByDate[dateKey].markId) {
+          groupedByDate[dateKey].markId = seg.mark._id;
+          const overriddenSeenAt = localSeenAtByMarkId[seg.mark._id];
+          groupedByDate[dateKey].seenAt =
+            overriddenSeenAt ?? seg.mark.seenAt ?? null;
+        }
+
+        const segmentText =
+          seg.ayahStart > 0 && seg.ayahEnd > 0
+            ? `${seg.surahName} (${seg.ayahStart}-${seg.ayahEnd})`
+            : `${seg.surahName}`;
 
         if (seg.type === "memorization") {
           if (groupedByDate[dateKey].memorization) {
@@ -233,10 +253,31 @@ export const SimpleStudentTableView = memo<SimpleStudentTableViewProps>(
           totalReview: revMarks.length,
         },
       };
-    }, [surahs, sortOrder, selectedMonth]);
+    }, [surahs, sortOrder, selectedMonth, localSeenAtByMarkId]);
 
     const toggleSort = () => {
       setSortOrder((prev) => (prev === "desc" ? "asc" : "desc"));
+    };
+
+    const handleSignSeen = async (markId: string) => {
+      if (!markId) return;
+      try {
+        setSigningMarkId(markId);
+        const result = await markDailyMarkAsSeen(markId);
+        if (result.success) {
+          const seenAtValue =
+            result.data?.seenAt ||
+            // optimistic fallback in case API doesn't return seenAt
+            new Date().toISOString();
+
+          setLocalSeenAtByMarkId((prev) => ({
+            ...prev,
+            [markId]: seenAtValue,
+          }));
+        }
+      } finally {
+        setSigningMarkId(null);
+      }
     };
 
     const getMonthLabel = (monthKey: string): string => {
@@ -248,7 +289,7 @@ export const SimpleStudentTableView = memo<SimpleStudentTableViewProps>(
     if (loading) {
       return (
         <div
-          className="min-h-screen bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20 flex items-center justify-center"
+          className="min-h-screen bg-linear-to-br from-emerald-50/30 via-slate-50 to-teal-50/20 flex items-center justify-center"
           dir="rtl">
           <div className="text-center">
             <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
@@ -262,7 +303,7 @@ export const SimpleStudentTableView = memo<SimpleStudentTableViewProps>(
     if (error) {
       return (
         <div
-          className="min-h-screen bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20 flex items-center justify-center"
+          className="min-h-screen bg-linear-to-br from-emerald-50/30 via-slate-50 to-teal-50/20 flex items-center justify-center"
           dir="rtl">
           <div className="bg-red-50 border border-red-200 rounded-2xl p-8 text-center max-w-md">
             <p className="text-red-700 font-medium mb-4">{error}</p>
@@ -280,10 +321,10 @@ export const SimpleStudentTableView = memo<SimpleStudentTableViewProps>(
     if (tableData.length === 0 && availableMonths.length === 0) {
       return (
         <div
-          className="min-h-screen bg-gradient-to-br from-emerald-50/30 via-slate-50 to-teal-50/20 flex items-center justify-center"
+          className="min-h-screen bg-linear-to-br from-emerald-50/30 via-slate-50 to-teal-50/20 flex items-center justify-center"
           dir="rtl">
           <div className="text-center py-20">
-            <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 shadow-lg">
+            <div className="bg-linear-to-br from-emerald-50 to-teal-50 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 shadow-lg">
               <BookOpen className="w-12 h-12 text-emerald-600" />
             </div>
             <h3 className="text-2xl font-bold text-slate-900 mb-2">
@@ -299,10 +340,10 @@ export const SimpleStudentTableView = memo<SimpleStudentTableViewProps>(
 
     return (
       <div
-        className="min-h-screen bg-gradient-to-br from-emerald-50/50 via-white to-teal-50/30"
+        className="min-h-screen bg-linear-to-br from-emerald-50/50 via-white to-teal-50/30"
         dir="rtl">
         {/* Header */}
-        <div className="bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-700 text-white">
+        <div className="bg-linear-to-r from-emerald-600 via-emerald-700 to-teal-700 text-white">
           <div className="p-6 pb-8">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div className="flex items-center gap-4">
@@ -325,7 +366,7 @@ export const SimpleStudentTableView = memo<SimpleStudentTableViewProps>(
                 <select
                   value={selectedMonth}
                   onChange={(e) => setSelectedMonth(e.target.value)}
-                  className="bg-transparent text-white border-none outline-none cursor-pointer font-medium text-sm min-w-[140px]">
+                  className="bg-transparent text-white border-none outline-none cursor-pointer font-medium text-sm min-w-35">
                   <option value="all" className="text-slate-800">
                     كل الأشهر
                   </option>
@@ -414,7 +455,7 @@ export const SimpleStudentTableView = memo<SimpleStudentTableViewProps>(
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-gradient-to-r from-slate-50 to-slate-100 border-b-2 border-slate-200">
+                  <tr className="bg-linear-to-r from-slate-50 to-slate-100 border-b-2 border-slate-200">
                     <th
                       className="px-5 py-4 text-right font-bold text-slate-700 cursor-pointer hover:bg-slate-100 transition-colors"
                       onClick={toggleSort}>
@@ -443,12 +484,15 @@ export const SimpleStudentTableView = memo<SimpleStudentTableViewProps>(
                     <th className="px-5 py-4 text-center font-bold text-blue-700 bg-blue-50/50">
                       العلامة
                     </th>
+                    <th className="px-5 py-4 text-center font-bold text-slate-700">
+                      تمت المشاهدة
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {tableData.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-5 py-12 text-center">
+                      <td colSpan={7} className="px-5 py-12 text-center">
                         <div className="text-slate-400">
                           <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
                           <p className="font-medium">
@@ -501,10 +545,10 @@ export const SimpleStudentTableView = memo<SimpleStudentTableViewProps>(
                             <span
                               className={`inline-flex items-center justify-center w-11 h-11 rounded-xl font-bold text-white shadow-md transition-transform hover:scale-105 ${
                                 row.memorization.mark >= 8
-                                  ? "bg-gradient-to-br from-emerald-400 to-emerald-600"
+                                  ? "bg-linear-to-br from-emerald-400 to-emerald-600"
                                   : row.memorization.mark >= 5
-                                    ? "bg-gradient-to-br from-amber-400 to-amber-600"
-                                    : "bg-gradient-to-br from-red-400 to-red-600"
+                                    ? "bg-linear-to-br from-amber-400 to-amber-600"
+                                    : "bg-linear-to-br from-red-400 to-red-600"
                               }`}>
                               {row.memorization.mark}
                             </span>
@@ -535,10 +579,10 @@ export const SimpleStudentTableView = memo<SimpleStudentTableViewProps>(
                             <span
                               className={`inline-flex items-center justify-center w-11 h-11 rounded-xl font-bold text-white shadow-md transition-transform hover:scale-105 ${
                                 row.review.mark >= 8
-                                  ? "bg-gradient-to-br from-blue-400 to-blue-600"
+                                  ? "bg-linear-to-br from-blue-400 to-blue-600"
                                   : row.review.mark >= 5
-                                    ? "bg-gradient-to-br from-amber-400 to-amber-600"
-                                    : "bg-gradient-to-br from-red-400 to-red-600"
+                                    ? "bg-linear-to-br from-amber-400 to-amber-600"
+                                    : "bg-linear-to-br from-red-400 to-red-600"
                               }`}>
                               {row.review.mark}
                             </span>
@@ -550,6 +594,46 @@ export const SimpleStudentTableView = memo<SimpleStudentTableViewProps>(
                             <span className="text-slate-300">-</span>
                           )}
                         </td>
+
+                        {/* التوقيع / تمت المشاهدة */}
+                        <td className="px-5 py-4 text-center">
+                          {(() => {
+                            const hasAnyMark =
+                              (row.memorization?.mark !== null &&
+                                row.memorization?.mark !== undefined) ||
+                              (row.review?.mark !== null &&
+                                row.review?.mark !== undefined);
+
+                            if (!hasAnyMark || !row.markId) {
+                              return <span className="text-slate-300">-</span>;
+                            }
+
+                            if (row.seenAt) {
+                              const seenDate = new Date(row.seenAt);
+                              return (
+                                <div className="text-emerald-700 font-semibold text-sm">
+                                  تمت
+                                  <div className="text-[11px] text-slate-500 font-medium mt-1">
+                                    {isNaN(seenDate.getTime())
+                                      ? ""
+                                      : seenDate.toLocaleString("ar-SA")}
+                                  </div>
+                                </div>
+                              );
+                            }
+
+                            const isLoadingSign = signingMarkId === row.markId;
+                            return (
+                              <button
+                                type="button"
+                                disabled={isLoadingSign}
+                                onClick={() => handleSignSeen(row.markId!)}
+                                className="px-4 py-2 rounded-xl text-sm font-bold bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors">
+                                {isLoadingSign ? "..." : "شاهدت العلامة"}
+                              </button>
+                            );
+                          })()}
+                        </td>
                       </tr>
                     ))
                   )}
@@ -558,7 +642,7 @@ export const SimpleStudentTableView = memo<SimpleStudentTableViewProps>(
             </div>
 
             {/* Footer with summary */}
-            <div className="bg-gradient-to-r from-slate-50 to-slate-100 px-5 py-4 border-t-2 border-slate-200">
+            <div className="bg-linear-to-r from-slate-50 to-slate-100 px-5 py-4 border-t-2 border-slate-200">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <p className="text-slate-600 text-sm">
                   إجمالي الجلسات المعروضة:{" "}

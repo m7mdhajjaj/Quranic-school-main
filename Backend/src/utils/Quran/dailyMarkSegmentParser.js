@@ -25,18 +25,38 @@ const parseSegment = (input, type = "segment") => {
     rawStart = input.ayahStart || input.start || input.from;
     rawEnd = input.ayahEnd || input.end || input.to;
   } else if (typeof input === "string") {
+    // Normalize common Arabic phrasing:
+    // - "البقرة من آية 1 إلى 5" → "البقرة 1-5"
+    // - tolerate different dash characters and extra words
+    let normalized = input.toString().trim();
+
+    // unify dashes
+    normalized = normalized.replace(/[–—]/g, "-");
+
+    // normalize Arabic 'إلى/الى' to '-'
+    normalized = normalized.replace(/\s*(إلى|الى)\s*/g, "-");
+
+    // remove brackets/parentheses often used around ranges: "غافر (1-25)" -> "غافر 1-25"
+    // keep the numbers and dash in place
+    normalized = normalized.replace(/[()\[\]{}（）【】]/g, " ");
+
+    // remove common words around ranges (keep numbers)
+    normalized = normalized
+      .replace(
+        /\s*(من\s*(?:آية|اية|آيه|ايه|آيات|ايات|الآية|الاية|الآيه|الايه)?|(?:آية|اية|آيه|ايه|آيات|ايات|الآية|الاية|الآيه|الايه))\s*/g,
+        " ",
+      )
+      .replace(/\s+/g, " ")
+      .trim();
+
     // Try to parse "Name Start-End" e.g. "البقرة 1-5"
-    // Regex: Match name (letters/spaces) + optional digits + optional separator + digits
-    // Very basic parser. Ideally frontend sends structured data.
-    const match = input.match(/^([^\d]+)(?:\s+(\d+)\s*[-:]\s*(\d+))?$/);
+    const match = normalized.match(/^([^\d]+?)(?:\s+(\d+)\s*[-:]\s*(\d+))?$/);
     if (match) {
-        rawSurahQuery = match[1].trim();
-        rawStart = match[2] ? parseInt(match[2]) : 1;
-        rawEnd = match[3] ? parseInt(match[3]) : null; // If null, validation might fail or default to end
+      rawSurahQuery = match[1].trim();
+      rawStart = match[2] ? parseInt(match[2]) : 1;
+      rawEnd = match[3] ? parseInt(match[3]) : null;
     } else {
-        // Fallback: assume just name, default range? No, risky.
-        rawSurahQuery = input.trim(); 
-        // We will default start=1, end=1 (or handle later)
+      rawSurahQuery = normalized;
     }
   } else {
     return { isValid: false, error: "Invalid input format" };
@@ -45,9 +65,9 @@ const parseSegment = (input, type = "segment") => {
   // 2. Resolve Surah
   const surah = findSurah(rawSurahQuery);
   if (!surah) {
-    return { 
-      isValid: false, 
-      error: `لم يتم التعرف على السورة: ${rawSurahQuery}` 
+    return {
+      isValid: false,
+      error: `لم يتم التعرف على السورة: ${rawSurahQuery}`,
     };
   }
 
@@ -61,13 +81,22 @@ const parseSegment = (input, type = "segment") => {
   if (isNaN(end)) end = surah.ayahCount;
 
   if (start > end) {
-     return { isValid: false, error: `بداية المقطع (${start}) أكبر من نهايته (${end})` };
+    return {
+      isValid: false,
+      error: `بداية المقطع (${start}) أكبر من نهايته (${end})`,
+    };
   }
   if (start > surah.ayahCount) {
-     return { isValid: false, error: `رقم الآية (${start}) أكبر من عدد آيات سورة ${surah.name} (${surah.ayahCount})` };
+    return {
+      isValid: false,
+      error: `رقم الآية (${start}) أكبر من عدد آيات سورة ${surah.name} (${surah.ayahCount})`,
+    };
   }
   if (end > surah.ayahCount) {
-     return { isValid: false, error: `رقم الآية (${end}) أكبر من عدد آيات سورة ${surah.name} (${surah.ayahCount})` };
+    return {
+      isValid: false,
+      error: `رقم الآية (${end}) أكبر من عدد آيات سورة ${surah.name} (${surah.ayahCount})`,
+    };
   }
 
   // 5. Construct Canonical Object
@@ -77,13 +106,13 @@ const parseSegment = (input, type = "segment") => {
     surahNumber: surah.number,
     surahNameCanonical: surah.name,
     surahNameInput: rawSurahQuery.toString(),
-    
+
     ayahStart: start,
     ayahEnd: end,
-    
+
     canonicalKey: canonicalKey,
     surahAyahCount: surah.ayahCount,
-    
+
     // Initial status for new segments
     status: input.status || "not_started",
     completedAt: input.completedAt || null,
